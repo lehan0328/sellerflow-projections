@@ -85,7 +85,7 @@ export const AdminCustomers = () => {
         body: { userIds }
       });
 
-      // Calculate Amazon revenue for each user (last 30 days)
+      // Calculate Amazon payouts for each user (last 30 days, confirmed only)
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
@@ -125,11 +125,16 @@ export const AdminCustomers = () => {
             accountOwnerCompany = ownerProfile?.company;
           }
 
-          // Fetch Amazon revenue using the same Postgres function as Analytics (last 30 days)
-          const { data: amazonRevenue } = await supabase
-            .rpc('get_amazon_revenue_30_days', { p_user_id: profile.user_id });
+          // Fetch Amazon payouts (last 30 days, confirmed only)
+          const { data: amazonPayouts } = await supabase
+            .from('amazon_payouts')
+            .select('total_amount')
+            .eq('user_id', profile.user_id)
+            .eq('status', 'confirmed')
+            .gte('payout_date', thirtyDaysAgo.toISOString())
+            .lte('payout_date', new Date().toISOString());
 
-          const revenue = amazonRevenue || 0;
+          const revenue = amazonPayouts?.reduce((sum, payout) => sum + Number(payout.total_amount || 0), 0) || 0;
 
           // Fetch Stripe subscription data if customer has stripe_customer_id
           let renewalDate = null;
@@ -592,7 +597,7 @@ export const AdminCustomers = () => {
                 <TableHead>Status</TableHead>
                 <TableHead>{viewMode === 'churned' ? 'Last Plan' : 'Plan'}</TableHead>
                 <TableHead>Discount</TableHead>
-                <TableHead>Amazon Revenue (30d)</TableHead>
+                <TableHead>Amazon Payouts (30d)</TableHead>
                 <TableHead>Renewal Date</TableHead>
                 <TableHead>Last Paid</TableHead>
                 {viewMode === 'churned' && <TableHead>Churn Date</TableHead>}
