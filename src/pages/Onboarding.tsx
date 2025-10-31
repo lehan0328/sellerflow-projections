@@ -241,10 +241,8 @@ export default function Onboarding() {
       const { data, error } = await supabase.functions.invoke('exchange-plaid-token', {
         body: { 
           publicToken: plaidPublicToken, 
-          metadata: {
-            ...plaidMetadata,
-            accounts: plaidMetadata.accounts.filter((acc: any) => selectedAccounts.includes(acc.id))
-          },
+          metadata: plaidMetadata,
+          selectedAccountIds: selectedAccounts,
           priorities
         }
       });
