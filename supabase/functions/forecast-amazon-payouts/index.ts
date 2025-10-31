@@ -486,6 +486,11 @@ serve(async (req) => {
         // Calculate baseline amount using different strategies for daily vs bi-weekly
         let baselineAmount;
         
+        // Declare baseline variables at broader scope for later use
+        let baseline30Days = 0;
+        let baseline60Days = 0;
+        let baseline90Days = 0;
+        
         if (payoutFrequency === 'daily') {
           // ===== DAILY ACCOUNTS: Prioritize 90-day payout history =====
           console.log(`[FORECAST] Daily account - calculating from payout history for ${amazonAccount.account_name}`);
@@ -614,9 +619,9 @@ serve(async (req) => {
             // Adjust transaction weight based on data reliability
             const reliableTransactionDaily = transactionBasedDaily * Math.max(0.1, transactionDataReliability);
             
-            const baseline30Days = (blendedPayoutAvg * weights30Days) + (reliableTransactionDaily * (1 - weights30Days));
-            const baseline60Days = (blendedPayoutAvg * weights60Days) + (reliableTransactionDaily * (1 - weights60Days));
-            const baseline90Days = (blendedPayoutAvg * weights90Days) + (reliableTransactionDaily * (1 - weights90Days));
+            baseline30Days = (blendedPayoutAvg * weights30Days) + (reliableTransactionDaily * (1 - weights30Days));
+            baseline60Days = (blendedPayoutAvg * weights60Days) + (reliableTransactionDaily * (1 - weights60Days));
+            baseline90Days = (blendedPayoutAvg * weights90Days) + (reliableTransactionDaily * (1 - weights90Days));
             
             console.log(`[FORECAST] Forecast horizon baselines calculated:`, {
               blendedPayoutAvg: blendedPayoutAvg.toFixed(2),
@@ -643,6 +648,11 @@ serve(async (req) => {
               const totalPayoutAmount = nonForecastedPayouts.reduce((sum, p) => sum + Number(p.total_amount), 0);
               baselineAmount = daysDiff > 0 ? totalPayoutAmount / daysDiff : simpleAvg;
               
+              // Set all horizon baselines to the same value since we don't have enough data to differentiate
+              baseline30Days = baselineAmount;
+              baseline60Days = baselineAmount;
+              baseline90Days = baselineAmount;
+              
               console.log(`[FORECAST] Using all available payouts:`, {
                 totalAmount: totalPayoutAmount.toFixed(2),
                 daysInPeriod: daysDiff,
@@ -650,6 +660,9 @@ serve(async (req) => {
               });
             } else {
               baselineAmount = 1000; // Conservative default
+              baseline30Days = baselineAmount;
+              baseline60Days = baselineAmount;
+              baseline90Days = baselineAmount;
               console.log(`[FORECAST] No payout history, using conservative default: ${baselineAmount}`);
             }
           }
@@ -700,6 +713,11 @@ serve(async (req) => {
             // For bi-weekly: multiply daily average by 14
             baselineAmount = dailyAverage * 14;
           }
+          
+          // Set baseline variables for bi-weekly (same value for all horizons)
+          baseline30Days = baselineAmount;
+          baseline60Days = baselineAmount;
+          baseline90Days = baselineAmount;
         }
         
         // Generate forecasts for 3 months based on frequency
