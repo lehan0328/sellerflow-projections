@@ -11,6 +11,7 @@ import { useIncome } from "@/hooks/useIncome";
 import { useTransactions } from "@/hooks/useTransactions";
 import { useExcludeToday } from "@/contexts/ExcludeTodayContext";
 import { useReserveAmount } from "@/hooks/useReserveAmount";
+import { useAmazonPayouts } from "@/hooks/useAmazonPayouts";
 import { addDays, isWithinInterval, startOfDay } from "date-fns";
 import aurenLogo from "@/assets/auren-full-logo.png";
 import { supabase } from "@/integrations/supabase/client";
@@ -96,18 +97,7 @@ const FlexReport = () => {
   const {
     transactions
   } = useTransactions();
-  const { data: amazonPayouts } = useQuery({
-    queryKey: ['amazon-payouts'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('amazon_payouts')
-        .select('*')
-        .order('payout_date', { ascending: false });
-      
-      if (error) throw error;
-      return data;
-    },
-  });
+  const { amazonPayouts } = useAmazonPayouts();
 
   // Calculate metrics
   const today = startOfDay(new Date());
@@ -129,13 +119,13 @@ const FlexReport = () => {
   // Amazon revenue (this calendar month)
   const startOfMonth = startOfDay(new Date(today.getFullYear(), today.getMonth(), 1));
   const endOfMonth = startOfDay(new Date(today.getFullYear(), today.getMonth() + 1, 0));
-  const amazonRevenueThisMonth = amazonPayouts?.filter(payout => {
+  const amazonRevenueThisMonth = amazonPayouts.filter(payout => {
     const payoutDate = new Date(payout.payout_date);
     return isWithinInterval(payoutDate, { start: startOfMonth, end: endOfMonth });
   }).reduce((sum, payout) => sum + Number(payout.total_amount), 0) || 0;
 
   // Total Amazon payouts (confirmed only)
-  const confirmedPayouts = amazonPayouts?.filter(p => p.status === 'confirmed') || [];
+  const confirmedPayouts = amazonPayouts.filter(p => p.status === 'confirmed') || [];
   const totalPayouts = confirmedPayouts.reduce((sum, p) => sum + Number(p.total_amount || 0), 0);
   
   // Find earliest payout date
@@ -150,12 +140,12 @@ const FlexReport = () => {
   const oneYearAgo = addDays(today, -365);
   const sixMonthsAgo = addDays(today, -182);
   
-  const recentPayouts = amazonPayouts?.filter(p => 
+  const recentPayouts = amazonPayouts.filter(p => 
     p.status === 'confirmed' && 
     new Date(p.payout_date) >= sixMonthsAgo
   ).reduce((sum, p) => sum + Number(p.total_amount || 0), 0) || 0;
   
-  const olderPayouts = amazonPayouts?.filter(p => 
+  const olderPayouts = amazonPayouts.filter(p => 
     p.status === 'confirmed' && 
     new Date(p.payout_date) >= oneYearAgo && 
     new Date(p.payout_date) < sixMonthsAgo
@@ -188,7 +178,7 @@ const FlexReport = () => {
   // Previous month Amazon revenue (for comparison)
   const startOfLastMonth = startOfDay(new Date(today.getFullYear(), today.getMonth() - 1, 1));
   const endOfLastMonth = startOfDay(new Date(today.getFullYear(), today.getMonth(), 0));
-  const previousMonthAmazonRevenue = amazonPayouts?.filter(payout => {
+  const previousMonthAmazonRevenue = amazonPayouts.filter(payout => {
     const payoutDate = new Date(payout.payout_date);
     return isWithinInterval(payoutDate, { start: startOfLastMonth, end: endOfLastMonth });
   }).reduce((sum, payout) => sum + Number(payout.total_amount), 0) || 0;
