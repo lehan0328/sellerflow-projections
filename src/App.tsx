@@ -6,7 +6,6 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ExcludeTodayProvider } from "@/contexts/ExcludeTodayContext";
 import Landing from "./pages/Landing";
 import Dashboard from "./pages/Dashboard";
-import Settings from "./pages/Settings";
 import { SignUpsClosed } from "./pages/SignUpsClosed";
 import { SignUp } from "./pages/SignUp";
 import UpgradePlan from "./pages/UpgradePlan";
@@ -134,11 +133,6 @@ const App = () => (
           <Route path="/sample-data" element={
             <ProtectedRoute>
               <SampleDataGenerator />
-            </ProtectedRoute>
-          } />
-          <Route path="/settings" element={
-            <ProtectedRoute>
-              <Settings />
             </ProtectedRoute>
           } />
           <Route path="/upgrade-plan" element={
