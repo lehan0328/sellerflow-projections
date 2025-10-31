@@ -16,6 +16,7 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const navigate = useNavigate();
   const [trialEnd, setTrialEnd] = useState<string | null>(null);
   const [checkingTrial, setCheckingTrial] = useState(true);
+  const [hasPlanOverride, setHasPlanOverride] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -41,11 +42,14 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
       // Get user's profile to check if they're part of a team
       const { data: profile } = await supabase
         .from('profiles')
-        .select('trial_end, account_id, is_account_owner')
+        .select('trial_end, account_id, is_account_owner, plan_override')
         .eq('user_id', user.id)
         .maybeSingle();
 
       let trialEndDate = profile?.trial_end || null;
+      
+      // Check if user has a plan override (lifetime access, etc.)
+      setHasPlanOverride(!!profile?.plan_override);
 
       // If user is part of a team (not account owner), check account owner's trial
       if (profile?.account_id && !profile?.is_account_owner) {
@@ -71,8 +75,9 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
 
   // Check if trial has expired AND user has no active subscription
   // If subscribed is true (has active Stripe subscription), never block access
-  // Only check trial if they don't have an active subscription
-  const isTrialExpired = !subscribed && trialEnd && new Date(trialEnd) < new Date();
+  // If user has plan_override (lifetime access, etc.), never block access
+  // Only check trial if they don't have an active subscription or plan override
+  const isTrialExpired = !subscribed && !hasPlanOverride && trialEnd && new Date(trialEnd) < new Date();
 
   if (loading || subLoading || checkingTrial) {
     return <LoadingScreen message="Verifying your session..." />;
