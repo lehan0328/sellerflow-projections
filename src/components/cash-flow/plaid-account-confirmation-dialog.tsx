@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -58,11 +58,19 @@ export function PlaidAccountConfirmationDialog({
     uniqueId: acc.id || `temp-account-${index}-${acc.name.replace(/\s/g, '-')}`
   }));
 
-  // Initialize with empty selection - user must explicitly select accounts
+  // Initialize with empty selection
   const [selectedAccountIds, setSelectedAccountIds] = useState<Set<string>>(new Set());
   const [priorities, setPriorities] = useState<Record<string, number>>({});
   const [expandedAccounts, setExpandedAccounts] = useState<Set<string>>(new Set());
   const [isAdding, setIsAdding] = useState(false);
+
+  // Auto-select all accounts when dialog opens
+  useEffect(() => {
+    if (open && accountsWithIds.length > 0) {
+      const allAccountIds = new Set(accountsWithIds.map(acc => acc.uniqueId));
+      setSelectedAccountIds(allAccountIds);
+    }
+  }, [open, accounts]);
   
   // Calculate remaining connections
   const remainingConnections = planLimits.bankConnections - currentUsage.bankConnections;
@@ -256,11 +264,23 @@ export function PlaidAccountConfirmationDialog({
                         />
                         <div className="flex-1">
                           <p className="font-medium text-sm">{account.name}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {account.balances?.current != null && `Balance: $${account.balances.current.toFixed(2)}`}
-                            {account.balances?.current != null && account.balances?.limit != null && ' • '}
-                            {account.balances?.limit != null && `Limit: $${account.balances.limit.toFixed(2)}`}
-                          </p>
+                          <div className="flex flex-wrap gap-2 mt-1">
+                            {account.balances?.current != null && (
+                              <span className="text-xs text-muted-foreground">
+                                Balance: <span className="font-medium text-foreground">${account.balances.current.toFixed(2)}</span>
+                              </span>
+                            )}
+                            {account.balances?.available != null && (
+                              <span className="text-xs text-muted-foreground">
+                                • Available: <span className="font-medium text-green-600 dark:text-green-400">${account.balances.available.toFixed(2)}</span>
+                              </span>
+                            )}
+                            {account.balances?.limit != null && (
+                              <span className="text-xs text-muted-foreground">
+                                • Limit: <span className="font-medium text-foreground">${account.balances.limit.toFixed(2)}</span>
+                              </span>
+                            )}
+                          </div>
                         </div>
                         {isSelected && (
                           <Badge 
