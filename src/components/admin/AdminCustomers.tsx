@@ -28,7 +28,7 @@ interface Customer {
   account_status?: string;
   payment_failure_date?: string;
   email?: string;
-  amazon_revenue?: number;
+  amazon_revenue?: number | string;
   renewal_date?: string;
   last_paid_date?: string;
   stripe_customer_id?: string;
@@ -74,7 +74,7 @@ export const AdminCustomers = () => {
       setIsLoading(true);
       const { data: profiles, error } = await supabase
         .from('profiles')
-        .select('user_id, first_name, last_name, company, created_at, plan_override, discount_redeemed_at, trial_end, churn_date, account_status, payment_failure_date, stripe_customer_id, account_id, is_account_owner')
+        .select('user_id, first_name, last_name, company, created_at, plan_override, discount_redeemed_at, trial_end, churn_date, account_status, payment_failure_date, stripe_customer_id, account_id, is_account_owner, monthly_amazon_revenue')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -112,30 +112,20 @@ export const AdminCustomers = () => {
             .eq('user_id', profile.user_id)
             .maybeSingle();
 
-          // If user is staff/admin (not owner), fetch the account owner's company
+          // If user is staff/admin (not owner), fetch the account owner's company and monthly revenue
           let accountOwnerCompany = null;
+          let monthlyRevenue = profile.monthly_amazon_revenue || null;
           if (userRole && userRole.role !== 'owner') {
             const { data: ownerProfile } = await supabase
               .from('profiles')
-              .select('company')
+              .select('company, monthly_amazon_revenue')
               .eq('account_id', userRole.account_id)
               .eq('is_account_owner', true)
               .maybeSingle();
             
             accountOwnerCompany = ownerProfile?.company;
+            monthlyRevenue = ownerProfile?.monthly_amazon_revenue || null;
           }
-
-          // Fetch Amazon payouts (last 30 days, confirmed only)
-          // Query by account_id to get all payouts for the account
-          const { data: amazonPayouts } = await supabase
-            .from('amazon_payouts')
-            .select('total_amount')
-            .eq('account_id', profile.account_id)
-            .eq('status', 'confirmed')
-            .gte('payout_date', thirtyDaysAgo.toISOString())
-            .lte('payout_date', new Date().toISOString());
-
-          const revenue = amazonPayouts?.reduce((sum, payout) => sum + Number(payout.total_amount || 0), 0) || 0;
 
           // Fetch Stripe subscription data if customer has stripe_customer_id
           let renewalDate = null;
@@ -173,7 +163,7 @@ export const AdminCustomers = () => {
           return {
             ...profile,
             email: emailData?.emails?.[profile.user_id] || 'Unknown',
-            amazon_revenue: revenue,
+            amazon_revenue: monthlyRevenue || 'Not provided',
             renewal_date: calculatedRenewalDate,
             last_paid_date: lastPaidDate,
             stripe_plan_name: stripePlanName,
@@ -680,7 +670,7 @@ export const AdminCustomers = () => {
                 <TableHead>Status</TableHead>
                 <TableHead>{viewMode === 'churned' ? 'Last Plan' : 'Plan'}</TableHead>
                 <TableHead>Discount</TableHead>
-                <TableHead>Amazon Payouts (30d)</TableHead>
+                <TableHead>Monthly Revenue</TableHead>
                 <TableHead>Renewal Date</TableHead>
                 <TableHead>Last Paid</TableHead>
                 {viewMode === 'churned' && <TableHead>Churn Date</TableHead>}
@@ -804,8 +794,8 @@ export const AdminCustomers = () => {
                         )}
                       </TableCell>
                       <TableCell>
-                        <span className="text-sm font-medium">
-                          ${(customer.amazon_revenue || 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                        <span className="text-sm text-muted-foreground">
+                          {typeof customer.amazon_revenue === 'string' ? customer.amazon_revenue : 'Not provided'}
                         </span>
                       </TableCell>
                       <TableCell>

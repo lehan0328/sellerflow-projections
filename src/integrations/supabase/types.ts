@@ -1600,6 +1600,7 @@ export type Database = {
           last_amazon_connection: string | null
           last_name: string | null
           max_team_members: number
+          monthly_amazon_revenue: string | null
           monthly_revenue: string | null
           payment_failure_date: string | null
           plan_override: string | null
@@ -1626,6 +1627,7 @@ export type Database = {
           last_amazon_connection?: string | null
           last_name?: string | null
           max_team_members?: number
+          monthly_amazon_revenue?: string | null
           monthly_revenue?: string | null
           payment_failure_date?: string | null
           plan_override?: string | null
@@ -1652,6 +1654,7 @@ export type Database = {
           last_amazon_connection?: string | null
           last_name?: string | null
           max_team_members?: number
+          monthly_amazon_revenue?: string | null
           monthly_revenue?: string | null
           payment_failure_date?: string | null
           plan_override?: string | null

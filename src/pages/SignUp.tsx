@@ -20,6 +20,7 @@ export const SignUp = () => {
     firstName: '',
     lastName: '',
     company: '',
+    monthlyAmazonRevenue: '',
   });
 
   useEffect(() => {
@@ -46,7 +47,7 @@ export const SignUp = () => {
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!signUpData.email || !signUpData.password || !signUpData.confirmPassword || !signUpData.firstName || !signUpData.lastName || !signUpData.company) {
+    if (!signUpData.email || !signUpData.password || !signUpData.confirmPassword || !signUpData.firstName || !signUpData.lastName || !signUpData.company || !signUpData.monthlyAmazonRevenue) {
       toast.error('Please fill in all fields');
       return;
     }
@@ -74,6 +75,7 @@ export const SignUp = () => {
             first_name: signUpData.firstName,
             last_name: signUpData.lastName,
             company: signUpData.company,
+            monthly_amazon_revenue: signUpData.monthlyAmazonRevenue,
           }
         }
       });
@@ -188,6 +190,20 @@ export const SignUp = () => {
                     type="text"
                     value={signUpData.company}
                     onChange={(e) => setSignUpData({ ...signUpData, company: e.target.value })}
+                    className="h-12 border-primary/20 bg-background/50 backdrop-blur-sm focus:border-primary focus:ring-primary/20 transition-all"
+                    disabled={loading}
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="monthlyAmazonRevenue" className="text-base">Monthly Amazon Revenue</Label>
+                  <Input
+                    id="monthlyAmazonRevenue"
+                    type="text"
+                    placeholder="e.g., $50,000 or $500k"
+                    value={signUpData.monthlyAmazonRevenue}
+                    onChange={(e) => setSignUpData({ ...signUpData, monthlyAmazonRevenue: e.target.value })}
                     className="h-12 border-primary/20 bg-background/50 backdrop-blur-sm focus:border-primary focus:ring-primary/20 transition-all"
                     disabled={loading}
                     required
