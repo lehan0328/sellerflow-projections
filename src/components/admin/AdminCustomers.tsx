@@ -112,24 +112,28 @@ export const AdminCustomers = () => {
             .eq('user_id', profile.user_id)
             .maybeSingle();
 
-          // If user is staff/admin (not owner), fetch the account owner's company
+          // If user is staff/admin (not owner), fetch the account owner's company and user_id
           let accountOwnerCompany = null;
+          let accountOwnerUserId = profile.user_id; // Default to current user
+          
           if (userRole && userRole.role !== 'owner') {
             const { data: ownerProfile } = await supabase
               .from('profiles')
-              .select('company')
+              .select('company, user_id')
               .eq('account_id', userRole.account_id)
               .eq('is_account_owner', true)
               .maybeSingle();
             
             accountOwnerCompany = ownerProfile?.company;
+            accountOwnerUserId = ownerProfile?.user_id || profile.user_id;
           }
 
           // Fetch Amazon payouts (last 30 days, confirmed only)
+          // Use account owner's user_id for team members
           const { data: amazonPayouts } = await supabase
             .from('amazon_payouts')
             .select('total_amount')
-            .eq('user_id', profile.user_id)
+            .eq('user_id', accountOwnerUserId)
             .eq('status', 'confirmed')
             .gte('payout_date', thirtyDaysAgo.toISOString())
             .lte('payout_date', new Date().toISOString());
