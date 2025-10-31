@@ -23,8 +23,8 @@ serve(async (req) => {
 
     console.log('Creating Plaid link token for user:', userId);
 
-    // Determine the redirect URI based on the request origin
-    const origin = req.headers.get('origin') || 'https://7a7abab6-1ab3-40f5-8847-2b043f3ea03c.lovableproject.com';
+    // Use production domain for OAuth redirect
+    const origin = req.headers.get('origin') || 'https://aurenapp.com';
     const redirectUri = `${origin}/oauth-redirect`;
 
     console.log('Using OAuth redirect URI:', redirectUri);
