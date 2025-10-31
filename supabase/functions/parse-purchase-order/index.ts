@@ -58,30 +58,73 @@ serve(async (req) => {
 
     console.log("Processing document:", file.name, file.type);
 
-    // PDF files are not supported by the vision API
-    // Only image formats (PNG, JPEG, WEBP, GIF) are accepted
-    if (file.type === 'application/pdf') {
-      return new Response(
-        JSON.stringify({ 
-          success: false,
-          error: "PDF files cannot be processed directly. The AI vision API only supports image formats (PNG, JPEG, WEBP, GIF).\n\n📸 Please convert your PDF to an image:\n• Take a screenshot (Windows: Win+Shift+S, Mac: Cmd+Shift+4)\n• Use an online PDF to JPG converter\n• Open the PDF and export/save as an image\n\nThen upload the image file instead."
-        }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+    let extractionPrompt = "";
+    let messageContent: any[] = [];
 
-    // Read file as base64 for images
-    const arrayBuffer = await file.arrayBuffer();
-    const bytes = new Uint8Array(arrayBuffer);
-    
-    // Convert to base64
-    let base64 = '';
-    const chunkSize = 0x8000; // 32KB chunks to avoid stack overflow
-    for (let i = 0; i < bytes.length; i += chunkSize) {
-      const chunk = bytes.subarray(i, Math.min(i + chunkSize, bytes.length));
-      base64 += String.fromCharCode(...chunk);
+    // Handle PDFs using text extraction
+    if (file.type === 'application/pdf') {
+      const arrayBuffer = await file.arrayBuffer();
+      const bytes = new Uint8Array(arrayBuffer);
+      
+      // Use Lovable's document parsing API for PDFs
+      const parseFormData = new FormData();
+      parseFormData.append('file', new Blob([bytes], { type: 'application/pdf' }), file.name);
+      
+      const parseResponse = await fetch('https://document-parser.lovable.workers.dev/parse', {
+        method: 'POST',
+        body: parseFormData,
+      });
+
+      if (!parseResponse.ok) {
+        console.error("PDF parsing error:", parseResponse.status);
+        return new Response(
+          JSON.stringify({ 
+            success: false,
+            error: "Failed to parse PDF document. Please try again or use an image format."
+          }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const parseResult = await parseResponse.json();
+      const extractedText = parseResult.content || "";
+      
+      console.log("Extracted PDF text length:", extractedText.length);
+
+      extractionPrompt = `Extract all purchase order, sales order, and invoice information from this document text.\n\nDocument content:\n${extractedText}`;
+      messageContent = [
+        {
+          type: "text",
+          text: extractionPrompt + "\n\nIMPORTANT - DOCUMENT TYPE DETECTION (check in this exact order):\n1. If document says 'SALES ORDER' or 'SO' → set documentType to 'sales_order'\n2. If document says 'INVOICE' (not 'Pro-forma' or 'Proforma') → set documentType to 'invoice'\n3. If document says 'Pro-forma Invoice', 'Proforma Invoice', 'Pro forma Invoice', 'PERFORMA INVOICE' → set documentType to 'proforma_invoice'\n4. If document says 'Purchase Order' or 'PO' → set documentType to 'purchase_order'\n5. Default to 'purchase_order' if unclear\n\nIMPORTANT - TOTAL AMOUNT EXTRACTION RULES:\n1. Look for the FINAL payable amount with labels: 'Total:', 'Total Amount:', 'Grand Total:', 'Amount Due:', 'Balance Due:', or 'Total Payable:'\n2. IGNORE lines with: 'Subtotal:', 'Discount:', 'Deposit:', 'Tax:', 'VAT:', 'Shipping:', 'Handling:', 'Adjustment:', or 'Credit:'\n3. If multiple 'Total' entries exist, capture the LAST valid total that represents the final amount due (typically after all discounts, taxes, and adjustments)\n4. The correct total is usually the last monetary value before payment instructions or terms\n5. Return the amount as a number string without currency symbols (e.g., '1500.50' not '$1,500.50')\n\nFor the vendor name, check these fields in order of priority: 'From:', 'Vendor:', 'Supplier:', 'Sold By:', 'Issued By:', 'Ship From:', 'Company:'. Use whichever field is present to identify the vendor (required). Also extract: purchase order or invoice number, item description, payment terms (Net 30/60/90 or immediate), due date, delivery date, category (Inventory, Packaging Materials, Marketing/PPC, Shipping & Logistics, Professional Services, or Other), and additional notes."
+        }
+      ];
+    } else {
+      // Handle images using vision API
+      const arrayBuffer = await file.arrayBuffer();
+      const bytes = new Uint8Array(arrayBuffer);
+      
+      // Convert to base64
+      let base64 = '';
+      const chunkSize = 0x8000; // 32KB chunks to avoid stack overflow
+      for (let i = 0; i < bytes.length; i += chunkSize) {
+        const chunk = bytes.subarray(i, Math.min(i + chunkSize, bytes.length));
+        base64 += String.fromCharCode(...chunk);
+      }
+      base64 = btoa(base64);
+
+      messageContent = [
+        {
+          type: "text",
+          text: "Extract all purchase order, sales order, and invoice information from this document.\n\nIMPORTANT - DOCUMENT TYPE DETECTION (check in this exact order):\n1. If document says 'SALES ORDER' or 'SO' → set documentType to 'sales_order'\n2. If document says 'INVOICE' (not 'Pro-forma' or 'Proforma') → set documentType to 'invoice'\n3. If document says 'Pro-forma Invoice', 'Proforma Invoice', 'Pro forma Invoice', 'PERFORMA INVOICE' → set documentType to 'proforma_invoice'\n4. If document says 'Purchase Order' or 'PO' → set documentType to 'purchase_order'\n5. Default to 'purchase_order' if unclear\n\nIMPORTANT - TOTAL AMOUNT EXTRACTION RULES:\n1. Look for the FINAL payable amount with labels: 'Total:', 'Total Amount:', 'Grand Total:', 'Amount Due:', 'Balance Due:', or 'Total Payable:'\n2. IGNORE lines with: 'Subtotal:', 'Discount:', 'Deposit:', 'Tax:', 'VAT:', 'Shipping:', 'Handling:', 'Adjustment:', or 'Credit:'\n3. If multiple 'Total' entries exist, capture the LAST valid total that represents the final amount due (typically after all discounts, taxes, and adjustments)\n4. The correct total is usually the last monetary value before payment instructions or terms\n5. Return the amount as a number string without currency symbols (e.g., '1500.50' not '$1,500.50')\n\nFor the vendor name, check these fields in order of priority: 'From:', 'Vendor:', 'Supplier:', 'Sold By:', 'Issued By:', 'Ship From:', 'Company:'. Use whichever field is present to identify the vendor (required). Also extract: purchase order or invoice number, item description, payment terms (Net 30/60/90 or immediate), due date, delivery date, category (Inventory, Packaging Materials, Marketing/PPC, Shipping & Logistics, Professional Services, or Other), and additional notes."
+        },
+        {
+          type: "image_url",
+          image_url: {
+            url: `data:${file.type};base64,${base64}`
+          }
+        }
+      ];
     }
-    base64 = btoa(base64);
 
     console.log("Sending to AI for extraction");
 
@@ -97,18 +140,7 @@ serve(async (req) => {
         messages: [
           {
             role: "user",
-            content: [
-              {
-                type: "text",
-                text: "Extract all purchase order, sales order, and invoice information from this document.\n\nIMPORTANT - DOCUMENT TYPE DETECTION (check in this exact order):\n1. If document says 'SALES ORDER' or 'SO' → set documentType to 'sales_order'\n2. If document says 'INVOICE' (not 'Pro-forma' or 'Proforma') → set documentType to 'invoice'\n3. If document says 'Pro-forma Invoice', 'Proforma Invoice', 'Pro forma Invoice', 'PERFORMA INVOICE' → set documentType to 'proforma_invoice'\n4. If document says 'Purchase Order' or 'PO' → set documentType to 'purchase_order'\n5. Default to 'purchase_order' if unclear\n\nIMPORTANT - TOTAL AMOUNT EXTRACTION RULES:\n1. Look for the FINAL payable amount with labels: 'Total:', 'Total Amount:', 'Grand Total:', 'Amount Due:', 'Balance Due:', or 'Total Payable:'\n2. IGNORE lines with: 'Subtotal:', 'Discount:', 'Deposit:', 'Tax:', 'VAT:', 'Shipping:', 'Handling:', 'Adjustment:', or 'Credit:'\n3. If multiple 'Total' entries exist, capture the LAST valid total that represents the final amount due (typically after all discounts, taxes, and adjustments)\n4. The correct total is usually the last monetary value before payment instructions or terms\n5. Return the amount as a number string without currency symbols (e.g., '1500.50' not '$1,500.50')\n\nFor the vendor name, check these fields in order of priority: 'From:', 'Vendor:', 'Supplier:', 'Sold By:', 'Issued By:', 'Ship From:', 'Company:'. Use whichever field is present to identify the vendor (required). Also extract: purchase order or invoice number, item description, payment terms (Net 30/60/90 or immediate), due date, delivery date, category (Inventory, Packaging Materials, Marketing/PPC, Shipping & Logistics, Professional Services, or Other), and additional notes."
-              },
-              {
-                type: "image_url",
-                image_url: {
-                  url: `data:${file.type};base64,${base64}`
-                }
-              }
-            ]
+            content: messageContent
           }
         ],
         tools: [
