@@ -224,7 +224,10 @@ export function PlaidAccountConfirmationDialog({
                   <span><strong className="text-foreground">Chase</strong> - Better coverage but still sometimes incomplete</span>
                 </li>
               </ul>
-              <p className="mt-2 text-xs text-muted-foreground italic">
+              <p className="mt-3 text-xs text-amber-700 dark:text-amber-300 font-medium">
+                ⚠️ Plaid does not capture extended spending limits. Manually adjust credit limits after saving if needed.
+              </p>
+              <p className="mt-1.5 text-xs text-muted-foreground italic">
                 You can manually add missing payment dates and statement info after connecting
               </p>
             </div>
