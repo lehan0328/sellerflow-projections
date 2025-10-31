@@ -23,9 +23,9 @@ serve(async (req) => {
 
     console.log('Creating Plaid link token for user:', userId);
 
-    // Use production domain for OAuth redirect
-    const origin = req.headers.get('origin') || 'https://aurenapp.com';
-    const redirectUri = `${origin}/oauth-redirect`;
+    // IMPORTANT: Always use production domain for OAuth redirect
+    // This must match exactly what's configured in Plaid Dashboard
+    const redirectUri = 'https://aurenapp.com/oauth-redirect';
 
     console.log('Using OAuth redirect URI:', redirectUri);
     console.log('⚠️ IMPORTANT: Ensure this URI is added to Plaid Dashboard > Team Settings > API > Allowed redirect URIs');
