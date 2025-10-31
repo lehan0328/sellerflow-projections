@@ -28,6 +28,8 @@ serve(async (req) => {
     const redirectUri = `${origin}/oauth-redirect`;
 
     console.log('Using OAuth redirect URI:', redirectUri);
+    console.log('⚠️ IMPORTANT: Ensure this URI is added to Plaid Dashboard > Team Settings > API > Allowed redirect URIs');
+    console.log('OAuth institutions like Chase require exact URI match in Plaid dashboard');
 
     // Create link token with Plaid API
     const response = await fetch(`https://${PLAID_ENV}.plaid.com/link/token/create`, {

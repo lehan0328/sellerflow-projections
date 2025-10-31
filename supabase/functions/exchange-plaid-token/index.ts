@@ -44,6 +44,8 @@ serve(async (req) => {
     });
 
     console.log('Exchanging public token for user:', user.id);
+    console.log('Institution:', metadata?.institution?.name);
+    console.log('OAuth used:', !!metadata?.link_session_id);
 
     // Get user's account_id from profile
     const { data: profile, error: profileError } = await supabaseAdmin
@@ -60,6 +62,7 @@ serve(async (req) => {
     console.log('User account_id:', accountId);
 
     // Exchange public token for access token
+    console.log('Initiating token exchange with Plaid...');
     const response = await fetch(`https://${PLAID_ENV}.plaid.com/item/public_token/exchange`, {
       method: 'POST',
       headers: {
@@ -75,11 +78,21 @@ serve(async (req) => {
     const data = await response.json();
     
     if (!response.ok) {
-      console.error('Plaid API error:', data);
-      throw new Error(data.error_message || 'Failed to exchange token');
+      console.error('❌ Plaid token exchange failed:', data);
+      console.error('Institution:', metadata?.institution?.name);
+      console.error('Error code:', data.error_code);
+      console.error('Error type:', data.error_type);
+      
+      // Provide specific guidance for common OAuth issues
+      if (data.error_code === 'INVALID_PUBLIC_TOKEN' || data.error_code === 'ITEM_LOGIN_REQUIRED') {
+        throw new Error(`${metadata?.institution?.name || 'Bank'} connection failed. Please try again and ensure you complete the login process.`);
+      }
+      
+      throw new Error(data.error_message || `Failed to connect to ${metadata?.institution?.name || 'bank'}`);
     }
 
     const { access_token, item_id } = data;
+    console.log('✅ Successfully exchanged token for item:', item_id);
 
     // Get account details from Plaid
     const accountsResponse = await fetch(`https://${PLAID_ENV}.plaid.com/accounts/get`, {
@@ -186,6 +199,8 @@ serve(async (req) => {
       if (isCreditCard) {
         // Process credit card
         console.log('📇 Processing credit card:', account.name);
+        console.log('Institution:', metadata.institution.name);
+        console.log('Raw balances:', JSON.stringify(account.balances, null, 2));
         
         // Check if this credit card already exists
         const { data: existingCard } = await supabaseAdmin
@@ -202,15 +217,34 @@ serve(async (req) => {
         }
         
         const currentBalance = account.balances.current || 0;
-        const creditLimit = account.balances.limit || 0;
-        const availableCredit = creditLimit - currentBalance;
+        const creditLimit = account.balances.limit || null;
+        
+        // Log if credit limit is missing - common with some institutions
+        if (!creditLimit || creditLimit === 0) {
+          console.log(`⚠️ Credit limit not provided by ${metadata.institution.name} for ${account.name}`);
+          console.log('This is a known limitation with some institutions (e.g., Capital One, Discover)');
+          console.log('User will need to manually set the credit limit in settings');
+        } else {
+          console.log(`✅ Credit limit found: $${creditLimit}`);
+        }
+        
+        const availableCredit = creditLimit ? creditLimit - currentBalance : null;
         
         // Find liabilities data for this credit card
         const cardLiabilities = liabilitiesData ? liabilitiesData.find((lib: any) => lib.account_id === account.account_id) : null;
         
-        console.log('Credit card liabilities data:', cardLiabilities);
+        if (cardLiabilities) {
+          console.log('✅ Liabilities data found:', {
+            statement_balance: cardLiabilities.last_statement_balance,
+            minimum_payment: cardLiabilities.minimum_payment_amount,
+            due_date: cardLiabilities.next_payment_due_date
+          });
+        } else {
+          console.log('⚠️ No liabilities data available for this card');
+        }
         
         // Store as credit card with encrypted access token
+        // Note: credit_limit might be null for some institutions
         const { data: cardData, error: insertError } = await supabaseAdmin
           .from('credit_cards')
           .insert({
@@ -236,12 +270,12 @@ serve(async (req) => {
           .single();
 
         if (insertError) {
-          console.error('Error inserting credit card:', insertError);
+          console.error('❌ Error inserting credit card:', insertError);
           throw insertError;
         }
         
         creditCardIds.push(cardData.id);
-        console.log('✅ Credit card stored successfully:', cardData.id);
+        console.log(`✅ Credit card stored successfully: ${cardData.id}${!creditLimit ? ' (credit limit will need to be set manually)' : ''}`);
       } else {
         // Process bank account
         console.log('🏦 Processing bank account:', account.name);
