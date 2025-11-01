@@ -68,6 +68,8 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
   const [showOverdueModal, setShowOverdueModal] = useState(false);
   const [showIncomingModal, setShowIncomingModal] = useState(false);
   const [showUpcomingModal, setShowUpcomingModal] = useState(false);
+  const [showBankAccountsModal, setShowBankAccountsModal] = useState(false);
+  const [showCreditCardsModal, setShowCreditCardsModal] = useState(false);
   
   // Save selections to localStorage
   useEffect(() => {
@@ -91,7 +93,7 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
   
   // Use toggled balance type
   const displayBankBalance = useAvailableBalance ? totalAvailableBalance : bankAccountBalance;
-  const { totalCreditLimit, totalBalance: totalCreditBalance, totalAvailableCredit } = useCreditCards();
+  const { creditCards, totalCreditLimit, totalBalance: totalCreditBalance, totalAvailableCredit } = useCreditCards();
   const { reserveAmount, updateReserveAmount: updateReserve, canUpdate, lastUpdated } = useReserveAmount();
   const { excludeToday, setExcludeToday } = useExcludeToday();
   const { data: safeSpendingData, isLoading: isLoadingSafeSpending, refetch: refetchSafeSpending } = useSafeSpending(reserveAmount, excludeToday, useAvailableBalance);
@@ -488,6 +490,22 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
                   </Button>
                 </div>
               )}
+              {accounts.length > 0 && (
+                <div className="mt-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowBankAccountsModal(true)}
+                    className="h-7 px-2 text-xs border-green-600 text-green-700 hover:bg-green-600 hover:text-white w-full"
+                  >
+                    <Eye className="h-3 w-3 mr-1" />
+                    View Accounts
+                    <Badge variant="secondary" className="ml-1 h-4 px-1 text-[10px] bg-green-100 text-green-700">
+                      {accounts.length}
+                    </Badge>
+                  </Button>
+                </div>
+              )}
             </div>
             <DollarSign className="h-8 w-8 text-green-500" />
           </div>
@@ -569,6 +587,22 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
                   </>
                 )}
               </div>
+              {creditCards.length > 0 && (
+                <div className="mt-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowCreditCardsModal(true)}
+                    className="h-7 px-2 text-xs border-purple-600 text-purple-700 hover:bg-purple-600 hover:text-white w-full"
+                  >
+                    <Eye className="h-3 w-3 mr-1" />
+                    View Cards
+                    <Badge variant="secondary" className="ml-1 h-4 px-1 text-[10px] bg-purple-100 text-purple-700">
+                      {creditCards.length}
+                    </Badge>
+                  </Button>
+                </div>
+              )}
             </div>
             <CreditCard className="h-8 w-8 text-purple-500" />
           </div>
@@ -772,6 +806,129 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
         title={`Upcoming Payments (${timeRangeOptions.find(opt => opt.value === upcomingTimeRange)?.label})`}
         type="upcoming"
       />
+
+      {/* Bank Accounts Modal */}
+      <Dialog open={showBankAccountsModal} onOpenChange={setShowBankAccountsModal}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Bank Accounts</DialogTitle>
+            <DialogDescription>
+              View all your connected bank accounts and their balances
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            {accounts.map((account) => (
+              <div key={account.id} className="border border-border rounded-lg p-4 bg-card">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-semibold text-base">{account.account_name}</h4>
+                      <Badge variant="outline" className="text-xs">
+                        {account.account_type}
+                      </Badge>
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-1">{account.institution_name}</p>
+                    <div className="mt-3 space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">Current Balance:</span>
+                        <span className="text-lg font-semibold">{formatCurrency(account.balance)}</span>
+                      </div>
+                      {account.available_balance !== null && account.available_balance !== account.balance && (
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-muted-foreground">Available:</span>
+                          <span className="text-base font-medium text-green-600">{formatCurrency(account.available_balance)}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <DollarSign className="h-6 w-6 text-green-500 ml-4" />
+                </div>
+              </div>
+            ))}
+            <div className="border-t pt-4 mt-4">
+              <div className="flex items-center justify-between">
+                <span className="font-semibold">Total Balance:</span>
+                <span className="text-2xl font-bold text-green-600">{formatCurrency(bankAccountBalance)}</span>
+              </div>
+              {totalAvailableBalance !== bankAccountBalance && (
+                <div className="flex items-center justify-between mt-2">
+                  <span className="font-semibold">Total Available:</span>
+                  <span className="text-xl font-bold text-green-700">{formatCurrency(totalAvailableBalance)}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Credit Cards Modal */}
+      <Dialog open={showCreditCardsModal} onOpenChange={setShowCreditCardsModal}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Credit Cards</DialogTitle>
+            <DialogDescription>
+              View all your connected credit cards and available credit
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            {creditCards.map((card) => {
+              const utilization = card.credit_limit > 0 ? (card.balance / card.credit_limit) * 100 : 0;
+              return (
+                <div key={card.id} className="border border-border rounded-lg p-4 bg-card">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-semibold text-base">{card.account_name}</h4>
+                        {card.priority && (
+                          <Badge variant="secondary" className="text-xs">
+                            Priority {card.priority}
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-1">{card.institution_name}</p>
+                      <div className="mt-3 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-muted-foreground">Available Credit:</span>
+                          <span className="text-lg font-semibold text-purple-600">{formatCurrency(card.available_credit)}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-muted-foreground">Credit Limit:</span>
+                          <span className="text-base">{formatCurrency(card.credit_limit)}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-muted-foreground">Balance:</span>
+                          <span className="text-base text-red-600">{formatCurrency(card.balance)}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-muted-foreground">Utilization:</span>
+                          <span className={`text-sm font-medium ${utilization > 30 ? 'text-red-600' : 'text-green-600'}`}>
+                            {utilization.toFixed(1)}%
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <CreditCard className="h-6 w-6 text-purple-500 ml-4" />
+                  </div>
+                </div>
+              );
+            })}
+            <div className="border-t pt-4 mt-4">
+              <div className="flex items-center justify-between">
+                <span className="font-semibold">Total Credit Limit:</span>
+                <span className="text-xl font-bold">{formatCurrency(totalCreditLimit)}</span>
+              </div>
+              <div className="flex items-center justify-between mt-2">
+                <span className="font-semibold">Total Available:</span>
+                <span className="text-2xl font-bold text-purple-600">{formatCurrency(totalAvailableCredit)}</span>
+              </div>
+              <div className="flex items-center justify-between mt-2">
+                <span className="font-semibold">Total Balance:</span>
+                <span className="text-xl font-bold text-red-600">{formatCurrency(totalCreditBalance)}</span>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
