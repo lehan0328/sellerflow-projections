@@ -813,28 +813,8 @@ serve(async (req) => {
           const riskMultiplier = 1 - (riskAdjustment / 100);
           const predictedAmount = Math.round(seasonallyAdjusted * riskMultiplier);
           
-          // Calculate realistic confidence bounds based on risk adjustment
-          // More conservative (higher risk adjustment) = tighter bounds
-          let confidenceRange: number;
-          if (riskAdjustment >= 10) {
-            // Very Conservative (10%): ±6% range (12% total spread)
-            confidenceRange = 0.06;
-          } else if (riskAdjustment >= 7) {
-            // Between Safe and Very Conservative (7-9): ±7% range (14% total spread)
-            confidenceRange = 0.07;
-          } else if (riskAdjustment >= 4) {
-            // Safe/Conservative (4-6): ±8% range (16% total spread)
-            confidenceRange = 0.08;
-          } else if (riskAdjustment >= 1) {
-            // Between Medium and Safe (1-3): ±9% range (18% total spread)
-            confidenceRange = 0.09;
-          } else if (riskAdjustment >= 0) {
-            // Moderate (0): ±10% range (20% total spread)
-            confidenceRange = 0.10;
-          } else {
-            // Aggressive (-5 to -1): ±12% range (24% total spread)
-            confidenceRange = 0.12;
-          }
+          // Use a fixed 5% confidence range for all risk levels
+          const confidenceRange = 0.05;
           
           if (dayCount <= 3 || dayCount % 14 === 0 || (payoutFrequency === 'bi-weekly')) {
             console.log(`[FORECAST] ${amazonAccount.account_name} - ${payoutFrequency === 'daily' ? 'Day' : 'Period'} ${dayCount} final: base ${basePrediction.toFixed(2)} → seasonal ${seasonallyAdjusted.toFixed(2)} → risk-adjusted ${predictedAmount}, bounds ±${(confidenceRange * 100).toFixed(0)}%`);
