@@ -723,25 +723,37 @@ serve(async (req) => {
             horizonType = '90-day';
           }
           
-          // SIMPLIFIED FORECASTING: Only use baseline average with safety net reduction
-          // No trend boosts, no day-of-week patterns, no seasonal adjustments
-          let basePrediction = dailyBaseline;
+          // FORECASTING: Baseline + Seasonal Adjustments + Safety Net
           let calculationMethod = 'safety_net_average';
           
-          // Apply safety net reduction only (lowers the forecast for conservative planning)
-          // riskAdjustment values: 0% (Moderate), 3% (Medium), 5% (Safe), 7% (Conservative), 10% (Very Conservative)
+          // Apply seasonal adjustments to baseline
+          const forecastMonth = currentDate.getMonth() + 1; // 1-12
+          const seasonalMultiplier = seasonalMultipliers[forecastMonth] || 1.0;
+          let basePrediction = dailyBaseline * seasonalMultiplier;
+          
+          // Log seasonal application on first day
+          if (dayCount === 1) {
+            console.log(`[FORECAST] ${amazonAccount.account_name} - Seasonal Adjustment for Month ${forecastMonth}: ${(seasonalMultiplier * 100).toFixed(1)}%`);
+            console.log(`[FORECAST] Baseline ${dailyBaseline.toFixed(2)} × ${seasonalMultiplier.toFixed(3)} = ${basePrediction.toFixed(2)}`);
+          }
+          
+          // Apply safety net reduction (3%, 8%, or 15% depending on user setting)
           const safetyNetMultiplier = 1 - (riskAdjustment / 100);
           const predictedAmount = Math.round(basePrediction * safetyNetMultiplier);
           
-          if (dayCount <= 3 || dayCount % 14 === 0 || (payoutFrequency === 'bi-weekly')) {
-            console.log(`[FORECAST] ${amazonAccount.account_name} - ${payoutFrequency === 'daily' ? 'Day' : 'Period'} ${dayCount}: ${horizonType} baseline ${basePrediction.toFixed(2)} → safety net -${riskAdjustment}% = ${predictedAmount}`);
+          // Log safety net calculation on first day
+          if (dayCount === 1) {
+            console.log(`[FORECAST] ${amazonAccount.account_name} - Safety Net Applied: ${riskAdjustment}% reduction`);
+            console.log(`[FORECAST] Multiplier: ${safetyNetMultiplier.toFixed(3)} (${(safetyNetMultiplier * 100).toFixed(1)}% of baseline)`);
+            console.log(`[FORECAST] Base ${basePrediction.toFixed(2)} × ${safetyNetMultiplier.toFixed(3)} = ${predictedAmount.toFixed(2)}`);
           }
           
           // Use a fixed 5% confidence range for all risk levels
           const confidenceRange = 0.05;
           
-          if (dayCount <= 3 || dayCount % 14 === 0 || (payoutFrequency === 'bi-weekly')) {
-            console.log(`[FORECAST] ${amazonAccount.account_name} - ${payoutFrequency === 'daily' ? 'Day' : 'Period'} ${dayCount} final: base ${basePrediction.toFixed(2)} → seasonal ${seasonallyAdjusted.toFixed(2)} → risk-adjusted ${predictedAmount}, bounds ±${(confidenceRange * 100).toFixed(0)}%`);
+          // Log day forecast for verification (sample every 10 days and first 3)
+          if (dayCount <= 3 || dayCount % 10 === 0 || (payoutFrequency === 'bi-weekly')) {
+            console.log(`[FORECAST] ${amazonAccount.account_name} - ${payoutFrequency === 'daily' ? 'Day' : 'Period'} ${dayCount} (${currentDate.toISOString().split('T')[0]}): $${predictedAmount} | baseline: ${dailyBaseline.toFixed(2)} → seasonal: ${(seasonalMultiplier * 100).toFixed(0)}% → safety: ${(safetyNetMultiplier * 100).toFixed(0)}% → bounds: ±${(confidenceRange * 100).toFixed(0)}%`);
           }
           
           const forecastPayout = {
