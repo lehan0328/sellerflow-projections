@@ -788,7 +788,7 @@ serve(async (req) => {
                 demo_multiplier: 1,
                 base_prediction: basePrediction,
                 seasonal_multiplier: seasonalMultiplier,
-                seasonally_adjusted: seasonallyAdjusted,
+                seasonally_adjusted: basePrediction,
                 risk_multiplier: 1 - (riskAdjustment / 100)
               }
             }
