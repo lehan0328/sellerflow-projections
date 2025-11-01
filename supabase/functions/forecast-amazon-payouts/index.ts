@@ -708,33 +708,33 @@ serve(async (req) => {
           
           if (currentDate > threeMonthsOut) break;
           
-          // Select baseline based on forecast horizon (day number)
-          let dailyBaseline: number;
-          let horizonType: string;
+          // Use consistent baseline across all time periods (no drop-off)
+          const dailyBaseline = baseline30Days;
+          const horizonType = 'consistent';
           
-          if (dayCount <= 30) {
-            dailyBaseline = baseline30Days;
-            horizonType = '30-day';
-          } else if (dayCount <= 60) {
-            dailyBaseline = baseline60Days;
-            horizonType = '60-day';
-          } else {
-            dailyBaseline = baseline90Days;
-            horizonType = '90-day';
-          }
-          
-          // FORECASTING: Baseline + Seasonal Adjustments + Safety Net
-          let calculationMethod = 'safety_net_average';
+          // FORECASTING: Baseline + Seasonal Adjustments + Daily Variation + Safety Net
+          let calculationMethod = 'safety_net_average_with_variation';
           
           // Apply seasonal adjustments to baseline
           const forecastMonth = currentDate.getMonth() + 1; // 1-12
           const seasonalMultiplier = seasonalMultipliers[forecastMonth] || 1.0;
           let basePrediction = dailyBaseline * seasonalMultiplier;
           
-          // Log seasonal application on first day
+          // Add realistic daily variation (±2.5% deterministic variation based on date)
+          // This creates natural-looking variation without causing actual randomness
+          const dateStr = currentDate.toISOString().split('T')[0];
+          const dateSeed = dateStr.split('-').reduce((acc, val) => acc + parseInt(val), 0);
+          const variationPercent = (((dateSeed * 7919) % 100) / 100 - 0.5) * 0.05; // ±2.5%
+          const dailyVariation = 1 + variationPercent;
+          basePrediction = basePrediction * dailyVariation;
+          
+          // Log calculation on first day and sample days
           if (dayCount === 1) {
-            console.log(`[FORECAST] ${amazonAccount.account_name} - Seasonal Adjustment for Month ${forecastMonth}: ${(seasonalMultiplier * 100).toFixed(1)}%`);
-            console.log(`[FORECAST] Baseline ${dailyBaseline.toFixed(2)} × ${seasonalMultiplier.toFixed(3)} = ${basePrediction.toFixed(2)}`);
+            console.log(`[FORECAST] ${amazonAccount.account_name} - Forecast Calculation:`);
+            console.log(`  - Baseline: $${dailyBaseline.toFixed(2)}`);
+            console.log(`  - Seasonal (Month ${forecastMonth}): ${(seasonalMultiplier * 100).toFixed(1)}%`);
+            console.log(`  - Daily Variation: ${(dailyVariation * 100 - 100).toFixed(2)}%`);
+            console.log(`  - Result: $${basePrediction.toFixed(2)}`);
           }
           
           // Apply safety net reduction (3%, 8%, or 15% depending on user setting)
@@ -753,7 +753,7 @@ serve(async (req) => {
           
           // Log day forecast for verification (sample every 10 days and first 3)
           if (dayCount <= 3 || dayCount % 10 === 0 || (payoutFrequency === 'bi-weekly')) {
-            console.log(`[FORECAST] ${amazonAccount.account_name} - ${payoutFrequency === 'daily' ? 'Day' : 'Period'} ${dayCount} (${currentDate.toISOString().split('T')[0]}): $${predictedAmount} | baseline: ${dailyBaseline.toFixed(2)} → seasonal: ${(seasonalMultiplier * 100).toFixed(0)}% → safety: ${(safetyNetMultiplier * 100).toFixed(0)}% → bounds: ±${(confidenceRange * 100).toFixed(0)}%`);
+            console.log(`[FORECAST] ${amazonAccount.account_name} - Day ${dayCount} (${currentDate.toISOString().split('T')[0]}): $${predictedAmount} | baseline: $${dailyBaseline.toFixed(2)} → seasonal: ${(seasonalMultiplier * 100).toFixed(0)}% → variation: ${(dailyVariation * 100 - 100).toFixed(1)}% → safety: ${(safetyNetMultiplier * 100).toFixed(0)}%`);
           }
           
           const forecastPayout = {
