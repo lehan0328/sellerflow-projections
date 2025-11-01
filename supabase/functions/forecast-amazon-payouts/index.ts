@@ -723,95 +723,19 @@ serve(async (req) => {
             horizonType = '90-day';
           }
           
-          // Use selected baseline for calculations
+          // SIMPLIFIED FORECASTING: Only use baseline average with safety net reduction
+          // No trend boosts, no day-of-week patterns, no seasonal adjustments
           let basePrediction = dailyBaseline;
-          let calculationMethod = 'baseline';
+          let calculationMethod = 'safety_net_average';
           
-          if (payoutFrequency === 'daily') {
-            // For daily payouts: Add realistic day-to-day variation
-            // Each day should have unique characteristics based on actual sales patterns
-            
-            // Use a combination of:
-            // 1. Day of week pattern (weekdays vs weekends)
-            // 2. Random variation to simulate natural fluctuations
-            // 3. Sales trend if available
-            
-            const dayOfWeek = currentDate.getDay(); // 0 = Sunday, 6 = Saturday
-            
-            // Day of week multiplier (weekends typically lower sales)
-            let dayMultiplier = 1.0;
-            if (dayOfWeek === 0) { // Sunday
-              dayMultiplier = 0.75;
-            } else if (dayOfWeek === 6) { // Saturday
-              dayMultiplier = 0.85;
-            } else if (dayOfWeek === 1) { // Monday (often higher)
-              dayMultiplier = 1.05;
-            }
-            
-            // Use deterministic date-based variation (±3%) instead of random for consistency
-            const dateHash = (currentDate.getFullYear() * 10000 + (currentDate.getMonth() + 1) * 100 + currentDate.getDate()) % 100;
-            const deterministicVariation = 0.97 + (dateHash / 100 * 0.06); // 0.97 to 1.03 (±3%)
-            
-            // For first 14 days: incorporate recent sales trend with CAPPED impact
-            if (dayCount <= 14 && last14DaysSales.length > 0) {
-              const avgRecentSales = last14DaysSales.reduce((a, b) => a + b, 0) / last14DaysSales.length;
-              const trendPercent = recentSalesTrend / avgRecentSales;
-              // Cap trend impact to ±5% (much more conservative than ±50%)
-              const trendAdjustment = 1 + Math.max(-0.05, Math.min(0.05, trendPercent * dayCount * 0.05));
-              basePrediction = dailyBaseline * dayMultiplier * deterministicVariation * trendAdjustment;
-              calculationMethod = 'daily_with_trend';
-              
-              if (dayCount === 1) {
-                console.log(`[FORECAST] ${amazonAccount.account_name} - Daily forecast with trend:`, {
-                  baseline: dailyBaseline.toFixed(2),
-                  horizonType,
-                  dayOfWeek,
-                  dayMultiplier,
-                  deterministicVariation: deterministicVariation.toFixed(3),
-                  trendAdjustment: trendAdjustment.toFixed(3)
-                });
-              }
-            } else {
-              // Days 15-90: use baseline with day-of-week and deterministic variation only
-              basePrediction = dailyBaseline * dayMultiplier * deterministicVariation;
-              calculationMethod = 'daily_pattern';
-            }
-            
-            if (dayCount === 1 || dayCount === 15 || dayCount === 30 || dayCount === 45 || dayCount === 61) {
-              console.log(`[FORECAST] ${amazonAccount.account_name} - Day ${dayCount} (${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][dayOfWeek]}):`, {
-                method: calculationMethod,
-                horizonType,
-                baseline: dailyBaseline.toFixed(2),
-                dayMultiplier: dayMultiplier.toFixed(2),
-                amount: basePrediction.toFixed(2)
-              });
-            }
-          } else {
-            // Bi-weekly: Add more significant variation between periods (85-115%)
-            const periodVariation = 0.85 + (Math.random() * 0.30);
-            basePrediction = dailyBaseline * periodVariation;
-            calculationMethod = 'biweekly_with_variation';
-            
-            console.log(`[FORECAST] ${amazonAccount.account_name} - Period ${dayCount}:`, {
-              horizonType,
-              baseline: dailyBaseline.toFixed(2),
-              variation: periodVariation.toFixed(3),
-              predicted: basePrediction.toFixed(2)
-            });
-          }
-          
-          // Apply seasonal adjustment based on historical month performance
-          const forecastMonth = currentDate.getMonth() + 1; // 1-12
-          const seasonalMultiplier = seasonalMultipliers[forecastMonth] || 1.0;
-          const seasonallyAdjusted = basePrediction * seasonalMultiplier;
+          // Apply safety net reduction only (lowers the forecast for conservative planning)
+          // riskAdjustment values: 0% (Moderate), 3% (Medium), 5% (Safe), 7% (Conservative), 10% (Very Conservative)
+          const safetyNetMultiplier = 1 - (riskAdjustment / 100);
+          const predictedAmount = Math.round(basePrediction * safetyNetMultiplier);
           
           if (dayCount <= 3 || dayCount % 14 === 0 || (payoutFrequency === 'bi-weekly')) {
-            console.log(`[FORECAST] ${amazonAccount.account_name} - Month ${forecastMonth} seasonal adjustment: ${basePrediction.toFixed(2)} * ${seasonalMultiplier.toFixed(2)} = ${seasonallyAdjusted.toFixed(2)}`);
+            console.log(`[FORECAST] ${amazonAccount.account_name} - ${payoutFrequency === 'daily' ? 'Day' : 'Period'} ${dayCount}: ${horizonType} baseline ${basePrediction.toFixed(2)} → safety net -${riskAdjustment}% = ${predictedAmount}`);
           }
-          
-          // Apply risk adjustment: -5 = +5%, 0 = no adjustment, 5 = -5%, 10 = -10%
-          const riskMultiplier = 1 - (riskAdjustment / 100);
-          const predictedAmount = Math.round(seasonallyAdjusted * riskMultiplier);
           
           // Use a fixed 5% confidence range for all risk levels
           const confidenceRange = 0.05;
