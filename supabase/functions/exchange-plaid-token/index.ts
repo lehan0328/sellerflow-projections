@@ -180,23 +180,26 @@ serve(async (req) => {
     // Store accounts in database - bank accounts and credit cards (for account details only)
     const bankAccountIds: string[] = [];
     const creditCardIds: string[] = [];
+    const failedAccounts: Array<{ name: string; error: string }> = [];
     
     console.log('User selected accounts:', selectedAccountIds);
     console.log('Total accounts available:', accountsData.accounts.length);
+    console.log('Priorities provided:', priorities);
     
     for (const account of accountsData.accounts) {
-      // Skip accounts that weren't selected by the user (if selectedAccountIds is provided)
-      if (selectedAccountIds && !selectedAccountIds.includes(account.account_id)) {
-        console.log(`Skipping unselected account: ${account.name} (${account.account_id})`);
-        continue;
-      }
-      
-      console.log(`Processing selected account: ${account.name}, type: ${account.type}, subtype: ${account.subtype}`);
-      
-      // Check if this is a credit card
-      const isCreditCard = account.type === 'credit' || account.subtype === 'credit card' || account.subtype === 'credit';
-      
-      if (isCreditCard) {
+      try {
+        // Skip accounts that weren't selected by the user (if selectedAccountIds is provided)
+        if (selectedAccountIds && !selectedAccountIds.includes(account.account_id)) {
+          console.log(`Skipping unselected account: ${account.name} (${account.account_id})`);
+          continue;
+        }
+        
+        console.log(`Processing selected account: ${account.name}, type: ${account.type}, subtype: ${account.subtype}`);
+        
+        // Check if this is a credit card
+        const isCreditCard = account.type === 'credit' || account.subtype === 'credit card' || account.subtype === 'credit';
+        
+        if (isCreditCard) {
         // Process credit card
         console.log('📇 Processing credit card:', account.name);
         console.log('Institution:', metadata.institution.name);
@@ -243,35 +246,67 @@ serve(async (req) => {
           console.log('⚠️ No liabilities data available for this card');
         }
         
+        // Get priority for this card (from priorities object keyed by plaid_account_id)
+        const cardPriority = priorities?.[account.account_id] || null;
+        console.log(`Credit card priority for ${account.name}: ${cardPriority || 'not set'}`);
+        
+        // Prepare credit card data for insertion
+        const creditCardData = {
+          user_id: user.id,
+          account_id: accountId,
+          institution_name: metadata.institution.name,
+          account_name: account.name,
+          account_type: account.subtype || account.type,
+          balance: currentBalance,
+          credit_limit: creditLimit || 0, // Default to 0 if null
+          available_credit: availableCredit,
+          currency_code: account.balances.iso_currency_code || 'USD',
+          encrypted_access_token: access_token,
+          encrypted_plaid_item_id: item_id,
+          plaid_account_id: account.account_id,
+          statement_balance: cardLiabilities?.last_statement_balance || 0,
+          minimum_payment: cardLiabilities?.minimum_payment_amount || 0,
+          payment_due_date: cardLiabilities?.next_payment_due_date || null,
+          statement_close_date: cardLiabilities?.last_statement_issue_date || null,
+          priority: cardPriority,
+          last_sync: new Date().toISOString(),
+        };
+        
+        // Log detailed insertion data for debugging
+        console.log('💾 Attempting to insert credit card with data:', {
+          user_id: user.id,
+          account_id: accountId,
+          account_name: account.name,
+          balance: currentBalance,
+          credit_limit: creditLimit || 0,
+          priority: cardPriority,
+          has_access_token: !!access_token,
+          has_plaid_item_id: !!item_id
+        });
+        
         // Store as credit card with encrypted access token
-        // Note: credit_limit might be null for some institutions
         const { data: cardData, error: insertError } = await supabaseAdmin
           .from('credit_cards')
-          .insert({
-            user_id: user.id,
-            account_id: accountId,
-            institution_name: metadata.institution.name,
-            account_name: account.name,
-            account_type: account.subtype || account.type,
-            balance: currentBalance,
-            credit_limit: creditLimit,
-            available_credit: availableCredit,
-            currency_code: account.balances.iso_currency_code || 'USD',
-            encrypted_access_token: access_token,
-            encrypted_plaid_item_id: item_id,
-            plaid_account_id: account.account_id,
-            statement_balance: cardLiabilities?.last_statement_balance || 0,
-            minimum_payment: cardLiabilities?.minimum_payment_amount || 0,
-            payment_due_date: cardLiabilities?.next_payment_due_date || null,
-            statement_close_date: cardLiabilities?.last_statement_issue_date || null,
-            last_sync: new Date().toISOString(),
-          })
+          .insert(creditCardData)
           .select('id')
           .single();
 
         if (insertError) {
-          console.error('❌ Error inserting credit card:', insertError);
-          throw insertError;
+          console.error('❌ Error inserting credit card:', {
+            error: insertError,
+            errorMessage: insertError.message,
+            errorCode: insertError.code,
+            errorDetails: insertError.details,
+            cardName: account.name,
+            userId: user.id,
+            accountId: accountId,
+            hasNullFields: {
+              credit_limit: !creditLimit,
+              available_credit: !availableCredit,
+              priority: !cardPriority
+            }
+          });
+          throw new Error(`Failed to add credit card "${account.name}": ${insertError.message}`);
         }
         
         creditCardIds.push(cardData.id);
@@ -327,6 +362,14 @@ serve(async (req) => {
         bankAccountIds.push(accountData.id);
         console.log('✅ Bank account stored successfully:', accountData.id);
       }
+      } catch (accountError: any) {
+        // Log the error but continue processing other accounts
+        console.error(`❌ Failed to process account ${account.name}:`, accountError);
+        failedAccounts.push({
+          name: account.name,
+          error: accountError.message || 'Unknown error'
+        });
+      }
     }
 
     console.log('Successfully stored accounts:', { 
@@ -366,15 +409,32 @@ serve(async (req) => {
     const totalSynced = syncResults.bankAccounts.success;
     const totalFailed = syncResults.bankAccounts.failed;
     const totalAccounts = bankAccountIds.length + creditCardIds.length;
+    const totalRequested = selectedAccountIds?.length || accountsData.accounts.length;
+
+    // Build response message
+    let message = `Successfully connected ${totalAccounts} of ${totalRequested} account(s)`;
+    if (bankAccountIds.length > 0 || creditCardIds.length > 0) {
+      message += ` (${bankAccountIds.length} bank, ${creditCardIds.length} credit cards)`;
+    }
+    if (totalSynced > 0) {
+      message += ` and synced ${totalSynced} transaction histories`;
+    }
+    
+    // Add warning about failed accounts if any
+    if (failedAccounts.length > 0) {
+      const failedNames = failedAccounts.map(f => f.name).join(', ');
+      message += `. Failed to add: ${failedNames}. Check logs for details.`;
+    }
 
     return new Response(
       JSON.stringify({ 
-        success: true, 
+        success: totalAccounts > 0, // Success if at least one account was added
         bankAccountIds,
         creditCardIds,
         transactionsSynced: totalSynced,
         transactionsFailed: totalFailed,
-        message: `Successfully connected ${totalAccounts} account(s) (${bankAccountIds.length} bank, ${creditCardIds.length} credit cards) and synced ${totalSynced} transaction histories` 
+        failedAccounts,
+        message
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
