@@ -818,9 +818,9 @@ serve(async (req) => {
             refunds_total: 0,
             other_total: 0,
             raw_settlement_data: {
-                forecast_metadata: {
-                  confidence: 0.85,
-                  risk_adjustment: riskAdjustment,
+              forecast_metadata: {
+                confidence: 0.85,
+                risk_adjustment: riskAdjustment,
                 risk_level: riskAdjustment === -5 ? 'aggressive' : riskAdjustment === 0 ? 'medium' : riskAdjustment === 5 ? 'safe' : 'very_safe',
                 upper_bound: Math.round(predictedAmount * (1 + confidenceRange)),
                 lower_bound: Math.round(predictedAmount * (1 - confidenceRange)),
