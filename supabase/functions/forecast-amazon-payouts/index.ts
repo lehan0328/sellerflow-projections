@@ -615,19 +615,19 @@ serve(async (req) => {
         // Calculate 30-day growth trend to apply to forecasts
         let growthMultiplier = 1.0; // Default: no growth adjustment
         
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-        const sixtyDaysAgo = new Date();
-        sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+        const growthThirtyDaysAgo = new Date();
+        growthThirtyDaysAgo.setDate(growthThirtyDaysAgo.getDate() - 30);
+        const growthSixtyDaysAgo = new Date();
+        growthSixtyDaysAgo.setDate(growthSixtyDaysAgo.getDate() - 60);
         
         const last30DaysPayouts = amazonPayouts.filter(p => {
           const date = new Date(p.payout_date);
-          return date >= thirtyDaysAgo && p.status === 'confirmed';
+          return date >= growthThirtyDaysAgo && p.status === 'confirmed';
         });
         
         const prev30DaysPayouts = amazonPayouts.filter(p => {
           const date = new Date(p.payout_date);
-          return date >= sixtyDaysAgo && date < thirtyDaysAgo && p.status === 'confirmed';
+          return date >= growthSixtyDaysAgo && date < growthThirtyDaysAgo && p.status === 'confirmed';
         });
         
         if (last30DaysPayouts.length >= 3 && prev30DaysPayouts.length >= 3) {
