@@ -100,41 +100,60 @@ serve(async (req) => {
     const outlierCount = replacedForecasts.length - filteredForecasts.length;
     console.log(`[ACCURACY] Excluded ${outlierCount} outliers. Using ${filteredForecasts.length} forecasts for metrics.`);
 
+    // If too few forecasts remain after filtering, use all forecasts
+    const dataForMetrics = filteredForecasts.length >= 3 ? filteredForecasts : replacedForecasts;
+    const actualOutlierCount = filteredForecasts.length >= 3 ? outlierCount : 0;
+    
+    if (filteredForecasts.length < 3 && replacedForecasts.length >= 3) {
+      console.log(`[ACCURACY] Using all ${replacedForecasts.length} forecasts (insufficient data after outlier removal)`);
+    }
+
     // Calculate comprehensive metrics using filtered data
-    const accuracies = filteredForecasts.map(p => p.forecast_accuracy_percentage || 0);
-    const overallAccuracy = accuracies.reduce((sum, a) => sum + a, 0) / accuracies.length;
+    const accuracies = dataForMetrics.map(p => p.forecast_accuracy_percentage || 0);
+    const overallAccuracy = accuracies.length > 0 
+      ? accuracies.reduce((sum, a) => sum + a, 0) / accuracies.length 
+      : 0;
 
     // Calculate absolute errors using filtered data
-    const absoluteErrors = filteredForecasts.map(p => {
+    const absoluteErrors = dataForMetrics.map(p => {
       const forecast = Number(p.original_forecast_amount || 0);
       const actual = Number(p.total_amount || 0);
       return Math.abs(actual - forecast);
     });
-    const averageAbsoluteError = absoluteErrors.reduce((sum, e) => sum + e, 0) / absoluteErrors.length;
+    const averageAbsoluteError = absoluteErrors.length > 0
+      ? absoluteErrors.reduce((sum, e) => sum + e, 0) / absoluteErrors.length
+      : 0;
 
     // Calculate percentage errors (MAPE - Mean Absolute Percentage Error) using filtered data
-    const percentageErrors = filteredForecasts.map(p => {
+    const percentageErrors = dataForMetrics.map(p => {
       const forecast = Number(p.original_forecast_amount || 0);
       const actual = Number(p.total_amount || 0);
       if (actual === 0) return 0;
       return Math.abs((actual - forecast) / actual) * 100;
     });
-    const mape = percentageErrors.reduce((sum, e) => sum + e, 0) / percentageErrors.length;
+    const mape = percentageErrors.length > 0
+      ? percentageErrors.reduce((sum, e) => sum + e, 0) / percentageErrors.length
+      : 0;
 
     // Bias analysis using filtered data (are we consistently over or under-forecasting?)
-    const biases = filteredForecasts.map(p => {
+    const biases = dataForMetrics.map(p => {
       const forecast = Number(p.original_forecast_amount || 0);
       const actual = Number(p.total_amount || 0);
       return forecast - actual; // Positive = over-forecast, Negative = under-forecast
     });
-    const averageBias = biases.reduce((sum, b) => sum + b, 0) / biases.length;
-    const biasPercentage = filteredForecasts.length > 0
-      ? (averageBias / (filteredForecasts.reduce((sum, p) => sum + Number(p.total_amount || 0), 0) / filteredForecasts.length)) * 100
+    const averageBias = biases.length > 0
+      ? biases.reduce((sum, b) => sum + b, 0) / biases.length
+      : 0;
+    const avgActual = dataForMetrics.length > 0
+      ? dataForMetrics.reduce((sum, p) => sum + Number(p.total_amount || 0), 0) / dataForMetrics.length
+      : 0;
+    const biasPercentage = avgActual > 0
+      ? (averageBias / avgActual) * 100
       : 0;
 
     // Accuracy by modeling method using filtered data
     const byMethod: Record<string, { count: number; totalAccuracy: number; avgAccuracy: number }> = {};
-    filteredForecasts.forEach(p => {
+    dataForMetrics.forEach(p => {
       const method = p.modeling_method || 'unknown';
       if (!byMethod[method]) {
         byMethod[method] = { count: 0, totalAccuracy: 0, avgAccuracy: 0 };
@@ -149,7 +168,7 @@ serve(async (req) => {
 
     // Monthly accuracy trends using filtered data
     const monthlyTrends: Record<string, { count: number; totalAccuracy: number; avgAccuracy: number }> = {};
-    filteredForecasts.forEach(p => {
+    dataForMetrics.forEach(p => {
       const month = p.payout_date.substring(0, 7); // YYYY-MM
       if (!monthlyTrends[month]) {
         monthlyTrends[month] = { count: 0, totalAccuracy: 0, avgAccuracy: 0 };
@@ -171,11 +190,11 @@ serve(async (req) => {
       }));
 
     // Calculate improvement rate using filtered data (comparing first half vs second half)
-    const halfPoint = Math.floor(filteredForecasts.length / 2);
-    const firstHalfAccuracy = filteredForecasts
+    const halfPoint = Math.floor(dataForMetrics.length / 2);
+    const firstHalfAccuracy = dataForMetrics
       .slice(halfPoint)
-      .reduce((sum, p) => sum + (p.forecast_accuracy_percentage || 0), 0) / Math.max(1, filteredForecasts.length - halfPoint);
-    const secondHalfAccuracy = filteredForecasts
+      .reduce((sum, p) => sum + (p.forecast_accuracy_percentage || 0), 0) / Math.max(1, dataForMetrics.length - halfPoint);
+    const secondHalfAccuracy = dataForMetrics
       .slice(0, halfPoint)
       .reduce((sum, p) => sum + (p.forecast_accuracy_percentage || 0), 0) / Math.max(1, halfPoint);
     const improvementRate = firstHalfAccuracy > 0 
@@ -218,8 +237,8 @@ serve(async (req) => {
     }
 
     const metrics = {
-      totalComparisons: filteredForecasts.length,
-      outliersExcluded: outlierCount,
+      totalComparisons: dataForMetrics.length,
+      outliersExcluded: actualOutlierCount,
       overallAccuracy: parseFloat(overallAccuracy.toFixed(2)),
       averageAbsoluteError: parseFloat(averageAbsoluteError.toFixed(2)),
       mape: parseFloat(mape.toFixed(2)),
@@ -229,7 +248,7 @@ serve(async (req) => {
       byMethod,
       trends,
       insights,
-      recentComparisons: filteredForecasts.slice(0, 5).map(p => ({
+      recentComparisons: dataForMetrics.slice(0, 5).map(p => ({
         date: p.payout_date,
         forecast: Number(p.original_forecast_amount),
         actual: Number(p.total_amount),
