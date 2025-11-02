@@ -610,6 +610,62 @@ export type Database = {
           },
         ]
       }
+      amazon_sync_logs: {
+        Row: {
+          account_id: string | null
+          completed_at: string | null
+          created_at: string
+          error_message: string | null
+          id: string
+          metadata: Json | null
+          payouts_synced: number | null
+          started_at: string
+          sync_duration_ms: number | null
+          sync_status: string
+          sync_type: string
+          transactions_synced: number | null
+          user_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          payouts_synced?: number | null
+          started_at?: string
+          sync_duration_ms?: number | null
+          sync_status: string
+          sync_type: string
+          transactions_synced?: number | null
+          user_id: string
+        }
+        Update: {
+          account_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          payouts_synced?: number | null
+          started_at?: string
+          sync_duration_ms?: number | null
+          sync_status?: string
+          sync_type?: string
+          transactions_synced?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "amazon_sync_logs_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "amazon_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       amazon_transactions: {
         Row: {
           account_id: string | null
