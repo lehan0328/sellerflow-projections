@@ -393,7 +393,7 @@ export function AmazonManagement() {
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
             <DollarSign className="h-5 w-5 text-primary" />
-            <span>Amazon Revenue Summary</span>
+            <span>Amazon Revenue Summary (Next 30 Days)</span>
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -404,11 +404,27 @@ export function AmazonManagement() {
             </div>
             <div className="text-center">
               <p className="text-sm text-muted-foreground">Upcoming Payouts</p>
-              <p className="text-2xl font-bold text-positive">{formatCurrency(totalUpcoming)}</p>
+              <p className="text-2xl font-bold text-positive">{formatCurrency(
+                amazonPayouts
+                  .filter(p => {
+                    const payoutDate = new Date(p.payout_date);
+                    const today = new Date();
+                    const thirtyDaysFromNow = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000);
+                    return payoutDate >= today && payoutDate <= thirtyDaysFromNow;
+                  })
+                  .reduce((sum, p) => sum + (p.total_amount || 0), 0)
+              )}</p>
             </div>
             <div className="text-center">
               <p className="text-sm text-muted-foreground">Total Payouts</p>
-              <p className="text-2xl font-bold text-foreground">{amazonPayouts.length}</p>
+              <p className="text-2xl font-bold text-foreground">{
+                amazonPayouts.filter(p => {
+                  const payoutDate = new Date(p.payout_date);
+                  const today = new Date();
+                  const thirtyDaysFromNow = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000);
+                  return payoutDate >= today && payoutDate <= thirtyDaysFromNow;
+                }).length
+              }</p>
             </div>
           </div>
         </CardContent>
