@@ -514,7 +514,20 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
           <div className="flex flex-col h-full">
             <div className="flex items-center justify-between mb-2">
               <p className="text-sm text-slate-600">Today's Activity</p>
-              <Calendar className="h-8 w-8 text-blue-500" />
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 px-2"
+                  onClick={() => {
+                    const today = new Date().toISOString().split('T')[0];
+                    window.location.href = `/transactions?date=${today}`;
+                  }}
+                >
+                  <Eye className="h-4 w-4" />
+                </Button>
+                <Calendar className="h-8 w-8 text-blue-500" />
+              </div>
             </div>
             <TooltipProvider>
               <Tooltip>
