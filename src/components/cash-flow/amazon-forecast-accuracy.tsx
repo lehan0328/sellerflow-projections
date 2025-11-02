@@ -100,6 +100,16 @@ export const AmazonForecastAccuracy = () => {
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Outliers Notice */}
+        {metrics?.outliersExcluded > 0 && (
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              {metrics.outliersExcluded} extreme outlier{metrics.outliersExcluded > 1 ? 's' : ''} excluded from analysis for more accurate metrics.
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* Overall Accuracy Badge */}
         <div className="grid gap-4 md:grid-cols-3">
           <div className="flex flex-col items-center justify-center p-4 bg-muted/50 rounded-lg">

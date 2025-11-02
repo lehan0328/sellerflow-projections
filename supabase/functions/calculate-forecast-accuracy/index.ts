@@ -73,20 +73,47 @@ serve(async (req) => {
 
     console.log(`[ACCURACY] Found ${replacedForecasts.length} replaced forecasts`);
 
-    // Calculate comprehensive metrics
-    const accuracies = replacedForecasts.map(p => p.forecast_accuracy_percentage || 0);
+    // Exclude outliers using IQR method
+    const absolutePercentageErrors = replacedForecasts.map(p => {
+      const forecast = Number(p.original_forecast_amount || 0);
+      const actual = Number(p.total_amount || 0);
+      if (actual === 0) return 0;
+      return Math.abs((actual - forecast) / actual) * 100;
+    });
+
+    // Sort to calculate quartiles
+    const sortedErrors = [...absolutePercentageErrors].sort((a, b) => a - b);
+    const q1Index = Math.floor(sortedErrors.length * 0.25);
+    const q3Index = Math.floor(sortedErrors.length * 0.75);
+    const q1 = sortedErrors[q1Index];
+    const q3 = sortedErrors[q3Index];
+    const iqr = q3 - q1;
+    const lowerBound = q1 - 1.5 * iqr;
+    const upperBound = q3 + 1.5 * iqr;
+
+    // Filter out outliers
+    const filteredForecasts = replacedForecasts.filter((p, idx) => {
+      const error = absolutePercentageErrors[idx];
+      return error >= lowerBound && error <= upperBound;
+    });
+
+    const outlierCount = replacedForecasts.length - filteredForecasts.length;
+    console.log(`[ACCURACY] Excluded ${outlierCount} outliers. Using ${filteredForecasts.length} forecasts for metrics.`);
+
+    // Calculate comprehensive metrics using filtered data
+    const accuracies = filteredForecasts.map(p => p.forecast_accuracy_percentage || 0);
     const overallAccuracy = accuracies.reduce((sum, a) => sum + a, 0) / accuracies.length;
 
-    // Calculate absolute errors
-    const absoluteErrors = replacedForecasts.map(p => {
+    // Calculate absolute errors using filtered data
+    const absoluteErrors = filteredForecasts.map(p => {
       const forecast = Number(p.original_forecast_amount || 0);
       const actual = Number(p.total_amount || 0);
       return Math.abs(actual - forecast);
     });
     const averageAbsoluteError = absoluteErrors.reduce((sum, e) => sum + e, 0) / absoluteErrors.length;
 
-    // Calculate percentage errors (MAPE - Mean Absolute Percentage Error)
-    const percentageErrors = replacedForecasts.map(p => {
+    // Calculate percentage errors (MAPE - Mean Absolute Percentage Error) using filtered data
+    const percentageErrors = filteredForecasts.map(p => {
       const forecast = Number(p.original_forecast_amount || 0);
       const actual = Number(p.total_amount || 0);
       if (actual === 0) return 0;
@@ -94,20 +121,20 @@ serve(async (req) => {
     });
     const mape = percentageErrors.reduce((sum, e) => sum + e, 0) / percentageErrors.length;
 
-    // Bias analysis (are we consistently over or under-forecasting?)
-    const biases = replacedForecasts.map(p => {
+    // Bias analysis using filtered data (are we consistently over or under-forecasting?)
+    const biases = filteredForecasts.map(p => {
       const forecast = Number(p.original_forecast_amount || 0);
       const actual = Number(p.total_amount || 0);
       return forecast - actual; // Positive = over-forecast, Negative = under-forecast
     });
     const averageBias = biases.reduce((sum, b) => sum + b, 0) / biases.length;
-    const biasPercentage = replacedForecasts.length > 0
-      ? (averageBias / (replacedForecasts.reduce((sum, p) => sum + Number(p.total_amount || 0), 0) / replacedForecasts.length)) * 100
+    const biasPercentage = filteredForecasts.length > 0
+      ? (averageBias / (filteredForecasts.reduce((sum, p) => sum + Number(p.total_amount || 0), 0) / filteredForecasts.length)) * 100
       : 0;
 
-    // Accuracy by modeling method
+    // Accuracy by modeling method using filtered data
     const byMethod: Record<string, { count: number; totalAccuracy: number; avgAccuracy: number }> = {};
-    replacedForecasts.forEach(p => {
+    filteredForecasts.forEach(p => {
       const method = p.modeling_method || 'unknown';
       if (!byMethod[method]) {
         byMethod[method] = { count: 0, totalAccuracy: 0, avgAccuracy: 0 };
@@ -120,9 +147,9 @@ serve(async (req) => {
       byMethod[method].avgAccuracy = byMethod[method].totalAccuracy / byMethod[method].count;
     });
 
-    // Monthly accuracy trends
+    // Monthly accuracy trends using filtered data
     const monthlyTrends: Record<string, { count: number; totalAccuracy: number; avgAccuracy: number }> = {};
-    replacedForecasts.forEach(p => {
+    filteredForecasts.forEach(p => {
       const month = p.payout_date.substring(0, 7); // YYYY-MM
       if (!monthlyTrends[month]) {
         monthlyTrends[month] = { count: 0, totalAccuracy: 0, avgAccuracy: 0 };
@@ -143,12 +170,12 @@ serve(async (req) => {
         count: data.count
       }));
 
-    // Calculate improvement rate (comparing first half vs second half)
-    const halfPoint = Math.floor(replacedForecasts.length / 2);
-    const firstHalfAccuracy = replacedForecasts
+    // Calculate improvement rate using filtered data (comparing first half vs second half)
+    const halfPoint = Math.floor(filteredForecasts.length / 2);
+    const firstHalfAccuracy = filteredForecasts
       .slice(halfPoint)
-      .reduce((sum, p) => sum + (p.forecast_accuracy_percentage || 0), 0) / Math.max(1, replacedForecasts.length - halfPoint);
-    const secondHalfAccuracy = replacedForecasts
+      .reduce((sum, p) => sum + (p.forecast_accuracy_percentage || 0), 0) / Math.max(1, filteredForecasts.length - halfPoint);
+    const secondHalfAccuracy = filteredForecasts
       .slice(0, halfPoint)
       .reduce((sum, p) => sum + (p.forecast_accuracy_percentage || 0), 0) / Math.max(1, halfPoint);
     const improvementRate = firstHalfAccuracy > 0 
@@ -191,7 +218,8 @@ serve(async (req) => {
     }
 
     const metrics = {
-      totalComparisons: replacedForecasts.length,
+      totalComparisons: filteredForecasts.length,
+      outliersExcluded: outlierCount,
       overallAccuracy: parseFloat(overallAccuracy.toFixed(2)),
       averageAbsoluteError: parseFloat(averageAbsoluteError.toFixed(2)),
       mape: parseFloat(mape.toFixed(2)),
@@ -201,7 +229,7 @@ serve(async (req) => {
       byMethod,
       trends,
       insights,
-      recentComparisons: replacedForecasts.slice(0, 5).map(p => ({
+      recentComparisons: filteredForecasts.slice(0, 5).map(p => ({
         date: p.payout_date,
         forecast: Number(p.original_forecast_amount),
         actual: Number(p.total_amount),
