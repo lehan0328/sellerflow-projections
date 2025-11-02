@@ -63,6 +63,7 @@ export function AmazonPayouts() {
   const [selectedMarketplace, setSelectedMarketplace] = useState("ATVPDKIKX0DER");
   const [showSettledPayouts, setShowSettledPayouts] = useState(false);
   const [advancedModelingEnabled, setAdvancedModelingEnabled] = useState(false);
+  const [showSyncHistory, setShowSyncHistory] = useState(false);
   
   // Date range filter - default to current month
   const now = new Date();
@@ -437,6 +438,14 @@ export function AmazonPayouts() {
                 minute: '2-digit'
               }) : 'Never'}
                 </div>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => setShowSyncHistory(true)}
+                >
+                  <Clock className="h-4 w-4 mr-2" />
+                  History
+                </Button>
                 <Button 
                   variant="outline" 
                   size="sm" 
@@ -1008,6 +1017,140 @@ export function AmazonPayouts() {
             <Button onClick={handleConnectAmazon} className="w-full">
               Connect to Amazon
             </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Sync History Dialog */}
+      <Dialog open={showSyncHistory} onOpenChange={setShowSyncHistory}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Clock className="h-5 w-5" />
+              Amazon Sync History
+            </DialogTitle>
+            <DialogDescription>
+              Detailed sync information for all connected Amazon accounts
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            {amazonAccounts.length === 0 ? (
+              <div className="text-center text-muted-foreground py-8">
+                No Amazon accounts connected
+              </div>
+            ) : (
+              amazonAccounts.map((account) => {
+                const hoursSinceSync = account.last_sync 
+                  ? (Date.now() - new Date(account.last_sync).getTime()) / (1000 * 60 * 60)
+                  : null;
+                
+                return (
+                  <div key={account.id} className="border rounded-lg p-4 space-y-3">
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-1 flex-1">
+                        <h4 className="font-semibold flex items-center gap-2">
+                          <ShoppingCart className="h-4 w-4 text-primary" />
+                          {account.account_name}
+                        </h4>
+                        <p className="text-sm text-muted-foreground">{account.marketplace_name}</p>
+                      </div>
+                      <Badge 
+                        variant={
+                          account.sync_status === 'syncing' ? 'default' :
+                          account.sync_status === 'error' ? 'destructive' :
+                          account.initial_sync_complete ? 'outline' : 'secondary'
+                        }
+                      >
+                        {account.sync_status === 'syncing' ? 'Syncing' :
+                         account.sync_status === 'error' ? 'Error' :
+                         account.initial_sync_complete ? 'Complete' : 'Incomplete'}
+                      </Badge>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <p className="text-muted-foreground">Last Sync</p>
+                        <p className="font-medium">
+                          {account.last_sync 
+                            ? new Date(account.last_sync).toLocaleString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric',
+                                hour: 'numeric',
+                                minute: '2-digit'
+                              })
+                            : 'Never'}
+                        </p>
+                        {hoursSinceSync !== null && (
+                          <p className="text-xs text-muted-foreground">
+                            {hoursSinceSync < 1 
+                              ? `${Math.round(hoursSinceSync * 60)} minutes ago`
+                              : hoursSinceSync < 24
+                              ? `${Math.round(hoursSinceSync)} hours ago`
+                              : `${Math.round(hoursSinceSync / 24)} days ago`}
+                          </p>
+                        )}
+                      </div>
+                      
+                      <div>
+                        <p className="text-muted-foreground">Transactions Synced</p>
+                        <p className="font-medium">{account.transaction_count?.toLocaleString() || 0}</p>
+                        {(account as any).oldest_transaction_date && (
+                          <p className="text-xs text-muted-foreground">
+                            Since {new Date((account as any).oldest_transaction_date).toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric'
+                            })}
+                          </p>
+                        )}
+                      </div>
+                      
+                      <div>
+                        <p className="text-muted-foreground">Sync Progress</p>
+                        <p className="font-medium">{account.sync_progress || 0}%</p>
+                      </div>
+                      
+                      <div>
+                        <p className="text-muted-foreground">Initial Sync</p>
+                        <p className="font-medium">
+                          {account.initial_sync_complete ? '✓ Complete' : '⏳ In Progress'}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    {account.sync_message && (
+                      <div className="bg-muted/50 rounded p-3">
+                        <p className="text-sm text-muted-foreground font-medium mb-1">Status Message</p>
+                        <p className="text-sm">{account.sync_message}</p>
+                      </div>
+                    )}
+                    
+                    {account.last_sync_error && (
+                      <Alert variant="destructive">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertDescription className="text-xs">
+                          {account.last_sync_error}
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                    
+                    {(account as any).rate_limited_until && new Date((account as any).rate_limited_until) > new Date() && (
+                      <Alert>
+                        <Clock className="h-4 w-4" />
+                        <AlertDescription className="text-xs">
+                          Rate limited until {new Date((account as any).rate_limited_until).toLocaleTimeString('en-US', {
+                            hour: 'numeric',
+                            minute: '2-digit'
+                          })}
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                  </div>
+                );
+              })
+            )}
           </div>
         </DialogContent>
       </Dialog>
