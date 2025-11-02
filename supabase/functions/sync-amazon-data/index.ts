@@ -21,10 +21,36 @@ const MARKETPLACE_REGIONS: Record<string, string> = {
 
 async function syncAmazonData(supabase: any, amazonAccount: any, userId: string) {
   const amazonAccountId = amazonAccount.id
+  const syncStartTime = Date.now();
+  let syncLogId: string | null = null;
+  let totalPayoutsSynced = 0;
+  let totalTransactionsSynced = 0;
   
   try {
     console.log('[SYNC] ===== STARTING AMAZON SYNC =====')
     console.log('[SYNC] Account:', amazonAccount.account_name)
+    
+    // Create sync log entry
+    const { data: syncLog, error: logError } = await supabase
+      .from('amazon_sync_logs')
+      .insert({
+        user_id: userId,
+        account_id: amazonAccountId,
+        sync_type: 'manual',
+        sync_status: 'started',
+        started_at: new Date().toISOString(),
+        metadata: {
+          account_name: amazonAccount.account_name,
+          marketplace_name: amazonAccount.marketplace_name
+        }
+      })
+      .select()
+      .single();
+    
+    if (!logError && syncLog) {
+      syncLogId = syncLog.id;
+      console.log('[SYNC] Created sync log:', syncLogId);
+    }
     
     const region = MARKETPLACE_REGIONS[amazonAccount.marketplace_id] || 'US'
     const apiEndpoint = AMAZON_SPAPI_ENDPOINTS[region]
@@ -360,7 +386,9 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string)
     
     console.log(`[SYNC] ✅ ${settlementsToSave.length} settlements saved to amazon_payouts table`)
     
-    await supabase.from('amazon_accounts').update({ 
+    totalPayoutsSynced = settlementsToSave.length;
+    
+    await supabase.from('amazon_accounts').update({
       sync_progress: 50,
       sync_message: `${settlementsToSave.length} payouts loaded`,
       last_sync: new Date().toISOString()
@@ -612,6 +640,8 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string)
           
           console.log(`[SYNC] ✅ All ${savedCount} transactions saved to database`)
           
+          totalTransactionsSynced = savedCount;
+          
           await supabase.from('amazon_accounts').update({
             sync_status: 'idle',
             sync_progress: 100,
@@ -650,9 +680,41 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string)
     
     console.log('[SYNC] ===== SYNC COMPLETE =====')
     
+    // Update sync log with completion
+    if (syncLogId) {
+      const syncDuration = Date.now() - syncStartTime;
+      await supabase
+        .from('amazon_sync_logs')
+        .update({
+          sync_status: 'completed',
+          completed_at: new Date().toISOString(),
+          sync_duration_ms: syncDuration,
+          transactions_synced: totalTransactionsSynced,
+          payouts_synced: totalPayoutsSynced
+        })
+        .eq('id', syncLogId);
+      console.log('[SYNC] Updated sync log with completion');
+    }
+    
   } catch (error) {
     console.error('[SYNC] ===== SYNC FAILED =====')
     console.error('[SYNC] Error:', error)
+    
+    // Update sync log with error
+    if (syncLogId) {
+      const syncDuration = Date.now() - syncStartTime;
+      await supabase
+        .from('amazon_sync_logs')
+        .update({
+          sync_status: 'failed',
+          completed_at: new Date().toISOString(),
+          sync_duration_ms: syncDuration,
+          error_message: (error as Error).message.substring(0, 500)
+        })
+        .eq('id', syncLogId);
+      console.log('[SYNC] Updated sync log with error');
+    }
+    
     await supabase.from('amazon_accounts').update({ 
       sync_status: 'error',
       sync_message: (error as Error).message.substring(0, 200),
