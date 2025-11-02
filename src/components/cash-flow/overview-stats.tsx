@@ -70,6 +70,7 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
   const [showUpcomingModal, setShowUpcomingModal] = useState(false);
   const [showBankAccountsModal, setShowBankAccountsModal] = useState(false);
   const [showCreditCardsModal, setShowCreditCardsModal] = useState(false);
+  const [showTodayModal, setShowTodayModal] = useState(false);
   
   // Save selections to localStorage
   useEffect(() => {
@@ -519,10 +520,7 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
                   variant="ghost"
                   size="sm"
                   className="h-8 px-2"
-                  onClick={() => {
-                    const today = new Date().toISOString().split('T')[0];
-                    window.location.href = `/transactions?date=${today}`;
-                  }}
+                  onClick={() => setShowTodayModal(true)}
                 >
                   <Eye className="h-4 w-4" />
                 </Button>
@@ -818,6 +816,21 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
         transactions={upcomingPayments as any}
         title={`Upcoming Payments (${timeRangeOptions.find(opt => opt.value === upcomingTimeRange)?.label})`}
         type="upcoming"
+      />
+
+      {/* Today's Transactions Modal */}
+      <TransactionsListModal
+        open={showTodayModal}
+        onOpenChange={setShowTodayModal}
+        transactions={events.filter(event => {
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          const eventDate = new Date(event.date);
+          eventDate.setHours(0, 0, 0, 0);
+          return eventDate.getTime() === today.getTime();
+        }) as any}
+        title="Today's Transactions"
+        type="incoming"
       />
 
       {/* Bank Accounts Modal */}
