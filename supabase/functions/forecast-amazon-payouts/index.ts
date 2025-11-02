@@ -612,6 +612,47 @@ serve(async (req) => {
           baseline90Days = baselineAmount;
         }
         
+        // Calculate 30-day growth trend to apply to forecasts
+        let growthMultiplier = 1.0; // Default: no growth adjustment
+        
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        const sixtyDaysAgo = new Date();
+        sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+        
+        const last30DaysPayouts = amazonPayouts.filter(p => {
+          const date = new Date(p.payout_date);
+          return date >= thirtyDaysAgo && p.status === 'confirmed';
+        });
+        
+        const prev30DaysPayouts = amazonPayouts.filter(p => {
+          const date = new Date(p.payout_date);
+          return date >= sixtyDaysAgo && date < thirtyDaysAgo && p.status === 'confirmed';
+        });
+        
+        if (last30DaysPayouts.length >= 3 && prev30DaysPayouts.length >= 3) {
+          const last30Total = last30DaysPayouts.reduce((sum, p) => sum + Number(p.total_amount), 0);
+          const prev30Total = prev30DaysPayouts.reduce((sum, p) => sum + Number(p.total_amount), 0);
+          
+          if (prev30Total > 0) {
+            const growthRate = ((last30Total - prev30Total) / prev30Total);
+            // Cap growth adjustment to ±30% to prevent unrealistic forecasts
+            const cappedGrowthRate = Math.max(-0.30, Math.min(0.30, growthRate));
+            growthMultiplier = 1 + cappedGrowthRate;
+            
+            console.log(`[FORECAST] ${amazonAccount.account_name} - 30-Day Growth Trend:`, {
+              last30Days: last30Total.toFixed(2),
+              prev30Days: prev30Total.toFixed(2),
+              growthRate: (growthRate * 100).toFixed(1) + '%',
+              cappedRate: (cappedGrowthRate * 100).toFixed(1) + '%',
+              multiplier: growthMultiplier.toFixed(3),
+              note: 'Growth trend applied to baseline forecasts'
+            });
+          }
+        } else {
+          console.log(`[FORECAST] ${amazonAccount.account_name} - Insufficient data for growth trend (need 3+ payouts in each 30-day period)`);
+        }
+        
         // Generate forecasts for 3 months based on frequency
         const forecastedPayouts: any[] = [];
         
@@ -720,6 +761,9 @@ serve(async (req) => {
           const seasonalMultiplier = seasonalMultipliers[forecastMonth] || 1.0;
           let basePrediction = dailyBaseline * seasonalMultiplier;
           
+          // Apply 30-day growth trend
+          basePrediction = basePrediction * growthMultiplier;
+          
           // Add realistic daily variation (±2.5% deterministic variation based on date)
           // This creates natural-looking variation without causing actual randomness
           const dateStr = currentDate.toISOString().split('T')[0];
@@ -733,6 +777,7 @@ serve(async (req) => {
             console.log(`[FORECAST] ${amazonAccount.account_name} - Forecast Calculation:`);
             console.log(`  - Baseline: $${dailyBaseline.toFixed(2)}`);
             console.log(`  - Seasonal (Month ${forecastMonth}): ${(seasonalMultiplier * 100).toFixed(1)}%`);
+            console.log(`  - Growth Trend: ${(growthMultiplier * 100).toFixed(1)}%`);
             console.log(`  - Daily Variation: ${(dailyVariation * 100 - 100).toFixed(2)}%`);
             console.log(`  - Result: $${basePrediction.toFixed(2)}`);
           }
@@ -753,7 +798,7 @@ serve(async (req) => {
           
           // Log day forecast for verification (sample every 10 days and first 3)
           if (dayCount <= 3 || dayCount % 10 === 0 || (payoutFrequency === 'bi-weekly')) {
-            console.log(`[FORECAST] ${amazonAccount.account_name} - Day ${dayCount} (${currentDate.toISOString().split('T')[0]}): $${predictedAmount} | baseline: $${dailyBaseline.toFixed(2)} → seasonal: ${(seasonalMultiplier * 100).toFixed(0)}% → variation: ${(dailyVariation * 100 - 100).toFixed(1)}% → safety: ${(safetyNetMultiplier * 100).toFixed(0)}%`);
+            console.log(`[FORECAST] ${amazonAccount.account_name} - Day ${dayCount} (${currentDate.toISOString().split('T')[0]}): $${predictedAmount} | baseline: $${dailyBaseline.toFixed(2)} → seasonal: ${(seasonalMultiplier * 100).toFixed(0)}% → growth: ${(growthMultiplier * 100).toFixed(0)}% → variation: ${(dailyVariation * 100 - 100).toFixed(1)}% → safety: ${(safetyNetMultiplier * 100).toFixed(0)}%`);
           }
           
           const forecastPayout = {
@@ -788,6 +833,7 @@ serve(async (req) => {
                 demo_multiplier: 1,
                 base_prediction: basePrediction,
                 seasonal_multiplier: seasonalMultiplier,
+                growth_multiplier: growthMultiplier,
                 seasonally_adjusted: basePrediction,
                 risk_multiplier: 1 - (riskAdjustment / 100)
               }
