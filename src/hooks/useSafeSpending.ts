@@ -320,9 +320,9 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
             fundsAvailableDate = new Date(payoutDate);
             fundsAvailableDate.setDate(fundsAvailableDate.getDate() + 1);
           } else {
-            // For forecasted payouts, add +1 day to payout_date for bank transfer
+            // For forecasted payouts, use date as-is (forecast engine already calculates correct dates)
             fundsAvailableDate = parseLocalDate(payout.payout_date);
-            fundsAvailableDate.setDate(fundsAvailableDate.getDate() + 1);
+            // No adjustment needed - forecasts are generated with correct target dates
           }
           
           // ALWAYS include open settlements (estimated) - they represent real accumulating money
