@@ -38,6 +38,7 @@ interface CashFlowInsightsProps {
   nextBuyingOpportunityDate?: string;
   nextBuyingOpportunityAvailableDate?: string;
   allBuyingOpportunities?: Array<{ date: string; balance: number; available_date?: string }>;
+  dailyBalances?: Array<{ date: string; balance: number }>;
   onUpdateReserveAmount?: (amount: number) => Promise<void>;
   transactionMatchButton?: React.ReactNode;
 }
@@ -58,6 +59,7 @@ export const CashFlowInsights = memo(({
   nextBuyingOpportunityDate,
   nextBuyingOpportunityAvailableDate,
   allBuyingOpportunities = [],
+  dailyBalances = [],
   onUpdateReserveAmount,
   transactionMatchButton
 }: CashFlowInsightsProps) => {
@@ -548,12 +550,9 @@ export const CashFlowInsights = memo(({
       console.error('Error fetching recurring expenses:', error);
     }
     
-    // Find the buying opportunity for this date to get projected cash
-    // Note: opportunity.balance is "safe spending" (projected balance - reserve)
-    // We need to add the reserve back to get the actual projected balance
-    const opportunity = allBuyingOpportunities.find(opp => opp.date === dateStr);
-    const safeSpending = opportunity?.balance || currentBalance;
-    const projectedCash = safeSpending + reserveAmount; // Add reserve back to get actual projected balance
+    // Find the projected balance for this date from daily_balances
+    const dailyBalance = dailyBalances.find(db => db.date === dateStr);
+    const projectedCash = dailyBalance?.balance || currentBalance;
     
     // Calculate available credit
     const totalAvailableCredit = creditCards.reduce((sum, card) => {

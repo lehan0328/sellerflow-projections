@@ -2311,6 +2311,7 @@ const Dashboard = () => {
                   nextBuyingOpportunityDate={safeSpendingData?.calculation?.next_buying_opportunity_date}
                   nextBuyingOpportunityAvailableDate={safeSpendingData?.calculation?.next_buying_opportunity_available_date}
                   allBuyingOpportunities={safeSpendingData?.calculation?.all_buying_opportunities || []}
+                  dailyBalances={safeSpendingData?.calculation?.daily_balances || []}
                   onUpdateReserveAmount={updateReserveAmount}
                   transactionMatchButton={
                     <TransactionMatchButton 
