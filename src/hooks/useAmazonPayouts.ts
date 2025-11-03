@@ -30,6 +30,11 @@ export interface AmazonPayout {
     marketplace_name: string;
     payout_frequency?: 'daily' | 'bi-weekly';
   };
+  // Forecast accuracy tracking
+  original_forecast_amount?: number | null;
+  forecast_replaced_at?: string | null;
+  forecast_accuracy_percentage?: number | null;
+  modeling_method?: string | null;
   // Daily forecast metadata (Delivery Date + 7)
   backlog_amount?: number;
   daily_unlock_amount?: number;
