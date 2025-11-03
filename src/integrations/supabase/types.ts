@@ -2232,11 +2232,13 @@ export type Database = {
           chart_cashflow_color: string | null
           chart_credit_color: string | null
           chart_forecast_color: string | null
+          chart_lowest_balance_color: string | null
           chart_reserve_color: string | null
           chart_resources_color: string | null
           chart_show_cashflow_line: boolean | null
           chart_show_credit_line: boolean | null
           chart_show_forecast_line: boolean | null
+          chart_show_lowest_balance_line: boolean | null
           chart_show_reserve_line: boolean | null
           chart_show_resources_line: boolean | null
           created_at: string
@@ -2261,11 +2263,13 @@ export type Database = {
           chart_cashflow_color?: string | null
           chart_credit_color?: string | null
           chart_forecast_color?: string | null
+          chart_lowest_balance_color?: string | null
           chart_reserve_color?: string | null
           chart_resources_color?: string | null
           chart_show_cashflow_line?: boolean | null
           chart_show_credit_line?: boolean | null
           chart_show_forecast_line?: boolean | null
+          chart_show_lowest_balance_line?: boolean | null
           chart_show_reserve_line?: boolean | null
           chart_show_resources_line?: boolean | null
           created_at?: string
@@ -2290,11 +2294,13 @@ export type Database = {
           chart_cashflow_color?: string | null
           chart_credit_color?: string | null
           chart_forecast_color?: string | null
+          chart_lowest_balance_color?: string | null
           chart_reserve_color?: string | null
           chart_resources_color?: string | null
           chart_show_cashflow_line?: boolean | null
           chart_show_credit_line?: boolean | null
           chart_show_forecast_line?: boolean | null
+          chart_show_lowest_balance_line?: boolean | null
           chart_show_reserve_line?: boolean | null
           chart_show_resources_line?: boolean | null
           created_at?: string

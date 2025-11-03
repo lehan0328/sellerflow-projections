@@ -16,11 +16,13 @@ export const useUserSettings = () => {
     showCreditCardLine: true,
     showReserveLine: true,
     showForecastLine: false,
+    showLowestBalanceLine: true,
     cashFlowColor: 'hsl(221, 83%, 53%)',
     totalResourcesColor: '#10b981',
     creditCardColor: '#f59e0b',
     reserveColor: '#ef4444',
     forecastColor: '#a855f7',
+    lowestBalanceColor: '#ef4444',
   });
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -85,11 +87,13 @@ export const useUserSettings = () => {
         showCreditCardLine: data.chart_show_credit_line ?? true,
         showReserveLine: data.chart_show_reserve_line ?? true,
         showForecastLine: data.chart_show_forecast_line ?? false,
+        showLowestBalanceLine: data.chart_show_lowest_balance_line ?? true,
         cashFlowColor: data.chart_cashflow_color ?? 'hsl(221, 83%, 53%)',
         totalResourcesColor: data.chart_resources_color ?? '#10b981',
         creditCardColor: data.chart_credit_color ?? '#f59e0b',
         reserveColor: data.chart_reserve_color ?? '#ef4444',
         forecastColor: data.chart_forecast_color ?? '#a855f7',
+        lowestBalanceColor: data.chart_lowest_balance_color ?? '#ef4444',
       });
     } catch (error: any) {
       console.error('Error fetching user settings:', error);
@@ -129,11 +133,13 @@ export const useUserSettings = () => {
       if (preferences.showCreditCardLine !== undefined) dbUpdates.chart_show_credit_line = preferences.showCreditCardLine;
       if (preferences.showReserveLine !== undefined) dbUpdates.chart_show_reserve_line = preferences.showReserveLine;
       if (preferences.showForecastLine !== undefined) dbUpdates.chart_show_forecast_line = preferences.showForecastLine;
+      if (preferences.showLowestBalanceLine !== undefined) dbUpdates.chart_show_lowest_balance_line = preferences.showLowestBalanceLine;
       if (preferences.cashFlowColor !== undefined) dbUpdates.chart_cashflow_color = preferences.cashFlowColor;
       if (preferences.totalResourcesColor !== undefined) dbUpdates.chart_resources_color = preferences.totalResourcesColor;
       if (preferences.creditCardColor !== undefined) dbUpdates.chart_credit_color = preferences.creditCardColor;
       if (preferences.reserveColor !== undefined) dbUpdates.chart_reserve_color = preferences.reserveColor;
       if (preferences.forecastColor !== undefined) dbUpdates.chart_forecast_color = preferences.forecastColor;
+      if (preferences.lowestBalanceColor !== undefined) dbUpdates.chart_lowest_balance_color = preferences.lowestBalanceColor;
 
       const { error } = await supabase
         .from('user_settings')
@@ -250,11 +256,13 @@ export const useUserSettings = () => {
                   showCreditCardLine: payload.new.chart_show_credit_line ?? true,
                   showReserveLine: payload.new.chart_show_reserve_line ?? true,
                   showForecastLine: payload.new.chart_show_forecast_line ?? false,
+                  showLowestBalanceLine: payload.new.chart_show_lowest_balance_line ?? true,
                   cashFlowColor: payload.new.chart_cashflow_color || 'hsl(221, 83%, 53%)',
                   totalResourcesColor: payload.new.chart_resources_color || '#10b981',
                   creditCardColor: payload.new.chart_credit_color || '#f59e0b',
                   reserveColor: payload.new.chart_reserve_color || '#ef4444',
                   forecastColor: payload.new.chart_forecast_color || '#a855f7',
+                  lowestBalanceColor: payload.new.chart_lowest_balance_color || '#ef4444',
                 });
               }
             }

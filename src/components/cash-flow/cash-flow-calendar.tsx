@@ -98,6 +98,8 @@ export const CashFlowCalendar = ({
   const [chartType, setChartType] = useState<'bar' | 'line'>('line');
   const [selectedTransaction, setSelectedTransaction] = useState<CashFlowEvent | null>(null);
   const [showTransactionModal, setShowTransactionModal] = useState(false);
+  const [showLowestBalanceLine, setShowLowestBalanceLine] = useState(true);
+  const [lowestBalanceColor, setLowestBalanceColor] = useState('#ef4444');
   const [selectedDayTransactions, setSelectedDayTransactions] = useState<CashFlowEvent[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [showDayTransactionsModal, setShowDayTransactionsModal] = useState(false);
@@ -654,6 +656,12 @@ export const CashFlowCalendar = ({
   
   const displayData = getDisplayData();
   
+  // Calculate lowest projected balance from chart data
+  const lowestProjectedBalance = useMemo(() => {
+    if (chartData.length === 0) return 0;
+    return Math.min(...chartData.map(d => d.cashFlow || 0));
+  }, [chartData]);
+  
   // Memoize Y-axis domain calculation
   const yDomain = useMemo((): [number, number] => {
     const yValues = displayData.flatMap((d: any) => [
@@ -1134,7 +1142,7 @@ export const CashFlowCalendar = ({
                           activeDot={{ r: 8, cursor: 'pointer', strokeWidth: 0 }}
                         />
                       )}
-                      {showReserveLine && (
+                       {showReserveLine && (
                         <Line
                           type="monotone"
                           dataKey="reserve"
@@ -1144,6 +1152,15 @@ export const CashFlowCalendar = ({
                           dot={false}
                           activeDot={{ r: 8, cursor: 'pointer', strokeWidth: 0 }}
                         />
+                       )}
+                       {showLowestBalanceLine && lowestProjectedBalance !== 0 && (
+                         <ReferenceLine
+                           y={lowestProjectedBalance}
+                           stroke={lowestBalanceColor}
+                           strokeWidth={2}
+                           strokeDasharray="3 3"
+                           label={{ value: 'Lowest', position: 'insideTopRight', fill: lowestBalanceColor, fontSize: 12 }}
+                         />
                        )}
                        {refAreaLeft && refAreaRight && (
                          <ReferenceArea
@@ -1525,8 +1542,39 @@ export const CashFlowCalendar = ({
                       style={{ appearance: 'none', backgroundColor: reserveColor }}
                     />
                   </label>
-              <label htmlFor="reserve-toggle" className="cursor-pointer">Reserve Amount</label>
+                  <label htmlFor="reserve-toggle" className="cursor-pointer">Reserve Amount</label>
             </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="lowest-balance-toggle"
+                    checked={showLowestBalanceLine}
+                    onChange={(e) => {
+                      setShowLowestBalanceLine(e.target.checked);
+                      updateChartPreferences({ showLowestBalanceLine: e.target.checked });
+                    }}
+                    className="w-4 h-4 rounded border-gray-300"
+                  />
+                  <label htmlFor="lowest-balance-color" className="cursor-pointer">
+                    <input
+                      type="color"
+                      id="lowest-balance-color"
+                      value={lowestBalanceColor}
+                      onChange={(e) => {
+                        setLowestBalanceColor(e.target.value);
+                        updateChartPreferences({ lowestBalanceColor: e.target.value });
+                      }}
+                      className="w-3 h-3 rounded cursor-pointer border-0 p-0"
+                      style={{ appearance: 'none', backgroundColor: lowestBalanceColor }}
+                    />
+                  </label>
+                  <label htmlFor="lowest-balance-toggle" className="cursor-pointer flex items-center gap-1">
+                    Lowest Projected Balance
+                    <span className="text-xs text-muted-foreground">
+                      (${lowestProjectedBalance.toLocaleString()})
+                    </span>
+                  </label>
+                </div>
           </div>
         
         </div>
