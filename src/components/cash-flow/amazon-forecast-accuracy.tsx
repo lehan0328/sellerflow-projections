@@ -241,19 +241,6 @@ export const AmazonForecastAccuracy = () => {
           </div>
         </div>
 
-        {/* AI Insights */}
-        {metrics?.insights && metrics.insights.length > 0 && (
-          <Alert>
-            <Brain className="h-4 w-4" />
-            <AlertDescription>
-              <div className="space-y-1">
-                {metrics.insights.map((insight: string, idx: number) => (
-                  <p key={idx} className="text-sm">{insight}</p>
-                ))}
-              </div>
-            </AlertDescription>
-          </Alert>
-        )}
 
         {/* Accuracy by Method */}
         {metrics?.byMethod && Object.keys(metrics.byMethod).length > 0 && (
