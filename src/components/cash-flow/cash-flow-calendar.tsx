@@ -99,7 +99,7 @@ export const CashFlowCalendar = ({
   const [selectedTransaction, setSelectedTransaction] = useState<CashFlowEvent | null>(null);
   const [showTransactionModal, setShowTransactionModal] = useState(false);
   const [showLowestBalanceLine, setShowLowestBalanceLine] = useState(true);
-  const [lowestBalanceColor, setLowestBalanceColor] = useState('#ef4444');
+  const [lowestBalanceColor, setLowestBalanceColor] = useState('#eab308'); // Yellow for available to spend
   const [selectedDayTransactions, setSelectedDayTransactions] = useState<CashFlowEvent[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [showDayTransactionsModal, setShowDayTransactionsModal] = useState(false);
@@ -656,11 +656,13 @@ export const CashFlowCalendar = ({
   
   const displayData = getDisplayData();
   
-  // Calculate lowest projected balance from chart data
+  // Calculate lowest projected balance from chart data (available to spend)
   const lowestProjectedBalance = useMemo(() => {
     if (chartData.length === 0) return 0;
-    return Math.min(...chartData.map(d => d.cashFlow || 0));
-  }, [chartData]);
+    const lowestCashFlow = Math.min(...chartData.map(d => d.cashFlow || 0));
+    // Available to spend = lowest projected balance - reserve amount
+    return lowestCashFlow - reserveAmount;
+  }, [chartData, reserveAmount]);
   
   // Memoize Y-axis domain calculation
   const yDomain = useMemo((): [number, number] => {
@@ -1153,13 +1155,13 @@ export const CashFlowCalendar = ({
                           activeDot={{ r: 8, cursor: 'pointer', strokeWidth: 0 }}
                         />
                        )}
-                       {showLowestBalanceLine && lowestProjectedBalance !== 0 && (
+                       {showLowestBalanceLine && (
                          <ReferenceLine
                            y={lowestProjectedBalance}
                            stroke={lowestBalanceColor}
                            strokeWidth={2}
                            strokeDasharray="3 3"
-                           label={{ value: 'Lowest', position: 'insideTopRight', fill: lowestBalanceColor, fontSize: 12 }}
+                           label={{ value: 'Available to Spend', position: 'insideTopRight', fill: lowestBalanceColor, fontSize: 12 }}
                          />
                        )}
                        {refAreaLeft && refAreaRight && (
@@ -1569,7 +1571,7 @@ export const CashFlowCalendar = ({
                     />
                   </label>
                   <label htmlFor="lowest-balance-toggle" className="cursor-pointer flex items-center gap-1">
-                    Lowest Projected Balance
+                    Available to Spend
                     <span className="text-xs text-muted-foreground">
                       (${lowestProjectedBalance.toLocaleString()})
                     </span>
