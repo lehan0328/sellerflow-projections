@@ -770,14 +770,14 @@ export const PurchaseOrderForm = ({
                     {formData.poDate ? format(formData.poDate, "PPP") : "Pick a date"}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0 z-50">
+                <PopoverContent className="w-auto p-0 z-[100]" align="start" sideOffset={4}>
                   <Calendar mode="single" selected={formData.poDate} onSelect={date => {
                   setFormData(prev => ({
                     ...prev,
                     poDate: date || new Date(new Date().setDate(new Date().getDate() + 1))
                   }));
                   setIsPODatePickerOpen(false);
-                }} disabled={(date) => date <= new Date(new Date().setHours(0, 0, 0, 0))} initialFocus className={cn("pointer-events-auto")} />
+                }} disabled={(date) => date <= new Date(new Date().setHours(0, 0, 0, 0))} initialFocus className={cn("p-3 pointer-events-auto")} />
                 </PopoverContent>
               </Popover>
             </div>
@@ -891,14 +891,14 @@ export const PurchaseOrderForm = ({
                         {formData.deliveryDate ? format(formData.deliveryDate, "PPP") : "Pick delivery date"}
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0 z-50">
+                    <PopoverContent className="w-auto p-0 z-[100]" align="start" sideOffset={4}>
                       <Calendar mode="single" selected={formData.deliveryDate} onSelect={date => {
                     setFormData(prev => ({
                       ...prev,
                       deliveryDate: date
                     }));
                     setIsDeliveryDatePickerOpen(false);
-                  }} initialFocus />
+                  }} initialFocus className={cn("p-3 pointer-events-auto")} />
                     </PopoverContent>
                   </Popover>
                 </div>}
@@ -938,14 +938,14 @@ export const PurchaseOrderForm = ({
                               {payment.dueDate ? format(payment.dueDate, "PPP") : "Pick due date"}
                             </Button>
                           </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0 z-50">
+                          <PopoverContent className="w-auto p-0 z-[100]" align="start" sideOffset={4}>
                             <Calendar mode="single" selected={payment.dueDate} onSelect={date => {
                         updatePayment(payment.id, "dueDate", date);
                         setOpenPaymentDatePickers(prev => ({
                           ...prev,
                           [payment.id]: false
                         }));
-                      }} initialFocus />
+                      }} initialFocus className={cn("p-3 pointer-events-auto")} />
                           </PopoverContent>
                         </Popover>
                       </CardContent>
