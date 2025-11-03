@@ -255,36 +255,6 @@ export const AmazonForecastAccuracy = () => {
           </Alert>
         )}
 
-        {/* Accuracy by Method */}
-        {metrics?.byMethod && Object.keys(metrics.byMethod).length > 0 && (
-          <div className="border rounded-lg p-4">
-            <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
-              <Brain className="h-4 w-4" />
-              Historical Performance Tracking
-            </h4>
-            <p className="text-xs text-muted-foreground mb-3">
-              Track improvements over time to see what changes make forecasts better
-            </p>
-            <div className="space-y-2">
-              {Object.entries(metrics.byMethod).map(([method, data]: [string, any]) => {
-                const displayMethod = method === 'auren_forecast_v1' ? 'Auren Formula V1' : 
-                                     method === 'unknown' ? 'Legacy Method' :
-                                     method.replace(/_/g, ' ');
-                return (
-                  <div key={method} className="flex items-center justify-between">
-                    <span className="text-sm font-medium">{displayMethod}</span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground">({data.count} payouts tracked)</span>
-                      <Badge variant={data.avgAccuracy >= 90 ? "default" : "secondary"}>
-                        {data.avgAccuracy.toFixed(1)}%
-                      </Badge>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
 
         {/* Individual Comparisons */}
         <div className="space-y-3">
