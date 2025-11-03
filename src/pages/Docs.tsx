@@ -6,7 +6,6 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { 
-  ArrowLeft, 
   BookOpen, 
   Search, 
   Settings, 
@@ -18,11 +17,11 @@ import {
   DollarSign,
   Link as LinkIcon,
   ShoppingCart,
-  FileText,
   AlertCircle,
   ArrowRight
 } from "lucide-react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
+import { PublicHeader } from "@/components/PublicHeader";
 
 const Docs = () => {
   const navigate = useNavigate();
@@ -196,44 +195,7 @@ const Docs = () => {
       )}
 
       {/* Header */}
-      <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => navigate('/')}
-                className="hover-scale transition-all duration-200"
-              >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Home
-              </Button>
-              <div className="flex items-center space-x-2">
-                <div className="h-8 w-8 rounded-lg bg-gradient-primary flex items-center justify-center">
-                  <FileText className="h-5 w-5 text-primary-foreground" />
-                </div>
-                <div>
-                  <h1 className="text-2xl font-bold flex items-center space-x-2">
-                    <span>Documentation</span>
-                  </h1>
-                  <p className="text-muted-foreground text-sm">
-                    Learn how to use Auren effectively
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center space-x-4">
-              <Button variant="outline" size="sm" onClick={() => navigate('/auth')}>
-                Sign In
-              </Button>
-              <Button size="sm" className="bg-gradient-primary" onClick={() => navigate('/auth')}>
-                Get Started
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
+      <PublicHeader activePage="docs" />
 
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto">
