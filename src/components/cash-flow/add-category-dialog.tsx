@@ -17,6 +17,7 @@ export function AddCategoryDialog({ open, onOpenChange, onAddCategory, type }: A
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    e.stopPropagation(); // Prevent event from bubbling to parent forms
     if (!categoryName.trim()) return;
 
     setIsSubmitting(true);
