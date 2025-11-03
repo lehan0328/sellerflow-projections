@@ -45,8 +45,12 @@ export function AdminForecastAccuracy() {
   });
 
   useEffect(() => {
+    console.log('[Admin Forecast Accuracy] useEffect triggered - isAdmin:', isAdmin);
     if (isAdmin) {
+      console.log('[Admin Forecast Accuracy] Admin verified, fetching metrics...');
       fetchAndCalculateMetrics();
+    } else {
+      console.log('[Admin Forecast Accuracy] User is not admin, skipping fetch');
     }
   }, [isAdmin]);
 
@@ -71,9 +75,15 @@ export function AdminForecastAccuracy() {
       }
 
       if (!data || data.length === 0) {
+        console.log('[Admin Forecast Accuracy] No data returned from query');
         setIsLoading(false);
         return;
       }
+      
+      console.log('[Admin Forecast Accuracy] Processing data:', {
+        totalRecords: data.length,
+        uniqueEmails: [...new Set(data.map(d => d.user_email))]
+      });
 
       // Group by amazon_account_id
       const accountGroups = data.reduce((acc, log) => {
