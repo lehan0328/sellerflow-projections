@@ -5,9 +5,16 @@ import { useAmazonPayouts } from "@/hooks/useAmazonPayouts";
 import { useIncome } from "@/hooks/useIncome";
 import { useAmazonAccounts } from "@/hooks/useAmazonAccounts";
 import { useAuth } from "@/hooks/useAuth";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { 
   TrendingUp, 
   ArrowLeft,
+  Info,
   Brain,
   Calendar as CalendarIcon,
   DollarSign,
@@ -28,7 +35,7 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  Tooltip,
+  Tooltip as RechartsTooltip,
   Legend,
   ResponsiveContainer,
   Area,
@@ -280,10 +287,22 @@ export default function AmazonForecast() {
     totalComparisons: number;
     outliersExcluded: number;
   } | null>(null);
+  const [confidenceThreshold, setConfidenceThreshold] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchAccuracy = async () => {
       if (!user) return;
+
+      // Fetch user's confidence threshold (safety net)
+      const { data: settings } = await supabase
+        .from('user_settings')
+        .select('forecast_confidence_threshold')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (settings?.forecast_confidence_threshold !== null && settings?.forecast_confidence_threshold !== undefined) {
+        setConfidenceThreshold(settings.forecast_confidence_threshold);
+      }
       
       try {
         // Fetch ALL accuracy logs for the user (not just 10)
@@ -450,8 +469,30 @@ export default function AmazonForecast() {
                 <p className="text-sm font-medium">Forecast Accuracy</p>
                 <Target className="h-4 w-4 text-purple-600" />
               </div>
-              <div className="text-2xl font-bold">
+              <div className="flex items-center gap-2 text-2xl font-bold">
                 {forecastAccuracy !== null ? `${forecastAccuracy.toFixed(1)}%` : 'N/A'}
+                {forecastAccuracy !== null && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-xs">
+                        <p className="text-sm">
+                          {confidenceThreshold !== null && confidenceThreshold > 0 ? (
+                            <>
+                              This includes your {confidenceThreshold}% safety net. Forecasts are intentionally conservative 
+                              to help you avoid cash flow surprises. Your true model accuracy is approximately{' '}
+                              {Math.min(100, (forecastAccuracy ?? 0) + confidenceThreshold).toFixed(1)}%.
+                            </>
+                          ) : (
+                            'Measures how close our forecasts are to actual Amazon payouts.'
+                          )}
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
               </div>
               <p className="text-xs text-muted-foreground">
                 {forecastAccuracy !== null && forecastAccuracy >= 90 ? 'Excellent' : 
@@ -569,7 +610,7 @@ export default function AmazonForecast() {
                   tickLine={{ stroke: '#e5e7eb' }}
                   tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
                 />
-                <Tooltip 
+                <RechartsTooltip 
                   formatter={(value) => `$${Number(value).toLocaleString()}`}
                   contentStyle={{ 
                     backgroundColor: '#fff', 
@@ -578,7 +619,7 @@ export default function AmazonForecast() {
                     boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
                   }}
                 />
-                <Legend 
+                <Legend
                   wrapperStyle={{ paddingTop: '20px' }}
                   iconType="circle"
                 />
@@ -608,7 +649,7 @@ export default function AmazonForecast() {
                   tickLine={{ stroke: '#e5e7eb' }}
                   tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
                 />
-                <Tooltip 
+                <RechartsTooltip 
                   formatter={(value) => `$${Number(value).toLocaleString()}`}
                   contentStyle={{ 
                     backgroundColor: '#fff', 
@@ -617,7 +658,7 @@ export default function AmazonForecast() {
                     boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
                   }}
                 />
-                <Legend 
+                <Legend
                   wrapperStyle={{ paddingTop: '20px' }}
                   iconType="circle"
                 />

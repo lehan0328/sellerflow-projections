@@ -17,14 +17,16 @@ export const AmazonForecastAccuracy = () => {
   const [error, setError] = useState<string | null>(null);
   const [accuracyLogs, setAccuracyLogs] = useState<any[]>([]);
   const [showAll, setShowAll] = useState(false);
+  const [confidenceThreshold, setConfidenceThreshold] = useState<number | null>(null);
 
-  // Fetch accuracy logs directly from the forecast_accuracy_log table
+  // Fetch accuracy logs and user settings
   useEffect(() => {
-    const fetchLogs = async () => {
+    const fetchData = async () => {
       if (!user) return;
 
       console.log('[Forecast Accuracy] Fetching accuracy logs for user:', user.id);
 
+      // Fetch accuracy logs
       const { data, error } = await supabase
         .from('forecast_accuracy_log')
         .select('*')
@@ -36,9 +38,20 @@ export const AmazonForecastAccuracy = () => {
       if (!error && data) {
         setAccuracyLogs(data);
       }
+
+      // Fetch user's confidence threshold (safety net)
+      const { data: settings } = await supabase
+        .from('user_settings')
+        .select('forecast_confidence_threshold')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (settings?.forecast_confidence_threshold !== null && settings?.forecast_confidence_threshold !== undefined) {
+        setConfidenceThreshold(settings.forecast_confidence_threshold);
+      }
     };
 
-    fetchLogs();
+    fetchData();
   }, [user]);
 
   // Pre-filter: Exclude extreme outliers with errors over 200%
@@ -91,6 +104,10 @@ export const AmazonForecastAccuracy = () => {
   const iqrExcluded = thresholdFiltered.length - filteredLogs.length;
   const totalExcluded = thresholdExcluded + iqrExcluded;
 
+  // Calculate approximate "true model accuracy" by adjusting for safety net
+  const adjustedAccuracy = confidenceThreshold !== null 
+    ? Math.min(100, avgAccuracy + confidenceThreshold) 
+    : null;
 
   const loadMetrics = async () => {
     console.log('[Forecast Accuracy] Loading metrics... accuracyLogs:', accuracyLogs.length);
@@ -187,6 +204,24 @@ export const AmazonForecastAccuracy = () => {
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+        
+        {/* Safety Net Explanation */}
+        {confidenceThreshold !== null && confidenceThreshold > 0 && (
+          <Alert className="border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/20">
+            <Brain className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+            <AlertDescription className="text-blue-800 dark:text-blue-200">
+              <div className="space-y-1">
+                <p className="font-medium">Safety Net Active: {confidenceThreshold}%</p>
+                <p className="text-sm">
+                  Forecasts are intentionally conservative by {confidenceThreshold}% to help you avoid cash flow surprises. 
+                  {adjustedAccuracy !== null && (
+                    <span className="font-medium"> Your true model accuracy is approximately {adjustedAccuracy.toFixed(1)}%.</span>
+                  )}
+                </p>
+              </div>
+            </AlertDescription>
           </Alert>
         )}
         
