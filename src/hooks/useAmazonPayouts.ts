@@ -89,6 +89,8 @@ export const useAmazonPayouts = () => {
         .eq("user_id", user.id)
         .order("payout_date", { ascending: false });
       
+      console.log('[fetchAmazonPayouts] Sample payout with modeling_method:', data?.[0]?.modeling_method);
+      
       console.log('[fetchAmazonPayouts] Query result:', { count: data?.length, error });
 
       if (error) {

@@ -18,6 +18,7 @@ type PayoutWithForecast = {
   forecast_replaced_at?: string | null;
   forecast_accuracy_percentage?: number | null;
   modeling_method?: string | null;
+  settlement_id: string;
 };
 
 export const AmazonForecastAccuracy = () => {
@@ -26,15 +27,48 @@ export const AmazonForecastAccuracy = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [accuracyLogCount, setAccuracyLogCount] = useState(0);
+  const [enrichedPayouts, setEnrichedPayouts] = useState<PayoutWithForecast[]>([]);
 
   // Filter payouts that have forecast data (were replaced from forecasts)
   const replacedForecasts = (amazonPayouts as PayoutWithForecast[])?.filter(
     payout => payout.forecast_replaced_at && payout.original_forecast_amount
   ) || [];
+  
+  console.log('[Forecast Accuracy] All payouts:', amazonPayouts?.length);
+  console.log('[Forecast Accuracy] Filtered replacedForecasts:', replacedForecasts.length);
+  console.log('[Forecast Accuracy] Sample replaced forecast:', replacedForecasts[0]);
+
+  // Fetch modeling methods from accuracy log and enrich payouts
+  useEffect(() => {
+    const enrichPayouts = async () => {
+      if (replacedForecasts.length === 0) {
+        setEnrichedPayouts([]);
+        return;
+      }
+
+      const { data: accuracyLogs } = await supabase
+        .from('forecast_accuracy_log')
+        .select('settlement_id, modeling_method')
+        .in('settlement_id', replacedForecasts.map(p => p.settlement_id));
+
+      const logMap = new Map(accuracyLogs?.map(log => [log.settlement_id, log.modeling_method]));
+      
+      const enriched = replacedForecasts.map(payout => ({
+        ...payout,
+        modeling_method: logMap.get(payout.settlement_id) || 'unknown'
+      }));
+
+      console.log('[Forecast Accuracy] Enriched payouts:', enriched.length);
+      console.log('[Forecast Accuracy] Sample enriched:', enriched[0]);
+      setEnrichedPayouts(enriched);
+    };
+
+    enrichPayouts();
+  }, [replacedForecasts.length]);
 
   // Calculate overall accuracy
-  const avgAccuracy = replacedForecasts.length > 0
-    ? replacedForecasts.reduce((sum, p) => sum + (p.forecast_accuracy_percentage || 0), 0) / replacedForecasts.length
+  const avgAccuracy = enrichedPayouts.length > 0
+    ? enrichedPayouts.reduce((sum, p) => sum + (p.forecast_accuracy_percentage || 0), 0) / enrichedPayouts.length
     : 0;
 
   // Check forecast_accuracy_log table directly
@@ -51,7 +85,7 @@ export const AmazonForecastAccuracy = () => {
   }, []);
 
   const loadMetrics = async () => {
-    console.log('[Forecast Accuracy] Loading metrics... replacedForecasts:', replacedForecasts.length, 'accuracyLogs:', accuracyLogCount);
+    console.log('[Forecast Accuracy] Loading metrics... enrichedPayouts:', enrichedPayouts.length, 'accuracyLogs:', accuracyLogCount);
     
     setIsLoading(true);
     setError(null);
@@ -133,7 +167,7 @@ export const AmazonForecastAccuracy = () => {
               Mathematical forecasting performance analysis
             </CardDescription>
           </div>
-          {replacedForecasts.length > 0 && (
+          {enrichedPayouts.length > 0 && (
             <Button onClick={loadMetrics} disabled={isLoading} variant="outline" size="sm">
               {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Refresh'}
             </Button>
@@ -144,6 +178,7 @@ export const AmazonForecastAccuracy = () => {
         {/* Debug Info */}
         <div className="text-xs text-muted-foreground border-b pb-2">
           Replaced Forecasts: {replacedForecasts.length} | 
+          Enriched: {enrichedPayouts.length} |
           Accuracy Logs: {accuracyLogCount} |
           Metrics Loaded: {metrics ? 'Yes' : 'No'} | 
           Loading: {isLoading ? 'Yes' : 'No'}
@@ -248,8 +283,8 @@ export const AmazonForecastAccuracy = () => {
 
         {/* Individual Comparisons */}
         <div className="space-y-3">
-          <h4 className="text-sm font-semibold">Recent Comparisons</h4>
-          {replacedForecasts.map((payout) => {
+          <h4 className="text-sm font-semibold">Recent Comparisons ({enrichedPayouts.length})</h4>
+          {enrichedPayouts.map((payout) => {
             const forecastAmount = Number(payout.original_forecast_amount);
             const actualAmount = Number(payout.total_amount);
             const accuracy = payout.forecast_accuracy_percentage || 0;
