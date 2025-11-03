@@ -40,10 +40,36 @@ export const AmazonForecastAccuracy = () => {
     fetchLogs();
   }, [user]);
 
-  // Calculate overall accuracy from logs
-  const avgAccuracy = accuracyLogs.length > 0
-    ? accuracyLogs.reduce((sum, log) => sum + (100 - Math.abs(log.difference_percentage)), 0) / accuracyLogs.length
+  // Filter out extreme outliers using IQR method
+  const filteredLogs = (() => {
+    if (accuracyLogs.length === 0) return [];
+    
+    // Calculate absolute percentage errors
+    const errors = accuracyLogs.map(log => Math.abs(log.difference_percentage));
+    
+    // Sort to calculate quartiles
+    const sortedErrors = [...errors].sort((a, b) => a - b);
+    const q1Index = Math.floor(sortedErrors.length * 0.25);
+    const q3Index = Math.floor(sortedErrors.length * 0.75);
+    const q1 = sortedErrors[q1Index];
+    const q3 = sortedErrors[q3Index];
+    const iqr = q3 - q1;
+    const lowerBound = q1 - 1.5 * iqr;
+    const upperBound = q3 + 1.5 * iqr;
+    
+    // Filter out outliers
+    return accuracyLogs.filter((log, idx) => {
+      const error = errors[idx];
+      return error >= lowerBound && error <= upperBound;
+    });
+  })();
+
+  // Calculate overall accuracy from filtered logs
+  const avgAccuracy = filteredLogs.length > 0
+    ? filteredLogs.reduce((sum, log) => sum + (100 - Math.abs(log.difference_percentage)), 0) / filteredLogs.length
     : 0;
+
+  const outliersExcluded = accuracyLogs.length - filteredLogs.length;
 
 
   const loadMetrics = async () => {
@@ -144,12 +170,22 @@ export const AmazonForecastAccuracy = () => {
           </Alert>
         )}
         
-        {/* Outliers Notice */}
+        {/* Frontend Outliers Notice */}
+        {outliersExcluded > 0 && (
+          <Alert className="border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/20">
+            <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+            <AlertDescription className="text-amber-800 dark:text-amber-200">
+              {outliersExcluded} extreme outlier{outliersExcluded > 1 ? 's' : ''} (like -422.8%) excluded from accuracy calculations for more reliable metrics.
+            </AlertDescription>
+          </Alert>
+        )}
+        
+        {/* Backend Outliers Notice */}
         {metrics?.outliersExcluded > 0 && (
           <Alert>
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              {metrics.outliersExcluded} extreme outlier{metrics.outliersExcluded > 1 ? 's' : ''} excluded from analysis for more accurate metrics.
+              {metrics.outliersExcluded} extreme outlier{metrics.outliersExcluded > 1 ? 's' : ''} excluded from detailed analysis for more accurate metrics.
             </AlertDescription>
           </Alert>
         )}
@@ -234,8 +270,8 @@ export const AmazonForecastAccuracy = () => {
 
         {/* Individual Comparisons */}
         <div className="space-y-3">
-          <h4 className="text-sm font-semibold">Recent Comparisons ({accuracyLogs.length})</h4>
-          {accuracyLogs.map((log) => {
+          <h4 className="text-sm font-semibold">Recent Comparisons ({filteredLogs.length}{outliersExcluded > 0 ? ` of ${accuracyLogs.length}` : ''})</h4>
+          {filteredLogs.map((log) => {
             const forecastAmount = Number(log.forecasted_amount);
             const actualAmount = Number(log.actual_amount);
             const accuracy = 100 - Math.abs(log.difference_percentage);
