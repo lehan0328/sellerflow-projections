@@ -142,6 +142,37 @@ export default function ScenarioPlanner() {
 
     // Build complete event list matching dashboard logic with IDs for tracking
     const events: Array<{ date: Date; amount: number; type: 'inflow' | 'outflow'; sourceId: string; sourceType: string }> = [];
+    
+    // Filter Amazon payouts first (same logic as Dashboard)
+    const filteredAmazonPayouts = amazonPayouts.filter(payout => {
+      // Exclude forecasted payouts in the past - forecasts should start from today
+      if ((payout.status as string) === 'forecasted') {
+        const payoutDate = new Date(payout.payout_date);
+        const todayDate = new Date();
+        todayDate.setHours(0, 0, 0, 0);
+        payoutDate.setHours(0, 0, 0, 0);
+        
+        if (payoutDate < todayDate) {
+          return false;
+        }
+      }
+      
+      // Exclude open settlements ONLY for daily settlement accounts
+      if ((payout.status as string) === 'estimated') {
+        const accountFrequency = payout.amazon_accounts?.payout_frequency;
+        const rawData = (payout as any).raw_settlement_data;
+        const hasEndDate = !!(rawData?.FinancialEventGroupEnd || rawData?.settlement_end_date);
+        
+        if (accountFrequency === 'daily') {
+          // For daily accounts, ONLY exclude open settlements (no end date)
+          if (!hasEndDate) {
+            return false;
+          }
+        }
+      }
+      
+      return true;
+    });
 
     // Add vendor transactions (purchase orders with vendors assigned)
     transactions
@@ -249,38 +280,8 @@ export default function ScenarioPlanner() {
       });
     });
 
-    // Add Amazon payouts (using same filtering logic as Dashboard)
-    amazonPayouts
-      .filter(payout => {
-        // Exclude forecasted payouts in the past - forecasts should start from today
-        if ((payout.status as string) === 'forecasted') {
-          const payoutDate = new Date(payout.payout_date);
-          const today = new Date();
-          today.setHours(0, 0, 0, 0);
-          payoutDate.setHours(0, 0, 0, 0);
-          
-          if (payoutDate < today) {
-            return false;
-          }
-        }
-        
-        // Exclude open settlements ONLY for daily settlement accounts
-        if ((payout.status as string) === 'estimated') {
-          const accountFrequency = payout.amazon_accounts?.payout_frequency;
-          const rawData = (payout as any).raw_settlement_data;
-          const hasEndDate = !!(rawData?.FinancialEventGroupEnd || rawData?.settlement_end_date);
-          
-          if (accountFrequency === 'daily') {
-            // For daily accounts, ONLY exclude open settlements (no end date)
-            if (!hasEndDate) {
-              return false;
-            }
-          }
-        }
-        
-        return true;
-      })
-      .forEach(payout => {
+    // Add Amazon payouts (already filtered above)
+    filteredAmazonPayouts.forEach(payout => {
         // Calculate display date (same logic as Dashboard)
         const isOpenSettlement = (payout.status as string) === 'estimated';
         const isForecastedPayout = (payout.status as string) === 'forecasted';
@@ -342,7 +343,7 @@ export default function ScenarioPlanner() {
       creditCards: creditCards.filter(card => card.payment_due_date && card.balance > 0).length,
       recurringExpenses: recurringExpenses.length,
       amazonPayoutsTotal: amazonPayouts.length,
-      amazonPayoutsFiltered: events.filter(e => e.sourceType === 'amazon_payout').length,
+      amazonPayoutsFiltered: filteredAmazonPayouts.length,
       totalEvents: events.length
     });
     
@@ -365,11 +366,12 @@ export default function ScenarioPlanner() {
       sourceId: e.sourceId
     })));
 
-    return { allEvents: events, baselineCash: currentCash };
+    return { allEvents: events, baselineCash: currentCash, filteredAmazonPayoutsCount: filteredAmazonPayouts.length };
   }, [bankAccounts, bankTotalBalance, useAvailableBalance, userSettingsCash, transactions, incomeItems, creditCards, recurringExpenses, amazonPayouts]);
 
   const allEvents = allEventsData.allEvents;
   const baselineCash = allEventsData.baselineCash;
+  const filteredAmazonPayoutsCount = allEventsData.filteredAmazonPayoutsCount;
 
   // Calculate scenario projections using actual events
   const scenarioProjection = useMemo(() => {
@@ -935,7 +937,7 @@ export default function ScenarioPlanner() {
                       </div>
                       <div className="flex items-center gap-2">
                         <div className="w-2 h-2 rounded-full bg-blue-500" />
-                        <span>Amazon Payouts ({amazonPayouts.length})</span>
+                        <span>Amazon Payouts ({filteredAmazonPayoutsCount})</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <div className="w-2 h-2 rounded-full bg-purple-500" />
@@ -978,7 +980,7 @@ export default function ScenarioPlanner() {
                         <div className="w-3 h-3 rounded-full bg-blue-500" />
                         <span className="font-medium">Amazon Payouts</span>
                       </div>
-                      <span className="text-muted-foreground">{amazonPayouts.length} payouts</span>
+                      <span className="text-muted-foreground">{filteredAmazonPayoutsCount} forecasted payout{filteredAmazonPayoutsCount !== 1 ? 's' : ''}</span>
                     </div>
                     <div className="flex justify-between items-center p-3 border rounded-lg">
                       <div className="flex items-center gap-2">
@@ -1239,7 +1241,7 @@ export default function ScenarioPlanner() {
 
 
                     {/* Amazon Payouts */}
-                    {amazonPayouts.length > 0 && (
+                    {filteredAmazonPayoutsCount > 0 && (
                       <div className="border rounded-lg p-3 space-y-2">
                         <div className="flex items-center justify-between gap-2">
                           <div className="flex items-center gap-2 font-medium text-sm">
@@ -1258,7 +1260,7 @@ export default function ScenarioPlanner() {
                           </div>
                         </div>
                         <div className="text-xs text-muted-foreground">
-                          {amazonPayouts.length} payout{amazonPayouts.length !== 1 ? 's' : ''} from database
+                          {filteredAmazonPayoutsCount} forecasted payout{filteredAmazonPayoutsCount !== 1 ? 's' : ''}
                         </div>
                         <div className="flex gap-2">
                           <Select 
@@ -1681,14 +1683,14 @@ export default function ScenarioPlanner() {
                   )}
 
 
-                  {/* Amazon Payouts */}
-                  {amazonPayouts.length > 0 && (
-                    <div className="border rounded-lg p-3 space-y-2">
-                      <div className="flex items-center gap-2 font-medium text-sm">
-                        <div className="w-2 h-2 rounded-full bg-blue-500" />
-                        Amazon Payouts ({amazonPayouts.length})
-                      </div>
-                      {amazonPayouts.slice(0, 5).map(payout => (
+                    {/* Amazon Payouts */}
+                    {filteredAmazonPayoutsCount > 0 && (
+                      <div className="border rounded-lg p-3 space-y-2">
+                        <div className="flex items-center gap-2 font-medium text-sm">
+                          <div className="w-2 h-2 rounded-full bg-blue-500" />
+                          Amazon Payouts ({filteredAmazonPayoutsCount} forecasted)
+                        </div>
+                        {amazonPayouts.slice(0, 5).map(payout => (
                         <div key={payout.id} className="pl-4 space-y-1">
                           <div className="flex items-center justify-between gap-2">
                             <div className="text-xs text-muted-foreground flex-1">
