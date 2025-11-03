@@ -136,8 +136,17 @@ export default function ScenarioPlanner() {
       // Average growth rate across all periods
       if (growthRates.length > 0) {
         growthRate = growthRates.reduce((sum, rate) => sum + rate, 0) / growthRates.length;
+        // Cap growth rate at ±50% to prevent explosive compounding
+        growthRate = Math.max(-50, Math.min(50, growthRate));
       }
     }
+    
+    console.log('[ScenarioPlanner] Historical average calculation:', {
+      recentPayoutsCount: recentPayouts.length,
+      lastPayoutAmount: recentPayouts[recentPayouts.length - 1].total_amount,
+      calculatedGrowthRate: growthRate,
+      payoutAmounts: recentPayouts.map(p => p.total_amount)
+    });
 
     // Calculate average payout frequency
     let avgDaysBetween = 14; // Default bi-weekly
@@ -153,6 +162,12 @@ export default function ScenarioPlanner() {
 
     // Start from most recent payout amount
     const lastPayoutAmount = recentPayouts[recentPayouts.length - 1].total_amount;
+    
+    // Validate last payout amount isn't absurdly large
+    if (lastPayoutAmount > 1000000) {
+      console.error('[ScenarioPlanner] Absurd payout amount detected:', lastPayoutAmount);
+      return [];
+    }
 
     // Project next 3 months applying growth trend
     const projectedPayouts = [];
@@ -160,7 +175,6 @@ export default function ScenarioPlanner() {
     threeMonthsFromNow.setMonth(threeMonthsFromNow.getMonth() + 3);
     
     let projectionIndex = 0;
-    let currentProjectedAmount = lastPayoutAmount;
     
     while (projectionIndex < 20) { // Safety limit
       const projectedDate = new Date(now);
@@ -172,19 +186,37 @@ export default function ScenarioPlanner() {
         continue;
       }
       
-      // Apply growth rate to projection
-      currentProjectedAmount = currentProjectedAmount * (1 + growthRate / 100);
+      // Apply growth rate to projection (linear, not compound)
+      // This prevents exponential explosion
+      const growthMultiplier = 1 + (growthRate / 100) * (projectionIndex + 1);
+      const projectedAmount = lastPayoutAmount * growthMultiplier;
+      
+      // Validate projection isn't absurdly large
+      if (projectedAmount > 10000000) {
+        console.error('[ScenarioPlanner] Projection exceeded $10M, stopping:', {
+          projectionIndex,
+          amount: projectedAmount,
+          lastPayoutAmount,
+          growthRate
+        });
+        break;
+      }
       
       projectedPayouts.push({
         id: `avg_${projectionIndex}`,
         payout_date: projectedDate.toISOString(),
-        total_amount: Math.round(currentProjectedAmount * 100) / 100, // Round to 2 decimals
+        total_amount: Math.round(projectedAmount * 100) / 100, // Round to 2 decimals
         marketplace_name: `Trend-Based (${growthRate >= 0 ? '+' : ''}${growthRate.toFixed(1)}% growth)`,
         status: 'projected'
       });
       
       projectionIndex++;
     }
+    
+    console.log('[ScenarioPlanner] Generated projections:', {
+      count: projectedPayouts.length,
+      amounts: projectedPayouts.map(p => p.total_amount)
+    });
 
     return projectedPayouts;
   }, [amazonPayouts]);
