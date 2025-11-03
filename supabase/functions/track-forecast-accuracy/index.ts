@@ -63,8 +63,9 @@ serve(async (req) => {
     const forecastedAmount = forecast.total_amount;
     const actualAmount = actualPayout.total_amount;
     const differenceAmount = actualAmount - forecastedAmount;
-    const differencePercentage = forecastedAmount !== 0 
-      ? ((differenceAmount / forecastedAmount) * 100) 
+    // Use MAPE (Mean Absolute Percentage Error) formula: |difference| / actual * 100
+    const differencePercentage = actualAmount !== 0 
+      ? (Math.abs(differenceAmount) / actualAmount) * 100
       : 0;
 
     const userName = profile 
@@ -79,10 +80,10 @@ serve(async (req) => {
       user: userName
     });
 
-    // Insert accuracy log
+    // Upsert accuracy log to prevent duplicates
     const { error: insertError } = await supabase
       .from('forecast_accuracy_log')
-      .insert({
+      .upsert({
         user_id: actualPayout.user_id,
         account_id: profile?.account_id,
         amazon_account_id: actualPayout.amazon_account_id,
@@ -98,6 +99,9 @@ serve(async (req) => {
         user_name: userName,
         monthly_revenue: profile?.monthly_revenue,
         confidence_threshold: userSettings?.confidence_threshold || 0.80
+      }, {
+        onConflict: 'settlement_id',
+        ignoreDuplicates: false
       });
 
     if (insertError) {

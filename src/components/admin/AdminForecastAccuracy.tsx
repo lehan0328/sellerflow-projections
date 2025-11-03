@@ -101,12 +101,12 @@ export function AdminForecastAccuracy() {
           new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
         );
 
-        // MAPE (Mean Absolute Percentage Error)
+        // MAPE (Mean Absolute Percentage Error) - already calculated correctly in logs
         const mape = sortedLogs.reduce((sum, log) => 
-          sum + Math.abs(log.difference_percentage), 0
+          sum + log.difference_percentage, 0
         ) / sortedLogs.length;
 
-        // Overall Accuracy (100 - MAPE for simplicity)
+        // Overall Accuracy (100 - MAPE)
         const overallAccuracy = Math.max(0, 100 - mape);
 
         // Accuracy trend: compare recent 5 vs previous 5
@@ -114,20 +114,20 @@ export function AdminForecastAccuracy() {
         const previousLogs = sortedLogs.slice(5, Math.min(10, sortedLogs.length));
 
         const recentMape = recentLogs.length > 0
-          ? recentLogs.reduce((sum, log) => sum + Math.abs(log.difference_percentage), 0) / recentLogs.length
+          ? recentLogs.reduce((sum, log) => sum + log.difference_percentage, 0) / recentLogs.length
           : mape;
 
         const previousMape = previousLogs.length > 0
-          ? previousLogs.reduce((sum, log) => sum + Math.abs(log.difference_percentage), 0) / previousLogs.length
+          ? previousLogs.reduce((sum, log) => sum + log.difference_percentage, 0) / previousLogs.length
           : recentMape;
 
         const accuracyTrend = previousMape - recentMape; // Positive = improving
 
         const recentAccuracy = Math.max(0, 100 - recentMape);
 
-        // Percentage within thresholds
-        const within5 = (sortedLogs.filter(log => Math.abs(log.difference_percentage) <= 5).length / sortedLogs.length) * 100;
-        const within10 = (sortedLogs.filter(log => Math.abs(log.difference_percentage) <= 10).length / sortedLogs.length) * 100;
+        // Percentage within thresholds (MAPE is already absolute)
+        const within5 = (sortedLogs.filter(log => log.difference_percentage <= 5).length / sortedLogs.length) * 100;
+        const within10 = (sortedLogs.filter(log => log.difference_percentage <= 10).length / sortedLogs.length) * 100;
 
         return {
           accountId,
