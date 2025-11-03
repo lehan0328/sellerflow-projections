@@ -90,6 +90,7 @@ export default function ScenarioPlanner() {
     income: { enabled: false, type: 'percentage', value: '' },
     amazonPayouts: { enabled: false, type: 'percentage', value: '' },
     purchaseOrders: { enabled: false, type: 'percentage', value: '' },
+    recurringIncome: { enabled: false, type: 'percentage', value: '' },
     recurringExpenses: { enabled: false, type: 'percentage', value: '' },
     creditCards: { enabled: false, type: 'percentage', value: '' },
   });
@@ -432,7 +433,10 @@ export default function ScenarioPlanner() {
           else if (event.sourceType === 'amazon_payout') globalKey = 'amazonPayouts';
           else if (event.sourceType === 'purchase_order') globalKey = 'purchaseOrders';
           else if (event.sourceType === 'vendor_payment') globalKey = 'purchaseOrders'; // Vendor payments use same adjustment as purchase orders
-          else if (event.sourceType === 'recurring') globalKey = 'recurringExpenses';
+          else if (event.sourceType === 'recurring') {
+            // Differentiate between recurring income and expenses based on event type
+            globalKey = event.type === 'inflow' ? 'recurringIncome' : 'recurringExpenses';
+          }
           else if (event.sourceType === 'credit_card') globalKey = 'creditCards';
           
           // Apply adjustment if value is set, regardless of enabled state
@@ -1389,13 +1393,122 @@ export default function ScenarioPlanner() {
                       </div>
                     )}
 
+                    {/* Recurring Income */}
+                    {recurringExpenses.filter(r => r.type === 'income').length > 0 && (
+                      <div className="border rounded-lg p-3 space-y-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2 font-medium text-sm">
+                            <div className="w-2 h-2 rounded-full bg-green-500" />
+                            Recurring Income ({recurringExpenses.filter(r => r.type === 'income').length})
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-muted-foreground">Show Details</span>
+                            <Switch
+                              checked={globalAdjustments.recurringIncome?.enabled ?? false}
+                              onCheckedChange={(checked) => setGlobalAdjustments(prev => ({
+                                ...prev,
+                                recurringIncome: { ...prev.recurringIncome, enabled: checked }
+                              }))}
+                            />
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <Select 
+                            value={globalAdjustments.recurringIncome?.type || 'percentage'}
+                            onValueChange={(v: any) => setGlobalAdjustments(prev => ({
+                              ...prev,
+                              recurringIncome: { ...prev.recurringIncome, type: v }
+                            }))}
+                          >
+                            <SelectTrigger className="w-[100px]">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="z-50 bg-background">
+                              <SelectItem value="percentage">%</SelectItem>
+                              <SelectItem value="absolute">$</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <Input
+                            type="number"
+                            value={globalAdjustments.recurringIncome?.value ?? ''}
+                            onChange={(e) => setGlobalAdjustments(prev => ({
+                              ...prev,
+                              recurringIncome: { ...prev.recurringIncome, value: e.target.value === '' ? '' : Number(e.target.value) }
+                            }))}
+                            placeholder="0"
+                          />
+                        </div>
+                        {globalAdjustments.recurringIncome?.enabled && (
+                          <div className="pl-4 space-y-2 max-h-[200px] overflow-y-auto">
+                            {recurringExpenses.filter(r => r.type === 'income').map(recurring => (
+                              <div key={recurring.id} className="border-t pt-2 space-y-1">
+                                <div className="flex items-center justify-between gap-2">
+                                  <div className="text-xs text-muted-foreground flex-1">
+                                    {recurring.name} - ${recurring.amount.toLocaleString()}
+                                  </div>
+                                  <Switch
+                                    checked={dataSourceAdjustments[`recurring_${recurring.id}`]?.enabled ?? false}
+                                    onCheckedChange={(checked) => setDataSourceAdjustments(prev => ({
+                                      ...prev,
+                                      [`recurring_${recurring.id}`]: {
+                                        enabled: checked,
+                                        type: prev[`recurring_${recurring.id}`]?.type || 'percentage',
+                                        value: prev[`recurring_${recurring.id}`]?.value || 0
+                                      }
+                                    }))}
+                                  />
+                                </div>
+                                {dataSourceAdjustments[`recurring_${recurring.id}`]?.enabled && (
+                                  <div className="flex gap-2">
+                                    <Select
+                                      value={dataSourceAdjustments[`recurring_${recurring.id}`]?.type || 'percentage'}
+                                      onValueChange={(v: any) => setDataSourceAdjustments(prev => ({
+                                        ...prev,
+                                        [`recurring_${recurring.id}`]: {
+                                          enabled: prev[`recurring_${recurring.id}`]?.enabled ?? true,
+                                          type: v,
+                                          value: prev[`recurring_${recurring.id}`]?.value || 0
+                                        }
+                                      }))}
+                                    >
+                                      <SelectTrigger className="w-[100px] h-8 text-xs">
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent className="z-50 bg-background">
+                                        <SelectItem value="percentage">%</SelectItem>
+                                        <SelectItem value="absolute">$</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                    <Input
+                                      type="number"
+                                      className="h-8 text-xs"
+                                      value={dataSourceAdjustments[`recurring_${recurring.id}`]?.value ?? ''}
+                                      onChange={(e) => setDataSourceAdjustments(prev => ({
+                                        ...prev,
+                                        [`recurring_${recurring.id}`]: {
+                                          enabled: prev[`recurring_${recurring.id}`]?.enabled ?? true,
+                                          type: prev[`recurring_${recurring.id}`]?.type || 'percentage',
+                                          value: e.target.value === '' ? '' : Number(e.target.value)
+                                        }
+                                      }))}
+                                      placeholder="0"
+                                    />
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
                     {/* Recurring Expenses */}
-                    {recurringExpenses.length > 0 && (
+                    {recurringExpenses.filter(r => r.type === 'expense').length > 0 && (
                       <div className="border rounded-lg p-3 space-y-2">
                         <div className="flex items-center justify-between gap-2">
                           <div className="flex items-center gap-2 font-medium text-sm">
                             <div className="w-2 h-2 rounded-full bg-purple-500" />
-                            All Recurring Items ({recurringExpenses.length})
+                            Recurring Expenses ({recurringExpenses.filter(r => r.type === 'expense').length})
                           </div>
                           <div className="flex items-center gap-2">
                             <span className="text-xs text-muted-foreground">Show Details</span>
@@ -1436,7 +1549,7 @@ export default function ScenarioPlanner() {
                         </div>
                         {globalAdjustments.recurringExpenses?.enabled && (
                           <div className="pl-4 space-y-2 max-h-[200px] overflow-y-auto">
-                            {recurringExpenses.map(recurring => (
+                            {recurringExpenses.filter(r => r.type === 'expense').map(recurring => (
                               <div key={recurring.id} className="border-t pt-2 space-y-1">
                                 <div className="flex items-center justify-between gap-2">
                                   <div className="text-xs text-muted-foreground flex-1">
