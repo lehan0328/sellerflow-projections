@@ -99,16 +99,46 @@ export default function ScenarioPlanner() {
     // Build complete event list matching dashboard logic with IDs for tracking
     const events: Array<{ date: Date; amount: number; type: 'inflow' | 'outflow'; sourceId: string; sourceType: string }> = [];
 
-    // Add vendor transactions (purchase orders)
+    // Add vendor transactions (purchase orders with vendors assigned)
     transactions
-      .filter(tx => tx.type === 'purchase_order' && tx.vendorId && tx.status !== 'completed')
+      .filter(tx => {
+        // Only show purchase orders with vendor IDs
+        if (tx.type !== 'purchase_order' || !tx.vendorId) {
+          return false;
+        }
+        // Exclude completed transactions
+        if (tx.status === 'completed') {
+          return false;
+        }
+        // Exclude .1 transactions (paid portion of partial payments)
+        if (tx.description?.endsWith('.1')) return false;
+        // Exclude partially_paid parent transactions (they're replaced by .2 transactions)
+        const dbStatus = (tx as any).status;
+        if (dbStatus === 'partially_paid') return false;
+        // Allow .2 transactions (remaining balance with new due date) to show
+        return true;
+      })
       .forEach(tx => {
+        const eventDate = tx.dueDate || tx.transactionDate;
         events.push({
-          date: tx.dueDate || tx.transactionDate,
+          date: eventDate,
           amount: -tx.amount,
           type: 'outflow',
           sourceId: `po_${tx.id}`,
           sourceType: 'purchase_order'
+        });
+      });
+
+    // Add vendor payments (actual cash outflows that have been made)
+    transactions
+      .filter(t => t.type === 'vendor_payment')
+      .forEach(t => {
+        events.push({
+          date: t.transactionDate,
+          amount: -t.amount,
+          type: 'outflow',
+          sourceId: `vendor_payment_${t.id}`,
+          sourceType: 'vendor_payment'
         });
       });
 
@@ -263,6 +293,7 @@ export default function ScenarioPlanner() {
     console.log('[ScenarioPlanner] Data Sources:', {
       bankBalance: currentCash,
       purchaseOrders: transactions.filter(tx => tx.type === 'purchase_order' && tx.vendorId && tx.status !== 'completed').length,
+      vendorPayments: transactions.filter(t => t.type === 'vendor_payment').length,
       incomeItems: incomeItems.filter(income => income.status !== 'received').length,
       creditCards: creditCards.filter(card => card.payment_due_date && card.balance > 0).length,
       recurringExpenses: recurringExpenses.length,
@@ -365,6 +396,7 @@ export default function ScenarioPlanner() {
           if (event.sourceType === 'income') globalKey = 'income';
           else if (event.sourceType === 'amazon_payout') globalKey = 'amazonPayouts';
           else if (event.sourceType === 'purchase_order') globalKey = 'purchaseOrders';
+          else if (event.sourceType === 'vendor_payment') globalKey = 'purchaseOrders'; // Vendor payments use same adjustment as purchase orders
           else if (event.sourceType === 'recurring') globalKey = 'recurringExpenses';
           else if (event.sourceType === 'credit_card') globalKey = 'creditCards';
           
