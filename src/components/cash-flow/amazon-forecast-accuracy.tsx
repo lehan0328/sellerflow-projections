@@ -69,6 +69,16 @@ export const AmazonForecastAccuracy = () => {
     ? filteredLogs.reduce((sum, log) => sum + (100 - Math.abs(log.difference_percentage)), 0) / filteredLogs.length
     : 0;
 
+  // Calculate MAPE from filtered logs
+  const calculatedMAPE = filteredLogs.length > 0
+    ? filteredLogs.reduce((sum, log) => sum + Math.abs(log.difference_percentage), 0) / filteredLogs.length
+    : 0;
+
+  // Calculate Bias from filtered logs
+  const calculatedBias = filteredLogs.length > 0
+    ? filteredLogs.reduce((sum, log) => sum + log.difference_percentage, 0) / filteredLogs.length
+    : 0;
+
   const outliersExcluded = accuracyLogs.length - filteredLogs.length;
 
 
@@ -200,27 +210,23 @@ export const AmazonForecastAccuracy = () => {
             <Progress value={avgAccuracy} className="w-full mt-2" />
           </div>
 
-          {metrics && (
-            <>
-              <div className="flex flex-col items-center justify-center p-4 bg-muted/50 rounded-lg">
-                <span className="text-xs text-muted-foreground mb-1">Avg Error (MAPE)</span>
-                <span className="text-2xl font-bold">{metrics.mape.toFixed(1)}%</span>
-                <span className="text-xs text-muted-foreground mt-1">
-                  {metrics.mape < 10 ? '🎯 Excellent' : metrics.mape < 20 ? '✓ Good' : '⚠️ High'}
-                </span>
-              </div>
+          <div className="flex flex-col items-center justify-center p-4 bg-muted/50 rounded-lg">
+            <span className="text-xs text-muted-foreground mb-1">Avg Error (MAPE)</span>
+            <span className="text-2xl font-bold">{calculatedMAPE.toFixed(1)}%</span>
+            <span className="text-xs text-muted-foreground mt-1">
+              {calculatedMAPE < 10 ? '🎯 Excellent' : calculatedMAPE < 20 ? '✓ Good' : '⚠️ High'}
+            </span>
+          </div>
 
-              <div className="flex flex-col items-center justify-center p-4 bg-muted/50 rounded-lg">
-                <span className="text-xs text-muted-foreground mb-1">Bias</span>
-                <span className={`text-2xl font-bold ${metrics.biasPercentage > 0 ? 'text-orange-600' : metrics.biasPercentage < 0 ? 'text-blue-600' : 'text-green-600'}`}>
-                  {metrics.biasPercentage > 0 ? '+' : ''}{metrics.biasPercentage.toFixed(1)}%
-                </span>
-                <span className="text-xs text-muted-foreground mt-1">
-                  {Math.abs(metrics.biasPercentage) < 5 ? '✓ Balanced' : metrics.biasPercentage > 0 ? '📉 Over-forecast' : '📈 Under-forecast'}
-                </span>
-              </div>
-            </>
-          )}
+          <div className="flex flex-col items-center justify-center p-4 bg-muted/50 rounded-lg">
+            <span className="text-xs text-muted-foreground mb-1">Bias</span>
+            <span className={`text-2xl font-bold ${calculatedBias > 0 ? 'text-orange-600' : calculatedBias < 0 ? 'text-blue-600' : 'text-green-600'}`}>
+              {calculatedBias > 0 ? '+' : ''}{calculatedBias.toFixed(1)}%
+            </span>
+            <span className="text-xs text-muted-foreground mt-1">
+              {Math.abs(calculatedBias) < 5 ? '✓ Balanced' : calculatedBias > 0 ? '📉 Over-forecast' : '📈 Under-forecast'}
+            </span>
+          </div>
         </div>
 
         {/* AI Insights */}
