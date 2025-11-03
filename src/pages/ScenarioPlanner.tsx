@@ -16,6 +16,7 @@ import { useCreditCards } from "@/hooks/useCreditCards";
 import { useBankAccounts } from "@/hooks/useBankAccounts";
 import { useRecurringExpenses } from "@/hooks/useRecurringExpenses";
 import { useAmazonPayouts } from "@/hooks/useAmazonPayouts";
+import { useUserSettings } from "@/hooks/useUserSettings";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { generateRecurringDates } from "@/lib/recurringDates";
@@ -65,6 +66,13 @@ export default function ScenarioPlanner() {
   const { accounts: bankAccounts, totalBalance: bankTotalBalance } = useBankAccounts();
   const { recurringExpenses } = useRecurringExpenses();
   const { amazonPayouts } = useAmazonPayouts();
+  const { totalCash: userSettingsCash } = useUserSettings();
+  
+  // Balance toggle - matches Dashboard logic
+  const [useAvailableBalance] = useState(() => {
+    const saved = localStorage.getItem('useAvailableBalance');
+    return saved !== null ? saved === 'true' : true; // Default to true (available balance)
+  });
 
   const [selectedScenarioId, setSelectedScenarioId] = useState<string | null>(null);
   const [scenarioName, setScenarioName] = useState("");
@@ -91,10 +99,46 @@ export default function ScenarioPlanner() {
 
   // Calculate baseline metrics based on actual cash and build complete event list
   const allEventsData = useMemo(() => {
-    // Use the total balance from the bank accounts hook
-    const currentCash = bankTotalBalance;
+    // Calculate display cash matching Dashboard logic exactly
+    const today = startOfDay(new Date());
     
-    console.log('[ScenarioPlanner] Current cash from bank accounts:', currentCash);
+    // Calculate available balance total
+    const totalAvailableBalance = bankAccounts.reduce((sum, account) => {
+      return sum + (account.available_balance ?? account.balance);
+    }, 0);
+    
+    // Use selected balance type (matches Dashboard)
+    const displayBankBalance = useAvailableBalance ? totalAvailableBalance : bankTotalBalance;
+    
+    // Calculate transaction total (only completed transactions on or before today)
+    const transactionTotal = transactions.reduce((total, transaction) => {
+      const amount = Number(transaction.amount);
+      const transactionDate = startOfDay(transaction.transactionDate);
+      
+      // Only count transactions on or before today and that are completed
+      if (transactionDate > today || transaction.status !== 'completed') {
+        return total;
+      }
+      
+      // Income: customer_payment, sales_order
+      // Expenses: purchase_order, vendor_payment
+      const isIncome = transaction.type === 'customer_payment' || transaction.type === 'sales_order';
+      return isIncome ? total + amount : total - amount;
+    }, 0);
+    
+    // Use bank account balance if connected, otherwise calculate from user settings + transactions
+    const currentCash = bankAccounts.length > 0 ? displayBankBalance : userSettingsCash + transactionTotal;
+    
+    console.log('[ScenarioPlanner] Current cash calculation:', {
+      bankAccounts: bankAccounts.length,
+      bankTotalBalance,
+      totalAvailableBalance,
+      useAvailableBalance,
+      displayBankBalance,
+      userSettingsCash,
+      transactionTotal,
+      currentCash
+    });
 
     // Build complete event list matching dashboard logic with IDs for tracking
     const events: Array<{ date: Date; amount: number; type: 'inflow' | 'outflow'; sourceId: string; sourceType: string }> = [];
@@ -322,7 +366,7 @@ export default function ScenarioPlanner() {
     })));
 
     return { allEvents: events, baselineCash: currentCash };
-  }, [bankTotalBalance, transactions, incomeItems, creditCards, recurringExpenses, amazonPayouts]);
+  }, [bankAccounts, bankTotalBalance, useAvailableBalance, userSettingsCash, transactions, incomeItems, creditCards, recurringExpenses, amazonPayouts]);
 
   const allEvents = allEventsData.allEvents;
   const baselineCash = allEventsData.baselineCash;
