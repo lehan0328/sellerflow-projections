@@ -281,9 +281,9 @@ export const AmazonForecastAccuracy = () => {
               ? 'Auren Formula V1' 
               : log.modeling_method || 'Unknown Method';
             
-            // Calculate actual days between start and end (inclusive)
+            // Calculate actual days between start and end
             const calculatedDays = log.settlement_period_start && log.settlement_close_date
-              ? differenceInDays(new Date(log.settlement_close_date), new Date(log.settlement_period_start)) + 1
+              ? differenceInDays(new Date(log.settlement_close_date), new Date(log.settlement_period_start))
               : log.days_accumulated || 1;
 
             return (
