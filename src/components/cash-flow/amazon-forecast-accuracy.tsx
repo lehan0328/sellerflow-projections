@@ -136,14 +136,6 @@ export const AmazonForecastAccuracy = () => {
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Debug Info */}
-        <div className="text-xs text-muted-foreground border-b pb-2">
-          Accuracy Logs: {accuracyLogs.length} |
-          Metrics Loaded: {metrics ? 'Yes' : 'No'} | 
-          Loading: {isLoading ? 'Yes' : 'No'}
-          {metrics && ` | MAPE: ${metrics.mape?.toFixed(1)}% | Methods: ${Object.keys(metrics.byMethod || {}).join(', ')}`}
-        </div>
-        
         {/* Error Alert */}
         {error && (
           <Alert variant="destructive">
