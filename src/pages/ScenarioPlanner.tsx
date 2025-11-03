@@ -71,9 +71,6 @@ export default function ScenarioPlanner() {
   const [scenarioDescription, setScenarioDescription] = useState("");
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
   
-  // Amazon payout forecast mode
-  const [amazonForecastMode, setAmazonForecastMode] = useState<'ai' | 'average'>('average');
-  
   // Toggle between global and individual adjustments
   const [useIndividualAdjustments, setUseIndividualAdjustments] = useState(false);
   
@@ -91,138 +88,6 @@ export default function ScenarioPlanner() {
   
   // Fixed 3-month projection
   const projectionMonths = 3;
-
-  // Filter Amazon payouts to only show estimated/forecasted ones for next 3 months
-  const estimatedPayouts = useMemo(() => {
-    const threeMonthsFromNow = new Date();
-    threeMonthsFromNow.setMonth(threeMonthsFromNow.getMonth() + 3);
-    
-    return amazonPayouts.filter(p => 
-      (p.status === 'estimated' || p.status === 'forecasted') && 
-      new Date(p.payout_date) <= threeMonthsFromNow
-    );
-  }, [amazonPayouts]);
-
-  // Calculate trend-based payouts from last 2 months
-  const historicalAveragePayouts = useMemo(() => {
-    const now = new Date();
-    const twoMonthsAgo = new Date(now);
-    twoMonthsAgo.setMonth(twoMonthsAgo.getMonth() - 2);
-
-    // Get confirmed payouts from last 2 months, sorted by date
-    const recentPayouts = amazonPayouts
-      .filter(p => 
-        p.status === 'confirmed' && 
-        new Date(p.payout_date) >= twoMonthsAgo &&
-        new Date(p.payout_date) <= now
-      )
-      .sort((a, b) => new Date(a.payout_date).getTime() - new Date(b.payout_date).getTime());
-
-    if (recentPayouts.length === 0) return [];
-
-    // Calculate growth/decline trend
-    let growthRate = 0;
-    if (recentPayouts.length >= 2) {
-      // Calculate percentage change between consecutive payouts
-      const growthRates = [];
-      for (let i = 1; i < recentPayouts.length; i++) {
-        const previousAmount = recentPayouts[i - 1].total_amount;
-        const currentAmount = recentPayouts[i].total_amount;
-        if (previousAmount > 0) {
-          const change = ((currentAmount - previousAmount) / previousAmount) * 100;
-          growthRates.push(change);
-        }
-      }
-      // Average growth rate across all periods
-      if (growthRates.length > 0) {
-        growthRate = growthRates.reduce((sum, rate) => sum + rate, 0) / growthRates.length;
-        // Cap growth rate at ±50% to prevent explosive compounding
-        growthRate = Math.max(-50, Math.min(50, growthRate));
-      }
-    }
-    
-    console.log('[ScenarioPlanner] Historical average calculation:', {
-      recentPayoutsCount: recentPayouts.length,
-      lastPayoutAmount: recentPayouts[recentPayouts.length - 1].total_amount,
-      calculatedGrowthRate: growthRate,
-      payoutAmounts: recentPayouts.map(p => p.total_amount)
-    });
-
-    // Calculate average payout frequency
-    let avgDaysBetween = 14; // Default bi-weekly
-    if (recentPayouts.length >= 2) {
-      let totalDays = 0;
-      for (let i = 1; i < recentPayouts.length; i++) {
-        const diff = new Date(recentPayouts[i].payout_date).getTime() - 
-                     new Date(recentPayouts[i-1].payout_date).getTime();
-        totalDays += diff / (1000 * 60 * 60 * 24);
-      }
-      avgDaysBetween = Math.round(totalDays / (recentPayouts.length - 1));
-    }
-
-    // Start from most recent payout amount
-    const lastPayoutAmount = recentPayouts[recentPayouts.length - 1].total_amount;
-    
-    // Validate last payout amount isn't absurdly large
-    if (lastPayoutAmount > 1000000) {
-      console.error('[ScenarioPlanner] Absurd payout amount detected:', lastPayoutAmount);
-      return [];
-    }
-
-    // Project next 3 months applying growth trend
-    const projectedPayouts = [];
-    const threeMonthsFromNow = new Date(now);
-    threeMonthsFromNow.setMonth(threeMonthsFromNow.getMonth() + 3);
-    
-    let projectionIndex = 0;
-    
-    while (projectionIndex < 20) { // Safety limit
-      const projectedDate = new Date(now);
-      projectedDate.setDate(projectedDate.getDate() + ((projectionIndex + 1) * avgDaysBetween));
-      
-      if (projectedDate > threeMonthsFromNow) break;
-      if (projectedDate <= now) {
-        projectionIndex++;
-        continue;
-      }
-      
-      // Apply growth rate to projection (linear, not compound)
-      // This prevents exponential explosion
-      const growthMultiplier = 1 + (growthRate / 100) * (projectionIndex + 1);
-      const projectedAmount = lastPayoutAmount * growthMultiplier;
-      
-      // Validate projection isn't absurdly large
-      if (projectedAmount > 10000000) {
-        console.error('[ScenarioPlanner] Projection exceeded $10M, stopping:', {
-          projectionIndex,
-          amount: projectedAmount,
-          lastPayoutAmount,
-          growthRate
-        });
-        break;
-      }
-      
-      projectedPayouts.push({
-        id: `avg_${projectionIndex}`,
-        payout_date: projectedDate.toISOString(),
-        total_amount: Math.round(projectedAmount * 100) / 100, // Round to 2 decimals
-        marketplace_name: `Trend-Based (${growthRate >= 0 ? '+' : ''}${growthRate.toFixed(1)}% growth)`,
-        status: 'projected'
-      });
-      
-      projectionIndex++;
-    }
-    
-    console.log('[ScenarioPlanner] Generated projections:', {
-      count: projectedPayouts.length,
-      amounts: projectedPayouts.map(p => p.total_amount)
-    });
-
-    return projectedPayouts;
-  }, [amazonPayouts]);
-
-  // Use either AI forecasted or historical average based on mode
-  const displayedPayouts = amazonForecastMode === 'ai' ? estimatedPayouts : historicalAveragePayouts;
 
   // Calculate baseline metrics based on actual cash and build complete event list
   const allEventsData = useMemo(() => {
@@ -310,16 +175,89 @@ export default function ScenarioPlanner() {
       });
     });
 
-    // Add Amazon payouts (based on selected mode)
-    displayedPayouts.forEach(payout => {
-      events.push({
-        date: new Date(payout.payout_date),
-        amount: payout.total_amount,
-        type: 'inflow',
-        sourceId: `amazon_${payout.id}`,
-        sourceType: 'amazon_payout'
+    // Add Amazon payouts (using same filtering logic as Dashboard)
+    amazonPayouts
+      .filter(payout => {
+        // Exclude forecasted payouts in the past - forecasts should start from today
+        if ((payout.status as string) === 'forecasted') {
+          const payoutDate = new Date(payout.payout_date);
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          payoutDate.setHours(0, 0, 0, 0);
+          
+          if (payoutDate < today) {
+            return false;
+          }
+        }
+        
+        // Exclude open settlements ONLY for daily settlement accounts
+        if ((payout.status as string) === 'estimated') {
+          const accountFrequency = payout.amazon_accounts?.payout_frequency;
+          const rawData = (payout as any).raw_settlement_data;
+          const hasEndDate = !!(rawData?.FinancialEventGroupEnd || rawData?.settlement_end_date);
+          
+          if (accountFrequency === 'daily') {
+            // For daily accounts, ONLY exclude open settlements (no end date)
+            if (!hasEndDate) {
+              return false;
+            }
+          }
+        }
+        
+        return true;
+      })
+      .forEach(payout => {
+        // Calculate display date (same logic as Dashboard)
+        const isOpenSettlement = (payout.status as string) === 'estimated';
+        const isForecastedPayout = (payout.status as string) === 'forecasted';
+        const isConfirmedPayout = (payout.status as string) === 'confirmed';
+        
+        let displayDate: Date;
+        
+        if (isConfirmedPayout) {
+          // For confirmed payouts, calculate from settlement end date + 1 day
+          const rawData = (payout as any).raw_settlement_data;
+          const settlementEndStr = rawData?.FinancialEventGroupEnd || rawData?.settlement_end_date;
+          
+          if (settlementEndStr) {
+            displayDate = new Date(settlementEndStr);
+            displayDate.setDate(displayDate.getDate() + 1);
+          } else {
+            displayDate = new Date(payout.payout_date);
+          }
+        } else if (isOpenSettlement) {
+          // For estimated payouts, calculate from settlement end date + 1 day
+          const rawData = (payout as any).raw_settlement_data;
+          const settlementEndStr = rawData?.FinancialEventGroupEnd || rawData?.settlement_end_date;
+          const settlementStartStr = rawData?.settlement_start_date || rawData?.FinancialEventGroupStart;
+          
+          if (settlementEndStr) {
+            displayDate = new Date(settlementEndStr);
+          } else if (settlementStartStr) {
+            const settlementStartDate = new Date(settlementStartStr);
+            const settlementCloseDate = new Date(settlementStartDate);
+            settlementCloseDate.setDate(settlementCloseDate.getDate() + 14);
+            displayDate = settlementCloseDate;
+          } else {
+            displayDate = new Date(payout.payout_date);
+          }
+          
+          // Add +1 day for bank transfer for estimated payouts
+          displayDate.setDate(displayDate.getDate() + 1);
+        } else {
+          // For forecasted payouts, add +1 day to payout_date for bank transfer
+          displayDate = new Date(payout.payout_date);
+          displayDate.setDate(displayDate.getDate() + 1);
+        }
+        
+        events.push({
+          date: displayDate,
+          amount: payout.total_amount,
+          type: 'inflow',
+          sourceId: `amazon_${payout.id}`,
+          sourceType: 'amazon_payout'
+        });
       });
-    });
 
     // Log data sources for debugging
     console.log('[ScenarioPlanner] Data Sources:', {
@@ -328,9 +266,18 @@ export default function ScenarioPlanner() {
       incomeItems: incomeItems.filter(income => income.status !== 'received').length,
       creditCards: creditCards.filter(card => card.payment_due_date && card.balance > 0).length,
       recurringExpenses: recurringExpenses.length,
-      amazonPayouts: displayedPayouts.length,
+      amazonPayoutsTotal: amazonPayouts.length,
+      amazonPayoutsFiltered: events.filter(e => e.sourceType === 'amazon_payout').length,
       totalEvents: events.length
     });
+    
+    // Log Amazon payouts for verification
+    const amazonEvents = events.filter(e => e.sourceType === 'amazon_payout');
+    console.log('[ScenarioPlanner] Amazon Payout Events:', amazonEvents.map(e => ({
+      date: format(e.date, 'MMM d, yyyy'),
+      amount: e.amount,
+      sourceId: e.sourceId
+    })));
     
     // Log top 5 largest events
     const topEvents = [...events]
@@ -344,7 +291,7 @@ export default function ScenarioPlanner() {
     })));
 
     return { allEvents: events, baselineCash: currentCash };
-  }, [bankTotalBalance, transactions, incomeItems, creditCards, recurringExpenses, displayedPayouts]);
+  }, [bankTotalBalance, transactions, incomeItems, creditCards, recurringExpenses, amazonPayouts]);
 
   const allEvents = allEventsData.allEvents;
   const baselineCash = allEventsData.baselineCash;
@@ -561,7 +508,6 @@ export default function ScenarioPlanner() {
     const scenarioData: ScenarioData = {
       projectionMonths: 3,
       dataSourceAdjustments: adjustmentsToSave,
-      amazonForecastMode: amazonForecastMode,
     };
 
     console.log('Saving scenario:', {
@@ -596,9 +542,6 @@ export default function ScenarioPlanner() {
     setSelectedScenarioId(scenarioId);
     setScenarioName(scenario.name);
     setScenarioDescription(scenario.description || "");
-    
-    // Load Amazon forecast mode (default to 'average' if not saved)
-    setAmazonForecastMode(scenario.scenario_data?.amazonForecastMode || 'average');
     
     // Load saved adjustments from scenario data
     const savedAdjustments = scenario.scenario_data?.dataSourceAdjustments || {};
@@ -665,7 +608,6 @@ export default function ScenarioPlanner() {
     setScenarioDescription("");
     setDataSourceAdjustments({});
     setUseIndividualAdjustments(false);
-    setAmazonForecastMode('average');
     setGlobalAdjustments({
       income: { enabled: false, type: 'percentage', value: '' },
       amazonPayouts: { enabled: false, type: 'percentage', value: '' },
@@ -1290,13 +1232,14 @@ export default function ScenarioPlanner() {
                       </div>
                     )}
 
+
                     {/* Amazon Payouts */}
-                    {displayedPayouts.length > 0 && (
+                    {amazonPayouts.length > 0 && (
                       <div className="border rounded-lg p-3 space-y-2">
                         <div className="flex items-center justify-between gap-2">
                           <div className="flex items-center gap-2 font-medium text-sm">
                             <div className="w-2 h-2 rounded-full bg-blue-500" />
-                            Amazon Forecasted Payouts (Next 3 Months)
+                            Amazon Payouts
                           </div>
                           <div className="flex items-center gap-2">
                             <span className="text-xs text-muted-foreground">Show Details</span>
@@ -1309,73 +1252,8 @@ export default function ScenarioPlanner() {
                             />
                           </div>
                         </div>
-                        <div className="flex items-center justify-between gap-2 text-xs">
-                          <div className="flex items-center gap-2">
-                            <Label htmlFor="forecast-mode" className="text-xs">Forecast Method:</Label>
-                            <div className="flex gap-2">
-                              <Button
-                                variant={amazonForecastMode === 'average' ? 'default' : 'outline'}
-                                size="sm"
-                                className="h-7 text-xs"
-                                onClick={() => setAmazonForecastMode('average')}
-                              >
-                                Average
-                              </Button>
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <Button
-                                    variant={amazonForecastMode === 'ai' ? 'default' : 'outline'}
-                                    size="sm"
-                                    className="h-7 text-xs"
-                                  >
-                                    AI Forecast
-                                  </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>Generate AI Forecast?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      This will analyze your Amazon sales, payouts, refunds, fees, and returns data to generate an AI-powered forecast for the next 3 months. Recent data (last 3 months) will be weighted more heavily. This may take a moment.
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction onClick={async () => {
-                                      setAmazonForecastMode('ai');
-                                      toast({ title: "Generating AI Forecast", description: "Analyzing your Amazon data...", duration: 10000 });
-                                      try {
-                                        const { data: { user } } = await supabase.auth.getUser();
-                                        if (!user) throw new Error('Not authenticated');
-                                        
-                                        const { error } = await supabase.functions.invoke('forecast-amazon-payouts', {
-                                          body: { userId: user.id }
-                                        });
-                                        
-                                        if (error) throw error;
-                                        
-                                        toast({ 
-                                          title: "AI Forecast Complete! 🎉", 
-                                          description: "Your Amazon payout forecast has been generated. Please refresh the page to see the updated projections.",
-                                          duration: 8000
-                                        });
-                                      } catch (err: any) {
-                                        console.error('Forecast error:', err);
-                                        toast({ 
-                                          title: "Forecast Failed", 
-                                          description: err.message || "Unable to generate forecast",
-                                          variant: "destructive"
-                                        });
-                                      }
-                                    }}>Generate Forecast</AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
-                            </div>
-                          </div>
-                        </div>
                         <div className="text-xs text-muted-foreground">
-                          {displayedPayouts.length} payout{displayedPayouts.length !== 1 ? 's' : ''} • 
-                          ${displayedPayouts.reduce((sum, p) => sum + p.total_amount, 0).toLocaleString()} total
+                          {amazonPayouts.length} payout{amazonPayouts.length !== 1 ? 's' : ''} from database
                         </div>
                         <div className="flex gap-2">
                           <Select 
@@ -1403,67 +1281,6 @@ export default function ScenarioPlanner() {
                             placeholder="0"
                           />
                         </div>
-                        {globalAdjustments.amazonPayouts?.enabled && (
-                          <div className="pl-4 space-y-2 max-h-[200px] overflow-y-auto">
-                            {displayedPayouts.map(payout => (
-                              <div key={payout.id} className="border-t pt-2 space-y-1">
-                                <div className="flex items-center justify-between gap-2">
-                                  <div className="text-xs text-muted-foreground flex-1">
-                                    {payout.marketplace_name} - {format(new Date(payout.payout_date), 'MMM d')} - ${payout.total_amount.toLocaleString()}
-                                  </div>
-                                  <Switch
-                                    checked={dataSourceAdjustments[`payout_${payout.id}`]?.enabled ?? false}
-                                    onCheckedChange={(checked) => setDataSourceAdjustments(prev => ({
-                                      ...prev,
-                                      [`payout_${payout.id}`]: {
-                                        enabled: checked,
-                                        type: prev[`payout_${payout.id}`]?.type || 'percentage',
-                                        value: prev[`payout_${payout.id}`]?.value || 0
-                                      }
-                                    }))}
-                                  />
-                                </div>
-                                {dataSourceAdjustments[`payout_${payout.id}`]?.enabled && (
-                                  <div className="flex gap-2">
-                                    <Select
-                                      value={dataSourceAdjustments[`payout_${payout.id}`]?.type || 'percentage'}
-                                      onValueChange={(v: any) => setDataSourceAdjustments(prev => ({
-                                        ...prev,
-                                        [`payout_${payout.id}`]: {
-                                          enabled: prev[`payout_${payout.id}`]?.enabled ?? true,
-                                          type: v,
-                                          value: prev[`payout_${payout.id}`]?.value || 0
-                                        }
-                                      }))}
-                                    >
-                                      <SelectTrigger className="w-[100px] h-8 text-xs">
-                                        <SelectValue />
-                                      </SelectTrigger>
-                                      <SelectContent className="z-50 bg-background">
-                                        <SelectItem value="percentage">%</SelectItem>
-                                        <SelectItem value="absolute">$</SelectItem>
-                                      </SelectContent>
-                                    </Select>
-                                    <Input
-                                      type="number"
-                                      className="h-8 text-xs"
-                                      value={dataSourceAdjustments[`payout_${payout.id}`]?.value ?? ''}
-                                      onChange={(e) => setDataSourceAdjustments(prev => ({
-                                        ...prev,
-                                        [`payout_${payout.id}`]: {
-                                          enabled: prev[`payout_${payout.id}`]?.enabled ?? true,
-                                          type: prev[`payout_${payout.id}`]?.type || 'percentage',
-                                          value: e.target.value === '' ? '' : Number(e.target.value)
-                                        }
-                                      }))}
-                                      placeholder="0"
-                                    />
-                                  </div>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        )}
                       </div>
                     )}
 
@@ -1858,14 +1675,15 @@ export default function ScenarioPlanner() {
                     </div>
                   )}
 
+
                   {/* Amazon Payouts */}
-                  {displayedPayouts.length > 0 && (
+                  {amazonPayouts.length > 0 && (
                     <div className="border rounded-lg p-3 space-y-2">
                       <div className="flex items-center gap-2 font-medium text-sm">
                         <div className="w-2 h-2 rounded-full bg-blue-500" />
-                        Amazon Payouts ({amazonForecastMode === 'ai' ? 'AI Forecast' : '2-Month Avg'}) ({displayedPayouts.length})
+                        Amazon Payouts ({amazonPayouts.length})
                       </div>
-                      {displayedPayouts.slice(0, 5).map(payout => (
+                      {amazonPayouts.slice(0, 5).map(payout => (
                         <div key={payout.id} className="pl-4 space-y-1">
                           <div className="flex items-center justify-between gap-2">
                             <div className="text-xs text-muted-foreground flex-1">
