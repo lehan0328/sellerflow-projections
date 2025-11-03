@@ -337,21 +337,23 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string)
         const lookbackStart = new Date(payoutDate);
         lookbackStart.setDate(lookbackStart.getDate() - 7);
         
-        const { data: rolledForecasts } = await supabase
-          .from('amazon_payouts')
-          .select('id, payout_date, total_amount, modeling_method, settlement_id')
-          .eq('amazon_account_id', settlement.amazon_account_id)
-          .eq('status', 'forecasted')
-          .gte('payout_date', lookbackStart.toISOString().split('T')[0])
-          .lte('payout_date', settlement.payout_date);
-        
-        if (rolledForecasts && rolledForecasts.length > 0) {
-          // Sum all rolled-over forecasts
-          const totalForecastedAmount = rolledForecasts.reduce((sum, f) => sum + Number(f.total_amount), 0);
-          const actualAmount = Number(settlement.total_amount);
-          const accuracyPercent = totalForecastedAmount > 0 
-            ? (1 - Math.abs(actualAmount - totalForecastedAmount) / totalForecastedAmount) * 100
-            : 0;
+          const { data: rolledForecasts } = await supabase
+            .from('amazon_payouts')
+            .select('id, payout_date, total_amount, modeling_method, settlement_id')
+            .eq('amazon_account_id', settlement.amazon_account_id)
+            .eq('status', 'forecasted')
+            .gte('payout_date', lookbackStart.toISOString().split('T')[0])
+            .lte('payout_date', settlement.payout_date);
+          
+          if (rolledForecasts && rolledForecasts.length > 0) {
+            // Sum all rolled-over forecasts
+            const totalForecastedAmount = rolledForecasts.reduce((sum, f) => sum + Number(f.total_amount), 0);
+            const actualAmount = Number(settlement.total_amount);
+            // Calculate MAPE: |difference| / actual * 100
+            const mape = actualAmount !== 0
+              ? (Math.abs(actualAmount - totalForecastedAmount) / actualAmount) * 100
+              : 0;
+            const accuracyPercent = 100 - mape;
           
           console.log(`[SYNC] 📊 Rollover detected for ${settlement.payout_date}:`, {
             daysRolled: rolledForecasts.length,
@@ -368,6 +370,12 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string)
           settlement.modeling_method = rolledForecasts[0].modeling_method || settlement.modeling_method;
           
           // Log to forecast_accuracy_log for historical tracking
+          // Use MAPE formula: |difference| / actual * 100
+          const differenceAmount = actualAmount - totalForecastedAmount;
+          const differencePercentage = actualAmount !== 0 
+            ? (Math.abs(differenceAmount) / actualAmount) * 100
+            : 0;
+          
           const { error: logError } = await supabase
             .from('forecast_accuracy_log')
             .insert({
@@ -377,8 +385,8 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string)
               payout_date: settlement.payout_date,
               forecasted_amount: totalForecastedAmount,
               actual_amount: actualAmount,
-              difference_amount: actualAmount - totalForecastedAmount,
-              difference_percentage: totalForecastedAmount > 0 ? ((actualAmount - totalForecastedAmount) / totalForecastedAmount) * 100 : 0,
+              difference_amount: differenceAmount,
+              difference_percentage: differencePercentage,
               settlement_id: settlement.settlement_id,
               marketplace_name: settlement.marketplace_name
             });
