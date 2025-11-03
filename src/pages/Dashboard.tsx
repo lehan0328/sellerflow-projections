@@ -1720,17 +1720,6 @@ const Dashboard = () => {
         ? new Date(new Date(displayDate).setDate(displayDate.getDate() + 1))
         : displayDate;
       
-      // Debug logging for forecasted payouts
-      if ((payout.status as string) === 'forecasted') {
-        console.log('🔍 [Amazon Payout] Creating forecasted payout event:', {
-          id: payout.id,
-          amount: payout.total_amount,
-          displayDate: format(displayDate, 'yyyy-MM-dd'),
-          balanceImpactDate: format(balanceImpactDate, 'yyyy-MM-dd'),
-          status: payout.status
-        });
-      }
-      
       return {
         id: `amazon-payout-${payout.id}`,
         type: 'inflow' as const,
@@ -1890,21 +1879,7 @@ const Dashboard = () => {
       // Get all events that impact balance on this day (use balanceImpactDate if available)
       const dayEvents = allCalendarEvents.filter(event => {
         const impactDate = event.balanceImpactDate || event.date;
-        const matches = format(impactDate, 'yyyy-MM-dd') === dateStr;
-        
-        // Debug log for forecasted Amazon payouts
-        if (event.source === 'Amazon-Forecasted' && (dateStr === '2025-11-03' || dateStr === '2025-11-04')) {
-          console.log('🔍 [Balance Calc] Checking forecasted payout:', {
-            eventId: event.id,
-            eventDate: format(event.date, 'yyyy-MM-dd'),
-            balanceImpactDate: event.balanceImpactDate ? format(event.balanceImpactDate, 'yyyy-MM-dd') : 'not set',
-            impactDate: format(impactDate, 'yyyy-MM-dd'),
-            checkingDate: dateStr,
-            matches
-          });
-        }
-        
-        return matches;
+        return format(impactDate, 'yyyy-MM-dd') === dateStr;
       });
       
       // Calculate net change for the day (exactly like the calendar does)
