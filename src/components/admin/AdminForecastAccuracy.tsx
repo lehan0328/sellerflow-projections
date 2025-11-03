@@ -17,6 +17,7 @@ interface AccuracyLog {
   amazon_account_id: string;
   account_id: string;
   created_at: string;
+  modeling_method: string;
 }
 
 interface AccountAccuracyMetrics {
@@ -36,6 +37,7 @@ interface AccountAccuracyMetrics {
 export function AdminForecastAccuracy() {
   const { isAdmin } = useAdmin();
   const [accountMetrics, setAccountMetrics] = useState<AccountAccuracyMetrics[]>([]);
+  const [allLogs, setAllLogs] = useState<AccuracyLog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [globalStats, setGlobalStats] = useState({
     totalAccounts: 0,
@@ -84,6 +86,9 @@ export function AdminForecastAccuracy() {
         totalRecords: data.length,
         uniqueEmails: [...new Set(data.map(d => d.user_email))]
       });
+
+      // Store all logs for detailed view
+      setAllLogs(data);
 
       // Group by amazon_account_id
       const accountGroups = data.reduce((acc, log) => {
@@ -251,7 +256,7 @@ export function AdminForecastAccuracy() {
             Account-Level Forecast Accuracy
           </CardTitle>
           <CardDescription>
-            Aggregated accuracy metrics per Amazon account (exact amounts hidden per policy)
+            Aggregated accuracy metrics per Amazon account
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -376,6 +381,87 @@ export function AdminForecastAccuracy() {
                       </TableCell>
                     </TableRow>
                   ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Individual Forecast Comparisons */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Activity className="h-5 w-5" />
+            All Forecast Comparisons
+          </CardTitle>
+          <CardDescription>
+            Detailed view of every forecast vs actual comparison
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>User</TableHead>
+                  <TableHead>Payout Date</TableHead>
+                  <TableHead>Marketplace</TableHead>
+                  <TableHead>Model Used</TableHead>
+                  <TableHead className="text-right">MAPE %</TableHead>
+                  <TableHead className="text-center">Accuracy</TableHead>
+                  <TableHead>Tracked Date</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {allLogs.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center text-muted-foreground">
+                      No forecast comparisons yet
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  allLogs.map((log) => {
+                    const accuracy = Math.max(0, 100 - log.difference_percentage);
+                    const modelDisplay = log.modeling_method === 'auren_forecast_v1' 
+                      ? 'Auren V1' 
+                      : log.modeling_method || 'Unknown';
+                    
+                    return (
+                      <TableRow key={log.id}>
+                        <TableCell>
+                          <div className="flex flex-col">
+                            <span className="font-medium text-sm">{log.user_name}</span>
+                            <span className="text-xs text-muted-foreground">{log.user_email}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="font-medium">
+                          {new Date(log.payout_date).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="text-xs">
+                            {log.marketplace_name}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="secondary" className="text-xs">
+                            {modelDisplay}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right font-mono">
+                          {log.difference_percentage.toFixed(1)}%
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Badge variant={accuracy >= 90 ? "default" : accuracy >= 75 ? "secondary" : "outline"}>
+                            {accuracy.toFixed(1)}%
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {new Date(log.created_at).toLocaleDateString()}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
                 )}
               </TableBody>
             </Table>
