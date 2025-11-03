@@ -2,14 +2,12 @@ import { useState, useEffect } from "react";
 import { Helmet } from "react-helmet";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Gift, DollarSign, Users, TrendingUp, Sun, Moon, Lock, AlertCircle, ArrowRight } from "lucide-react";
+import { Gift, DollarSign, Users, TrendingUp, Lock, AlertCircle, ArrowRight } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
-import { useTheme } from "next-themes";
-import aurenIcon from "@/assets/auren-icon-blue.png";
+import { PublicHeader } from "@/components/PublicHeader";
 
 export default function Partners() {
   const navigate = useNavigate();
-  const { theme, setTheme } = useTheme();
   const [showStickyCTA, setShowStickyCTA] = useState(false);
 
   useEffect(() => {
@@ -50,69 +48,7 @@ export default function Partners() {
 
       <div className="min-h-screen bg-background">
       {/* Navigation */}
-      <nav className="border-b bg-background/60 backdrop-blur-xl sticky top-0 z-50 animate-fade-in">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3 animate-scale-in cursor-pointer" onClick={() => navigate('/')}>
-              <div className="relative">
-                <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full animate-glow-pulse" />
-                <img src={aurenIcon} alt="Auren Logo" className="relative h-12 w-12 hover-scale transition-all duration-300" />
-              </div>
-              <span className="text-2xl font-display font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
-                Auren
-              </span>
-            </div>
-            <div className="hidden md:flex items-center space-x-6">
-              <Link to="/features" onClick={() => window.scrollTo(0, 0)} className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link font-medium">
-                Features
-              </Link>
-              <Link to="/pricing" className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link font-medium">
-                Pricing
-              </Link>
-              <Link to="/#testimonials" className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link font-medium">
-                Reviews
-              </Link>
-              <Link to="/blog" onClick={() => window.scrollTo(0, 0)} className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link font-medium">
-                Blog
-              </Link>
-              <Link to="/partners" className="text-foreground font-semibold transition-all duration-300">
-                Partners
-              </Link>
-              <Link to="/contact" className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link font-medium">
-                Contact
-              </Link>
-              <Link to="/docs" className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link font-medium">
-                Docs
-              </Link>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                className="hover-scale transition-all duration-200"
-              >
-                <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-                <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-                <span className="sr-only">Toggle theme</span>
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="hover-scale transition-all duration-200 border-primary/20 hover:border-primary/40" 
-                onClick={() => navigate('/auth')}
-              >
-                Sign In
-              </Button>
-              <Button 
-                size="sm" 
-                className="bg-gradient-primary hover-scale transition-all duration-200"
-                onClick={() => navigate('/signup')}
-              >
-                Start Free Trial
-              </Button>
-            </div>
-          </div>
-        </div>
-      </nav>
+      <PublicHeader activePage="partners" />
 
       {/* Hero Section */}
       <section className="relative py-32 px-6 overflow-hidden">
