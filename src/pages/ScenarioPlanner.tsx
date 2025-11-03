@@ -143,32 +143,21 @@ export default function ScenarioPlanner() {
     // Build complete event list matching dashboard logic with IDs for tracking
     const events: Array<{ date: Date; amount: number; type: 'inflow' | 'outflow'; sourceId: string; sourceType: string }> = [];
     
-    // Filter Amazon payouts first (same logic as Dashboard)
+    // Filter Amazon payouts - ONLY show forecasted payouts for 90-day projection
     const filteredAmazonPayouts = amazonPayouts.filter(payout => {
-      // Exclude forecasted payouts in the past - forecasts should start from today
-      if ((payout.status as string) === 'forecasted') {
-        const payoutDate = new Date(payout.payout_date);
-        const todayDate = new Date();
-        todayDate.setHours(0, 0, 0, 0);
-        payoutDate.setHours(0, 0, 0, 0);
-        
-        if (payoutDate < todayDate) {
-          return false;
-        }
+      // ONLY include forecasted payouts (exclude estimated and confirmed)
+      if ((payout.status as string) !== 'forecasted') {
+        return false;
       }
       
-      // Exclude open settlements ONLY for daily settlement accounts
-      if ((payout.status as string) === 'estimated') {
-        const accountFrequency = payout.amazon_accounts?.payout_frequency;
-        const rawData = (payout as any).raw_settlement_data;
-        const hasEndDate = !!(rawData?.FinancialEventGroupEnd || rawData?.settlement_end_date);
-        
-        if (accountFrequency === 'daily') {
-          // For daily accounts, ONLY exclude open settlements (no end date)
-          if (!hasEndDate) {
-            return false;
-          }
-        }
+      // Exclude forecasted payouts in the past - forecasts should start from today
+      const payoutDate = new Date(payout.payout_date);
+      const todayDate = new Date();
+      todayDate.setHours(0, 0, 0, 0);
+      payoutDate.setHours(0, 0, 0, 0);
+      
+      if (payoutDate < todayDate) {
+        return false;
       }
       
       return true;
