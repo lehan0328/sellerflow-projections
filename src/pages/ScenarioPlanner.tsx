@@ -796,45 +796,45 @@ export default function ScenarioPlanner() {
           <div className="grid gap-4 md:grid-cols-3">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Cumulative Impact</CardTitle>
+                <CardTitle className="text-sm font-medium">Scenario Impact</CardTitle>
                 <Calculator className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className={`text-2xl font-bold ${cumulativeImpact.difference >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  ${Math.abs(cumulativeImpact.difference).toLocaleString()}
+                <div className={`text-2xl font-bold ${((scenarioProjection[scenarioProjection.length - 1]?.scenarioCash || 0) - (scenarioProjection[scenarioProjection.length - 1]?.baselineCash || 0)) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {((scenarioProjection[scenarioProjection.length - 1]?.scenarioCash || 0) - (scenarioProjection[scenarioProjection.length - 1]?.baselineCash || 0)) >= 0 ? '+' : ''}${((scenarioProjection[scenarioProjection.length - 1]?.scenarioCash || 0) - (scenarioProjection[scenarioProjection.length - 1]?.baselineCash || 0)).toLocaleString()}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  {cumulativeImpact.difference >= 0 ? 'Better' : 'Worse'} than baseline ({cumulativeImpact.percentChange.toFixed(1)}%)
+                  Difference from baseline (3mo)
                 </p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Baseline Net (30-Day Payouts)</CardTitle>
+                <CardTitle className="text-sm font-medium">Baseline Net Change</CardTitle>
                 <TrendingUp className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">
-                  ${cumulativeImpact.baselineTotal.toLocaleString()}
+                <div className={`text-2xl font-bold ${((scenarioProjection[scenarioProjection.length - 1]?.baselineCash || 0) - baselineCash) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {((scenarioProjection[scenarioProjection.length - 1]?.baselineCash || 0) - baselineCash) >= 0 ? '+' : ''}${(((scenarioProjection[scenarioProjection.length - 1]?.baselineCash || 0) - baselineCash)).toLocaleString()}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Last 30 days × 3 months
+                  All income & expenses (3mo)
                 </p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Scenario Net (Adjusted)</CardTitle>
+                <CardTitle className="text-sm font-medium">Scenario Net Change</CardTitle>
                 <TrendingDown className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">
-                  ${cumulativeImpact.scenarioTotal.toLocaleString()}
+                <div className={`text-2xl font-bold ${((scenarioProjection[scenarioProjection.length - 1]?.scenarioCash || 0) - baselineCash) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {((scenarioProjection[scenarioProjection.length - 1]?.scenarioCash || 0) - baselineCash) >= 0 ? '+' : ''}${(((scenarioProjection[scenarioProjection.length - 1]?.scenarioCash || 0) - baselineCash)).toLocaleString()}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  With scenario adjustments
+                  With scenario adjustments (3mo)
                 </p>
               </CardContent>
             </Card>
