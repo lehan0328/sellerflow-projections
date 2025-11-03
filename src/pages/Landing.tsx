@@ -522,7 +522,14 @@ const Landing = () => {
               <Link to="/pricing" className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link font-medium">
                 Pricing
               </Link>
-              <a href="#testimonials" className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link font-medium">
+              <a 
+                href="#testimonials" 
+                onClick={(e) => {
+                  e.preventDefault();
+                  document.getElementById('testimonials')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }}
+                className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link font-medium"
+              >
                 Reviews
               </a>
               <a href="/blog" className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link font-medium">
