@@ -24,6 +24,7 @@ export const AmazonForecastAccuracy = () => {
   const [metrics, setMetrics] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [accuracyLogCount, setAccuracyLogCount] = useState(0);
 
   // Filter payouts that have forecast data (were replaced from forecasts)
   const replacedForecasts = (amazonPayouts as PayoutWithForecast[])?.filter(
@@ -35,14 +36,22 @@ export const AmazonForecastAccuracy = () => {
     ? replacedForecasts.reduce((sum, p) => sum + (p.forecast_accuracy_percentage || 0), 0) / replacedForecasts.length
     : 0;
 
+  // Check forecast_accuracy_log table directly
+  useEffect(() => {
+    const checkAccuracyLogs = async () => {
+      const { count } = await supabase
+        .from('forecast_accuracy_log')
+        .select('*', { count: 'exact', head: true });
+      
+      console.log('[Forecast Accuracy] Total accuracy logs in database:', count);
+      setAccuracyLogCount(count || 0);
+    };
+    checkAccuracyLogs();
+  }, []);
+
   const loadMetrics = async () => {
-    if (replacedForecasts.length === 0) {
-      console.log('[Forecast Accuracy] No replaced forecasts to analyze');
-      setError('No forecast data available yet');
-      return;
-    }
+    console.log('[Forecast Accuracy] Loading metrics... replacedForecasts:', replacedForecasts.length, 'accuracyLogs:', accuracyLogCount);
     
-    console.log('[Forecast Accuracy] Loading metrics for', replacedForecasts.length, 'forecasts...');
     setIsLoading(true);
     setError(null);
     
@@ -76,17 +85,20 @@ export const AmazonForecastAccuracy = () => {
 
   useEffect(() => {
     console.log('[Forecast Accuracy] useEffect triggered', { 
-      replacedCount: replacedForecasts.length, 
-      hasMetrics: !!metrics 
+      replacedCount: replacedForecasts.length,
+      accuracyLogCount,
+      hasMetrics: !!metrics,
+      isLoading
     });
     
-    if (replacedForecasts.length > 0 && !metrics && !isLoading) {
+    // Load metrics if we have accuracy logs, regardless of replacedForecasts
+    if (accuracyLogCount > 0 && !metrics && !isLoading) {
       console.log('[Forecast Accuracy] Auto-loading metrics...');
       loadMetrics();
     }
-  }, [replacedForecasts.length]);
+  }, [accuracyLogCount, metrics, isLoading]);
 
-  if (replacedForecasts.length === 0) {
+  if (accuracyLogCount === 0 && replacedForecasts.length === 0) {
     return (
       <Card>
         <CardHeader>
@@ -131,9 +143,10 @@ export const AmazonForecastAccuracy = () => {
         {/* Debug Info */}
         <div className="text-xs text-muted-foreground border-b pb-2">
           Replaced Forecasts: {replacedForecasts.length} | 
+          Accuracy Logs: {accuracyLogCount} |
           Metrics Loaded: {metrics ? 'Yes' : 'No'} | 
-          Loading: {isLoading ? 'Yes' : 'No'} |
-          {metrics && ` MAPE: ${metrics.mape?.toFixed(1)}%`}
+          Loading: {isLoading ? 'Yes' : 'No'}
+          {metrics && ` | MAPE: ${metrics.mape?.toFixed(1)}% | Methods: ${Object.keys(metrics.byMethod || {}).join(', ')}`}
         </div>
         
         {/* Error Alert */}
