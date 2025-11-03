@@ -90,6 +90,8 @@ interface CashFlowEvent {
   creditCardId?: string | null;
   source?: string;
   date: Date;
+  // When this event impacts the bank balance (for forecasts with transfer delays)
+  balanceImpactDate?: Date;
   // Whether this event should affect cash balance calculations
   affectsBalance?: boolean;
 }
@@ -1713,13 +1715,19 @@ const Dashboard = () => {
         });
       }
       
+      // For forecasted payouts, add +1 day for balance impact (bank transfer time)
+      const balanceImpactDate = (payout.status as string) === 'forecasted' 
+        ? new Date(new Date(displayDate).setDate(displayDate.getDate() + 1))
+        : displayDate;
+      
       return {
         id: `amazon-payout-${payout.id}`,
         type: 'inflow' as const,
         amount: payout.total_amount,
         description,
         source: (payout.status as string) === 'forecasted' ? 'Amazon-Forecasted' : 'Amazon',
-        date: displayDate
+        date: displayDate,
+        balanceImpactDate
       };
     });
   
@@ -1868,10 +1876,11 @@ const Dashboard = () => {
       currentDate.setHours(0, 0, 0, 0);
       const dateStr = format(currentDate, 'yyyy-MM-dd');
       
-      // Get all events for this day
-      const dayEvents = allCalendarEvents.filter(event => 
-        format(event.date, 'yyyy-MM-dd') === dateStr
-      );
+      // Get all events that impact balance on this day (use balanceImpactDate if available)
+      const dayEvents = allCalendarEvents.filter(event => {
+        const impactDate = event.balanceImpactDate || event.date;
+        return format(impactDate, 'yyyy-MM-dd') === dateStr;
+      });
       
       // Calculate net change for the day (exactly like the calendar does)
       const dailyInflow = dayEvents.filter(e => e.type === 'inflow').reduce((sum, e) => sum + e.amount, 0);
