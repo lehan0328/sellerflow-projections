@@ -17,6 +17,7 @@ type PayoutWithForecast = {
   original_forecast_amount?: number | null;
   forecast_replaced_at?: string | null;
   forecast_accuracy_percentage?: number | null;
+  modeling_method?: string | null;
 };
 
 export const AmazonForecastAccuracy = () => {
@@ -226,7 +227,7 @@ export const AmazonForecastAccuracy = () => {
             </p>
             <div className="space-y-2">
               {Object.entries(metrics.byMethod).map(([method, data]: [string, any]) => {
-                const displayMethod = method === 'auren_forecast_v1' ? 'Auren Forecast V1' : 
+                const displayMethod = method === 'auren_forecast_v1' ? 'Auren Formula V1' : 
                                      method === 'unknown' ? 'Legacy Method' :
                                      method.replace(/_/g, ' ');
                 return (
@@ -254,6 +255,9 @@ export const AmazonForecastAccuracy = () => {
             const accuracy = payout.forecast_accuracy_percentage || 0;
             const difference = actualAmount - forecastAmount;
             const isOver = difference > 0;
+            const modelDisplay = payout.modeling_method === 'auren_forecast_v1' 
+              ? 'Auren Formula V1' 
+              : payout.modeling_method || 'Unknown Method';
 
             return (
               <div 
@@ -266,6 +270,9 @@ export const AmazonForecastAccuracy = () => {
                     <span className="font-medium">
                       {format(new Date(payout.payout_date), 'MMM d, yyyy')}
                     </span>
+                    <Badge variant="secondary" className="text-xs">
+                      {modelDisplay}
+                    </Badge>
                   </div>
                   <Badge variant={accuracy >= 90 ? "default" : accuracy >= 75 ? "secondary" : "outline"}>
                     {accuracy.toFixed(1)}% accurate
