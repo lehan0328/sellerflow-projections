@@ -289,6 +289,28 @@ export default function ScenarioPlanner() {
       });
     });
 
+    // Log data sources for debugging
+    console.log('[ScenarioPlanner] Data Sources:', {
+      bankBalance: currentCash,
+      purchaseOrders: transactions.filter(tx => tx.type === 'purchase_order' && tx.vendorId && tx.status !== 'completed').length,
+      incomeItems: incomeItems.filter(income => income.status !== 'received').length,
+      creditCards: creditCards.filter(card => card.payment_due_date && card.balance > 0).length,
+      recurringExpenses: recurringExpenses.length,
+      amazonPayouts: displayedPayouts.length,
+      totalEvents: events.length
+    });
+    
+    // Log top 5 largest events
+    const topEvents = [...events]
+      .sort((a, b) => Math.abs(b.amount) - Math.abs(a.amount))
+      .slice(0, 5);
+    console.log('[ScenarioPlanner] Top 5 Largest Events:', topEvents.map(e => ({
+      amount: e.amount,
+      date: format(e.date, 'MMM d, yyyy'),
+      type: e.sourceType,
+      sourceId: e.sourceId
+    })));
+
     return { allEvents: events, baselineCash: currentCash };
   }, [bankTotalBalance, transactions, incomeItems, creditCards, recurringExpenses, displayedPayouts]);
 
