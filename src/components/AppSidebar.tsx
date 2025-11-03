@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import { Home, TrendingUp, CreditCard, Repeat, Wallet, Users, Calculator, BarChart3, FolderOpen, MessageSquare, Calendar, FileBarChart, Building2, Brain, Bell, Clock, Link2, Lock, Sparkles, Settings, ShoppingCart, Scale } from "lucide-react";
+import { Home, TrendingUp, CreditCard, Repeat, Wallet, Users, Calculator, BarChart3, FolderOpen, MessageSquare, Calendar, FileBarChart, Building2, Brain, Bell, Clock, Link2, Lock, Sparkles, Settings, ShoppingCart } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useSupportMessageCount } from "@/hooks/useSupportMessageCount";
@@ -36,11 +36,6 @@ const overviewSections = [{
   id: "scenario-planning",
   title: "Scenario Planning",
   icon: Calculator
-}, {
-  id: "match-transactions",
-  title: "Weighted Forecasts",
-  icon: Scale,
-  showMatchCount: true
 }];
 const transactionSections = [{
   id: "transactions",
@@ -120,15 +115,6 @@ export function AppSidebar({
   const handleSectionClick = (sectionId: string, section?: any) => {
     // Always allow navigation during loading to prevent blocked interactions
     if (!subscription.isLoading) {
-      // Weighted Forecasts: Professional + Trial only
-      if (sectionId === 'match-transactions') {
-        const hasAccess = subscription.is_trialing === true || hasPlanAccess(subscription.plan, 'professional');
-        if (!hasAccess) {
-          setShowUpgradeModal(true);
-          return;
-        }
-      }
-      
       // Scenario Planning: Professional + Trial only
       if (sectionId === 'scenario-planning') {
         const hasAccess = subscription.is_trialing === true || hasPlanAccess(subscription.plan, 'professional');
@@ -175,9 +161,7 @@ export function AppSidebar({
               
               // Check locks based on plan requirements - evaluate consistently
               const hasScenarioAccess = subscription.is_trialing === true || hasPlanAccess(subscription.plan, 'professional');
-              const hasForecastAccess = subscription.is_trialing === true || hasPlanAccess(subscription.plan, 'professional');
-              const showProfessionalLock = (section.id === 'scenario-planning' || section.id === 'match-transactions') && !subscription.isLoading && 
-                (section.id === 'scenario-planning' ? !hasScenarioAccess : !hasForecastAccess);
+              const showProfessionalLock = section.id === 'scenario-planning' && !subscription.isLoading && !hasScenarioAccess;
               
               return <SidebarMenuItem key={section.id}>
                     <SidebarMenuButton onClick={() => handleSectionClick(section.id, section)} className={`
