@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Sparkles, TrendingUp, AlertCircle, Loader2, Pencil, Check, X, CreditCard, ShoppingCart, Info, RefreshCw, Settings, DollarSign, Calendar, ArrowLeft, Search } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback, memo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useCreditCards } from "@/hooks/useCreditCards";
@@ -41,7 +41,7 @@ interface CashFlowInsightsProps {
   onUpdateReserveAmount?: (amount: number) => Promise<void>;
   transactionMatchButton?: React.ReactNode;
 }
-export const CashFlowInsights = ({
+export const CashFlowInsights = memo(({
   currentBalance,
   dailyInflow,
   dailyOutflow,
@@ -199,7 +199,7 @@ export const CashFlowInsights = ({
       isSubscribed = false;
       clearTimeout(timeoutId);
     };
-  }, [user, amazonPayouts.length]); // Only depend on length to avoid re-running on every data change
+  }, [user?.id, amazonPayouts.length, isForecastGenerating]); // More specific dependencies
 
   const handleGenerateForecast = async () => {
     if (!user) return;
@@ -306,102 +306,98 @@ export const CashFlowInsights = ({
     setIsEditingReserve(false);
   };
 
-  // Fetch pending purchase orders for each credit card
+  // Fetch pending purchase orders for each credit card - memoized
+  const fetchPendingOrders = useCallback(async () => {
+    if (!creditCards || creditCards.length === 0 || !user?.id) return;
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('account_id')
+      .eq('user_id', user.id)
+      .single();
+
+    if (!profile?.account_id) return;
+
+    const { data: transactions } = await supabase
+      .from('transactions')
+      .select('credit_card_id, amount')
+      .eq('account_id', profile.account_id)
+      .eq('type', 'purchase_order')
+      .eq('status', 'pending')
+      .eq('archived', false)
+      .not('credit_card_id', 'is', null);
+
+    if (transactions) {
+      const ordersByCard: Record<string, number> = {};
+      transactions.forEach(tx => {
+        if (tx.credit_card_id) {
+          ordersByCard[tx.credit_card_id] = (ordersByCard[tx.credit_card_id] || 0) + Number(tx.amount);
+        }
+      });
+      setPendingOrdersByCard(ordersByCard);
+    }
+  }, [creditCards?.length, user?.id]);
+
   useEffect(() => {
-    const fetchPendingOrders = async () => {
-      if (!creditCards || creditCards.length === 0) return;
-
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      // Get user's account_id first
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('account_id')
-        .eq('user_id', user.id)
-        .single();
-
-      if (!profile?.account_id) return;
-
-      const { data: transactions } = await supabase
-        .from('transactions')
-        .select('credit_card_id, amount')
-        .eq('account_id', profile.account_id)
-        .eq('type', 'purchase_order')
-        .eq('status', 'pending')
-        .eq('archived', false)
-        .not('credit_card_id', 'is', null);
-
-      if (transactions) {
-        const ordersByCard: Record<string, number> = {};
-        transactions.forEach(tx => {
-          if (tx.credit_card_id) {
-            ordersByCard[tx.credit_card_id] = (ordersByCard[tx.credit_card_id] || 0) + Number(tx.amount);
-          }
-        });
-        setPendingOrdersByCard(ordersByCard);
-      }
-    };
-
     fetchPendingOrders();
-  }, [creditCards]);
+  }, [fetchPendingOrders]);
   
-  // Calculate buying opportunities for each credit card
-  useEffect(() => {
-    const calculateCardOpportunities = () => {
-      if (!creditCards || creditCards.length === 0) return;
+  // Calculate buying opportunities for each credit card - memoized
+  const calculatedCardOpportunities = useMemo(() => {
+    if (!creditCards || creditCards.length === 0) return {};
 
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const opportunitiesMap: Record<string, Array<{ date: string; availableCredit: number }>> = {};
+
+    for (const card of creditCards) {
+      const opportunities: Array<{ date: string; availableCredit: number }> = [];
       
-      const opportunitiesMap: Record<string, Array<{ date: string; availableCredit: number }>> = {};
+      // Calculate effective available credit using override if set
+      const effectiveCreditLimit = card.credit_limit_override || card.credit_limit;
+      const effectiveAvailableCredit = effectiveCreditLimit - card.balance;
+      
+      // Current available credit is always the first opportunity
+      opportunities.push({
+        date: today.toISOString().split('T')[0],
+        availableCredit: effectiveAvailableCredit
+      });
 
-      for (const card of creditCards) {
-        const opportunities: Array<{ date: string; availableCredit: number }> = [];
-        
-        // Calculate effective available credit using override if set
-        const effectiveCreditLimit = card.credit_limit_override || card.credit_limit;
-        const effectiveAvailableCredit = effectiveCreditLimit - card.balance;
-        
-        // Current available credit is always the first opportunity
-        opportunities.push({
-          date: today.toISOString().split('T')[0],
-          availableCredit: effectiveAvailableCredit
-        });
+      // If card has statement balance and due date, that's a buying opportunity
+      if (card.statement_balance && card.statement_balance > 0 && card.payment_due_date) {
+        const paymentDueDate = new Date(card.payment_due_date);
+        paymentDueDate.setHours(0, 0, 0, 0);
 
-        // If card has statement balance and due date, that's a buying opportunity
-        if (card.statement_balance && card.statement_balance > 0 && card.payment_due_date) {
-          const paymentDueDate = new Date(card.payment_due_date);
-          paymentDueDate.setHours(0, 0, 0, 0);
-
-          // Only include if due date is in the future
-          if (paymentDueDate > today) {
-            const newAvailableCredit = effectiveAvailableCredit + Number(card.statement_balance);
-            opportunities.push({
-              date: paymentDueDate.toISOString().split('T')[0],
-              availableCredit: newAvailableCredit
-            });
-          }
+        // Only include if due date is in the future
+        if (paymentDueDate > today) {
+          const newAvailableCredit = effectiveAvailableCredit + Number(card.statement_balance);
+          opportunities.push({
+            date: paymentDueDate.toISOString().split('T')[0],
+            availableCredit: newAvailableCredit
+          });
         }
-
-        // Sort opportunities by date
-        opportunities.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-        
-        // Ensure later opportunities never have lower available credit than earlier ones
-        for (let i = 1; i < opportunities.length; i++) {
-          if (opportunities[i].availableCredit < opportunities[i - 1].availableCredit) {
-            opportunities[i].availableCredit = opportunities[i - 1].availableCredit;
-          }
-        }
-
-        opportunitiesMap[card.id] = opportunities;
       }
 
-      setCardOpportunities(opportunitiesMap);
-    };
+      // Sort opportunities by date
+      opportunities.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      
+      // Ensure later opportunities never have lower available credit than earlier ones
+      for (let i = 1; i < opportunities.length; i++) {
+        if (opportunities[i].availableCredit < opportunities[i - 1].availableCredit) {
+          opportunities[i].availableCredit = opportunities[i - 1].availableCredit;
+        }
+      }
 
-    calculateCardOpportunities();
+      opportunitiesMap[card.id] = opportunities;
+    }
+
+    return opportunitiesMap;
   }, [creditCards]);
+
+  useEffect(() => {
+    setCardOpportunities(calculatedCardOpportunities);
+  }, [calculatedCardOpportunities]);
 
   // Handle adding a temporary PO projection
   const handleAddProjection = () => {
@@ -433,8 +429,8 @@ export const CashFlowInsights = ({
     });
   };
 
-  // Calculate adjusted opportunities with temporary projections
-  const getAdjustedOpportunities = () => {
+  // Calculate adjusted opportunities with temporary projections - memoized
+  const getAdjustedOpportunities = useCallback(() => {
     if (tempProjections.length === 0) return allBuyingOpportunities;
 
     // Create a map of dates to projected expenses
@@ -472,11 +468,11 @@ export const CashFlowInsights = ({
       // Only show this opportunity if it doesn't exceed the minimum future balance
       return opp.balance <= minFutureBalance || adjustedOpps.slice(index + 1).length === 0;
     });
-  };
+  }, [tempProjections, allBuyingOpportunities]);
 
-  const adjustedOpportunities = getAdjustedOpportunities();
+  const adjustedOpportunities = useMemo(() => getAdjustedOpportunities(), [getAdjustedOpportunities]);
 
-  const handleDateSearch = async (date: Date) => {
+  const handleDateSearch = useCallback(async (date: Date) => {
     setSearchedDate(date);
     const dateStr = date.toISOString().split('T')[0];
     
@@ -572,7 +568,7 @@ export const CashFlowInsights = ({
       expenses: dayExpenses,
       income: dayIncome
     });
-  };
+  }, [events, amazonPayouts, allBuyingOpportunities, currentBalance, reserveAmount, creditCards]);
 
 
   return <Card className="shadow-card h-full flex flex-col">
@@ -1576,4 +1572,4 @@ export const CashFlowInsights = ({
         </DialogContent>
       </Dialog>
     </Card>;
-};
+});
