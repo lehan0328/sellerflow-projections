@@ -23,6 +23,7 @@ export const AmazonForecastAccuracy = () => {
   const { amazonPayouts } = useAmazonPayouts();
   const [metrics, setMetrics] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Filter payouts that have forecast data (were replaced from forecasts)
   const replacedForecasts = (amazonPayouts as PayoutWithForecast[])?.filter(
@@ -35,25 +36,52 @@ export const AmazonForecastAccuracy = () => {
     : 0;
 
   const loadMetrics = async () => {
-    if (replacedForecasts.length === 0) return;
+    if (replacedForecasts.length === 0) {
+      console.log('[Forecast Accuracy] No replaced forecasts to analyze');
+      setError('No forecast data available yet');
+      return;
+    }
     
+    console.log('[Forecast Accuracy] Loading metrics for', replacedForecasts.length, 'forecasts...');
     setIsLoading(true);
+    setError(null);
+    
     try {
-      const { data, error } = await supabase.functions.invoke('calculate-forecast-accuracy');
+      const { data, error: invokeError } = await supabase.functions.invoke('calculate-forecast-accuracy');
       
-      if (error) throw error;
-      if (data?.metrics) {
-        setMetrics(data.metrics);
+      console.log('[Forecast Accuracy] Raw response:', { data, error: invokeError });
+      
+      if (invokeError) {
+        console.error('[Forecast Accuracy] Invoke error:', invokeError);
+        setError('Failed to calculate metrics');
+        throw invokeError;
       }
+      
+      if (!data) {
+        console.warn('[Forecast Accuracy] No data in response');
+        setError('No data returned from calculation');
+        return;
+      }
+      
+      console.log('[Forecast Accuracy] Success! Setting metrics:', data.metrics);
+      setMetrics(data.metrics);
+      
     } catch (error) {
-      console.error('Error loading accuracy metrics:', error);
+      console.error('[Forecast Accuracy] Exception:', error);
+      setError(error instanceof Error ? error.message : 'Unknown error');
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    if (replacedForecasts.length > 0 && !metrics) {
+    console.log('[Forecast Accuracy] useEffect triggered', { 
+      replacedCount: replacedForecasts.length, 
+      hasMetrics: !!metrics 
+    });
+    
+    if (replacedForecasts.length > 0 && !metrics && !isLoading) {
+      console.log('[Forecast Accuracy] Auto-loading metrics...');
       loadMetrics();
     }
   }, [replacedForecasts.length]);
@@ -100,6 +128,22 @@ export const AmazonForecastAccuracy = () => {
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Debug Info */}
+        <div className="text-xs text-muted-foreground border-b pb-2">
+          Replaced Forecasts: {replacedForecasts.length} | 
+          Metrics Loaded: {metrics ? 'Yes' : 'No'} | 
+          Loading: {isLoading ? 'Yes' : 'No'} |
+          {metrics && ` MAPE: ${metrics.mape?.toFixed(1)}%`}
+        </div>
+        
+        {/* Error Alert */}
+        {error && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+        
         {/* Outliers Notice */}
         {metrics?.outliersExcluded > 0 && (
           <Alert>
