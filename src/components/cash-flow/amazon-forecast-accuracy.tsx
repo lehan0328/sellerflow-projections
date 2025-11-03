@@ -251,19 +251,46 @@ export const AmazonForecastAccuracy = () => {
                 className="border rounded-lg p-4 space-y-2 hover:bg-muted/30 transition-colors"
               >
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium">
-                      {format(new Date(log.payout_date), 'MMM d, yyyy')}
-                    </span>
-                    <Badge variant="secondary" className="text-xs">
-                      {modelDisplay}
-                    </Badge>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                      <span className="font-medium">
+                        Settlement Closed: {format(new Date(log.settlement_close_date || log.payout_date), 'MMM d, yyyy')}
+                      </span>
+                      <Badge variant="secondary" className="text-xs">
+                        {modelDisplay}
+                      </Badge>
+                    </div>
+                    {log.days_accumulated > 1 && log.settlement_period_start && (
+                      <div className="text-xs text-muted-foreground ml-6 mt-1">
+                        Period: {format(new Date(log.settlement_period_start), 'MMM d')} - {format(new Date(log.settlement_close_date || log.payout_date), 'MMM d')} ({log.days_accumulated} days)
+                      </div>
+                    )}
+                    <div className="text-xs text-muted-foreground ml-6">
+                      Payout received: {format(new Date(log.payout_date), 'MMM d, yyyy')}
+                    </div>
                   </div>
                   <Badge variant={accuracy >= 90 ? "default" : accuracy >= 75 ? "secondary" : "outline"}>
                     {accuracy.toFixed(1)}% accurate
                   </Badge>
                 </div>
+
+                {/* Forecast breakdown when multiple days */}
+                {log.forecasted_amounts_by_day && log.forecasted_amounts_by_day.length > 1 && (
+                  <div className="text-xs space-y-1 bg-muted/50 p-2 rounded ml-6">
+                    <div className="font-medium">Forecasts Included:</div>
+                    {log.forecasted_amounts_by_day.map((day: any, idx: number) => (
+                      <div key={idx} className="flex justify-between">
+                        <span>{format(new Date(day.date), 'MMM d')}</span>
+                        <span>${Number(day.amount).toLocaleString()}</span>
+                      </div>
+                    ))}
+                    <div className="flex justify-between border-t pt-1 font-semibold">
+                      <span>Total:</span>
+                      <span>${forecastAmount.toLocaleString()}</span>
+                    </div>
+                  </div>
+                )}
 
                 <div className="grid grid-cols-3 gap-2 text-sm">
                   <div>

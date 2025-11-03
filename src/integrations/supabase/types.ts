@@ -1342,15 +1342,20 @@ export type Database = {
           amazon_account_id: string | null
           confidence_threshold: number | null
           created_at: string | null
+          days_accumulated: number | null
           difference_amount: number
           difference_percentage: number
           forecasted_amount: number
+          forecasted_amounts_by_day: Json | null
           id: string
           marketplace_name: string | null
           modeling_method: string | null
           monthly_revenue: string | null
           payout_date: string
+          settlement_close_date: string | null
           settlement_id: string
+          settlement_period_end: string | null
+          settlement_period_start: string | null
           updated_at: string | null
           user_email: string | null
           user_id: string
@@ -1362,15 +1367,20 @@ export type Database = {
           amazon_account_id?: string | null
           confidence_threshold?: number | null
           created_at?: string | null
+          days_accumulated?: number | null
           difference_amount: number
           difference_percentage: number
           forecasted_amount: number
+          forecasted_amounts_by_day?: Json | null
           id?: string
           marketplace_name?: string | null
           modeling_method?: string | null
           monthly_revenue?: string | null
           payout_date: string
+          settlement_close_date?: string | null
           settlement_id: string
+          settlement_period_end?: string | null
+          settlement_period_start?: string | null
           updated_at?: string | null
           user_email?: string | null
           user_id: string
@@ -1382,15 +1392,20 @@ export type Database = {
           amazon_account_id?: string | null
           confidence_threshold?: number | null
           created_at?: string | null
+          days_accumulated?: number | null
           difference_amount?: number
           difference_percentage?: number
           forecasted_amount?: number
+          forecasted_amounts_by_day?: Json | null
           id?: string
           marketplace_name?: string | null
           modeling_method?: string | null
           monthly_revenue?: string | null
           payout_date?: string
+          settlement_close_date?: string | null
           settlement_id?: string
+          settlement_period_end?: string | null
+          settlement_period_start?: string | null
           updated_at?: string | null
           user_email?: string | null
           user_id?: string

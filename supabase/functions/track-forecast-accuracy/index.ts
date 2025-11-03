@@ -20,19 +20,33 @@ serve(async (req) => {
 
     console.log('[ACCURACY] Tracking forecast accuracy for payout:', actualPayout.id);
 
-    // For daily payouts with rollovers, we need to sum multiple forecast days
-    // Look back up to 7 days to find all forecasts that were rolled into this payout
-    const payoutDate = new Date(actualPayout.payout_date);
-    const lookbackStart = new Date(payoutDate);
+    // Extract settlement dates from raw data
+    const settlementEndDate = actualPayout.raw_settlement_data?.FinancialEventGroupEnd
+      ? new Date(actualPayout.raw_settlement_data.FinancialEventGroupEnd)
+      : new Date(actualPayout.payout_date);
+    
+    const settlementStartDate = actualPayout.raw_settlement_data?.FinancialEventGroupStart
+      ? new Date(actualPayout.raw_settlement_data.FinancialEventGroupStart)
+      : null;
+    
+    // CRITICAL: Use settlement close date (NOT payout date) to find forecasts
+    // Settlement closes at night (e.g., Nov 1 8pm = Nov 2 00:01 UTC)
+    // We want forecasts BEFORE the settlement closed (e.g., Oct 31 + Nov 1)
+    const settlementCloseDate = settlementEndDate.toISOString().split('T')[0];
+    const settlementStartDateStr = settlementStartDate?.toISOString().split('T')[0];
+    
+    // Look back up to 7 days from settlement close
+    const lookbackStart = new Date(settlementCloseDate);
     lookbackStart.setDate(lookbackStart.getDate() - 7);
 
     const { data: rolledForecasts, error: forecastError } = await supabase
       .from('amazon_payouts')
       .select('id, payout_date, total_amount, modeling_method, settlement_id')
       .eq('amazon_account_id', actualPayout.amazon_account_id)
+      .eq('user_id', actualPayout.user_id) // CRITICAL: Match user_id
       .eq('status', 'forecasted')
       .gte('payout_date', lookbackStart.toISOString().split('T')[0])
-      .lte('payout_date', actualPayout.payout_date)
+      .lt('payout_date', settlementCloseDate) // CRITICAL: < not <=
       .order('payout_date', { ascending: true });
 
     if (forecastError) {
@@ -51,11 +65,26 @@ serve(async (req) => {
     // Sum all rolled-over forecasts
     const totalForecastedAmount = rolledForecasts.reduce((sum, f) => sum + Number(f.total_amount), 0);
     
+    // Calculate days accumulated in settlement period
+    const daysAccumulated = settlementStartDate && settlementEndDate
+      ? Math.ceil((settlementEndDate.getTime() - settlementStartDate.getTime()) / (1000 * 60 * 60 * 24))
+      : rolledForecasts.length;
+    
+    // Capture individual forecast details
+    const forecastDetails = rolledForecasts.map(f => ({
+      date: f.payout_date,
+      amount: Number(f.total_amount),
+      method: f.modeling_method
+    }));
+    
     console.log('[ACCURACY] Rollover analysis:', {
-      daysIncluded: rolledForecasts.length,
+      settlementPeriod: `${settlementStartDateStr} to ${settlementCloseDate}`,
+      daysAccumulated,
+      forecastsIncluded: rolledForecasts.length,
       forecastDates: rolledForecasts.map(f => f.payout_date),
       totalForecasted: totalForecastedAmount,
-      actual: actualPayout.total_amount
+      actual: actualPayout.total_amount,
+      payoutReceived: actualPayout.payout_date
     });
 
     // Get user profile info and settings
@@ -102,7 +131,12 @@ serve(async (req) => {
         account_id: profile?.account_id,
         amazon_account_id: actualPayout.amazon_account_id,
         payout_date: actualPayout.payout_date,
+        settlement_close_date: settlementCloseDate,
+        settlement_period_start: settlementStartDateStr,
+        settlement_period_end: settlementCloseDate,
+        days_accumulated: daysAccumulated,
         forecasted_amount: forecastedAmount,
+        forecasted_amounts_by_day: forecastDetails,
         actual_amount: actualAmount,
         difference_amount: differenceAmount,
         difference_percentage: differencePercentage,
