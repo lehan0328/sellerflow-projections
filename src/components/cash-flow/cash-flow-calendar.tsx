@@ -661,7 +661,14 @@ export const CashFlowCalendar = ({
     if (chartData.length === 0) return 0;
     const lowestCashFlow = Math.min(...chartData.map(d => d.cashFlow || 0));
     // Available to spend = lowest projected balance - reserve amount
-    return lowestCashFlow - reserveAmount;
+    const availableToSpend = lowestCashFlow - reserveAmount;
+    console.log('📊 [Calendar] Available to Spend calculation:', {
+      lowestCashFlow,
+      reserveAmount,
+      availableToSpend,
+      chartDataLength: chartData.length
+    });
+    return availableToSpend;
   }, [chartData, reserveAmount]);
   
   // Memoize Y-axis domain calculation
@@ -675,12 +682,17 @@ export const CashFlowCalendar = ({
       d.cashFlow,
     ].filter((v: any) => typeof v === 'number')) as number[];
 
+    // Include the lowest projected balance (available to spend) in the domain
+    if (typeof lowestProjectedBalance === 'number' && !isNaN(lowestProjectedBalance)) {
+      yValues.push(lowestProjectedBalance);
+    }
+
     const yMin = yValues.length ? Math.min(...yValues) : 0;
     const yMax = yValues.length ? Math.max(...yValues) : 0;
     const yRange = Math.max(1, yMax - yMin);
     const yPadding = Math.max(1000, Math.round(yRange * 0.05));
     return [yMin - yPadding, yMax + yPadding];
-  }, [displayData]);
+  }, [displayData, lowestProjectedBalance]);
   
   const getChartInnerWidth = () => {
     const svg = chartWrapperRef.current?.querySelector('svg.recharts-surface') as SVGElement | null;
@@ -1573,7 +1585,7 @@ export const CashFlowCalendar = ({
                   <label htmlFor="lowest-balance-toggle" className="cursor-pointer flex items-center gap-1">
                     Available to Spend
                     <span className="text-xs text-muted-foreground">
-                      (${lowestProjectedBalance.toLocaleString()})
+                      (${Math.round(lowestProjectedBalance).toLocaleString()})
                     </span>
                   </label>
                 </div>
