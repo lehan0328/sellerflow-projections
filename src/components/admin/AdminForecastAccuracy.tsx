@@ -52,12 +52,23 @@ export function AdminForecastAccuracy() {
 
   const fetchAndCalculateMetrics = async () => {
     try {
+      console.log('[Admin Forecast Accuracy] Fetching accuracy logs...');
+      
       const { data, error } = await supabase
         .from('forecast_accuracy_log')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      console.log('[Admin Forecast Accuracy] Query result:', { 
+        dataCount: data?.length, 
+        error: error?.message,
+        sampleRecord: data?.[0]
+      });
+
+      if (error) {
+        console.error('[Admin Forecast Accuracy] Query error:', error);
+        throw error;
+      }
 
       if (!data || data.length === 0) {
         setIsLoading(false);
