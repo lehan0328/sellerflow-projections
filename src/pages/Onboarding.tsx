@@ -912,12 +912,15 @@ export default function Onboarding() {
                   </div>
                 </div>
 
-                <div className="mt-4 p-4 bg-white/50 dark:bg-black/20 rounded border border-blue-300 dark:border-blue-700">
-                  <p className="text-sm text-muted-foreground">
-                    <strong>Important:</strong> Forecasting requires your Amazon account to complete its initial sync. This ensures accurate predictions based on your actual sales patterns.
+                <div className="mt-4 p-4 bg-amber-50/80 dark:bg-amber-950/30 rounded border border-amber-300 dark:border-amber-700">
+                  <p className="text-sm text-amber-900 dark:text-amber-100 font-medium mb-2">
+                    ⚠️ Important Limitations
+                  </p>
+                  <p className="text-xs text-amber-800 dark:text-amber-200">
+                    Forecasts are based on historical data patterns and do not factor in sudden sale spikes or extreme drops. Our v2 model (coming soon) will include advanced anomaly detection.
                   </p>
                   <p className="text-xs text-muted-foreground mt-2">
-                    💡 The system works best with at least 30 days of recent sales activity for the most accurate forecasts.
+                    💡 Forecasting requires your Amazon account to complete its initial sync and works best with at least 30 days of recent sales activity.
                   </p>
                 </div>
               </div>

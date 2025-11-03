@@ -7,6 +7,7 @@ import { useSupportMessageCount } from "@/hooks/useSupportMessageCount";
 import { useUserSettings } from "@/hooks/useUserSettings";
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar, SidebarHeader } from "@/components/ui/sidebar";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import aurenIcon from "@/assets/auren-icon-blue.png";
 import { useAdmin } from "@/hooks/useAdmin";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -194,17 +195,31 @@ export function AppSidebar({
                             {'showBadge' in section && section.showBadge && unreadCount > 0 && <Badge variant="destructive" className="text-[10px] font-bold px-1.5 py-0 min-w-[18px] h-[18px] flex items-center justify-center">
                                 {unreadCount}
                               </Badge>}
-                            {'showForecastBadge' in section && section.showForecastBadge && (
-                              <Badge 
-                                variant="default"
-                                className={`text-[10px] font-bold px-1.5 py-0 h-[18px] ${
-                                  forecastsEnabled 
-                                    ? "bg-emerald-500 hover:bg-emerald-600 text-white" 
-                                    : "bg-gray-400 hover:bg-gray-500 text-white"
-                                }`}
-                              >
-                                {forecastsEnabled ? "ON" : "OFF"}
-                              </Badge>
+                             {'showForecastBadge' in section && section.showForecastBadge && (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Badge 
+                                      variant="default"
+                                      className={`text-[10px] font-bold px-1.5 py-0 h-[18px] cursor-help ${
+                                        forecastsEnabled 
+                                          ? "bg-emerald-500 hover:bg-emerald-600 text-white" 
+                                          : "bg-gray-400 hover:bg-gray-500 text-white"
+                                      }`}
+                                    >
+                                      {forecastsEnabled ? "ON" : "OFF"}
+                                    </Badge>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="right" className="max-w-xs">
+                                    <p className="text-xs">
+                                      <strong>Forecasts based on historical data.</strong>
+                                    </p>
+                                    <p className="text-xs mt-1 text-muted-foreground">
+                                      Does not factor in sudden sale spikes or extreme drops. V2 model coming soon with advanced anomaly detection.
+                                    </p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
                             )}
                             {showProfessionalLock && <Lock className="h-4 w-4 text-muted-foreground" />}
                           </span>
@@ -216,13 +231,27 @@ export function AppSidebar({
                           {matchCount}
                         </div>}
                       {isCollapsed && 'showForecastBadge' in section && section.showForecastBadge && (
-                        <div className={`absolute -top-1 -right-1 rounded-full w-5 h-5 flex items-center justify-center text-[9px] font-bold ${
-                          forecastsEnabled 
-                            ? "bg-emerald-500 text-white" 
-                            : "bg-gray-400 text-white"
-                        }`}>
-                          {forecastsEnabled ? "ON" : "OFF"}
-                        </div>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className={`absolute -top-1 -right-1 rounded-full w-5 h-5 flex items-center justify-center text-[9px] font-bold cursor-help ${
+                                forecastsEnabled 
+                                  ? "bg-emerald-500 text-white" 
+                                  : "bg-gray-400 text-white"
+                              }`}>
+                                {forecastsEnabled ? "ON" : "OFF"}
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent side="right" className="max-w-xs">
+                              <p className="text-xs">
+                                <strong>Forecasts based on historical data.</strong>
+                              </p>
+                              <p className="text-xs mt-1 text-muted-foreground">
+                                Does not factor in sudden sale spikes or extreme drops. V2 model coming soon with advanced anomaly detection.
+                              </p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                       )}
                       {isCollapsed && showProfessionalLock && <div className="absolute -top-1 -right-1">
                           <Lock className="h-3 w-3 text-muted-foreground" />
