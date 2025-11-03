@@ -40,6 +40,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { AmazonForecastAccuracy } from "@/components/cash-flow/amazon-forecast-accuracy";
 import { ForecastSettings } from "@/components/settings/forecast-settings";
+import { DailyCashoutBanner } from "@/components/cash-flow/daily-cashout-banner";
 import { BarChart3 } from "lucide-react";
 
 export default function AmazonForecast() {
@@ -62,12 +63,22 @@ export default function AmazonForecast() {
   const historicalData = useMemo(() => {
     const monthlyData: Record<string, { actualPayouts: number; forecastedPayouts: number; count: number }> = {};
     
-    // Last 12 months
+    // Last 12 months + current month
     for (let i = 11; i >= 0; i--) {
       const date = new Date();
       date.setMonth(date.getMonth() - i);
       const key = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
       monthlyData[key] = { actualPayouts: 0, forecastedPayouts: 0, count: 0 };
+    }
+
+    // Also add next 3 months for future forecasts
+    for (let i = 1; i <= 3; i++) {
+      const date = new Date();
+      date.setMonth(date.getMonth() + i);
+      const key = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+      if (!monthlyData[key]) {
+        monthlyData[key] = { actualPayouts: 0, forecastedPayouts: 0, count: 0 };
+      }
     }
 
     // Aggregate actual payouts - only confirmed payouts
@@ -82,15 +93,17 @@ export default function AmazonForecast() {
         }
       });
 
-    // Aggregate forecasted payouts - for future periods
+    // Aggregate forecasted payouts - show them even if no confirmed payouts exist
     amazonPayouts
       .filter(payout => payout.status === 'forecasted')
       .forEach(payout => {
         const date = new Date(payout.payout_date);
         const key = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-        if (monthlyData[key]) {
-          monthlyData[key].forecastedPayouts += Number(payout.total_amount || 0);
+        // Create month if it doesn't exist (for future forecasts)
+        if (!monthlyData[key]) {
+          monthlyData[key] = { actualPayouts: 0, forecastedPayouts: 0, count: 0 };
         }
+        monthlyData[key].forecastedPayouts += Number(payout.total_amount || 0);
       });
 
     return Object.entries(monthlyData).map(([month, data]) => ({
@@ -103,14 +116,13 @@ export default function AmazonForecast() {
 
   const generateForecast = async () => {
     setIsGenerating(true);
-    toast.loading("Generating Seasonality-Based Forecast - Analyzing Amazon payout patterns...");
+    toast.loading("Cleaning up stale forecasts and regenerating...");
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      const { data, error } = await supabase.functions.invoke("forecast-amazon-payouts-seasonality", {
-        body: { userId: user.id }
-      });
+      // First cleanup and regenerate
+      const { data, error } = await supabase.functions.invoke("cleanup-and-regenerate-forecasts");
 
       if (error) {
         console.error('Forecast error:', error);
@@ -124,7 +136,7 @@ export default function AmazonForecast() {
 
       if (data?.success) {
         toast.dismiss();
-        toast.success(`Seasonality forecast generated! ${data.forecastCount || 0} forecasts created. Refreshing...`);
+        toast.success(data.message || 'Forecasts regenerated successfully! Refreshing...');
         setTimeout(() => window.location.reload(), 1500);
       }
     } catch (error: any) {
@@ -338,6 +350,33 @@ export default function AmazonForecast() {
 
       {/* Mathematical Forecast Settings */}
       <ForecastSettings />
+
+      {/* Daily Cashout Rollover Detection Banner */}
+      {amazonAccounts.length > 0 && (() => {
+        // Find first daily payout account
+        const dailyAccount = amazonAccounts.find(
+          acc => acc.payout_frequency === 'daily'
+        );
+        
+        // Get forecasted payouts for that account
+        const forecastedPayouts = amazonPayouts
+          .filter(p => p.status === 'forecasted' && p.amazon_account_id === dailyAccount?.id)
+          .map(p => ({
+            payout_date: p.payout_date,
+            total_amount: Number(p.total_amount || 0)
+          }));
+
+        return dailyAccount && forecastedPayouts.length > 0 ? (
+          <DailyCashoutBanner
+            amazonAccountId={dailyAccount.id}
+            forecastedPayouts={forecastedPayouts}
+            onCashoutMarked={() => {
+              // Refresh the page to update forecasts
+              setTimeout(() => window.location.reload(), 1000);
+            }}
+          />
+        ) : null;
+      })()}
 
       {/* Key Metrics */}
       <Card>
