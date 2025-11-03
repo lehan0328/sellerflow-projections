@@ -33,6 +33,7 @@ interface CashFlowEvent {
   poName?: string;
   source?: string; // Added to identify Amazon payouts
   date: Date;
+  balanceImpactDate?: Date; // When the funds actually become available (e.g., +1 day for forecasted payouts)
 }
 
 interface IncomeItem {
@@ -222,9 +223,11 @@ export const CashFlowCalendar = ({
   const cellHeightClass = is6Rows ? 'h-[70px]' : 'h-[85px]';
 
   const getEventsForDay = (date: Date) => {
-    return events.filter(event => 
-      format(event.date, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd')
-    );
+    return events.filter(event => {
+      // Use balanceImpactDate if available (for forecasted payouts), otherwise use date
+      const impactDate = event.balanceImpactDate || event.date;
+      return format(impactDate, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd');
+    });
   };
 
   const getDayBalance = (date: Date) => {
