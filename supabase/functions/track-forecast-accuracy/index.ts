@@ -20,29 +20,43 @@ serve(async (req) => {
 
     console.log('[ACCURACY] Tracking forecast accuracy for payout:', actualPayout.id);
 
-    // Find the most recent forecast for this payout date and amazon account
-    const { data: forecast, error: forecastError } = await supabase
+    // For daily payouts with rollovers, we need to sum multiple forecast days
+    // Look back up to 7 days to find all forecasts that were rolled into this payout
+    const payoutDate = new Date(actualPayout.payout_date);
+    const lookbackStart = new Date(payoutDate);
+    lookbackStart.setDate(lookbackStart.getDate() - 7);
+
+    const { data: rolledForecasts, error: forecastError } = await supabase
       .from('amazon_payouts')
-      .select('*')
+      .select('id, payout_date, total_amount, modeling_method, settlement_id')
       .eq('amazon_account_id', actualPayout.amazon_account_id)
-      .eq('payout_date', actualPayout.payout_date)
       .eq('status', 'forecasted')
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
+      .gte('payout_date', lookbackStart.toISOString().split('T')[0])
+      .lte('payout_date', actualPayout.payout_date)
+      .order('payout_date', { ascending: true });
 
     if (forecastError) {
-      console.error('[ACCURACY] Error fetching forecast:', forecastError);
+      console.error('[ACCURACY] Error fetching forecasts:', forecastError);
       throw forecastError;
     }
 
-    if (!forecast) {
-      console.log('[ACCURACY] No forecast found for this payout, skipping accuracy tracking');
+    if (!rolledForecasts || rolledForecasts.length === 0) {
+      console.log('[ACCURACY] No forecasts found for this payout, skipping accuracy tracking');
       return new Response(
         JSON.stringify({ success: true, message: 'No forecast to compare' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    // Sum all rolled-over forecasts
+    const totalForecastedAmount = rolledForecasts.reduce((sum, f) => sum + Number(f.total_amount), 0);
+    
+    console.log('[ACCURACY] Rollover analysis:', {
+      daysIncluded: rolledForecasts.length,
+      forecastDates: rolledForecasts.map(f => f.payout_date),
+      totalForecasted: totalForecastedAmount,
+      actual: actualPayout.total_amount
+    });
 
     // Get user profile info and settings
     const { data: profile } = await supabase
@@ -60,7 +74,7 @@ serve(async (req) => {
     // Get user email
     const { data: { user } } = await supabase.auth.admin.getUserById(actualPayout.user_id);
 
-    const forecastedAmount = forecast.total_amount;
+    const forecastedAmount = totalForecastedAmount;
     const actualAmount = actualPayout.total_amount;
     const differenceAmount = actualAmount - forecastedAmount;
     // Use MAPE (Mean Absolute Percentage Error) formula: |difference| / actual * 100
@@ -94,7 +108,7 @@ serve(async (req) => {
         difference_percentage: differencePercentage,
         settlement_id: actualPayout.settlement_id,
         marketplace_name: actualPayout.marketplace_name,
-        modeling_method: forecast.modeling_method || 'auren_forecast_v1',
+        modeling_method: rolledForecasts[0].modeling_method || 'auren_forecast_v1',
         user_email: user?.email,
         user_name: userName,
         monthly_revenue: profile?.monthly_revenue,
@@ -109,7 +123,7 @@ serve(async (req) => {
       throw insertError;
     }
 
-    console.log('[ACCURACY] Successfully logged forecast accuracy');
+    console.log('[ACCURACY] Successfully logged forecast accuracy with rollover support');
 
     return new Response(
       JSON.stringify({

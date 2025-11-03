@@ -329,28 +329,43 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string)
     for (const settlement of settlementsToSave) {
       // Only check for confirmed settlements (not estimates)
       if (settlement.status === 'confirmed') {
-        const { data: existingForecast } = await supabase
-          .from('amazon_payouts')
-          .select('id, total_amount, modeling_method, settlement_id')
-          .eq('amazon_account_id', settlement.amazon_account_id)
-          .eq('payout_date', settlement.payout_date)
-          .eq('status', 'forecasted')
-          .maybeSingle()
+        // For daily payouts, check if this is a rollover by looking for multiple forecast days
+        // Rollovers happen when no payout on Day 1, so Day 2 includes both Day 1 and Day 2
         
-        if (existingForecast) {
-          const forecastedAmount = Number(existingForecast.total_amount)
-          const actualAmount = Number(settlement.total_amount)
-          const accuracyPercent = forecastedAmount > 0 
-            ? (1 - Math.abs(actualAmount - forecastedAmount) / forecastedAmount) * 100
-            : 0
+        // Look back up to 7 days to find all forecasts that should be included
+        const payoutDate = new Date(settlement.payout_date);
+        const lookbackStart = new Date(payoutDate);
+        lookbackStart.setDate(lookbackStart.getDate() - 7);
+        
+        const { data: rolledForecasts } = await supabase
+          .from('amazon_payouts')
+          .select('id, payout_date, total_amount, modeling_method, settlement_id')
+          .eq('amazon_account_id', settlement.amazon_account_id)
+          .eq('status', 'forecasted')
+          .gte('payout_date', lookbackStart.toISOString().split('T')[0])
+          .lte('payout_date', settlement.payout_date);
+        
+        if (rolledForecasts && rolledForecasts.length > 0) {
+          // Sum all rolled-over forecasts
+          const totalForecastedAmount = rolledForecasts.reduce((sum, f) => sum + Number(f.total_amount), 0);
+          const actualAmount = Number(settlement.total_amount);
+          const accuracyPercent = totalForecastedAmount > 0 
+            ? (1 - Math.abs(actualAmount - totalForecastedAmount) / totalForecastedAmount) * 100
+            : 0;
+          
+          console.log(`[SYNC] 📊 Rollover detected for ${settlement.payout_date}:`, {
+            daysRolled: rolledForecasts.length,
+            forecastDates: rolledForecasts.map(f => f.payout_date),
+            totalForecasted: totalForecastedAmount,
+            actual: actualAmount,
+            accuracy: accuracyPercent.toFixed(1) + '%'
+          });
           
           // Preserve forecast data in the settlement record
-          settlement.original_forecast_amount = forecastedAmount
-          settlement.forecast_replaced_at = new Date().toISOString()
-          settlement.forecast_accuracy_percentage = accuracyPercent
-          settlement.modeling_method = existingForecast.modeling_method || settlement.modeling_method
-          
-          console.log(`[SYNC] 📊 Forecast accuracy for ${settlement.payout_date}: ${accuracyPercent.toFixed(1)}% (forecast: $${forecastedAmount.toFixed(2)}, actual: $${actualAmount.toFixed(2)})`)
+          settlement.original_forecast_amount = totalForecastedAmount;
+          settlement.forecast_replaced_at = new Date().toISOString();
+          settlement.forecast_accuracy_percentage = accuracyPercent;
+          settlement.modeling_method = rolledForecasts[0].modeling_method || settlement.modeling_method;
           
           // Log to forecast_accuracy_log for historical tracking
           const { error: logError } = await supabase
@@ -360,17 +375,26 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string)
               account_id: settlement.account_id,
               amazon_account_id: settlement.amazon_account_id,
               payout_date: settlement.payout_date,
-              forecasted_amount: forecastedAmount,
+              forecasted_amount: totalForecastedAmount,
               actual_amount: actualAmount,
-              difference_amount: actualAmount - forecastedAmount,
-              difference_percentage: forecastedAmount > 0 ? ((actualAmount - forecastedAmount) / forecastedAmount) * 100 : 0,
+              difference_amount: actualAmount - totalForecastedAmount,
+              difference_percentage: totalForecastedAmount > 0 ? ((actualAmount - totalForecastedAmount) / totalForecastedAmount) * 100 : 0,
               settlement_id: settlement.settlement_id,
               marketplace_name: settlement.marketplace_name
-            })
+            });
           
           if (logError) {
-            console.error(`[SYNC] Failed to log accuracy for ${settlement.payout_date}:`, logError)
+            console.error(`[SYNC] Failed to log accuracy for ${settlement.payout_date}:`, logError);
           }
+          
+          // Delete all the rolled-over forecasts since they're now replaced
+          const forecastIds = rolledForecasts.map(f => f.id);
+          await supabase
+            .from('amazon_payouts')
+            .delete()
+            .in('id', forecastIds);
+          
+          console.log(`[SYNC] Deleted ${forecastIds.length} rolled-over forecasts`);
         }
       }
     }

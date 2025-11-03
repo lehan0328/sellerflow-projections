@@ -1,5 +1,4 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useAmazonPayouts } from "@/hooks/useAmazonPayouts";
 import { TrendingUp, TrendingDown, Target, Calendar, Brain, AlertCircle, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
@@ -8,103 +7,47 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
+import { useAuth } from "@/hooks/useAuth";
 
-// Extended type for payouts with forecast comparison fields
-type PayoutWithForecast = {
-  id: string;
-  payout_date: string;
-  total_amount: number;
-  original_forecast_amount?: number | null;
-  forecast_replaced_at?: string | null;
-  forecast_accuracy_percentage?: number | null;
-  modeling_method?: string | null;
-  settlement_id: string;
-};
 
 export const AmazonForecastAccuracy = () => {
-  const { amazonPayouts } = useAmazonPayouts();
+  const { user } = useAuth();
   const [metrics, setMetrics] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [accuracyLogCount, setAccuracyLogCount] = useState(0);
-  const [enrichedPayouts, setEnrichedPayouts] = useState<PayoutWithForecast[]>([]);
+  const [accuracyLogs, setAccuracyLogs] = useState<any[]>([]);
 
-  // Filter payouts that have forecast data (were replaced from forecasts)
-  const replacedForecasts = (amazonPayouts as PayoutWithForecast[])?.filter(
-    payout => {
-      const hasData = payout.forecast_replaced_at && payout.original_forecast_amount;
-      console.log('[Forecast Accuracy Filter]', {
-        id: payout.id,
-        date: payout.payout_date,
-        hasReplacedAt: !!payout.forecast_replaced_at,
-        hasOriginalAmount: !!payout.original_forecast_amount,
-        included: hasData
-      });
-      return hasData;
-    }
-  ) || [];
-  
-  console.log('[Forecast Accuracy] All payouts:', amazonPayouts?.length);
-  console.log('[Forecast Accuracy] Filtered replacedForecasts:', replacedForecasts.length);
-  console.log('[Forecast Accuracy] All payout IDs:', amazonPayouts?.map(p => p.id));
-  console.log('[Forecast Accuracy] Replaced payout IDs:', replacedForecasts.map(p => p.id));
-
-  // Fetch modeling methods from accuracy log and enrich payouts
+  // Fetch accuracy logs directly from the forecast_accuracy_log table
   useEffect(() => {
-    const enrichPayouts = async () => {
-      console.log('[Forecast Accuracy] enrichPayouts called, replacedForecasts:', replacedForecasts.length);
-      
-      if (replacedForecasts.length === 0) {
-        setEnrichedPayouts([]);
-        return;
-      }
+    const fetchLogs = async () => {
+      if (!user) return;
 
-      const settlementIds = replacedForecasts.map(p => p.settlement_id);
-      console.log('[Forecast Accuracy] Fetching modeling methods for settlement IDs:', settlementIds);
+      console.log('[Forecast Accuracy] Fetching accuracy logs for user:', user.id);
 
-      const { data: accuracyLogs, error } = await supabase
+      const { data, error } = await supabase
         .from('forecast_accuracy_log')
-        .select('settlement_id, modeling_method')
-        .in('settlement_id', settlementIds);
+        .select('*')
+        .eq('user_id', user.id)
+        .order('payout_date', { ascending: false });
 
-      console.log('[Forecast Accuracy] Accuracy logs fetched:', accuracyLogs?.length, 'error:', error);
-      console.log('[Forecast Accuracy] Sample accuracy log:', accuracyLogs?.[0]);
-
-      const logMap = new Map(accuracyLogs?.map(log => [log.settlement_id, log.modeling_method]) || []);
+      console.log('[Forecast Accuracy] Fetched logs:', data?.length, 'error:', error);
       
-      const enriched = replacedForecasts.map(payout => ({
-        ...payout,
-        modeling_method: logMap.get(payout.settlement_id) || 'unknown'
-      }));
-
-      console.log('[Forecast Accuracy] Enriched payouts:', enriched.length);
-      console.log('[Forecast Accuracy] Sample enriched payout:', enriched[0]);
-      setEnrichedPayouts(enriched);
+      if (!error && data) {
+        setAccuracyLogs(data);
+      }
     };
 
-    enrichPayouts();
-  }, [JSON.stringify(replacedForecasts.map(p => p.id))]);
+    fetchLogs();
+  }, [user]);
 
-  // Calculate overall accuracy
-  const avgAccuracy = enrichedPayouts.length > 0
-    ? enrichedPayouts.reduce((sum, p) => sum + (p.forecast_accuracy_percentage || 0), 0) / enrichedPayouts.length
+  // Calculate overall accuracy from logs
+  const avgAccuracy = accuracyLogs.length > 0
+    ? accuracyLogs.reduce((sum, log) => sum + (100 - log.difference_percentage), 0) / accuracyLogs.length
     : 0;
 
-  // Check forecast_accuracy_log table directly
-  useEffect(() => {
-    const checkAccuracyLogs = async () => {
-      const { count } = await supabase
-        .from('forecast_accuracy_log')
-        .select('*', { count: 'exact', head: true });
-      
-      console.log('[Forecast Accuracy] Total accuracy logs in database:', count);
-      setAccuracyLogCount(count || 0);
-    };
-    checkAccuracyLogs();
-  }, []);
 
   const loadMetrics = async () => {
-    console.log('[Forecast Accuracy] Loading metrics... enrichedPayouts:', enrichedPayouts.length, 'accuracyLogs:', accuracyLogCount);
+    console.log('[Forecast Accuracy] Loading metrics... accuracyLogs:', accuracyLogs.length);
     
     setIsLoading(true);
     setError(null);
@@ -139,21 +82,19 @@ export const AmazonForecastAccuracy = () => {
 
   useEffect(() => {
     console.log('[Forecast Accuracy] useEffect triggered', { 
-      replacedCount: replacedForecasts.length,
-      accuracyLogCount,
+      logsCount: accuracyLogs.length,
       hasMetrics: !!metrics,
       isLoading
     });
     
-    // Load metrics if we have accuracy logs, regardless of replacedForecasts
-    if (accuracyLogCount > 0 && !metrics && !isLoading) {
+    // Load metrics if we have accuracy logs
+    if (accuracyLogs.length > 0 && !metrics && !isLoading) {
       console.log('[Forecast Accuracy] Auto-loading metrics...');
       loadMetrics();
     }
-  }, [accuracyLogCount, metrics, isLoading]);
+  }, [accuracyLogs.length, metrics, isLoading]);
 
-  if (accuracyLogCount === 0 && replacedForecasts.length === 0) {
-    console.log('[Forecast Accuracy] No data - accuracyLogCount:', accuracyLogCount, 'replacedForecasts:', replacedForecasts.length);
+  if (accuracyLogs.length === 0) {
     return (
       <Card>
         <CardHeader>
@@ -187,7 +128,7 @@ export const AmazonForecastAccuracy = () => {
               Mathematical forecasting performance analysis
             </CardDescription>
           </div>
-          {enrichedPayouts.length > 0 && (
+          {accuracyLogs.length > 0 && (
             <Button onClick={loadMetrics} disabled={isLoading} variant="outline" size="sm">
               {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Refresh'}
             </Button>
@@ -197,9 +138,7 @@ export const AmazonForecastAccuracy = () => {
       <CardContent className="space-y-4">
         {/* Debug Info */}
         <div className="text-xs text-muted-foreground border-b pb-2">
-          Replaced Forecasts: {replacedForecasts.length} | 
-          Enriched: {enrichedPayouts.length} |
-          Accuracy Logs: {accuracyLogCount} |
+          Accuracy Logs: {accuracyLogs.length} |
           Metrics Loaded: {metrics ? 'Yes' : 'No'} | 
           Loading: {isLoading ? 'Yes' : 'No'}
           {metrics && ` | MAPE: ${metrics.mape?.toFixed(1)}% | Methods: ${Object.keys(metrics.byMethod || {}).join(', ')}`}
@@ -303,27 +242,27 @@ export const AmazonForecastAccuracy = () => {
 
         {/* Individual Comparisons */}
         <div className="space-y-3">
-          <h4 className="text-sm font-semibold">Recent Comparisons ({enrichedPayouts.length})</h4>
-          {enrichedPayouts.map((payout) => {
-            const forecastAmount = Number(payout.original_forecast_amount);
-            const actualAmount = Number(payout.total_amount);
-            const accuracy = payout.forecast_accuracy_percentage || 0;
-            const difference = actualAmount - forecastAmount;
+          <h4 className="text-sm font-semibold">Recent Comparisons ({accuracyLogs.length})</h4>
+          {accuracyLogs.map((log) => {
+            const forecastAmount = Number(log.forecasted_amount);
+            const actualAmount = Number(log.actual_amount);
+            const accuracy = 100 - log.difference_percentage;
+            const difference = log.difference_amount;
             const isOver = difference > 0;
-            const modelDisplay = payout.modeling_method === 'auren_forecast_v1' 
+            const modelDisplay = log.modeling_method === 'auren_forecast_v1' 
               ? 'Auren Formula V1' 
-              : payout.modeling_method || 'Unknown Method';
+              : log.modeling_method || 'Unknown Method';
 
             return (
               <div 
-                key={payout.id} 
+                key={log.id} 
                 className="border rounded-lg p-4 space-y-2 hover:bg-muted/30 transition-colors"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4 text-muted-foreground" />
                     <span className="font-medium">
-                      {format(new Date(payout.payout_date), 'MMM d, yyyy')}
+                      {format(new Date(log.payout_date), 'MMM d, yyyy')}
                     </span>
                     <Badge variant="secondary" className="text-xs">
                       {modelDisplay}
@@ -364,11 +303,9 @@ export const AmazonForecastAccuracy = () => {
                   </div>
                 </div>
 
-                {payout.forecast_replaced_at && (
-                  <p className="text-xs text-muted-foreground italic">
-                    Updated: {format(new Date(payout.forecast_replaced_at), 'MMM d, yyyy h:mm a')}
-                  </p>
-                )}
+                <p className="text-xs text-muted-foreground italic">
+                  Tracked: {format(new Date(log.created_at), 'MMM d, yyyy h:mm a')}
+                </p>
               </div>
             );
           })}
