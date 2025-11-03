@@ -297,9 +297,9 @@ export const AmazonForecastAccuracy = () => {
                         {modelDisplay}
                       </Badge>
                     </div>
-                    {log.days_accumulated > 1 && log.settlement_period_start && (
+                    {log.settlement_period_start && log.settlement_close_date && (
                       <div className="text-xs text-muted-foreground ml-6 mt-1">
-                        Period: {format(new Date(log.settlement_period_start), 'MMM d')} - {format(new Date(log.settlement_close_date || log.payout_date), 'MMM d')} ({log.days_accumulated} days)
+                        Period: {format(new Date(log.settlement_period_start), 'MMM d')} - {format(new Date(log.settlement_close_date), 'MMM d')} ({log.days_accumulated || 1} day{(log.days_accumulated || 1) > 1 ? 's' : ''})
                       </div>
                     )}
                     <div className="text-xs text-muted-foreground ml-6">
