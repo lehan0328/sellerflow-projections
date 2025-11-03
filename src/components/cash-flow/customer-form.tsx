@@ -54,7 +54,7 @@ export const CustomerForm = ({ open, onOpenChange, onAddCustomer }: CustomerForm
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto z-[55]">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold">
             Add New Customer

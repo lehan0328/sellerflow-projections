@@ -33,7 +33,7 @@ export function AddCategoryDialog({ open, onOpenChange, onAddCategory, type }: A
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm">
+      <DialogContent className="max-w-sm z-[60]">
         <DialogHeader>
           <DialogTitle>Add New {type === 'expense' ? 'Expense' : 'Income'} Category</DialogTitle>
         </DialogHeader>
