@@ -1,7 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingUp, TrendingDown, Target, Calendar, Brain, AlertCircle, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { format } from "date-fns";
+import { format, differenceInDays } from "date-fns";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -280,6 +280,11 @@ export const AmazonForecastAccuracy = () => {
             const modelDisplay = log.modeling_method === 'auren_forecast_v1' 
               ? 'Auren Formula V1' 
               : log.modeling_method || 'Unknown Method';
+            
+            // Calculate actual days between start and end (inclusive)
+            const calculatedDays = log.settlement_period_start && log.settlement_close_date
+              ? differenceInDays(new Date(log.settlement_close_date), new Date(log.settlement_period_start)) + 1
+              : log.days_accumulated || 1;
 
             return (
               <div 
@@ -299,7 +304,7 @@ export const AmazonForecastAccuracy = () => {
                     </div>
                     {log.settlement_period_start && log.settlement_close_date && (
                       <div className="text-xs text-muted-foreground ml-6 mt-1">
-                        Period: {format(new Date(log.settlement_period_start), 'MMM d')} - {format(new Date(log.settlement_close_date), 'MMM d')} ({log.days_accumulated || 1} day{(log.days_accumulated || 1) > 1 ? 's' : ''})
+                        Period: {format(new Date(log.settlement_period_start), 'MMM d')} - {format(new Date(log.settlement_close_date), 'MMM d')} ({calculatedDays} day{calculatedDays > 1 ? 's' : ''})
                       </div>
                     )}
                     <div className="text-xs text-muted-foreground ml-6">
