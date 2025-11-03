@@ -226,22 +226,6 @@ const WeightedForecasts = () => {
         </CardContent>
       </Card>
 
-      {/* Current Method Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Current Forecast Method</CardTitle>
-          <CardDescription>Your forecasts are currently using the most reliable data available</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
-            <div className="font-semibold mb-2">30-Day Payout Average</div>
-            <p className="text-sm text-muted-foreground">
-              Forecasts are calculated using a simple 30-day average of your actual Amazon payouts. 
-              This provides the most accurate and reliable predictions based on your confirmed disbursement history.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 };
