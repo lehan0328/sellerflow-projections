@@ -811,6 +811,7 @@ serve(async (req) => {
             marketplace_name: amazonAccount.marketplace_name || 'Amazon',
             status: 'forecasted',
             payout_type: payoutFrequency,
+            modeling_method: 'auren_forecast_v1',
             currency_code: amazonPayouts.length > 0 ? (amazonPayouts[0].currency_code || 'USD') : 'USD',
             transaction_count: 0,
             fees_total: 0,

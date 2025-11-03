@@ -93,6 +93,7 @@ serve(async (req) => {
         difference_percentage: differencePercentage,
         settlement_id: actualPayout.settlement_id,
         marketplace_name: actualPayout.marketplace_name,
+        modeling_method: forecast.modeling_method || 'auren_forecast_v1',
         user_email: user?.email,
         user_name: userName,
         monthly_revenue: profile?.monthly_revenue,

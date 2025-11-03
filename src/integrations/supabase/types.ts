@@ -1340,12 +1340,14 @@ export type Database = {
           account_id: string | null
           actual_amount: number
           amazon_account_id: string | null
+          confidence_threshold: number | null
           created_at: string | null
           difference_amount: number
           difference_percentage: number
           forecasted_amount: number
           id: string
           marketplace_name: string | null
+          modeling_method: string | null
           monthly_revenue: string | null
           payout_date: string
           settlement_id: string
@@ -1358,12 +1360,14 @@ export type Database = {
           account_id?: string | null
           actual_amount: number
           amazon_account_id?: string | null
+          confidence_threshold?: number | null
           created_at?: string | null
           difference_amount: number
           difference_percentage: number
           forecasted_amount: number
           id?: string
           marketplace_name?: string | null
+          modeling_method?: string | null
           monthly_revenue?: string | null
           payout_date: string
           settlement_id: string
@@ -1376,12 +1380,14 @@ export type Database = {
           account_id?: string | null
           actual_amount?: number
           amazon_account_id?: string | null
+          confidence_threshold?: number | null
           created_at?: string | null
           difference_amount?: number
           difference_percentage?: number
           forecasted_amount?: number
           id?: string
           marketplace_name?: string | null
+          modeling_method?: string | null
           monthly_revenue?: string | null
           payout_date?: string
           settlement_id?: string
