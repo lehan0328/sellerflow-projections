@@ -1433,6 +1433,15 @@ export const CashFlowCalendar = ({
                           />
                          </>
                        )}
+                       {showLowestBalanceLine && (
+                         <ReferenceLine
+                           y={lowestProjectedBalance}
+                           stroke={lowestBalanceColor}
+                           strokeWidth={2}
+                           strokeDasharray="3 3"
+                           label={{ value: 'Available to Spend', position: 'insideTopRight', fill: lowestBalanceColor, fontSize: 12 }}
+                         />
+                       )}
                        {refAreaLeft && refAreaRight && (
                          <ReferenceArea
                            x1={refAreaLeft}
