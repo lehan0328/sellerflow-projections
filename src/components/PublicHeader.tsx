@@ -109,9 +109,9 @@ export const PublicHeader = ({ activePage }: PublicHeaderProps) => {
             <Button 
               size="sm" 
               className="bg-gradient-primary hover-scale transition-all duration-200"
-              onClick={() => navigate('/contact')}
+              onClick={() => navigate('/signup')}
             >
-              Join Waitlist
+              Start Free Trial
             </Button>
           </div>
         </div>
