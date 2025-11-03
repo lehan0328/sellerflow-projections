@@ -551,9 +551,11 @@ export const CashFlowCalendar = ({
     let cumulativeOutflow = 0;
     
     return days.map((day, dayIndex) => {
-      const dayEvents = events.filter(event => 
-        format(event.date, 'yyyy-MM-dd') === format(day, 'yyyy-MM-dd')
-      );
+      const dayEvents = events.filter(event => {
+        // Use balanceImpactDate if available (for forecasted payouts), otherwise use date
+        const impactDate = event.balanceImpactDate || event.date;
+        return format(impactDate, 'yyyy-MM-dd') === format(day, 'yyyy-MM-dd');
+      });
       
       const dailyInflow = dayEvents.filter(e => e.type === 'inflow').reduce((sum, e) => sum + e.amount, 0);
       const dailyOutflow = dayEvents.filter(e => e.type !== 'inflow').reduce((sum, e) => sum + e.amount, 0);
