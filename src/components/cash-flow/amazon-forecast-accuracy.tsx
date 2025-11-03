@@ -31,27 +31,46 @@ export const AmazonForecastAccuracy = () => {
 
   // Filter payouts that have forecast data (were replaced from forecasts)
   const replacedForecasts = (amazonPayouts as PayoutWithForecast[])?.filter(
-    payout => payout.forecast_replaced_at && payout.original_forecast_amount
+    payout => {
+      const hasData = payout.forecast_replaced_at && payout.original_forecast_amount;
+      console.log('[Forecast Accuracy Filter]', {
+        id: payout.id,
+        date: payout.payout_date,
+        hasReplacedAt: !!payout.forecast_replaced_at,
+        hasOriginalAmount: !!payout.original_forecast_amount,
+        included: hasData
+      });
+      return hasData;
+    }
   ) || [];
   
   console.log('[Forecast Accuracy] All payouts:', amazonPayouts?.length);
   console.log('[Forecast Accuracy] Filtered replacedForecasts:', replacedForecasts.length);
-  console.log('[Forecast Accuracy] Sample replaced forecast:', replacedForecasts[0]);
+  console.log('[Forecast Accuracy] All payout IDs:', amazonPayouts?.map(p => p.id));
+  console.log('[Forecast Accuracy] Replaced payout IDs:', replacedForecasts.map(p => p.id));
 
   // Fetch modeling methods from accuracy log and enrich payouts
   useEffect(() => {
     const enrichPayouts = async () => {
+      console.log('[Forecast Accuracy] enrichPayouts called, replacedForecasts:', replacedForecasts.length);
+      
       if (replacedForecasts.length === 0) {
         setEnrichedPayouts([]);
         return;
       }
 
-      const { data: accuracyLogs } = await supabase
+      const settlementIds = replacedForecasts.map(p => p.settlement_id);
+      console.log('[Forecast Accuracy] Fetching modeling methods for settlement IDs:', settlementIds);
+
+      const { data: accuracyLogs, error } = await supabase
         .from('forecast_accuracy_log')
         .select('settlement_id, modeling_method')
-        .in('settlement_id', replacedForecasts.map(p => p.settlement_id));
+        .in('settlement_id', settlementIds);
 
-      const logMap = new Map(accuracyLogs?.map(log => [log.settlement_id, log.modeling_method]));
+      console.log('[Forecast Accuracy] Accuracy logs fetched:', accuracyLogs?.length, 'error:', error);
+      console.log('[Forecast Accuracy] Sample accuracy log:', accuracyLogs?.[0]);
+
+      const logMap = new Map(accuracyLogs?.map(log => [log.settlement_id, log.modeling_method]) || []);
       
       const enriched = replacedForecasts.map(payout => ({
         ...payout,
@@ -59,12 +78,12 @@ export const AmazonForecastAccuracy = () => {
       }));
 
       console.log('[Forecast Accuracy] Enriched payouts:', enriched.length);
-      console.log('[Forecast Accuracy] Sample enriched:', enriched[0]);
+      console.log('[Forecast Accuracy] Sample enriched payout:', enriched[0]);
       setEnrichedPayouts(enriched);
     };
 
     enrichPayouts();
-  }, [replacedForecasts.length]);
+  }, [JSON.stringify(replacedForecasts.map(p => p.id))]);
 
   // Calculate overall accuracy
   const avgAccuracy = enrichedPayouts.length > 0
@@ -134,6 +153,7 @@ export const AmazonForecastAccuracy = () => {
   }, [accuracyLogCount, metrics, isLoading]);
 
   if (accuracyLogCount === 0 && replacedForecasts.length === 0) {
+    console.log('[Forecast Accuracy] No data - accuracyLogCount:', accuracyLogCount, 'replacedForecasts:', replacedForecasts.length);
     return (
       <Card>
         <CardHeader>
