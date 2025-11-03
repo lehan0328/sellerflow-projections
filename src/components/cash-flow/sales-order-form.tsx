@@ -428,16 +428,6 @@ export const SalesOrderForm = ({ open, onOpenChange, customers, onSubmitOrder }:
               </SelectContent>
             </Select>
           </div>
-
-          <AddCategoryDialog
-            open={showAddCategory}
-            onOpenChange={setShowAddCategory}
-            onAddCategory={async (name) => {
-              await addCategory(name);
-              handleInputChange("category", name);
-            }}
-            type="income"
-          />
           
           <div className="space-y-2">
             <Label htmlFor="notes">Notes (Optional)</Label>
@@ -460,6 +450,16 @@ export const SalesOrderForm = ({ open, onOpenChange, customers, onSubmitOrder }:
           </div>
         </form>
       </DialogContent>
+      
+      <AddCategoryDialog
+        open={showAddCategory}
+        onOpenChange={setShowAddCategory}
+        onAddCategory={async (name) => {
+          await addCategory(name);
+          handleInputChange("category", name);
+        }}
+        type="income"
+      />
     </Dialog>
   );
 };

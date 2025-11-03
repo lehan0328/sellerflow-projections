@@ -544,17 +544,6 @@ export const IncomeForm = ({
                   </SelectContent>
                 </Select>
               </div>
-
-              <AddCategoryDialog
-                open={showAddCategory}
-                onOpenChange={setShowAddCategory}
-                onAddCategory={async (name) => {
-                  const addFn = formData.type === "income" ? addIncomeCategory : addExpenseCategory;
-                  await addFn(name);
-                  handleInputChange("category", name);
-                }}
-                type={formData.type}
-              />
               
               <div className="space-y-2">
                 <Label htmlFor="notes">Notes (Optional)</Label>
@@ -582,6 +571,18 @@ export const IncomeForm = ({
           </>
         )}
       </DialogContent>
+      
+      {/* Add Category Dialog */}
+      <AddCategoryDialog
+        open={showAddCategory}
+        onOpenChange={setShowAddCategory}
+        onAddCategory={async (name) => {
+          const addFn = formData.type === "income" ? addIncomeCategory : addExpenseCategory;
+          await addFn(name);
+          handleInputChange("category", name);
+        }}
+        type={formData.type}
+      />
       
       {/* Customer Form Modal */}
       <CustomerForm 

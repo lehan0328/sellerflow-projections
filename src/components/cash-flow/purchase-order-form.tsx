@@ -760,20 +760,6 @@ export const PurchaseOrderForm = ({
               </Select>
             </div>
 
-            <AddCategoryDialog
-              open={showAddCategory}
-              onOpenChange={setShowAddCategory}
-              onAddCategory={async (name) => {
-                await addCategory(name);
-                await refetchCategories();
-                setFormData(prev => ({
-                  ...prev,
-                  category: name
-                }));
-              }}
-              type="expense"
-            />
-
             {/* Description */}
             <div className="space-y-2">
               <Label htmlFor="description" className="text-sm font-medium">Description</Label>
@@ -1189,6 +1175,20 @@ export const PurchaseOrderForm = ({
         </form>}
     </DialogContent>
   </Dialog>
+
+  <AddCategoryDialog
+    open={showAddCategory}
+    onOpenChange={setShowAddCategory}
+    onAddCategory={async (name) => {
+      await addCategory(name);
+      await refetchCategories();
+      setFormData(prev => ({
+        ...prev,
+        category: name
+      }));
+    }}
+    type="expense"
+  />
 
   {/* Delete All Vendors Confirmation Dialog */}
   <AlertDialog open={showDeleteAllDialog} onOpenChange={setShowDeleteAllDialog}>
