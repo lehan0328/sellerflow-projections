@@ -2290,6 +2290,7 @@ const Dashboard = () => {
                   onIncomeClick={handleEditIncome}
                   reserveAmount={reserveAmount}
                   excludeToday={excludeToday}
+                  safeSpendingLimit={safeSpendingData?.safe_spending_limit || 0}
                 />
               </div>
               <div className="lg:col-span-1 h-full">

@@ -70,6 +70,7 @@ interface CashFlowCalendarProps {
   reserveAmount?: number;
   projectedDailyBalances?: Array<{ date: Date; balance: number }>;
   excludeToday?: boolean; // NEW: Whether to exclude today's transactions from projected balance
+  safeSpendingLimit?: number; // The calculated safe spending available from useSafeSpending hook
 }
 
 export const CashFlowCalendar = ({ 
@@ -88,6 +89,7 @@ export const CashFlowCalendar = ({
   reserveAmount = 0,
   projectedDailyBalances = [],
   excludeToday = false, // Default to false (include today's transactions)
+  safeSpendingLimit = 0, // Safe spending available to spend
 }: CashFlowCalendarProps) => {
   const { totalAvailableCredit } = useCreditCards();
   const { chartPreferences, updateChartPreferences } = useUserSettings();
@@ -656,20 +658,14 @@ export const CashFlowCalendar = ({
   
   const displayData = getDisplayData();
   
-  // Calculate lowest projected balance from chart data (available to spend)
-  const lowestProjectedBalance = useMemo(() => {
-    if (chartData.length === 0) return 0;
-    const lowestCashFlow = Math.min(...chartData.map(d => d.cashFlow || 0));
-    // Available to spend = lowest projected balance - reserve amount
-    const availableToSpend = lowestCashFlow - reserveAmount;
-    console.log('📊 [Calendar] Available to Spend calculation:', {
-      lowestCashFlow,
-      reserveAmount,
-      availableToSpend,
-      chartDataLength: chartData.length
-    });
-    return availableToSpend;
-  }, [chartData, reserveAmount]);
+  // Use the safe spending limit directly from the safe spending calculation
+  // This ensures the calendar shows the exact same "Available to Spend" as the stats box
+  const lowestProjectedBalance = safeSpendingLimit;
+  
+  console.log('📊 [Calendar] Available to Spend from safe spending:', {
+    safeSpendingLimit,
+    reserveAmount
+  });
   
   // Memoize Y-axis domain calculation
   const yDomain = useMemo((): [number, number] => {
