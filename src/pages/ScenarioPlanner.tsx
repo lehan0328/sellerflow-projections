@@ -902,18 +902,18 @@ export default function ScenarioPlanner() {
                       <p className="text-2xl font-bold">${baselineCash.toLocaleString()}</p>
                     </div>
                     <div className="p-4 border rounded-lg">
-                      <p className="text-sm text-muted-foreground mb-1">Scenario Impact (3mo)</p>
-                      <p className={`text-2xl font-bold ${cumulativeImpact.difference >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        {cumulativeImpact.difference >= 0 ? '+' : ''}${cumulativeImpact.difference.toLocaleString()}
+                      <p className="text-sm text-muted-foreground mb-1">Net Change (3mo)</p>
+                      <p className={`text-2xl font-bold ${(scenarioProjection[scenarioProjection.length - 1]?.baselineCash - baselineCash) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {(scenarioProjection[scenarioProjection.length - 1]?.baselineCash - baselineCash) >= 0 ? '+' : ''}${((scenarioProjection[scenarioProjection.length - 1]?.baselineCash || baselineCash) - baselineCash).toLocaleString()}
                       </p>
                     </div>
                     <div className="p-4 border rounded-lg">
-                      <p className="text-sm text-muted-foreground mb-1">Baseline End Balance</p>
-                      <p className="text-2xl font-bold">${cumulativeImpact.baselineTotal.toLocaleString()}</p>
+                      <p className="text-sm text-muted-foreground mb-1">Baseline End Balance (3mo)</p>
+                      <p className="text-2xl font-bold">${(scenarioProjection[scenarioProjection.length - 1]?.baselineCash || 0).toLocaleString()}</p>
                     </div>
                     <div className="p-4 border rounded-lg">
-                      <p className="text-sm text-muted-foreground mb-1">Scenario End Balance</p>
-                      <p className="text-2xl font-bold text-primary">${cumulativeImpact.scenarioTotal.toLocaleString()}</p>
+                      <p className="text-sm text-muted-foreground mb-1">Scenario End Balance (3mo)</p>
+                      <p className="text-2xl font-bold text-primary">${(scenarioProjection[scenarioProjection.length - 1]?.scenarioCash || 0).toLocaleString()}</p>
                     </div>
                   </div>
                   
