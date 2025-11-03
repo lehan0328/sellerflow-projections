@@ -81,18 +81,48 @@ serve(async (req) => {
           continue;
         }
 
-        // Check if user has expired subscription
+        // Check subscription status with plan overrides and Stripe subscriptions
         const { data: profile } = await supabaseAdmin
           .from('profiles')
-          .select('trial_end')
+          .select('trial_end, plan_override')
           .eq('user_id', account.user_id)
           .single();
 
-        // Check if trial expired
-        const trialEnd = profile?.trial_end ? new Date(profile.trial_end) : null;
-        const isTrialExpired = trialEnd && trialEnd < new Date();
+        // If there's a plan override, allow sync
+        let shouldSkip = false;
+        if (!profile?.plan_override) {
+          // Check for active Stripe subscription
+          const STRIPE_SECRET_KEY = Deno.env.get('STRIPE_SECRET_KEY');
+          let hasActiveSubscription = false;
 
-        if (isTrialExpired) {
+          if (STRIPE_SECRET_KEY && user.email) {
+            try {
+              const stripe = await import('https://esm.sh/stripe@14.21.0');
+              const stripeClient = stripe.default(STRIPE_SECRET_KEY, { apiVersion: '2023-10-16' as any });
+              
+              const customers = await stripeClient.customers.list({ email: user.email, limit: 1 });
+              if (customers.data.length > 0) {
+                const subscriptions = await stripeClient.subscriptions.list({
+                  customer: customers.data[0].id,
+                  status: 'active',
+                  limit: 1,
+                });
+                hasActiveSubscription = subscriptions.data.length > 0;
+              }
+            } catch (error) {
+              console.error('Error checking Stripe subscription:', error);
+            }
+          }
+
+          // If no active subscription, check trial status
+          if (!hasActiveSubscription) {
+            const trialEnd = profile?.trial_end ? new Date(profile.trial_end) : null;
+            const isTrialExpired = trialEnd && trialEnd < new Date();
+            shouldSkip = isTrialExpired;
+          }
+        }
+
+        if (shouldSkip) {
           console.log(`Skipping sync for expired account ${account.id}`);
           results.push({
             accountId: account.id,
