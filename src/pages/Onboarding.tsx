@@ -57,6 +57,7 @@ export default function Onboarding() {
   const [bankSkipped, setBankSkipped] = useState(false);
   const [forecastingEnabled, setForecastingEnabled] = useState(false);
   const [reserveAmount, setReserveAmount] = useState<string>('0');
+  const [safetyNet, setSafetyNet] = useState<number>(8); // Default to Moderate (8)
   const [linkToken, setLinkToken] = useState<string | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
   const [isAmazonSyncComplete, setIsAmazonSyncComplete] = useState(false);
@@ -351,7 +352,7 @@ export default function Onboarding() {
             user_id: user.id,
             account_id: profile.account_id,
             forecasts_enabled: forecastingEnabled,
-            forecast_confidence_threshold: 8, // Default to Moderate
+            forecast_confidence_threshold: safetyNet,
             default_reserve_lag_days: 7,
             safe_spending_reserve: Number(reserveAmount) || 0,
           }, {
@@ -464,7 +465,7 @@ export default function Onboarding() {
                   <div>
                     <h3 className="font-semibold">Step 4: Mathematical Forecasting</h3>
                     <p className="text-sm text-muted-foreground">
-                      Enable AI-powered payout predictions based on your Amazon transaction history (requires Amazon connection)
+                      Enable mathematical payout predictions based on your Amazon transaction history (requires Amazon connection)
                     </p>
                   </div>
                 </div>
@@ -928,6 +929,45 @@ export default function Onboarding() {
                   </p>
                   <p className="text-xs text-amber-700 dark:text-amber-300">
                     Mathematical forecasting will be available once your Amazon account completes its initial sync. This typically takes 15-30 minutes. You can enable it later from Settings.
+                  </p>
+                </div>
+              )}
+
+              {isAmazonSyncComplete && (
+                <div className="space-y-2">
+                  <Label htmlFor="safety-net" className="text-sm font-medium">
+                    Choose Safety Net Level
+                  </Label>
+                  <Select
+                    value={safetyNet.toString()}
+                    onValueChange={(value) => setSafetyNet(Number(value))}
+                  >
+                    <SelectTrigger id="safety-net">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="3">
+                        <div className="flex flex-col items-start">
+                          <span className="font-medium">Aggressive (−3%)</span>
+                          <span className="text-xs text-muted-foreground">Minimal buffer - stable sales, low returns</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="8">
+                        <div className="flex flex-col items-start">
+                          <span className="font-medium">Moderate (−8%) • Recommended</span>
+                          <span className="text-xs text-muted-foreground">Balanced protection - typical delays & returns</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="15">
+                        <div className="flex flex-col items-start">
+                          <span className="font-medium">Conservative (−15%)</span>
+                          <span className="text-xs text-muted-foreground">Maximum safety - volatile sales or high returns</span>
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    The safety net reduces forecasts to account for returns, chargebacks, and reserve delays
                   </p>
                 </div>
               )}
