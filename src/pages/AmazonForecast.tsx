@@ -4,6 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useAmazonPayouts } from "@/hooks/useAmazonPayouts";
 import { useIncome } from "@/hooks/useIncome";
 import { useAmazonAccounts } from "@/hooks/useAmazonAccounts";
+import { useAuth } from "@/hooks/useAuth";
 import { 
   TrendingUp, 
   ArrowLeft,
@@ -48,6 +49,7 @@ export default function AmazonForecast() {
   const { amazonPayouts } = useAmazonPayouts();
   const { incomeItems } = useIncome();
   const { amazonAccounts } = useAmazonAccounts();
+  const { user } = useAuth();
   const [isGenerating, setIsGenerating] = useState(false);
   const [showAllForecasts, setShowAllForecasts] = useState(false);
   const [chartType, setChartType] = useState<'bar' | 'line'>('bar');
@@ -274,21 +276,65 @@ export default function AmazonForecast() {
 
   // Calculate forecast accuracy
   const [forecastAccuracy, setForecastAccuracy] = useState<number | null>(null);
+  const [accuracyMetrics, setAccuracyMetrics] = useState<{
+    totalComparisons: number;
+    outliersExcluded: number;
+  } | null>(null);
 
   useEffect(() => {
     const fetchAccuracy = async () => {
+      if (!user) return;
+      
       try {
+        // Fetch ALL accuracy logs for the user (not just 10)
         const { data } = await supabase
           .from('forecast_accuracy_log')
           .select('difference_percentage')
-          .limit(10);
+          .eq('user_id', user.id);
 
         if (data && data.length > 0) {
-          const avgError = data.reduce((sum, log) => 
-            sum + Math.abs(log.difference_percentage), 0
-          ) / data.length;
-          const accuracy = 100 - avgError;
-          setForecastAccuracy(Math.max(0, Math.min(100, accuracy)));
+          // Stage 1: Filter out extreme outliers (>200% error)
+          const thresholdFiltered = data.filter(log => 
+            Math.abs(log.difference_percentage) <= 200
+          );
+          const thresholdExcluded = data.length - thresholdFiltered.length;
+
+          // Stage 2: Apply IQR method for statistical outlier removal
+          let filteredLogs = thresholdFiltered;
+          let iqrExcluded = 0;
+
+          if (thresholdFiltered.length >= 4) {
+            const errors = thresholdFiltered.map(log => Math.abs(log.difference_percentage));
+            const sortedErrors = [...errors].sort((a, b) => a - b);
+            
+            const q1Index = Math.floor(sortedErrors.length * 0.25);
+            const q3Index = Math.floor(sortedErrors.length * 0.75);
+            const q1 = sortedErrors[q1Index];
+            const q3 = sortedErrors[q3Index];
+            const iqr = q3 - q1;
+            const lowerBound = q1 - 1.5 * iqr;
+            const upperBound = q3 + 1.5 * iqr;
+            
+            filteredLogs = thresholdFiltered.filter((log, idx) => {
+              const error = errors[idx];
+              return error >= lowerBound && error <= upperBound;
+            });
+            
+            iqrExcluded = thresholdFiltered.length - filteredLogs.length;
+          }
+
+          // Calculate overall accuracy from filtered dataset
+          const avgAccuracy = filteredLogs.length > 0
+            ? filteredLogs.reduce((sum, log) => 
+                sum + (100 - Math.abs(log.difference_percentage)), 0
+              ) / filteredLogs.length
+            : 0;
+
+          setForecastAccuracy(Math.max(0, Math.min(100, avgAccuracy)));
+          setAccuracyMetrics({
+            totalComparisons: filteredLogs.length,
+            outliersExcluded: thresholdExcluded + iqrExcluded
+          });
         }
       } catch (error) {
         console.error('Error fetching forecast accuracy:', error);
@@ -296,7 +342,7 @@ export default function AmazonForecast() {
     };
 
     fetchAccuracy();
-  }, []);
+  }, [user]);
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -411,6 +457,7 @@ export default function AmazonForecast() {
                 {forecastAccuracy !== null && forecastAccuracy >= 90 ? 'Excellent' : 
                  forecastAccuracy !== null && forecastAccuracy >= 80 ? 'Good' : 
                  forecastAccuracy !== null ? 'Fair' : 'Not enough data'}
+                {accuracyMetrics && ` • ${accuracyMetrics.totalComparisons} comparisons`}
               </p>
             </div>
 
