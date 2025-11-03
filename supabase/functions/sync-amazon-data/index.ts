@@ -430,14 +430,9 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string)
             console.log(`[SYNC] ✅ Logged accuracy with settlement period ${settlementStartDateStr} to ${settlementCloseDate}`);
           }
           
-          // Delete all the rolled-over forecasts since they're now replaced
-          const forecastIds = rolledForecasts.map(f => f.id);
-          await supabase
-            .from('amazon_payouts')
-            .delete()
-            .in('id', forecastIds);
-          
-          console.log(`[SYNC] Deleted ${forecastIds.length} rolled-over forecasts`);
+          // DO NOT DELETE FORECASTS - they should remain for historical comparison
+          // Users need to see both forecasts and actuals side-by-side
+          console.log(`[SYNC] ✅ Preserved ${rolledForecasts.length} forecasts for historical comparison`);
         }
       }
     }
