@@ -42,7 +42,7 @@ export const AmazonForecastAccuracy = () => {
 
   // Calculate overall accuracy from logs
   const avgAccuracy = accuracyLogs.length > 0
-    ? accuracyLogs.reduce((sum, log) => sum + (100 - log.difference_percentage), 0) / accuracyLogs.length
+    ? accuracyLogs.reduce((sum, log) => sum + (100 - Math.abs(log.difference_percentage)), 0) / accuracyLogs.length
     : 0;
 
 
@@ -246,7 +246,7 @@ export const AmazonForecastAccuracy = () => {
           {accuracyLogs.map((log) => {
             const forecastAmount = Number(log.forecasted_amount);
             const actualAmount = Number(log.actual_amount);
-            const accuracy = 100 - log.difference_percentage;
+            const accuracy = 100 - Math.abs(log.difference_percentage);
             const difference = log.difference_amount;
             const isOver = difference > 0;
             const modelDisplay = log.modeling_method === 'auren_forecast_v1' 
