@@ -16,6 +16,7 @@ export const AmazonForecastAccuracy = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [accuracyLogs, setAccuracyLogs] = useState<any[]>([]);
+  const [showAll, setShowAll] = useState(false);
 
   // Fetch accuracy logs directly from the forecast_accuracy_log table
   useEffect(() => {
@@ -245,8 +246,19 @@ export const AmazonForecastAccuracy = () => {
 
         {/* Individual Comparisons */}
         <div className="space-y-3">
-          <h4 className="text-sm font-semibold">Recent Comparisons ({filteredLogs.length}{totalExcluded > 0 ? ` of ${accuracyLogs.length}` : ''})</h4>
-          {filteredLogs.map((log) => {
+          <div className="flex items-center justify-between">
+            <h4 className="text-sm font-semibold">Recent Comparisons ({filteredLogs.length}{totalExcluded > 0 ? ` of ${accuracyLogs.length}` : ''})</h4>
+            {filteredLogs.length > 5 && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setShowAll(!showAll)}
+              >
+                {showAll ? 'Show Less' : 'See All'}
+              </Button>
+            )}
+          </div>
+          {(showAll ? filteredLogs : filteredLogs.slice(0, 5)).map((log) => {
             const forecastAmount = Number(log.forecasted_amount);
             const actualAmount = Number(log.actual_amount);
             const accuracy = 100 - Math.abs(log.difference_percentage);
