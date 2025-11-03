@@ -792,6 +792,11 @@ export const ForecastSettings = () => {
                 {!loading && <div className="text-xs text-muted-foreground">
                     Current safety net: <span className="font-semibold">{savedSafetyLevel.label} {savedSafetyLevel.discount}</span>
                   </div>}
+                <div className="mt-3 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/20 p-3">
+                  <p className="text-xs text-amber-800 dark:text-amber-200">
+                    <strong>Note:</strong> Forecasts are based on historical data patterns and do not factor in sudden sale spikes or extreme drops. Our v2 model (coming soon) will include advanced anomaly detection.
+                  </p>
+                </div>
               </div> : !canEnableForecasts ? <div className="mt-2 space-y-1">
                 <div className="text-sm text-blue-600 dark:text-blue-400 flex items-center gap-2">
                   <AlertCircle className="h-4 w-4" />
