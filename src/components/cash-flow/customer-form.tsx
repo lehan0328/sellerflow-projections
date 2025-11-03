@@ -18,7 +18,7 @@ interface CustomerFormProps {
 }
 
 export const CustomerForm = ({ open, onOpenChange, onAddCustomer }: CustomerFormProps) => {
-  const { categories, addCategory, refetch: refetchCategories } = useCategories('income');
+  const { categories, addCategory, refetch: refetchCategories } = useCategories('income', false);
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
