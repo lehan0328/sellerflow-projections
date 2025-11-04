@@ -165,26 +165,29 @@ const Guides = () => {
                   <p className="text-muted-foreground">Explore Auren's most powerful capabilities</p>
                 </div>
                 
-                <Card className="shadow-card">
-                  <CardHeader>
-                    <CardTitle>Search by Amount</CardTitle>
-                    <p className="text-sm text-muted-foreground">
-                      Search how much you want to spend and we find the earliest date you can spend it
-                    </p>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="rounded-lg border bg-card overflow-hidden">
-                      <iframe 
-                        src="https://scribehow.com/embed/Search_Opportunities_by_Amount__oVVmOr3oQ9KiW2SkOo0kew?removeLogo=true" 
-                        width="100%" 
-                        height="800" 
-                        allow="fullscreen" 
-                        style={{ aspectRatio: '1 / 1', border: 0, minHeight: '480px' }}
-                        title="Search by Amount Guide"
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
+                <Link to="/guides/search-by-amount">
+                  <Card className="group relative overflow-hidden shadow-card hover:shadow-elevated transition-all duration-300 cursor-pointer border-2 hover:border-primary/50 animate-fade-in">
+                    <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    <CardHeader className="relative">
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-2 flex-1">
+                          <CardTitle className="text-2xl group-hover:text-primary transition-colors">
+                            Search by Amount
+                          </CardTitle>
+                          <p className="text-muted-foreground">
+                            Search how much you want to spend and we find the earliest date you can spend it
+                          </p>
+                        </div>
+                        <ChevronRight className="h-6 w-6 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all flex-shrink-0 ml-4" />
+                      </div>
+                    </CardHeader>
+                    <CardContent className="relative">
+                      <div className="flex items-center gap-2 text-sm text-primary font-medium">
+                        <span>View Interactive Guide</span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
               </div>
 
               <Separator className="my-8" />
