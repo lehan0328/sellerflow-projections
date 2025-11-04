@@ -449,6 +449,34 @@ export const PurchaseOrderForm = ({
     // Navigate to Dashboard settings where vendor management is located
     navigate('/dashboard?view=settings&section=vendors');
   };
+  // Convert PDF to PNG for better AI processing
+  const renderPdfPreview = async (file: File): Promise<Blob | null> => {
+    try {
+      const pdfjsLib: any = await import('pdfjs-dist');
+      if (pdfjsLib?.GlobalWorkerOptions) {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://unpkg.com/pdfjs-dist@5.4.296/build/pdf.worker.min.mjs';
+      }
+      const data = new Uint8Array(await file.arrayBuffer());
+      const pdf = await pdfjsLib.getDocument({ data }).promise;
+      const page = await pdf.getPage(1);
+      const viewport = page.getViewport({ scale: 2.0 }); // Higher scale for better OCR
+      const canvas = document.createElement('canvas');
+      canvas.width = viewport.width as number;
+      canvas.height = viewport.height as number;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return null;
+      await page.render({ canvasContext: ctx, viewport }).promise;
+      
+      // Convert canvas to blob
+      return new Promise((resolve) => {
+        canvas.toBlob((blob) => resolve(blob), 'image/png');
+      });
+    } catch (e) {
+      console.error('PDF preview render failed:', e);
+      return null;
+    }
+  };
+
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -477,9 +505,21 @@ export const PurchaseOrderForm = ({
     setIsProcessingDocument(true);
     setUploadedFileName(file.name);
     try {
+      let fileToUpload: File | Blob = file;
+
+      // Convert PDF to PNG for better AI processing
+      if (file.type === 'application/pdf') {
+        const pngBlob = await renderPdfPreview(file);
+        if (pngBlob) {
+          fileToUpload = new File([pngBlob], file.name.replace('.pdf', '.png'), { type: 'image/png' });
+        } else {
+          throw new Error('Failed to convert PDF to image');
+        }
+      }
+
       // Create form data
       const formDataToSend = new FormData();
-      formDataToSend.append('file', file);
+      formDataToSend.append('file', fileToUpload);
 
       // Call the edge function
       const {
