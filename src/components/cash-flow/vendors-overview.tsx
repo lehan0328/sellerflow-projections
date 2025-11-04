@@ -24,6 +24,8 @@ import { BankTransaction } from "./bank-transaction-log";
 import { toast } from "sonner";
 import * as React from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { calculateSimilarity } from "@/lib/similarityUtils";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 interface VendorsOverviewProps {
   bankTransactions?: BankTransaction[];
@@ -66,6 +68,7 @@ export const VendorsOverview = ({
   const [paymentMethodFilter, setPaymentMethodFilter] = useState<'all' | 'cash' | 'credit'>('all');
   const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
   const [lineItemsByTransaction, setLineItemsByTransaction] = useState<Record<string, any[]>>({});
+  const [matchingPOsByTransaction, setMatchingPOsByTransaction] = useState<Record<string, any[]>>({});
 
   const toggleRow = (transactionId: string) => {
     setExpandedRows(prev => ({ ...prev, [transactionId]: !prev[transactionId] }));
@@ -86,12 +89,109 @@ export const VendorsOverview = ({
 
       if (error) throw error;
       
+      const lineItems = data || [];
       setLineItemsByTransaction(prev => ({
         ...prev,
-        [transactionId]: data || []
+        [transactionId]: lineItems
       }));
+
+      // Find matching purchase orders based on line item similarity
+      if (lineItems.length > 0) {
+        await findMatchingPurchaseOrders(transactionId, lineItems);
+      }
     } catch (error) {
       console.error('Error fetching line items:', error);
+    }
+  };
+
+  const findMatchingPurchaseOrders = async (currentTransactionId: string, currentLineItems: any[]) => {
+    try {
+      // Get all other transactions with line items
+      const { data: allTransactions, error } = await supabase
+        .from('transactions')
+        .select(`
+          id,
+          description,
+          amount,
+          due_date,
+          status,
+          vendors(name)
+        `)
+        .eq('type', 'purchase_order')
+        .neq('id', currentTransactionId)
+        .order('due_date', { ascending: false });
+
+      if (error) throw error;
+
+      const matchingPOs: Array<{
+        id: string;
+        vendor_name: string;
+        po_number: string;
+        amount: number;
+        due_date: string;
+        status: string;
+        matching_items: Array<{
+          description: string;
+          similarity: number;
+        }>;
+      }> = [];
+
+      // Check each transaction for matching line items
+      for (const transaction of allTransactions || []) {
+        const { data: otherLineItems } = await supabase
+          .from('purchase_order_line_items')
+          .select('*')
+          .eq('transaction_id', transaction.id);
+
+        if (!otherLineItems || otherLineItems.length === 0) continue;
+
+        const matchingItems: Array<{ description: string; similarity: number }> = [];
+
+        // Compare each current line item with other transaction's line items
+        currentLineItems.forEach((currentItem) => {
+          otherLineItems.forEach((otherItem) => {
+            const currentDesc = currentItem.product_name || '';
+            const otherDesc = otherItem.product_name || '';
+
+            if (currentDesc && otherDesc) {
+              const similarity = calculateSimilarity(currentDesc, otherDesc);
+
+              // 80% or higher = match
+              if (similarity >= 80) {
+                matchingItems.push({
+                  description: otherDesc,
+                  similarity
+                });
+              }
+            }
+          });
+        });
+
+        // If transaction has matches, add to results
+        if (matchingItems.length > 0) {
+          matchingPOs.push({
+            id: transaction.id,
+            vendor_name: (transaction as any).vendors?.name || 'Unknown',
+            po_number: transaction.description || '',
+            amount: transaction.amount || 0,
+            due_date: transaction.due_date || '',
+            status: transaction.status || '',
+            matching_items: matchingItems.sort((a, b) => b.similarity - a.similarity)
+          });
+        }
+      }
+
+      // Sort by date (most recent first) and limit to top 3
+      const topMatches = matchingPOs
+        .sort((a, b) => new Date(b.due_date).getTime() - new Date(a.due_date).getTime())
+        .slice(0, 3);
+
+      setMatchingPOsByTransaction(prev => ({
+        ...prev,
+        [currentTransactionId]: topMatches
+      }));
+    } catch (error) {
+      console.error('Error finding matching purchase orders:', error);
     }
   };
 
@@ -649,6 +749,63 @@ export const VendorsOverview = ({
                           ) : (
                             <div className="text-sm text-muted-foreground text-center py-4">
                               No line items added for this purchase order
+                            </div>
+                          )}
+
+                          {/* Matching Purchase Orders Section */}
+                          {matchingPOsByTransaction[tx.id] && matchingPOsByTransaction[tx.id].length > 0 && (
+                            <div className="pt-4 border-t">
+                              <div className="text-sm font-medium mb-3">
+                                Similar Purchase Orders
+                              </div>
+                              <div className="space-y-2">
+                                {matchingPOsByTransaction[tx.id].map((matchingPO) => (
+                                  <Collapsible key={matchingPO.id}>
+                                    <div className="flex items-start justify-between p-3 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors">
+                                      <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2 mb-1">
+                                          <span className="font-medium text-sm truncate">
+                                            {matchingPO.vendor_name}
+                                          </span>
+                                          <Badge variant="outline" className="text-xs">
+                                            {matchingPO.po_number}
+                                          </Badge>
+                                        </div>
+                                        <div className="flex items-center gap-3 text-xs text-muted-foreground mb-2">
+                                          <span>${matchingPO.amount.toLocaleString()}</span>
+                                          <span>•</span>
+                                          <span>{new Date(matchingPO.due_date).toLocaleDateString()}</span>
+                                        </div>
+                                        <CollapsibleTrigger asChild>
+                                          <Button variant="ghost" size="sm" className="h-6 text-xs px-2">
+                                            <ChevronRight className="h-3 w-3 mr-1" />
+                                            View {matchingPO.matching_items.length} matching item{matchingPO.matching_items.length !== 1 ? 's' : ''}
+                                          </Button>
+                                        </CollapsibleTrigger>
+                                      </div>
+                                    </div>
+                                    <CollapsibleContent className="mt-2 ml-3">
+                                      <div className="flex flex-col gap-1 pl-3 border-l-2 border-muted">
+                                        {matchingPO.matching_items.slice(0, 5).map((item, idx) => (
+                                          <div key={idx} className="text-xs flex items-center gap-2 py-1">
+                                            <Badge variant="secondary" className="text-xs">
+                                              {item.similarity}%
+                                            </Badge>
+                                            <span className="text-muted-foreground">
+                                              {item.description}
+                                            </span>
+                                          </div>
+                                        ))}
+                                        {matchingPO.matching_items.length > 5 && (
+                                          <span className="text-xs text-muted-foreground pl-1">
+                                            +{matchingPO.matching_items.length - 5} more
+                                          </span>
+                                        )}
+                                      </div>
+                                    </CollapsibleContent>
+                                  </Collapsible>
+                                ))}
+                              </div>
                             </div>
                           )}
 
