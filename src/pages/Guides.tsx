@@ -158,6 +158,37 @@ const Guides = () => {
 
               <Separator className="my-8" />
 
+              {/* Signature Features */}
+              <div className="space-y-6 mb-12">
+                <div>
+                  <h3 className="text-2xl font-bold mb-2">Signature Features</h3>
+                  <p className="text-muted-foreground">Explore Auren's most powerful capabilities</p>
+                </div>
+                
+                <Card className="shadow-card">
+                  <CardHeader>
+                    <CardTitle>Search by Amount</CardTitle>
+                    <p className="text-sm text-muted-foreground">
+                      Search how much you want to spend and we find the earliest date you can spend it
+                    </p>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="rounded-lg border bg-card overflow-hidden">
+                      <iframe 
+                        src="https://scribehow.com/embed/Search_Opportunities_by_Amount__oVVmOr3oQ9KiW2SkOo0kew?removeLogo=true" 
+                        width="100%" 
+                        height="800" 
+                        allow="fullscreen" 
+                        style={{ aspectRatio: '1 / 1', border: 0, minHeight: '480px' }}
+                        title="Search by Amount Guide"
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <Separator className="my-8" />
+
               {/* Guide Sections */}
               <div className="space-y-8">
                 <h3 className="text-2xl font-bold">Browse by Category</h3>
