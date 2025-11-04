@@ -623,31 +623,23 @@ export const VendorsOverview = ({
                           {lineItemsByTransaction[tx.id] && lineItemsByTransaction[tx.id].length > 0 ? (
                             <div>
                               <div className="text-sm text-muted-foreground mb-3">
-                                Items in purchase order {tx.description}
+                                Items with discrepancies in shipment {tx.description}
                               </div>
                               <div className="overflow-x-auto">
-                                <table className="w-full text-sm border-collapse">
+                                <table className="w-full text-sm">
                                   <thead>
                                     <tr className="border-b">
-                                      <th className="text-left py-2 px-3 font-medium text-muted-foreground">SKU</th>
-                                      <th className="text-left py-2 px-3 font-medium text-muted-foreground">Product Name</th>
-                                      <th className="text-right py-2 px-3 font-medium text-muted-foreground">Qty</th>
-                                      <th className="text-right py-2 px-3 font-medium text-muted-foreground">Unit Price</th>
-                                      <th className="text-right py-2 px-3 font-medium text-muted-foreground">Total</th>
+                                      <th className="text-left py-2 px-2 font-medium">SKU</th>
+                                      <th className="text-left py-2 px-2 font-medium">Product Name</th>
+                                      <th className="text-right py-2 px-2 font-medium">Qty Expected</th>
                                     </tr>
                                   </thead>
                                   <tbody>
                                     {lineItemsByTransaction[tx.id].map((item: any) => (
-                                      <tr key={item.id} className="border-b last:border-0 hover:bg-muted/50">
-                                        <td className="py-2 px-3 font-mono text-xs">{item.sku || 'N/A'}</td>
-                                        <td className="py-2 px-3">{item.product_name}</td>
-                                        <td className="py-2 px-3 text-right font-medium">{item.quantity}</td>
-                                        <td className="py-2 px-3 text-right">
-                                          {item.unit_price ? `$${parseFloat(item.unit_price).toLocaleString()}` : '-'}
-                                        </td>
-                                        <td className="py-2 px-3 text-right font-semibold">
-                                          {item.total_price ? `$${parseFloat(item.total_price).toLocaleString()}` : '-'}
-                                        </td>
+                                      <tr key={item.id} className="border-b last:border-0">
+                                        <td className="py-2 px-2 font-mono text-xs">{item.sku || 'N/A'}</td>
+                                        <td className="py-2 px-2 text-muted-foreground">{item.product_name}</td>
+                                        <td className="py-2 px-2 text-right">{item.quantity}</td>
                                       </tr>
                                     ))}
                                   </tbody>
