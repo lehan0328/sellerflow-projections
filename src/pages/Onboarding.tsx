@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Building2, ShoppingCart, CheckCircle2, ArrowRight, Sparkles, TrendingUp, Brain } from "lucide-react";
+import { Building2, ShoppingCart, CheckCircle2, ArrowRight, Sparkles, TrendingUp, Brain, Search, FileText, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { useBankAccounts } from "@/hooks/useBankAccounts";
 import { useAmazonAccounts } from "@/hooks/useAmazonAccounts";
@@ -51,7 +51,7 @@ export default function Onboarding() {
   const { planLimits, currentPlan, isInTrial } = usePlanLimits();
   const queryClient = useQueryClient();
   
-  const [currentStep, setCurrentStep] = useState<'welcome' | 'amazon' | 'bank' | 'reserve' | 'forecasting'>('welcome');
+  const [currentStep, setCurrentStep] = useState<'welcome' | 'amazon' | 'bank' | 'reserve' | 'forecasting' | 'guides'>('welcome');
   const [showEnterpriseSetup, setShowEnterpriseSetup] = useState(false);
   const [amazonSkipped, setAmazonSkipped] = useState(false);
   const [bankSkipped, setBankSkipped] = useState(false);
@@ -392,10 +392,8 @@ export default function Onboarding() {
       console.error('Error saving onboarding preferences:', error);
       toast.error('An error occurred during onboarding');
     } finally {
-      // Small delay to ensure database writes complete
-      setTimeout(() => {
-        navigate('/dashboard');
-      }, 1000);
+      // Move to guides step instead of dashboard
+      setCurrentStep('guides');
     }
   };
 
@@ -997,6 +995,116 @@ export default function Onboarding() {
                   className="w-full"
                 >
                   No, I'll Enable Later
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Guides Step */}
+        {currentStep === 'guides' && (
+          <Card className="shadow-2xl border border-primary/20 backdrop-blur-xl bg-card/95">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="h-6 w-6 text-green-600" />
+                <CardTitle className="text-2xl">Setup Complete!</CardTitle>
+              </div>
+              <CardDescription>
+                Do you want to learn our core features before we start?
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Explore Auren's signature features with visual step-by-step guides
+                </p>
+                
+                {/* Signature Features Preview */}
+                <div className="grid gap-3 md:grid-cols-2">
+                  <div className="group">
+                    <div className="relative overflow-hidden rounded-lg border bg-card p-4 hover:shadow-md transition-all duration-300">
+                      <div className="flex items-start gap-3">
+                        <div className="p-2 rounded-lg bg-gradient-to-br from-orange-500 to-amber-500 flex-shrink-0">
+                          <TrendingUp className="h-4 w-4 text-white" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-semibold text-sm mb-1">Payout Forecasting</h4>
+                          <p className="text-xs text-muted-foreground line-clamp-2">
+                            Forecast payouts 3 months in advance
+                          </p>
+                        </div>
+                        <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="group">
+                    <div className="relative overflow-hidden rounded-lg border bg-card p-4 hover:shadow-md transition-all duration-300">
+                      <div className="flex items-start gap-3">
+                        <div className="p-2 rounded-lg bg-gradient-to-br from-purple-500 to-violet-500 flex-shrink-0">
+                          <ShoppingCart className="h-4 w-4 text-white" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-semibold text-sm mb-1">Advanced PO Planning</h4>
+                          <p className="text-xs text-muted-foreground line-clamp-2">
+                            Project pending POs & buying opportunities
+                          </p>
+                        </div>
+                        <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="group">
+                    <div className="relative overflow-hidden rounded-lg border bg-card p-4 hover:shadow-md transition-all duration-300">
+                      <div className="flex items-start gap-3">
+                        <div className="p-2 rounded-lg bg-gradient-to-br from-blue-500 to-purple-500 flex-shrink-0">
+                          <Search className="h-4 w-4 text-white" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-semibold text-sm mb-1">Search by Amount</h4>
+                          <p className="text-xs text-muted-foreground line-clamp-2">
+                            Find earliest date to spend any amount
+                          </p>
+                        </div>
+                        <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="group">
+                    <div className="relative overflow-hidden rounded-lg border bg-card p-4 hover:shadow-md transition-all duration-300">
+                      <div className="flex items-start gap-3">
+                        <div className="p-2 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 flex-shrink-0">
+                          <FileText className="h-4 w-4 text-white" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-semibold text-sm mb-1">Search by Date</h4>
+                          <p className="text-xs text-muted-foreground line-clamp-2">
+                            Know what you can spend on any date
+                          </p>
+                        </div>
+                        <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <Button 
+                  onClick={() => navigate('/dashboard')}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  Skip for Now
+                </Button>
+                <Button 
+                  onClick={() => navigate('/guides')}
+                  className="flex-1 bg-gradient-primary"
+                >
+                  Start Learning
+                  <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </div>
             </CardContent>
