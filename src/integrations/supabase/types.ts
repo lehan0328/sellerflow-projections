@@ -1744,6 +1744,50 @@ export type Database = {
         }
         Relationships: []
       }
+      purchase_order_line_items: {
+        Row: {
+          created_at: string
+          id: string
+          product_name: string
+          quantity: number
+          sku: string | null
+          total_price: number | null
+          transaction_id: string
+          unit_price: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          product_name: string
+          quantity?: number
+          sku?: string | null
+          total_price?: number | null
+          transaction_id: string
+          unit_price?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          product_name?: string
+          quantity?: number
+          sku?: string | null
+          total_price?: number | null
+          transaction_id?: string
+          unit_price?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_order_line_items_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       purchased_addons: {
         Row: {
           account_id: string | null
