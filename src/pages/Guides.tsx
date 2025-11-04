@@ -11,7 +11,8 @@ import {
   CreditCard,
   TrendingUp,
   Link as LinkIcon,
-  ArrowLeft
+  ArrowLeft,
+  ChevronRight
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { AppSidebar } from "@/components/AppSidebar";
@@ -184,22 +185,15 @@ const Guides = () => {
                               <li key={guideIndex}>
                                 <Link 
                                   to={guidePath}
-                                  className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                                  className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center justify-between group"
                                 >
-                                  {guideTitle}
+                                  <span>{guideTitle}</span>
+                                  <ChevronRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
                                 </Link>
                               </li>
                             );
                           })}
                         </ul>
-                        {section.title === "Income & Expenses" && (
-                          <Link to="/guides/purchase-orders">
-                            <Button size="sm" variant="outline" className="w-full mt-4">
-                              View Guides
-                              <LinkIcon className="ml-2 h-3 w-3" />
-                            </Button>
-                          </Link>
-                        )}
                       </CardContent>
                     </Card>
                   ))}
