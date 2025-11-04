@@ -9,20 +9,20 @@ export const WelcomeAnimation = ({ onComplete }: WelcomeAnimationProps) => {
   const [stage, setStage] = useState<'spotlight' | 'message' | 'fadeout'>('spotlight');
 
   useEffect(() => {
-    // Stage 1: Spotlight and logo (2s)
+    // Stage 1: Spotlight and logo (1s)
     const spotlightTimer = setTimeout(() => {
       setStage('message');
-    }, 2000);
+    }, 1000);
 
-    // Stage 2: Show message (4s)
+    // Stage 2: Show message (1.5s)
     const messageTimer = setTimeout(() => {
       setStage('fadeout');
-    }, 6000);
+    }, 2500);
 
-    // Stage 3: Fade out and complete (2s)
+    // Stage 3: Fade out and complete (1s)
     const completeTimer = setTimeout(() => {
       onComplete();
-    }, 8000);
+    }, 3500);
 
     return () => {
       clearTimeout(spotlightTimer);
