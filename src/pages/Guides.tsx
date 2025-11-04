@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Helmet } from "react-helmet";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -20,6 +20,10 @@ import { Button } from "@/components/ui/button";
 const Guides = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeSection, setActiveSection] = useState("guides");
+
+  useEffect(() => {
+    console.log("🎯 Guides page mounted successfully!");
+  }, []);
 
   const guideSections = [
     {
@@ -87,9 +91,9 @@ const Guides = () => {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full">
+      <div className="min-h-screen flex w-full bg-background">
         <AppSidebar activeSection={activeSection} onSectionChange={setActiveSection} />
-        <SidebarInset className="flex-1">
+        <SidebarInset className="flex-1 bg-background">
           <Helmet>
             <title>Guides - Auren</title>
             <meta name="description" content="Step-by-step guides for using Auren's features" />
@@ -100,8 +104,8 @@ const Guides = () => {
             <h1 className="text-xl font-semibold">Guides</h1>
           </header>
 
-          <div className="container mx-auto px-6 py-8">
-            <div className="max-w-6xl mx-auto">
+          <div className="container mx-auto px-6 py-8 bg-background">
+            <div className="max-w-6xl mx-auto bg-background">
               {/* Search Bar */}
               <div className="mb-8">
                 <div className="relative max-w-md">
