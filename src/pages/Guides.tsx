@@ -27,16 +27,22 @@ const Guides = () => {
     console.log("🎯 Guides page mounted successfully!");
   }, []);
 
+  type Guide = string | { title: string; path: string };
+  
   const guideSections = [
     {
-      title: "Purchase Orders",
-      description: "Learn how to create and manage purchase orders",
-      icon: <FileText className="h-6 w-6" />,
-      path: "/guides/purchase-orders",
+      title: "Income & Expenses",
+      description: "Managing your business income and expenses",
+      icon: <TrendingUp className="h-6 w-6" />,
+      path: "/guides/income-expenses",
       guides: [
-        "Manually Adding a Purchase Order",
-        "Tracking PO Status",
-        "Partial Payments"
+        {
+          title: "Manually Adding a Purchase Order",
+          path: "/guides/purchase-orders"
+        },
+        "Recording Income",
+        "Tracking Expenses",
+        "Categorizing Transactions"
       ]
     },
     {
@@ -75,7 +81,7 @@ const Guides = () => {
     {
       title: "Cash Flow Analysis",
       description: "Understanding your cash flow forecasts",
-      icon: <TrendingUp className="h-6 w-6" />,
+      icon: <FileText className="h-6 w-6" />,
       path: "/guides/cash-flow",
       guides: [
         "Reading the Dashboard",
@@ -88,7 +94,10 @@ const Guides = () => {
   const filteredSections = guideSections.filter(section =>
     section.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     section.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    section.guides.some(guide => guide.toLowerCase().includes(searchTerm.toLowerCase()))
+    section.guides.some(guide => {
+      const guideTitle = typeof guide === 'string' ? guide : guide.title;
+      return guideTitle.toLowerCase().includes(searchTerm.toLowerCase());
+    })
   );
 
   return (
@@ -166,18 +175,24 @@ const Guides = () => {
                       </CardHeader>
                       <CardContent className="space-y-3">
                         <ul className="space-y-2">
-                          {section.guides.map((guide, guideIndex) => (
-                            <li key={guideIndex}>
-                              <Link 
-                                to={`${section.path}#${guide.toLowerCase().replace(/\s+/g, '-')}`}
-                                className="text-sm text-muted-foreground hover:text-primary transition-colors"
-                              >
-                                {guide}
-                              </Link>
-                            </li>
-                          ))}
+                          {section.guides.map((guide, guideIndex) => {
+                            const isGuideObject = typeof guide === 'object' && guide !== null && 'title' in guide;
+                            const guideTitle: string = isGuideObject ? (guide as { title: string; path: string }).title : (guide as string);
+                            const guidePath = isGuideObject ? (guide as { title: string; path: string }).path : `${section.path}#${(guide as string).toLowerCase().replace(/\s+/g, '-')}`;
+                            
+                            return (
+                              <li key={guideIndex}>
+                                <Link 
+                                  to={guidePath}
+                                  className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                                >
+                                  {guideTitle}
+                                </Link>
+                              </li>
+                            );
+                          })}
                         </ul>
-                        {section.path === "/guides/purchase-orders" && (
+                        {section.title === "Income & Expenses" && (
                           <Link to="/guides/purchase-orders">
                             <Button size="sm" variant="outline" className="w-full mt-4">
                               View Guides
