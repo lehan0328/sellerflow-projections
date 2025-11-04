@@ -36,13 +36,6 @@ const GuidesAiPOAutofill = () => {
 
           <div className="container mx-auto px-6 py-8 bg-background">
             <div className="max-w-4xl mx-auto">
-              <div className="mb-6">
-                <h2 className="text-2xl font-bold mb-2">AI Purchase Order Autofill</h2>
-                <p className="text-muted-foreground">
-                  Learn how to use AI to automatically extract and fill purchase order details from documents.
-                </p>
-              </div>
-              
               <div className="rounded-lg border bg-card overflow-hidden">
                 <iframe 
                   src="https://scribehow.com/embed/AI_Autofill_PO_Creation__KtS04OwWTDePigvjChYV-Q?removeLogo=true" 
