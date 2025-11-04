@@ -165,7 +165,7 @@ const Guides = () => {
                   <p className="text-muted-foreground">Explore Auren's most powerful capabilities</p>
                 </div>
                 
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 justify-items-center">
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 justify-items-center [&>*:nth-child(4)]:lg:col-start-2">
                 <Link to="/guides/payout-forecasting" className="group">
                   <Card className="relative overflow-hidden h-full shadow-card hover:shadow-elevated transition-all duration-300 cursor-pointer border-0 hover-scale">
                     <div className="absolute inset-0 bg-gradient-to-br from-orange-500/20 via-amber-500/20 to-yellow-500/20" />
