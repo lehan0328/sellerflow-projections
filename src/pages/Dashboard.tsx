@@ -845,7 +845,7 @@ const Dashboard = () => {
       const transactionData = {
         type: 'purchase_order' as const,
         amount: amount,
-        description: orderData.poName || `PO - ${orderData.vendor}`,
+        description: (orderData.lineItemDescription && orderData.lineItemDescription.trim()) || orderData.poName || `PO - ${orderData.vendor}`,
         vendorId: vendorId,
         transactionDate: orderData.poDate || new Date(),
         dueDate: dueDate,
