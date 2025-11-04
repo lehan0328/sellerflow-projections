@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ExcludeTodayProvider } from "@/contexts/ExcludeTodayContext";
 import Landing from "./pages/Landing";
 import Dashboard from "./pages/Dashboard";
+import { WelcomeAnimationWrapper } from "./components/WelcomeAnimationWrapper";
 import { SignUpsClosed } from "./pages/SignUpsClosed";
 import { SignUp } from "./pages/SignUp";
 import UpgradePlan from "./pages/UpgradePlan";
@@ -176,7 +177,7 @@ const App = () => (
           } />
           <Route path="/dashboard" element={
             <ProtectedRoute>
-              <Dashboard />
+              <WelcomeAnimationWrapper />
             </ProtectedRoute>
           } />
           <Route path="/onboarding" element={

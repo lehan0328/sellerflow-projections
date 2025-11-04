@@ -55,12 +55,10 @@ import { useUserSettings } from "@/hooks/useUserSettings";
 import { useReserveAmount } from "@/hooks/useReserveAmount";
 import { useCustomers } from "@/hooks/useCustomers";
 import { useToast } from "@/hooks/use-toast";
-import aurenIcon from "@/assets/auren-icon-blue.png";
 import { supabase } from "@/integrations/supabase/client";
 import { useCreditCards } from "@/hooks/useCreditCards";
 import { usePlanLimits } from "@/hooks/usePlanLimits";
 import { LimitEnforcementModal } from "@/components/LimitEnforcementModal";
-import { WelcomeAnimation } from "@/components/WelcomeAnimation";
 
 import { useVendors, type Vendor } from "@/hooks/useVendors";
 import { useTransactions } from "@/hooks/useTransactions";
@@ -108,7 +106,6 @@ const Dashboard = () => {
   const [companyName, setCompanyName] = useState('');
   const [selectedCurrency, setSelectedCurrency] = useState<string>('USD');
   const [clearDataConfirmation, setClearDataConfirmation] = useState(false);
-  const [showWelcomeAnimation, setShowWelcomeAnimation] = useState<boolean | null>(null); // null = checking, true = show, false = hide
   const { theme, setTheme } = useTheme();
   
   // Handle URL params for settings navigation
@@ -199,68 +196,6 @@ const Dashboard = () => {
     }
   }, [profile]);
 
-  // Check if welcome animation should be shown - HIGH PRIORITY
-  const { data: userSettings, isLoading: settingsLoading } = useQuery({
-    queryKey: ['user-settings', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return null;
-      const { data, error } = await supabase
-        .from('user_settings')
-        .select('welcome_animation_shown')
-        .eq('user_id', user.id)
-        .maybeSingle();
-      
-      if (error) {
-        console.error('Error fetching user settings:', error);
-        return null;
-      }
-      return data;
-    },
-    enabled: !!user?.id,
-    staleTime: 0, // Always fetch fresh
-  });
-
-  // Set animation state immediately when settings load
-  useEffect(() => {
-    if (settingsLoading) {
-      return; // Keep null state while loading
-    }
-    
-    if (userSettings === null) {
-      // No settings found, don't show animation
-      setShowWelcomeAnimation(false);
-    } else if (userSettings && userSettings.welcome_animation_shown === false) {
-      // Settings found and animation not shown yet
-      setShowWelcomeAnimation(true);
-    } else {
-      // Animation already shown
-      setShowWelcomeAnimation(false);
-    }
-  }, [userSettings, settingsLoading]);
-
-  // Handle animation completion
-  const handleAnimationComplete = async () => {
-    setShowWelcomeAnimation(false);
-    
-    // Update the flag in database
-    if (user?.id) {
-      try {
-        const { error } = await supabase
-          .from('user_settings')
-          .update({ welcome_animation_shown: true })
-          .eq('user_id', user.id);
-        
-        if (error) {
-          console.error('Error updating welcome animation flag:', error);
-        } else {
-          // Invalidate the query to update the cache
-          queryClient.invalidateQueries({ queryKey: ['user-settings', user.id] });
-        }
-      } catch (error) {
-        console.error('Error updating welcome animation flag:', error);
-      }
-    }
-  };
 
   // Handle profile field changes
   const handleProfileChange = (field: string, value: string) => {
@@ -2983,16 +2918,8 @@ const Dashboard = () => {
   };
 
   return (
-    <>
-      {/* Welcome Animation Overlay - Shows first before anything else */}
-      {showWelcomeAnimation === true && (
-        <WelcomeAnimation onComplete={handleAnimationComplete} />
-      )}
-      
-      {/* Only render dashboard if animation state is determined and not showing */}
-      {showWelcomeAnimation === false && (
-        <SidebarProvider>
-          <div className="h-screen flex w-full bg-background overflow-hidden">
+    <SidebarProvider>
+      <div className="h-screen flex w-full bg-background overflow-hidden">
         <AppSidebar 
           activeSection={activeSection} 
           onSectionChange={handleSectionChange}
@@ -3173,20 +3100,9 @@ const Dashboard = () => {
           
           {/* Subtle gradient orbs */}
           <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-gradient-to-tl from-accent/5 to-transparent rounded-full blur-3xl opacity-20 animate-pulse" style={{ animationDelay: '1s' }} />
-          </div>
         </div>
-      </SidebarProvider>
-      )}
-      
-      {/* Loading state while checking animation status */}
-      {showWelcomeAnimation === null && (
-        <div className="h-screen w-full flex items-center justify-center bg-background">
-          <div className="animate-pulse">
-            <img src={aurenIcon} alt="Loading" className="h-16 w-auto opacity-50" />
-          </div>
-        </div>
-      )}
-    </>
+      </div>
+    </SidebarProvider>
   );
 };
 
