@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Building2, Calendar, DollarSign, AlertTriangle, Edit, CreditCard, Search, ArrowUpDown, Filter, Trash2, Link2, ExternalLink, Banknote } from "lucide-react";
+import { Building2, Calendar, DollarSign, AlertTriangle, Edit, CreditCard, Search, ArrowUpDown, Filter, Trash2, Link2, ExternalLink, Banknote, ChevronRight, ChevronDown } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
@@ -63,6 +63,11 @@ export const VendorsOverview = ({
   const [partialPaymentTx, setPartialPaymentTx] = useState<VendorTransaction | null>(null);
   const [paymentDialogOpen, setPaymentDialogOpen] = useState<string | null>(null);
   const [paymentMethodFilter, setPaymentMethodFilter] = useState<'all' | 'cash' | 'credit'>('all');
+  const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
+
+  const toggleRow = (transactionId: string) => {
+    setExpandedRows(prev => ({ ...prev, [transactionId]: !prev[transactionId] }));
+  };
 
   // Force refresh when parent signals
   useEffect(() => {
@@ -409,6 +414,7 @@ export const VendorsOverview = ({
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-[30px]"></TableHead>
                 <TableHead>Vendor</TableHead>
                 <TableHead>PO# / Ref#</TableHead>
                 <TableHead>Amount</TableHead>
@@ -420,10 +426,24 @@ export const VendorsOverview = ({
             </TableHeader>
             <TableBody>
               {filteredAndSortedTransactions.length === 0 ? <TableRow>
-                  <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                     {selectedVendor ? `No purchase orders found for ${vendorSearchOptions.find(v => v.value === selectedVendor)?.label || selectedVendor}.` : searchTerm ? 'No transactions found matching your search.' : 'No vendor purchase orders.'}
                   </TableCell>
-                </TableRow> : filteredAndSortedTransactions.map(tx => <TableRow key={tx.id}>
+                </TableRow> : filteredAndSortedTransactions.map(tx => <React.Fragment key={tx.id}>
+                  <TableRow className="cursor-pointer hover:bg-muted/50" onClick={(e) => {
+                    // Prevent toggling when clicking on buttons or interactive elements
+                    if ((e.target as HTMLElement).closest('button, select, a')) {
+                      return;
+                    }
+                    toggleRow(tx.id);
+                  }}>
+                    <TableCell className="w-[30px]" onClick={() => toggleRow(tx.id)}>
+                      {expandedRows[tx.id] ? (
+                        <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                      )}
+                    </TableCell>
                     <TableCell className="font-medium">{tx.vendorName}</TableCell>
                     <TableCell>{tx.description || 'N/A'}</TableCell>
                     <TableCell>
@@ -567,7 +587,61 @@ export const VendorsOverview = ({
                         </TooltipProvider>
                       </div>
                     </TableCell>
-                  </TableRow>)}
+                  </TableRow>
+                  
+                  {expandedRows[tx.id] && (
+                    <TableRow className="bg-muted/30">
+                      <TableCell colSpan={8}>
+                        <div className="border rounded-md p-4 bg-card space-y-4">
+                          <div className="grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                              <div className="text-xs text-muted-foreground font-medium mb-1">Description</div>
+                              <div className="font-medium">{tx.description || 'No description'}</div>
+                            </div>
+                            <div>
+                              <div className="text-xs text-muted-foreground font-medium mb-1">Category</div>
+                              <div className="font-medium">{tx.category || 'Uncategorized'}</div>
+                            </div>
+                            <div>
+                              <div className="text-xs text-muted-foreground font-medium mb-1">Payment Method</div>
+                              <div className="flex items-center gap-2">
+                                {tx.creditCardId ? (
+                                  <>
+                                    <CreditCard className="h-4 w-4 text-primary" />
+                                    <span>Credit Card</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Banknote className="h-4 w-4 text-green-600" />
+                                    <span>Cash</span>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                            <div>
+                              <div className="text-xs text-muted-foreground font-medium mb-1">Transaction Date</div>
+                              <div className="font-medium">
+                                {new Date(tx.transactionDate).toLocaleDateString()}
+                              </div>
+                            </div>
+                            {tx.amountPaid && tx.remainingBalance && (
+                              <>
+                                <div>
+                                  <div className="text-xs text-muted-foreground font-medium mb-1">Amount Paid</div>
+                                  <div className="font-medium text-green-600">${tx.amountPaid.toLocaleString()}</div>
+                                </div>
+                                <div>
+                                  <div className="text-xs text-muted-foreground font-medium mb-1">Remaining Balance</div>
+                                  <div className="font-medium text-orange-600">${tx.remainingBalance.toLocaleString()}</div>
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </React.Fragment>)}
             </TableBody>
           </Table>
         </div>
