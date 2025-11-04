@@ -81,7 +81,8 @@ export const PurchaseOrderForm = ({
     paymentMethod: "bank-transfer" as "bank-transfer" | "credit-card",
     selectedCreditCard: "",
     splitPayment: false,
-    documentType: "purchase_order" as "sales_order" | "invoice" | "proforma_invoice" | "purchase_order"
+    documentType: "purchase_order" as "sales_order" | "invoice" | "proforma_invoice" | "purchase_order",
+    extractedLineItems: [] as Array<{ sku?: string; productName: string; quantity?: number }>
   });
   const [cardSplits, setCardSplits] = useState<Array<{
     cardId: string;
@@ -155,7 +156,8 @@ export const PurchaseOrderForm = ({
         paymentMethod: "bank-transfer",
         selectedCreditCard: "",
         splitPayment: false,
-        documentType: "purchase_order"
+        documentType: "purchase_order",
+        extractedLineItems: []
       });
       setCardSplits([{
         cardId: "",
@@ -333,7 +335,8 @@ export const PurchaseOrderForm = ({
       ...formData,
       dueDate: calculatedDueDate,
       paymentSchedule: formData.paymentType === "preorder" ? paymentSchedule : undefined,
-      lineItemDescription: formData.description // Pass description separately for line item creation
+      lineItemDescription: formData.description, // Pass description separately for line item creation
+      extractedLineItems: formData.extractedLineItems // Pass extracted line items
     };
     console.log("Submitting purchase order:", orderData);
     onSubmitOrder(orderData);
@@ -557,7 +560,8 @@ export const PurchaseOrderForm = ({
           netTermsDays: extracted.netTermsDays || prev.netTermsDays,
           dueDate: extracted.dueDate ? parse(extracted.dueDate, 'yyyy-MM-dd', new Date()) : prev.dueDate,
           deliveryDate: extracted.deliveryDate ? parse(extracted.deliveryDate, 'yyyy-MM-dd', new Date()) : prev.deliveryDate,
-          documentType: extracted.documentType || prev.documentType
+          documentType: extracted.documentType || prev.documentType,
+          extractedLineItems: extracted.lineItems || [] // Store line items for later
         }));
 
         // Try to match vendor name

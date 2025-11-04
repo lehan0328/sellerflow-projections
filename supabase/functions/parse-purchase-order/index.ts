@@ -105,7 +105,7 @@ serve(async (req) => {
     const messageContent = [
       {
         type: "text",
-        text: "Extract all purchase order, sales order, and invoice information from this document.\n\nIMPORTANT - DOCUMENT TYPE DETECTION (check in this exact order):\n1. If document says 'SALES ORDER' or 'SO' → set documentType to 'sales_order'\n2. If document says 'INVOICE' (not 'Pro-forma' or 'Proforma') → set documentType to 'invoice'\n3. If document says 'Pro-forma Invoice', 'Proforma Invoice', 'Pro forma Invoice', 'PERFORMA INVOICE' → set documentType to 'proforma_invoice'\n4. If document says 'Purchase Order' or 'PO' → set documentType to 'purchase_order'\n5. Default to 'purchase_order' if unclear\n\nIMPORTANT - TOTAL AMOUNT EXTRACTION RULES:\n1. Look for the FINAL payable amount with labels: 'Total:', 'Total Amount:', 'Grand Total:', 'Amount Due:', 'Balance Due:', or 'Total Payable:'\n2. IGNORE lines with: 'Subtotal:', 'Discount:', 'Deposit:', 'Tax:', 'VAT:', 'Shipping:', 'Handling:', 'Adjustment:', or 'Credit:'\n3. If multiple 'Total' entries exist, capture the LAST valid total that represents the final amount due (typically after all discounts, taxes, and adjustments)\n4. The correct total is usually the last monetary value before payment instructions or terms\n5. Return the amount as a number string without currency symbols (e.g., '1500.50' not '$1,500.50')\n\nFor the vendor name, check these fields in order of priority: 'From:', 'Vendor:', 'Supplier:', 'Sold By:', 'Issued By:', 'Ship From:', 'Company:'. Use whichever field is present to identify the vendor (required). Also extract: purchase order or invoice number, item description, payment terms (Net 30/60/90 or immediate), due date, delivery date, category (Inventory, Packaging Materials, Marketing/PPC, Shipping & Logistics, Professional Services, or Other), and additional notes."
+        text: "Extract all purchase order, sales order, and invoice information from this document.\n\nIMPORTANT - DOCUMENT TYPE DETECTION (check in this exact order):\n1. If document says 'SALES ORDER' or 'SO' → set documentType to 'sales_order'\n2. If document says 'INVOICE' (not 'Pro-forma' or 'Proforma') → set documentType to 'invoice'\n3. If document says 'Pro-forma Invoice', 'Proforma Invoice', 'Pro forma Invoice', 'PERFORMA INVOICE' → set documentType to 'proforma_invoice'\n4. If document says 'Purchase Order' or 'PO' → set documentType to 'purchase_order'\n5. Default to 'purchase_order' if unclear\n\nIMPORTANT - TOTAL AMOUNT EXTRACTION RULES:\n1. Look for the FINAL payable amount with labels: 'Total:', 'Total Amount:', 'Grand Total:', 'Amount Due:', 'Balance Due:', or 'Total Payable:'\n2. IGNORE lines with: 'Subtotal:', 'Discount:', 'Deposit:', 'Tax:', 'VAT:', 'Shipping:', 'Handling:', 'Adjustment:', or 'Credit:'\n3. If multiple 'Total' entries exist, capture the LAST valid total that represents the final amount due (typically after all discounts, taxes, and adjustments)\n4. The correct total is usually the last monetary value before payment instructions or terms\n5. Return the amount as a number string without currency symbols (e.g., '1500.50' not '$1,500.50')\n\nIMPORTANT - LINE ITEMS EXTRACTION:\n1. Extract ALL line items from the document into the lineItems array\n2. Each line item should include: sku (if available), productName (required), and quantity (if available)\n3. Look for line item tables with columns like: Item, Description, SKU, Product, Qty, Quantity, etc.\n4. If no structured line items exist, still extract product descriptions as separate line items\n5. Set quantity to 1 if not specified\n\nFor the vendor name, check these fields in order of priority: 'From:', 'Vendor:', 'Supplier:', 'Sold By:', 'Issued By:', 'Ship From:', 'Company:'. Use whichever field is present to identify the vendor (required). Also extract: purchase order or invoice number, item description, payment terms (Net 30/60/90 or immediate), due date, delivery date, category (Inventory, Packaging Materials, Marketing/PPC, Shipping & Logistics, Professional Services, or Other), and additional notes."
       },
       {
         type: "image_url",
@@ -165,6 +165,28 @@ serve(async (req) => {
                   description: {
                     type: "string",
                     description: "Description of goods or services"
+                  },
+                  lineItems: {
+                    type: "array",
+                    description: "Array of line items with product details",
+                    items: {
+                      type: "object",
+                      properties: {
+                        sku: {
+                          type: "string",
+                          description: "Product SKU or item code"
+                        },
+                        productName: {
+                          type: "string",
+                          description: "Product name or description"
+                        },
+                        quantity: {
+                          type: "number",
+                          description: "Quantity ordered"
+                        }
+                      },
+                      required: ["productName"]
+                    }
                   },
                   category: {
                     type: "string",
@@ -261,6 +283,28 @@ serve(async (req) => {
                         description: {
                           type: "string",
                           description: "Description of goods or services"
+                        },
+                        lineItems: {
+                          type: "array",
+                          description: "Array of line items with product details",
+                          items: {
+                            type: "object",
+                            properties: {
+                              sku: {
+                                type: "string",
+                                description: "Product SKU or item code"
+                              },
+                              productName: {
+                                type: "string",
+                                description: "Product name or description"
+                              },
+                              quantity: {
+                                type: "number",
+                                description: "Quantity ordered"
+                              }
+                            },
+                            required: ["productName"]
+                          }
                         },
                         category: {
                           type: "string",

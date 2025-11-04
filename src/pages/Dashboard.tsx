@@ -857,8 +857,8 @@ const Dashboard = () => {
       const newTransaction = await addTransaction(transactionData);
       console.info("🔍 Transaction created:", newTransaction);
 
-      // Create line item from lineItemDescription if provided
-      if (newTransaction && orderData.lineItemDescription && orderData.lineItemDescription.trim()) {
+      // Create line items from extracted data or description
+      if (newTransaction) {
         try {
           const { data: { user } } = await supabase.auth.getUser();
           if (user) {
@@ -869,22 +869,42 @@ const Dashboard = () => {
               .single();
 
             if (profile?.account_id) {
-              await supabase
-                .from('purchase_order_line_items')
-                .insert({
+              // Check if we have extracted line items
+              if (orderData.extractedLineItems && Array.isArray(orderData.extractedLineItems) && orderData.extractedLineItems.length > 0) {
+                // Insert all extracted line items
+                const lineItemsToInsert = orderData.extractedLineItems.map((item: any) => ({
                   transaction_id: newTransaction.id,
                   account_id: profile.account_id,
-                  product_name: orderData.lineItemDescription.trim(),
-                  sku: null,
-                  quantity: 1,
+                  product_name: item.productName,
+                  sku: item.sku || null,
+                  quantity: item.quantity || 1,
                   unit_price: null,
                   total_price: null
-                });
-              console.info("✅ Line item created from description:", orderData.lineItemDescription);
+                }));
+                
+                await supabase
+                  .from('purchase_order_line_items')
+                  .insert(lineItemsToInsert);
+                console.info("✅ Line items created from extracted data:", lineItemsToInsert.length);
+              } else if (orderData.lineItemDescription && orderData.lineItemDescription.trim()) {
+                // Fallback: create single line item from description
+                await supabase
+                  .from('purchase_order_line_items')
+                  .insert({
+                    transaction_id: newTransaction.id,
+                    account_id: profile.account_id,
+                    product_name: orderData.lineItemDescription.trim(),
+                    sku: null,
+                    quantity: 1,
+                    unit_price: null,
+                    total_price: null
+                  });
+                console.info("✅ Line item created from description:", orderData.lineItemDescription);
+              }
             }
           }
         } catch (error) {
-          console.error('Error creating line item:', error);
+          console.error("❌ Error creating line items:", error);
         }
       }
     }
