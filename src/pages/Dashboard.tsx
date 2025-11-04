@@ -2924,7 +2924,7 @@ const Dashboard = () => {
         <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-0">
           <div className="absolute inset-0 flex items-center justify-center opacity-[0.03]">
             <img 
-              src="https://ruvdqtqyfzaxlobmxgaj.supabase.co/storage/v1/object/public/documents/auren-icon-blue.png" 
+              src="/auren-icon-blue.png" 
               alt="" 
               className="w-[600px] h-auto"
             />
@@ -2951,7 +2951,7 @@ const Dashboard = () => {
             {/* Giant watermark behind content */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden">
               <img 
-                src="https://ruvdqtqyfzaxlobmxgaj.supabase.co/storage/v1/object/public/documents/auren-icon-blue.png" 
+                src="/auren-icon-blue.png" 
                 alt="" 
                 className="w-[800px] h-auto opacity-[0.08]"
               />

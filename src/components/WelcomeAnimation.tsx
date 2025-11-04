@@ -45,7 +45,7 @@ export const WelcomeAnimation = ({ onComplete }: WelcomeAnimationProps) => {
           }`}
         >
           <img 
-            src="https://ruvdqtqyfzaxlobmxgaj.supabase.co/storage/v1/object/public/documents/auren-icon-blue.png" 
+            src="/auren-icon-blue.png" 
             alt="" 
             className="w-[600px] h-auto"
           />
