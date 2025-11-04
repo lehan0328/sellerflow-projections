@@ -108,6 +108,16 @@ const Dashboard = () => {
   const [clearDataConfirmation, setClearDataConfirmation] = useState(false);
   const { theme, setTheme } = useTheme();
   
+  // Handle navigation state from other pages (like guides)
+  useEffect(() => {
+    const state = location.state as { activeSection?: string } | null;
+    if (state?.activeSection) {
+      setActiveSection(state.activeSection);
+      // Clear the state after using it
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
+  
   // Handle URL params for settings navigation
   useEffect(() => {
     const params = new URLSearchParams(location.search);
