@@ -453,7 +453,7 @@ export const PurchaseOrderForm = ({
     // Navigate to Dashboard settings where vendor management is located
     navigate('/dashboard?view=settings&section=vendors');
   };
-  // Convert PDF to PNG for better AI processing
+  // Convert multi-page PDF to a single stacked PNG for better AI processing
   const renderPdfPreview = async (file: File): Promise<Blob | null> => {
     try {
       const pdfjsLib: any = await import('pdfjs-dist');
@@ -462,18 +462,42 @@ export const PurchaseOrderForm = ({
       }
       const data = new Uint8Array(await file.arrayBuffer());
       const pdf = await pdfjsLib.getDocument({ data }).promise;
-      const page = await pdf.getPage(1);
-      const viewport = page.getViewport({ scale: 2.0 }); // Higher scale for better OCR
-      const canvas = document.createElement('canvas');
-      canvas.width = viewport.width as number;
-      canvas.height = viewport.height as number;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return null;
-      await page.render({ canvasContext: ctx, viewport }).promise;
-      
-      // Convert canvas to blob
+
+      const maxPages = Math.min(pdf.numPages, 3); // stitch up to first 3 pages
+      const scale = 1.8; // balance quality vs size
+
+      const pageCanvases: HTMLCanvasElement[] = [];
+      for (let p = 1; p <= maxPages; p++) {
+        const page = await pdf.getPage(p);
+        const viewport = page.getViewport({ scale });
+        const canvas = document.createElement('canvas');
+        canvas.width = viewport.width as number;
+        canvas.height = viewport.height as number;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) continue;
+        await page.render({ canvasContext: ctx, viewport }).promise;
+        pageCanvases.push(canvas);
+      }
+
+      if (pageCanvases.length === 0) return null;
+
+      // Stitch vertically
+      const finalWidth = Math.max(...pageCanvases.map(c => c.width));
+      const finalHeight = pageCanvases.reduce((sum, c) => sum + c.height, 0);
+      const finalCanvas = document.createElement('canvas');
+      finalCanvas.width = finalWidth;
+      finalCanvas.height = finalHeight;
+      const finalCtx = finalCanvas.getContext('2d');
+      if (!finalCtx) return null;
+
+      let y = 0;
+      for (const c of pageCanvases) {
+        finalCtx.drawImage(c, 0, y);
+        y += c.height;
+      }
+
       return new Promise((resolve) => {
-        canvas.toBlob((blob) => resolve(blob), 'image/png');
+        finalCanvas.toBlob((blob) => resolve(blob), 'image/png', 0.92);
       });
     } catch (e) {
       console.error('PDF preview render failed:', e);
@@ -511,9 +535,15 @@ export const PurchaseOrderForm = ({
     try {
       let fileToUpload: File | Blob = file;
 
-      // Keep original PDF to preserve all pages for extraction
-      // (Pro model handles PDFs reliably; avoid converting to single-page PNG)
-      // No conversion performed for PDFs.
+      // Convert PDF to stacked PNG (first pages) for AI extraction reliability
+      if (file.type === 'application/pdf') {
+        const pngBlob = await renderPdfPreview(file);
+        if (pngBlob) {
+          fileToUpload = new File([pngBlob], file.name.replace(/\.pdf$/i, '.png'), { type: 'image/png' });
+        } else {
+          throw new Error('Failed to convert PDF to images');
+        }
+      }
 
       // Create form data
       const formDataToSend = new FormData();
