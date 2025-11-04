@@ -822,6 +822,25 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string)
       // Don't fail the sync if rollover fails
     }
     
+    // Regenerate forecasts after rollover completes
+    console.log('[SYNC] Regenerating forecasts after settlement detection...');
+    try {
+      const { data: forecastResult, error: forecastError } = await supabase.functions.invoke('forecast-amazon-payouts', {
+        body: { 
+          userId: userId 
+        }
+      });
+      
+      if (forecastError) {
+        console.error('[SYNC] Forecast regeneration failed:', forecastError);
+      } else {
+        console.log('[SYNC] Forecast regeneration completed:', forecastResult);
+      }
+    } catch (forecastErr) {
+      console.error('[SYNC] Error invoking forecast function:', forecastErr);
+      // Don't fail the sync if forecast fails
+    }
+    
     // Update sync log with completion
     if (syncLogId) {
       const syncDuration = Date.now() - syncStartTime;
