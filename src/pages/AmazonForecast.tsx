@@ -48,7 +48,6 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { AmazonForecastAccuracy } from "@/components/cash-flow/amazon-forecast-accuracy";
 import { ForecastSettings } from "@/components/settings/forecast-settings";
-import { DailyCashoutBanner } from "@/components/cash-flow/daily-cashout-banner";
 import { BarChart3 } from "lucide-react";
 
 export default function AmazonForecast() {
@@ -415,33 +414,6 @@ export default function AmazonForecast() {
 
       {/* Mathematical Forecast Settings */}
       <ForecastSettings />
-
-      {/* Daily Cashout Rollover Detection Banner */}
-      {amazonAccounts.length > 0 && (() => {
-        // Find first daily payout account
-        const dailyAccount = amazonAccounts.find(
-          acc => acc.payout_frequency === 'daily'
-        );
-        
-        // Get forecasted payouts for that account
-        const forecastedPayouts = amazonPayouts
-          .filter(p => p.status === 'forecasted' && p.amazon_account_id === dailyAccount?.id)
-          .map(p => ({
-            payout_date: p.payout_date,
-            total_amount: Number(p.total_amount || 0)
-          }));
-
-        return dailyAccount && forecastedPayouts.length > 0 ? (
-          <DailyCashoutBanner
-            amazonAccountId={dailyAccount.id}
-            forecastedPayouts={forecastedPayouts}
-            onCashoutMarked={() => {
-              // Refresh the page to update forecasts
-              setTimeout(() => window.location.reload(), 1000);
-            }}
-          />
-        ) : null;
-      })()}
 
       {/* Key Metrics */}
       <Card>
