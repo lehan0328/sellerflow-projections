@@ -387,9 +387,8 @@ export default function Analytics() {
       const dueDate = new Date(tx.dueDate);
       const isInRange = dueDate >= start && dueDate <= end;
       
-      if (isInRange && tx.status !== 'cancelled') {
-        const category = tx.category || 'Uncategorized';
-        categoryTotals[category] = (categoryTotals[category] || 0) + tx.amount;
+      if (isInRange && tx.status !== 'cancelled' && tx.category && tx.category.trim()) {
+        categoryTotals[tx.category] = (categoryTotals[tx.category] || 0) + tx.amount;
       }
     });
 
@@ -426,11 +425,10 @@ export default function Analytics() {
       // Check if the recurring expense is active during the selected date range
       const isActive = expenseStart <= end && (!expenseEnd || expenseEnd >= start);
       
-      if (isActive) {
-        const category = expense.category || 'Uncategorized';
+      if (isActive && expense.category && expense.category.trim()) {
         // Calculate the total for the date range based on frequency
         // For simplicity, we'll just add the monthly amount
-        categoryTotals[category] = (categoryTotals[category] || 0) + (expense.amount || 0);
+        categoryTotals[expense.category] = (categoryTotals[expense.category] || 0) + (expense.amount || 0);
       }
     });
 
