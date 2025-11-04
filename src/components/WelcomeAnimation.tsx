@@ -37,6 +37,21 @@ export const WelcomeAnimation = ({ onComplete }: WelcomeAnimationProps) => {
         stage === 'fadeout' ? 'opacity-0' : 'opacity-100'
       }`}
     >
+      {/* Watermark background - visible during fadeout to match dashboard */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+        <div 
+          className={`absolute inset-0 flex items-center justify-center transition-opacity duration-2000 ${
+            stage === 'fadeout' ? 'opacity-[0.03]' : 'opacity-0'
+          }`}
+        >
+          <img 
+            src="https://ruvdqtqyfzaxlobmxgaj.supabase.co/storage/v1/object/public/documents/auren-icon-blue.png" 
+            alt="" 
+            className="w-[600px] h-auto"
+          />
+        </div>
+      </div>
+
       {/* Animated spotlight effect */}
       <div className="absolute inset-0 overflow-hidden">
         <div 

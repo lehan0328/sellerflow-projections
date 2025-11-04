@@ -62,9 +62,20 @@ export const WelcomeAnimationWrapper = () => {
     }
   };
 
-  // Simple background loading state (no pulsing logo)
+  // Loading state with watermark that matches dashboard
   if (showAnimation === null) {
-    return <div className="h-screen w-full bg-background" />;
+    return (
+      <div className="h-screen w-full bg-background flex items-center justify-center relative overflow-hidden">
+        {/* Watermark that matches dashboard */}
+        <div className="absolute inset-0 flex items-center justify-center opacity-[0.03]">
+          <img 
+            src="https://ruvdqtqyfzaxlobmxgaj.supabase.co/storage/v1/object/public/documents/auren-icon-blue.png" 
+            alt="" 
+            className="w-[600px] h-auto pointer-events-none"
+          />
+        </div>
+      </div>
+    );
   }
 
   // Show animation

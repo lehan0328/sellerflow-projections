@@ -2919,7 +2919,18 @@ const Dashboard = () => {
 
   return (
     <SidebarProvider>
-      <div className="h-screen flex w-full bg-background overflow-hidden">
+      <div className="h-screen flex w-full bg-background overflow-hidden relative">
+        {/* Dashboard watermark background - matches animation exit */}
+        <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-0">
+          <div className="absolute inset-0 flex items-center justify-center opacity-[0.03]">
+            <img 
+              src="https://ruvdqtqyfzaxlobmxgaj.supabase.co/storage/v1/object/public/documents/auren-icon-blue.png" 
+              alt="" 
+              className="w-[600px] h-auto"
+            />
+          </div>
+        </div>
+
         <AppSidebar 
           activeSection={activeSection} 
           onSectionChange={handleSectionChange}
@@ -2927,7 +2938,7 @@ const Dashboard = () => {
           matchCount={uniquePoMatchCount}
         />
         
-        <div className="flex-1 overflow-y-auto relative">
+        <div className="flex-1 overflow-y-auto relative z-10">
           {/* Header with sidebar trigger */}
           <div className="sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
             <div className="flex items-center min-h-[120px] px-6">
