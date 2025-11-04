@@ -170,10 +170,10 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
       ]);
 
       // Use Amazon payouts from useAmazonPayouts hook (ensures same data as Dashboard)
-      const filteredAmazonPayouts = amazonPayouts.filter(payout => {
-        const payoutDate = new Date(payout.payout_date);
-        return payoutDate >= today && payoutDate <= futureDate;
-      });
+        const filteredAmazonPayouts = amazonPayouts.filter(payout => {
+          const payoutDate = parseLocalDate(payout.payout_date);
+          return payoutDate >= today && payoutDate <= futureDate;
+        });
       
       console.log('🔍 [useSafeSpending] Using Amazon payouts from useAmazonPayouts hook:', {
         total: filteredAmazonPayouts.length,
