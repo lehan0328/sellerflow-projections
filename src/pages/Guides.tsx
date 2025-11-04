@@ -249,6 +249,27 @@ const Guides = () => {
                     </CardContent>
                   </Card>
                 </Link>
+
+                <Link to="/guides/scenario-planning" className="group">
+                  <Card className="relative overflow-hidden h-full shadow-card hover:shadow-elevated transition-all duration-300 cursor-pointer border-0 hover-scale">
+                    <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/20 via-sky-500/20 to-blue-500/20" />
+                    <div className="absolute inset-0 bg-gradient-to-br from-cyan-600/0 via-sky-600/0 to-blue-600/0 group-hover:from-cyan-600/10 group-hover:via-sky-600/10 group-hover:to-blue-600/10 transition-all duration-300" />
+                    <CardHeader className="relative pb-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="p-2 rounded-lg bg-gradient-to-br from-cyan-500 to-sky-500">
+                          <TrendingUp className="h-5 w-5 text-white" />
+                        </div>
+                        <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                      </div>
+                      <CardTitle className="text-lg">Scenario Planning</CardTitle>
+                    </CardHeader>
+                    <CardContent className="relative">
+                      <p className="text-sm text-muted-foreground line-clamp-2">
+                        Plan out your cash balance projection no matter the scenario fully customizable
+                      </p>
+                    </CardContent>
+                  </Card>
+                </Link>
               </div>
               </div>
 

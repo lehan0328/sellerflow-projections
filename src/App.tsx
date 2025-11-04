@@ -32,6 +32,7 @@ import GuidesSearchByAmount from "./pages/GuidesSearchByAmount";
 import GuidesSearchByDate from "./pages/GuidesSearchByDate";
 import GuidesPayoutForecasting from "./pages/GuidesPayoutForecasting";
 import GuidesAdvancedPOPlanning from "./pages/GuidesAdvancedPOPlanning";
+import GuidesScenarioPlanning from "./pages/GuidesScenarioPlanning";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import { Auth } from "./pages/Auth";
@@ -123,6 +124,11 @@ const App = () => (
             <Route path="/guides/advanced-po-planning" element={
               <ProtectedRoute>
                 <GuidesAdvancedPOPlanning />
+              </ProtectedRoute>
+            } />
+            <Route path="/guides/scenario-planning" element={
+              <ProtectedRoute>
+                <GuidesScenarioPlanning />
               </ProtectedRoute>
             } />
             <Route path="/guides/search-by-amount" element={
