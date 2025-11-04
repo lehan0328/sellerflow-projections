@@ -81,27 +81,37 @@ serve(async (req) => {
       );
     }
 
-    // Sum all rolled-over forecasts
-    const totalForecastedAmount = rolledForecasts.reduce((sum, f) => sum + Number(f.total_amount), 0);
+    // Use the most recent forecast (it already contains all rollovers)
+    const mostRecentForecast = rolledForecasts[rolledForecasts.length - 1]; // Already sorted ascending
+    const totalForecastedAmount = Number(mostRecentForecast.total_amount);
     
     // Calculate days accumulated in settlement period
     const daysAccumulated = settlementStartDate && settlementEndDate
       ? Math.ceil((settlementEndDate.getTime() - settlementStartDate.getTime()) / (1000 * 60 * 60 * 24))
-      : rolledForecasts.length;
+      : 1; // Default to 1 day if no settlement dates
     
-    // Capture individual forecast details
+    // Capture forecast history (for debugging/transparency)
     const forecastDetails = rolledForecasts.map(f => ({
       date: f.payout_date,
       amount: Number(f.total_amount),
       method: f.modeling_method
     }));
     
+    // Add note that only the most recent is used for accuracy
+    console.log('[ACCURACY] Using most recent forecast for comparison:', {
+      mostRecentDate: mostRecentForecast.payout_date,
+      mostRecentAmount: totalForecastedAmount,
+      allForecasts: forecastDetails
+    });
+    
     console.log('[ACCURACY] Rollover analysis:', {
       settlementPeriod: `${settlementStartDateStr} to ${settlementCloseDate}`,
       daysAccumulated,
-      forecastsIncluded: rolledForecasts.length,
-      forecastDates: rolledForecasts.map(f => f.payout_date),
-      totalForecasted: totalForecastedAmount,
+      forecastsFound: rolledForecasts.length,
+      mostRecentForecast: {
+        date: mostRecentForecast.payout_date,
+        amount: totalForecastedAmount
+      },
       actual: actualPayout.total_amount,
       payoutReceived: actualPayout.payout_date
     });
@@ -161,7 +171,7 @@ serve(async (req) => {
         difference_percentage: differencePercentage,
         settlement_id: actualPayout.settlement_id,
         marketplace_name: actualPayout.marketplace_name,
-        modeling_method: rolledForecasts[0].modeling_method || 'auren_forecast_v1',
+        modeling_method: mostRecentForecast.modeling_method || 'auren_forecast_v1',
         user_email: user?.email,
         user_name: userName,
         monthly_revenue: profile?.monthly_revenue,
