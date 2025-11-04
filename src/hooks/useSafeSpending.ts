@@ -171,7 +171,7 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
 
       // Use Amazon payouts from useAmazonPayouts hook (ensures same data as Dashboard)
       const filteredAmazonPayouts = amazonPayouts.filter(payout => {
-        const payoutDate = new Date(payout.payout_date);
+        const payoutDate = parseLocalDate(payout.payout_date);
         return payoutDate >= today && payoutDate <= futureDate;
       });
       
@@ -288,8 +288,18 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
           let fundsAvailableDate: Date;
           
           if (isConfirmedPayout) {
-            // For confirmed payouts, use payout_date directly - this is when funds are actually available
-            fundsAvailableDate = parseLocalDate(payout.payout_date);
+            // For confirmed payouts, use FinancialEventGroupEnd from raw_settlement_data (matches overview-stats logic)
+            const rawData = (payout as any).raw_settlement_data;
+            const settlementEndStr = rawData?.FinancialEventGroupEnd || rawData?.settlement_end_date;
+            
+            if (settlementEndStr) {
+              // Extract date portion and parse as local date
+              const dateStr = new Date(settlementEndStr).toISOString().split('T')[0];
+              fundsAvailableDate = parseLocalDate(dateStr);
+            } else {
+              // Fallback to payout_date if no settlement data available
+              fundsAvailableDate = parseLocalDate(payout.payout_date);
+            }
           } else if (isEstimatedPayout) {
             // For estimated payouts, calculate from settlement end date + 1 day
             const rawData = (payout as any).raw_settlement_data;
