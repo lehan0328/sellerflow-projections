@@ -29,6 +29,7 @@ import Guides from "./pages/Guides";
 import GuidesPurchaseOrders from "./pages/GuidesPurchaseOrders";
 import GuidesAiPOAutofill from "./pages/GuidesAiPOAutofill";
 import GuidesAddingIncome from "./pages/GuidesAddingIncome";
+import GuidesEditingTransactions from "./pages/GuidesEditingTransactions";
 import GuidesSearchByAmount from "./pages/GuidesSearchByAmount";
 import GuidesSearchByDate from "./pages/GuidesSearchByDate";
 import GuidesPayoutForecasting from "./pages/GuidesPayoutForecasting";
@@ -115,6 +116,11 @@ const App = () => (
           <Route path="/guides/adding-income" element={
             <ProtectedRoute>
               <GuidesAddingIncome />
+            </ProtectedRoute>
+          } />
+          <Route path="/guides/editing-transactions" element={
+            <ProtectedRoute>
+              <GuidesEditingTransactions />
             </ProtectedRoute>
           } />
             <Route path="/guides/payout-forecasting" element={

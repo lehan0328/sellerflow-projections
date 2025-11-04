@@ -57,7 +57,10 @@ const Guides = () => {
           title: "Adding Additional Income",
           path: "/guides/adding-income"
         },
-        "Categorizing Transactions"
+        {
+          title: "Editing transactions",
+          path: "/guides/editing-transactions"
+        }
       ]
     },
     {
