@@ -203,7 +203,7 @@ export default function Onboarding() {
       await checkAmazonSyncStatus();
       setCurrentStep('forecasting');
     } else {
-      navigate('/dashboard');
+      setCurrentStep('guides');
     }
   };
 
@@ -308,12 +308,12 @@ export default function Onboarding() {
         : 'Reserve set to $0'
       );
 
-      // Move to forecasting step if Amazon was connected
+      // Move to forecasting step if Amazon was connected, otherwise guides
       if (!amazonSkipped) {
         await checkAmazonSyncStatus();
         setCurrentStep('forecasting');
       } else {
-        navigate('/dashboard');
+        setCurrentStep('guides');
       }
     } catch (error) {
       console.error('Error saving reserve:', error);
