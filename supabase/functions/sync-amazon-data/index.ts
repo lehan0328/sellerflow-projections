@@ -29,6 +29,47 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string)
   try {
     console.log('[SYNC] ===== STARTING AMAZON SYNC =====')
     console.log('[SYNC] Account:', amazonAccount.account_name)
+    console.log('[SYNC] Marketplace:', amazonAccount.marketplace_name)
+    
+    // Skip non-US marketplaces entirely
+    if (amazonAccount.marketplace_name !== 'United States') {
+      console.log(`[SYNC] Skipping non-US marketplace: ${amazonAccount.marketplace_name}`)
+      
+      // Create sync log entry
+      const { data: syncLog } = await supabase
+        .from('amazon_sync_logs')
+        .insert({
+          user_id: userId,
+          account_id: amazonAccountId,
+          sync_type: 'manual',
+          sync_status: 'skipped',
+          started_at: new Date().toISOString(),
+          completed_at: new Date().toISOString(),
+          metadata: {
+            account_name: amazonAccount.account_name,
+            marketplace_name: amazonAccount.marketplace_name,
+            skip_reason: 'Non-US marketplace not included in forecasts'
+          }
+        })
+        .select()
+        .single();
+      
+      await supabase.from('amazon_accounts').update({ 
+        sync_status: 'idle',
+        sync_message: 'Non-US marketplace - sync skipped',
+        last_sync: new Date().toISOString()
+      }).eq('id', amazonAccountId);
+      
+      return new Response(
+        JSON.stringify({
+          success: true,
+          skipped: true,
+          reason: 'Non-US marketplace not included in forecasts',
+          marketplace: amazonAccount.marketplace_name
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
     
     // Create sync log entry
     const { data: syncLog, error: logError } = await supabase
@@ -299,12 +340,24 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string)
         return null
       }
 
-      // Only process Succeeded settlements (skip invoiced, processing, failed, unknown)
+      // Check settlement duration - skip invoiced settlements (14-day B2B settlements)
+      const settlementStart = new Date(group.FinancialEventGroupStart);
+      const settlementEnd = new Date(group.FinancialEventGroupEnd);
+      const settlementDays = Math.ceil((settlementEnd.getTime() - settlementStart.getTime()) / (1000 * 60 * 60 * 24));
+      
+      if (settlementDays > 3) {
+        console.log(`[SYNC] Skipping invoiced/B2B settlement: ${group.FinancialEventGroupId} (${settlementDays} days, Amount: $${parseFloat(group.ConvertedTotal?.CurrencyAmount || group.OriginalTotal?.CurrencyAmount || '0').toFixed(2)})`);
+        return null;
+      }
+      
+      // Only process Succeeded settlements (skip processing, failed, unknown)
       const isSucceededSettlement = group.FundTransferStatus === 'Succeeded';
       if (!isSucceededSettlement) {
         console.log(`[SYNC] Skipping non-succeeded settlement: ${group.FinancialEventGroupId} (Status: ${group.FundTransferStatus})`);
         return null;
       }
+      
+      console.log(`[SYNC] Processing daily settlement: ${group.FinancialEventGroupId} (${settlementDays} days, Amount: $${parseFloat(group.ConvertedTotal?.CurrencyAmount || group.OriginalTotal?.CurrencyAmount || '0').toFixed(2)})`);
       
       // Closed settlement - payout is received the same day the settlement closes
       // (Settlement closes at night e.g. Nov 1 8pm = Nov 2 00:01 UTC, payout received Nov 2)

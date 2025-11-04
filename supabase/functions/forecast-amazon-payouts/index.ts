@@ -120,18 +120,38 @@ serve(async (req) => {
       console.log(`[FORECAST] Payout frequency: ${amazonAccount.payout_frequency}`);
       console.log(`[FORECAST] Payout model: ${amazonAccount.payout_model}`);
       
+      // Only forecast for US marketplace
+      if (amazonAccount.marketplace_name !== 'United States') {
+        console.log(`[FORECAST] Skipping non-US marketplace: ${amazonAccount.marketplace_name}`);
+        continue;
+      }
+      
       // Check if this is a daily settlement account
       const isDaily = amazonAccount.payout_model === 'daily' || amazonAccount.payout_frequency === 'daily';
       console.log(`[FORECAST] Account type: ${isDaily ? 'DAILY' : 'BI-WEEKLY'}`);
       
-      // Fetch Amazon payouts for this specific account from last 12 months
-      const { data: amazonPayouts, error: payoutsError } = await supabase
+      // Fetch Amazon payouts for this specific account from last 12 months (US marketplace only)
+      const { data: amazonPayoutsRaw, error: payoutsError } = await supabase
         .from('amazon_payouts')
         .select('*')
         .eq('amazon_account_id', amazonAccount.id)
         .eq('status', 'confirmed') // Only use confirmed payouts for baseline
+        .eq('marketplace_name', 'United States') // Only US marketplace
         .gte('payout_date', twelveMonthsAgo.toISOString().split('T')[0])
         .order('payout_date', { ascending: false });
+      
+      // Filter out invoiced settlements (14-day B2B settlements)
+      const amazonPayouts = amazonPayoutsRaw?.filter(p => {
+        if (!p.raw_settlement_data?.FinancialEventGroupStart || !p.raw_settlement_data?.FinancialEventGroupEnd) {
+          return true; // Keep if no duration data
+        }
+        const start = new Date(p.raw_settlement_data.FinancialEventGroupStart);
+        const end = new Date(p.raw_settlement_data.FinancialEventGroupEnd);
+        const days = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+        return days <= 3; // Only include 1-3 day settlements (daily), not 14-day (invoiced)
+      }) || [];
+      
+      console.log(`[FORECAST] Filtered to ${amazonPayouts.length} daily US settlements (excluded invoiced/B2B settlements)`);
       
       // Also check for Amazon's open settlements (estimated payouts)
       const { data: estimatedPayouts } = await supabase

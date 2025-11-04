@@ -39,12 +39,13 @@ serve(async (req) => {
     
     console.log('[ROLLOVER] Checking dates - Yesterday:', yesterdayStr, 'Today:', todayStr);
 
-    // Check if there's a Succeeded settlement for yesterday
+    // Check if there's a Succeeded settlement for yesterday (US marketplace only)
     const { data: yesterdaySettlement, error: settlementError } = await supabase
       .from('amazon_payouts')
       .select('*')
       .eq('amazon_account_id', amazonAccountId)
       .eq('status', 'confirmed')
+      .eq('marketplace_name', 'United States')
       .eq('payout_date', yesterdayStr)
       .maybeSingle();
 
@@ -53,10 +54,31 @@ serve(async (req) => {
       throw settlementError;
     }
 
-    // Check if the settlement is actually a Succeeded one
-    const isSucceededSettlement = yesterdaySettlement?.raw_settlement_data?.FundTransferStatus === 'Succeeded';
+    // Check if the settlement is actually a Succeeded one and a daily settlement (not invoiced)
+    let isSucceededDailySettlement = false;
+    if (yesterdaySettlement?.raw_settlement_data?.FundTransferStatus === 'Succeeded') {
+      // Check settlement duration - exclude invoiced settlements (14-day periods)
+      const settlementStart = yesterdaySettlement.raw_settlement_data?.FinancialEventGroupStart 
+        ? new Date(yesterdaySettlement.raw_settlement_data.FinancialEventGroupStart)
+        : null;
+      const settlementEnd = yesterdaySettlement.raw_settlement_data?.FinancialEventGroupEnd
+        ? new Date(yesterdaySettlement.raw_settlement_data.FinancialEventGroupEnd)
+        : null;
+      
+      if (settlementStart && settlementEnd) {
+        const settlementDays = Math.ceil((settlementEnd.getTime() - settlementStart.getTime()) / (1000 * 60 * 60 * 24));
+        isSucceededDailySettlement = settlementDays <= 3; // Only 1-3 day settlements (daily), not 14-day (invoiced)
+        
+        if (settlementDays > 3) {
+          console.log(`[ROLLOVER] Found settlement but it's an invoiced/B2B settlement (${settlementDays} days), treating as no settlement`);
+        }
+      } else {
+        // If no settlement duration data, assume it's valid
+        isSucceededDailySettlement = true;
+      }
+    }
 
-    if (yesterdaySettlement && isSucceededSettlement) {
+    if (yesterdaySettlement && isSucceededDailySettlement) {
       console.log('[ROLLOVER] Succeeded settlement found for yesterday, no rollover needed');
       return new Response(
         JSON.stringify({
