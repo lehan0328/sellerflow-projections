@@ -165,28 +165,49 @@ const Guides = () => {
                   <p className="text-muted-foreground">Explore Auren's most powerful capabilities</p>
                 </div>
                 
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  <Link to="/guides/search-by-amount" className="group">
-                    <Card className="relative overflow-hidden h-full shadow-card hover:shadow-elevated transition-all duration-300 cursor-pointer border-0 hover-scale">
-                      <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 via-purple-500/20 to-pink-500/20" />
-                      <div className="absolute inset-0 bg-gradient-to-br from-blue-600/0 via-purple-600/0 to-pink-600/0 group-hover:from-blue-600/10 group-hover:via-purple-600/10 group-hover:to-pink-600/10 transition-all duration-300" />
-                      <CardHeader className="relative pb-3">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="p-2 rounded-lg bg-gradient-to-br from-blue-500 to-purple-500">
-                            <Search className="h-5 w-5 text-white" />
-                          </div>
-                          <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                <Link to="/guides/search-by-amount" className="group">
+                  <Card className="relative overflow-hidden h-full shadow-card hover:shadow-elevated transition-all duration-300 cursor-pointer border-0 hover-scale">
+                    <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 via-purple-500/20 to-pink-500/20" />
+                    <div className="absolute inset-0 bg-gradient-to-br from-blue-600/0 via-purple-600/0 to-pink-600/0 group-hover:from-blue-600/10 group-hover:via-purple-600/10 group-hover:to-pink-600/10 transition-all duration-300" />
+                    <CardHeader className="relative pb-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="p-2 rounded-lg bg-gradient-to-br from-blue-500 to-purple-500">
+                          <Search className="h-5 w-5 text-white" />
                         </div>
-                        <CardTitle className="text-lg">Search by Amount</CardTitle>
-                      </CardHeader>
-                      <CardContent className="relative">
-                        <p className="text-sm text-muted-foreground line-clamp-2">
-                          Find the earliest date you can spend any amount
-                        </p>
-                      </CardContent>
-                    </Card>
-                  </Link>
-                </div>
+                        <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                      </div>
+                      <CardTitle className="text-lg">Search by Amount</CardTitle>
+                    </CardHeader>
+                    <CardContent className="relative">
+                      <p className="text-sm text-muted-foreground line-clamp-2">
+                        Find the earliest date you can spend any amount
+                      </p>
+                    </CardContent>
+                  </Card>
+                </Link>
+
+                <Link to="/guides/search-by-date" className="group">
+                  <Card className="relative overflow-hidden h-full shadow-card hover:shadow-elevated transition-all duration-300 cursor-pointer border-0 hover-scale">
+                    <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/20 via-teal-500/20 to-cyan-500/20" />
+                    <div className="absolute inset-0 bg-gradient-to-br from-emerald-600/0 via-teal-600/0 to-cyan-600/0 group-hover:from-emerald-600/10 group-hover:via-teal-600/10 group-hover:to-cyan-600/10 transition-all duration-300" />
+                    <CardHeader className="relative pb-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="p-2 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500">
+                          <FileText className="h-5 w-5 text-white" />
+                        </div>
+                        <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                      </div>
+                      <CardTitle className="text-lg">Search by Date</CardTitle>
+                    </CardHeader>
+                    <CardContent className="relative">
+                      <p className="text-sm text-muted-foreground line-clamp-2">
+                        Know exactly what you can spend on any given date
+                      </p>
+                    </CardContent>
+                  </Card>
+                </Link>
+              </div>
               </div>
 
               <Separator className="my-8" />
