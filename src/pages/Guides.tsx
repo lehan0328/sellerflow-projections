@@ -165,7 +165,7 @@ const Guides = () => {
                   <p className="text-muted-foreground">Explore Auren's most powerful capabilities</p>
                 </div>
                 
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 justify-items-center">
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 <Link to="/guides/payout-forecasting" className="group">
                   <Card className="relative overflow-hidden h-full shadow-card hover:shadow-elevated transition-all duration-300 cursor-pointer border-0 hover-scale">
                     <div className="absolute inset-0 bg-gradient-to-br from-orange-500/20 via-amber-500/20 to-yellow-500/20" />
@@ -229,47 +229,49 @@ const Guides = () => {
                   </Card>
                 </Link>
 
-                <Link to="/guides/search-by-date" className="group lg:col-start-2">
-                  <Card className="relative overflow-hidden h-full shadow-card hover:shadow-elevated transition-all duration-300 cursor-pointer border-0 hover-scale">
-                    <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/20 via-teal-500/20 to-cyan-500/20" />
-                    <div className="absolute inset-0 bg-gradient-to-br from-emerald-600/0 via-teal-600/0 to-cyan-600/0 group-hover:from-emerald-600/10 group-hover:via-teal-600/10 group-hover:to-cyan-600/10 transition-all duration-300" />
-                    <CardHeader className="relative pb-3">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="p-2 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500">
-                          <FileText className="h-5 w-5 text-white" />
+                <div className="lg:col-span-3 flex justify-center gap-4 flex-wrap md:flex-nowrap">
+                  <Link to="/guides/search-by-date" className="group w-full md:w-auto md:max-w-sm">
+                    <Card className="relative overflow-hidden h-full shadow-card hover:shadow-elevated transition-all duration-300 cursor-pointer border-0 hover-scale">
+                      <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/20 via-teal-500/20 to-cyan-500/20" />
+                      <div className="absolute inset-0 bg-gradient-to-br from-emerald-600/0 via-teal-600/0 to-cyan-600/0 group-hover:from-emerald-600/10 group-hover:via-teal-600/10 group-hover:to-cyan-600/10 transition-all duration-300" />
+                      <CardHeader className="relative pb-3">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="p-2 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500">
+                            <FileText className="h-5 w-5 text-white" />
+                          </div>
+                          <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
                         </div>
-                        <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
-                      </div>
-                      <CardTitle className="text-lg">Search by Date</CardTitle>
-                    </CardHeader>
-                    <CardContent className="relative">
-                      <p className="text-sm text-muted-foreground line-clamp-2">
-                        Know exactly what you can spend on any given date
-                      </p>
-                    </CardContent>
-                  </Card>
-                </Link>
+                        <CardTitle className="text-lg">Search by Date</CardTitle>
+                      </CardHeader>
+                      <CardContent className="relative">
+                        <p className="text-sm text-muted-foreground line-clamp-2">
+                          Know exactly what you can spend on any given date
+                        </p>
+                      </CardContent>
+                    </Card>
+                  </Link>
 
-                <Link to="/guides/scenario-planning" className="group">
-                  <Card className="relative overflow-hidden h-full shadow-card hover:shadow-elevated transition-all duration-300 cursor-pointer border-0 hover-scale">
-                    <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/20 via-sky-500/20 to-blue-500/20" />
-                    <div className="absolute inset-0 bg-gradient-to-br from-cyan-600/0 via-sky-600/0 to-blue-600/0 group-hover:from-cyan-600/10 group-hover:via-sky-600/10 group-hover:to-blue-600/10 transition-all duration-300" />
-                    <CardHeader className="relative pb-3">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="p-2 rounded-lg bg-gradient-to-br from-cyan-500 to-sky-500">
-                          <TrendingUp className="h-5 w-5 text-white" />
+                  <Link to="/guides/scenario-planning" className="group w-full md:w-auto md:max-w-sm">
+                    <Card className="relative overflow-hidden h-full shadow-card hover:shadow-elevated transition-all duration-300 cursor-pointer border-0 hover-scale">
+                      <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/20 via-sky-500/20 to-blue-500/20" />
+                      <div className="absolute inset-0 bg-gradient-to-br from-cyan-600/0 via-sky-600/0 to-blue-600/0 group-hover:from-cyan-600/10 group-hover:via-sky-600/10 group-hover:to-blue-600/10 transition-all duration-300" />
+                      <CardHeader className="relative pb-3">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="p-2 rounded-lg bg-gradient-to-br from-cyan-500 to-sky-500">
+                            <TrendingUp className="h-5 w-5 text-white" />
+                          </div>
+                          <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
                         </div>
-                        <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
-                      </div>
-                      <CardTitle className="text-lg">Scenario Planning</CardTitle>
-                    </CardHeader>
-                    <CardContent className="relative">
-                      <p className="text-sm text-muted-foreground line-clamp-2">
-                        Plan out your cash balance projection no matter the scenario fully customizable
-                      </p>
-                    </CardContent>
-                  </Card>
-                </Link>
+                        <CardTitle className="text-lg">Scenario Planning</CardTitle>
+                      </CardHeader>
+                      <CardContent className="relative">
+                        <p className="text-sm text-muted-foreground line-clamp-2">
+                          Plan out your cash balance projection no matter the scenario fully customizable
+                        </p>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                </div>
               </div>
               </div>
 
