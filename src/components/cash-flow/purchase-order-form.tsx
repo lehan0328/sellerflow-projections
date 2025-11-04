@@ -511,15 +511,9 @@ export const PurchaseOrderForm = ({
     try {
       let fileToUpload: File | Blob = file;
 
-      // Convert PDF to PNG for better AI processing
-      if (file.type === 'application/pdf') {
-        const pngBlob = await renderPdfPreview(file);
-        if (pngBlob) {
-          fileToUpload = new File([pngBlob], file.name.replace('.pdf', '.png'), { type: 'image/png' });
-        } else {
-          throw new Error('Failed to convert PDF to image');
-        }
-      }
+      // Keep original PDF to preserve all pages for extraction
+      // (Pro model handles PDFs reliably; avoid converting to single-page PNG)
+      // No conversion performed for PDFs.
 
       // Create form data
       const formDataToSend = new FormData();
