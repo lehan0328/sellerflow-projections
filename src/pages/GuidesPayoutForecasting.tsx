@@ -36,13 +36,6 @@ const GuidesPayoutForecasting = () => {
 
           <div className="container mx-auto px-6 py-8 bg-background">
             <div className="max-w-5xl mx-auto">
-              <div className="space-y-4 mb-8">
-                <h2 className="text-3xl font-bold">Payout Forecasting (Amazon)</h2>
-                <p className="text-lg text-muted-foreground">
-                  Accurately forecast your payouts 3 months in advance based on your Amazon sales history to help plan purchases
-                </p>
-              </div>
-
               <div className="rounded-lg overflow-hidden border bg-card">
                 <iframe 
                   src="https://scribehow.com/embed/Update_Advanced_Forecast_Settings__92s-O5m4QuWrg8AdHfXyFQ?removeLogo=true" 
