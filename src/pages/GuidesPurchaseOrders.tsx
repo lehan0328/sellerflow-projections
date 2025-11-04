@@ -3,10 +3,13 @@ import { Helmet } from "react-helmet";
 import { AppSidebar } from "@/components/AppSidebar";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileText } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { FileText, ArrowLeft } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const GuidesPurchaseOrders = () => {
   const [activeSection, setActiveSection] = useState("guides");
+  const navigate = useNavigate();
   
   return (
     <SidebarProvider>
@@ -20,6 +23,15 @@ const GuidesPurchaseOrders = () => {
 
           <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background px-6">
             <SidebarTrigger />
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => navigate('/guides')}
+              className="gap-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to Guides
+            </Button>
             <h1 className="text-xl font-semibold">Purchase Order Guides</h1>
           </header>
 

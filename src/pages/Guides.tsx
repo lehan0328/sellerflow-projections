@@ -10,9 +10,10 @@ import {
   Users,
   CreditCard,
   TrendingUp,
-  Link as LinkIcon
+  Link as LinkIcon,
+  ArrowLeft
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { AppSidebar } from "@/components/AppSidebar";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
@@ -20,6 +21,7 @@ import { Button } from "@/components/ui/button";
 const Guides = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeSection, setActiveSection] = useState("guides");
+  const navigate = useNavigate();
 
   useEffect(() => {
     console.log("🎯 Guides page mounted successfully!");
@@ -101,6 +103,15 @@ const Guides = () => {
 
           <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background px-6">
             <SidebarTrigger />
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => navigate('/dashboard')}
+              className="gap-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to Dashboard
+            </Button>
             <h1 className="text-xl font-semibold">Guides</h1>
           </header>
 
