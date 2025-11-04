@@ -321,9 +321,10 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
             fundsAvailableDate = new Date(payoutDate);
             fundsAvailableDate.setDate(fundsAvailableDate.getDate() + 1);
           } else {
-            // For forecasted payouts, use date as-is (forecast engine already calculates correct dates)
+            // For forecasted payouts, add T+1 (next-day availability)
+            // This matches Amazon's typical payout timing where funds become available the next day
             fundsAvailableDate = parseLocalDate(payout.payout_date);
-            // No adjustment needed - forecasts are generated with correct target dates
+            fundsAvailableDate.setDate(fundsAvailableDate.getDate() + 1);
           }
           
           // ALWAYS include open settlements (estimated) - they represent real accumulating money
