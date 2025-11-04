@@ -58,8 +58,8 @@ const resourceSections = [{
   id: "guides",
   title: "Guides",
   icon: BookOpen,
-  isExternal: true,
-  url: "https://docs.lovable.dev"
+  isExternal: false,
+  url: "/guides"
 }, {
   id: "settings",
   title: "Settings",

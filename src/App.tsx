@@ -24,6 +24,8 @@ import Docs from "./pages/Docs";
 import DocsGettingStarted from "./pages/DocsGettingStarted";
 import DocsAmazonIntegration from "./pages/DocsAmazonIntegration";
 import DocsFAQ from "./pages/DocsFAQ";
+import Guides from "./pages/Guides";
+import GuidesPurchaseOrders from "./pages/GuidesPurchaseOrders";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import { Auth } from "./pages/Auth";
@@ -87,6 +89,16 @@ const App = () => (
           <Route path="/docs/getting-started" element={<DocsGettingStarted />} />
           <Route path="/docs/amazon-integration" element={<DocsAmazonIntegration />} />
           <Route path="/docs/faq" element={<DocsFAQ />} />
+          <Route path="/guides" element={
+            <ProtectedRoute>
+              <Guides />
+            </ProtectedRoute>
+          } />
+          <Route path="/guides/purchase-orders" element={
+            <ProtectedRoute>
+              <GuidesPurchaseOrders />
+            </ProtectedRoute>
+          } />
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<TermsOfService />} />
           <Route path="/blog" element={<Blog />} />
