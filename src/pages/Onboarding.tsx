@@ -1021,16 +1021,16 @@ export default function Onboarding() {
                 
                 {/* Signature Features Preview */}
                 <div className="grid gap-3 md:grid-cols-2">
-                  <div className="group">
+                  <div className="group md:col-span-2">
                     <div className="relative overflow-hidden rounded-lg border bg-card p-4 hover:shadow-md transition-all duration-300">
                       <div className="flex items-start gap-3">
-                        <div className="p-2 rounded-lg bg-gradient-to-br from-orange-500 to-amber-500 flex-shrink-0">
+                        <div className="p-2 rounded-lg bg-gradient-to-br from-cyan-500 to-sky-500 flex-shrink-0">
                           <TrendingUp className="h-4 w-4 text-white" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h4 className="font-semibold text-sm mb-1">Payout Forecasting</h4>
+                          <h4 className="font-semibold text-sm mb-1">Scenario Planning</h4>
                           <p className="text-xs text-muted-foreground line-clamp-2">
-                            Forecast payouts 3 months in advance
+                            Plan out your cash balance projection no matter the scenario fully customizable
                           </p>
                         </div>
                         <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
@@ -1092,13 +1092,13 @@ export default function Onboarding() {
                   <div className="group md:col-span-2">
                     <div className="relative overflow-hidden rounded-lg border bg-card p-4 hover:shadow-md transition-all duration-300">
                       <div className="flex items-start gap-3">
-                        <div className="p-2 rounded-lg bg-gradient-to-br from-cyan-500 to-sky-500 flex-shrink-0">
+                        <div className="p-2 rounded-lg bg-gradient-to-br from-orange-500 to-amber-500 flex-shrink-0">
                           <TrendingUp className="h-4 w-4 text-white" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h4 className="font-semibold text-sm mb-1">Scenario Planning</h4>
+                          <h4 className="font-semibold text-sm mb-1">Payout Forecasting</h4>
                           <p className="text-xs text-muted-foreground line-clamp-2">
-                            Plan out your cash balance projection no matter the scenario fully customizable
+                            Forecast payouts 3 months in advance
                           </p>
                         </div>
                         <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
