@@ -165,7 +165,7 @@ const Guides = () => {
                   <p className="text-muted-foreground">Explore Auren's most powerful capabilities</p>
                 </div>
                 
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 justify-items-center [&>*:nth-child(4)]:lg:col-start-2">
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 justify-items-center">
                 <Link to="/guides/payout-forecasting" className="group">
                   <Card className="relative overflow-hidden h-full shadow-card hover:shadow-elevated transition-all duration-300 cursor-pointer border-0 hover-scale">
                     <div className="absolute inset-0 bg-gradient-to-br from-orange-500/20 via-amber-500/20 to-yellow-500/20" />
@@ -229,7 +229,7 @@ const Guides = () => {
                   </Card>
                 </Link>
 
-                <Link to="/guides/search-by-date" className="group">
+                <Link to="/guides/search-by-date" className="group lg:col-start-2">
                   <Card className="relative overflow-hidden h-full shadow-card hover:shadow-elevated transition-all duration-300 cursor-pointer border-0 hover-scale">
                     <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/20 via-teal-500/20 to-cyan-500/20" />
                     <div className="absolute inset-0 bg-gradient-to-br from-emerald-600/0 via-teal-600/0 to-cyan-600/0 group-hover:from-emerald-600/10 group-hover:via-teal-600/10 group-hover:to-cyan-600/10 transition-all duration-300" />
