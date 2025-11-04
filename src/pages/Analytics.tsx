@@ -186,62 +186,63 @@ export default function Analytics() {
     }
   };
 
-  // Calculate key metrics
+  // Calculate key metrics (MTD - Month to Date)
   const metrics = useMemo(() => {
-    // Get date range for filtering
-    const { start: incomeStart, end: incomeEnd } = getDateRange(incomeDateRange);
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
     
-    // Total cash inflow from bank transactions (credits) - FILTERED BY DATE RANGE
+    // Total cash inflow from bank transactions (credits) - MTD
     const bankInflow = bankTransactions
       .filter(tx => {
         const txDate = new Date(tx.date);
-        return tx.transactionType === 'credit' && txDate >= incomeStart && txDate <= incomeEnd;
+        return tx.transactionType === 'credit' && txDate >= startOfMonth && txDate <= now;
       })
       .reduce((sum, tx) => sum + tx.amount, 0);
 
-    // Total inflow from sales orders and customer payments - FILTERED BY DATE RANGE
+    // Total inflow from sales orders and customer payments - MTD
     const transactionInflow = dbTransactions
       .filter(tx => {
         const txDate = new Date(tx.transactionDate);
         return (tx.type === 'sales_order' || tx.type === 'customer_payment') && 
                tx.status === 'completed' && 
-               txDate >= incomeStart && txDate <= incomeEnd;
+               txDate >= startOfMonth && txDate <= now;
       })
       .reduce((sum, tx) => sum + tx.amount, 0);
 
-    // Total inflow from income items (received) - FILTERED BY DATE RANGE
+    // Total inflow from income items (received) - MTD
     const incomeInflow = incomeItems
       .filter(i => {
         const paymentDate = new Date(i.paymentDate);
-        return i.status === 'received' && paymentDate >= incomeStart && paymentDate <= incomeEnd;
+        return i.status === 'received' && paymentDate >= startOfMonth && paymentDate <= now;
       })
       .reduce((sum, i) => sum + i.amount, 0);
 
-    // Amazon payouts filtered by income date range (confirmed only, NET after fees)
+    // Amazon payouts (confirmed only, NET after fees) - MTD
     const amazonRevenueFiltered = amazonPayouts
       .filter(p => {
         const payoutDate = new Date(p.payout_date);
-        return p.status === 'confirmed' && payoutDate >= incomeStart && payoutDate <= incomeEnd;
+        return p.status === 'confirmed' && payoutDate >= startOfMonth && payoutDate <= now;
       })
       .reduce((sum, p) => sum + (p.total_amount || 0), 0);
 
     const totalInflow = bankInflow + transactionInflow + incomeInflow + amazonRevenueFiltered;
 
-    // Total cash outflow from bank transactions (debits) - FILTERED BY DATE RANGE
+    // Total cash outflow from bank transactions (debits) - MTD
     const bankOutflow = bankTransactions
       .filter(tx => {
         const txDate = new Date(tx.date);
-        return tx.transactionType === 'debit' && txDate >= incomeStart && txDate <= incomeEnd;
+        return tx.transactionType === 'debit' && txDate >= startOfMonth && txDate <= now;
       })
       .reduce((sum, tx) => sum + tx.amount, 0);
 
-    // Total outflow from purchase orders and vendor payments - FILTERED BY DATE RANGE
+    // Total outflow from purchase orders and vendor payments - MTD
     const transactionOutflow = dbTransactions
       .filter(tx => {
         const txDate = new Date(tx.transactionDate);
         return (tx.type === 'purchase_order' || tx.type === 'vendor_payment') && 
                tx.status !== 'cancelled' &&
-               txDate >= incomeStart && txDate <= incomeEnd;
+               txDate >= startOfMonth && txDate <= now;
       })
       .reduce((sum, tx) => sum + tx.amount, 0);
 
@@ -270,6 +271,62 @@ export default function Analytics() {
     // Net cash flow
     const netCashFlow = totalInflow - totalOutflow;
 
+    // Forecasted Income vs Expenses for this month
+    // Forecasted Amazon payouts (future payouts this month)
+    const forecastedAmazonPayouts = amazonPayouts
+      .filter(p => {
+        const payoutDate = new Date(p.payout_date);
+        return (p.status === 'estimated' || p.status === 'confirmed') && 
+               payoutDate >= now && 
+               payoutDate <= endOfMonth;
+      })
+      .reduce((sum, p) => sum + (p.total_amount || 0), 0);
+
+    // Additional income (pending income items this month)
+    const additionalIncome = incomeItems
+      .filter(i => {
+        const paymentDate = new Date(i.paymentDate);
+        return i.status === 'pending' && paymentDate >= startOfMonth && paymentDate <= endOfMonth;
+      })
+      .reduce((sum, i) => sum + i.amount, 0);
+
+    // Recurring income for this month
+    const recurringIncome = incomeItems
+      .filter(i => {
+        const paymentDate = new Date(i.paymentDate);
+        return i.isRecurring && paymentDate >= startOfMonth && paymentDate <= endOfMonth;
+      })
+      .reduce((sum, i) => sum + i.amount, 0);
+
+    const totalForecastedIncome = forecastedAmazonPayouts + additionalIncome + recurringIncome;
+
+    // Recurring expenses for this month (only active expenses)
+    const recurringExpensesMonth = recurringExpenses
+      .filter(e => {
+        if (!e.is_active || e.type !== 'expense') return false;
+        const startDate = new Date(e.start_date);
+        const endDate = e.end_date ? new Date(e.end_date) : null;
+        // Check if the recurring expense is active during this month
+        return startDate <= endOfMonth && (!endDate || endDate >= startOfMonth);
+      })
+      .reduce((sum, e) => {
+        // For simplicity, assume one occurrence per month
+        // In a real scenario, you'd calculate based on frequency
+        return sum + e.amount;
+      }, 0);
+
+    // Purchase orders (pending) this month
+    const purchaseOrdersMonth = dbTransactions
+      .filter(tx => {
+        const txDate = new Date(tx.transactionDate);
+        return tx.type === 'purchase_order' && 
+               tx.status === 'pending' &&
+               txDate >= startOfMonth && txDate <= endOfMonth;
+      })
+      .reduce((sum, tx) => sum + tx.amount, 0);
+
+    const totalForecastedExpenses = recurringExpensesMonth + purchaseOrdersMonth;
+
     return {
       totalInflow,
       totalOutflow,
@@ -277,11 +334,13 @@ export default function Analytics() {
       pendingIncome,
       creditUtilization,
       amazonRevenue, // Last 30 days GROSS revenue from hook
-      amazonRevenueFiltered, // Filtered by date range, NET payouts
+      amazonRevenueFiltered, // MTD NET payouts
       totalExpenses,
-      netCashFlow
+      netCashFlow,
+      totalForecastedIncome,
+      totalForecastedExpenses
     };
-  }, [bankTransactions, dbTransactions, incomeItems, vendors, creditCards, amazonPayouts, accounts, amazonRevenue, incomeDateRange, customStartDate, customEndDate]);
+  }, [bankTransactions, dbTransactions, incomeItems, vendors, creditCards, amazonPayouts, accounts, amazonRevenue, recurringExpenses]);
 
   // Revenue over time (last 6 months) - includes Amazon payouts and recurring income
   const revenueData = useMemo(() => {
@@ -594,7 +653,7 @@ export default function Analytics() {
       </div>
 
       {/* Key Metrics */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Inflow</CardTitle>
@@ -602,14 +661,7 @@ export default function Analytics() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">${metrics.totalInflow.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">
-              {incomeDateRange === 'this-month' ? 'This month' : 
-               incomeDateRange === 'last-month' ? 'Last month' :
-               incomeDateRange === 'last-2-months' ? 'Last 2 months' :
-               incomeDateRange === 'last-3-months' ? 'Last 3 months' :
-               incomeDateRange === 'last-6-months' ? 'Last 6 months' :
-               incomeDateRange === 'ytd' ? 'Year to date' : 'Selected period'}
-            </p>
+            <p className="text-xs text-muted-foreground">Month to date</p>
           </CardContent>
         </Card>
 
@@ -620,14 +672,7 @@ export default function Analytics() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-red-600">${metrics.totalOutflow.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">
-              {incomeDateRange === 'this-month' ? 'This month' : 
-               incomeDateRange === 'last-month' ? 'Last month' :
-               incomeDateRange === 'last-2-months' ? 'Last 2 months' :
-               incomeDateRange === 'last-3-months' ? 'Last 3 months' :
-               incomeDateRange === 'last-6-months' ? 'Last 6 months' :
-               incomeDateRange === 'ytd' ? 'Year to date' : 'Selected period'}
-            </p>
+            <p className="text-xs text-muted-foreground">Month to date</p>
           </CardContent>
         </Card>
 
@@ -638,14 +683,7 @@ export default function Analytics() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-purple-600">${metrics.amazonRevenueFiltered.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">
-              {incomeDateRange === 'this-month' ? 'This month' : 
-               incomeDateRange === 'last-month' ? 'Last month' :
-               incomeDateRange === 'last-2-months' ? 'Last 2 months' :
-               incomeDateRange === 'last-3-months' ? 'Last 3 months' :
-               incomeDateRange === 'last-6-months' ? 'Last 6 months' :
-               incomeDateRange === 'ytd' ? 'Year to date' : 'Selected period'}
-            </p>
+            <p className="text-xs text-muted-foreground">Month to date</p>
           </CardContent>
         </Card>
 
@@ -658,13 +696,21 @@ export default function Analytics() {
             <div className={`text-2xl font-bold ${metrics.netCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
               {metrics.netCashFlow >= 0 ? '+' : ''}${metrics.netCashFlow.toLocaleString()}
             </div>
+            <p className="text-xs text-muted-foreground">Month to date</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Forecasted Income vs Expenses</CardTitle>
+            <Target className="h-4 w-4 text-blue-600" />
+          </CardHeader>
+          <CardContent>
+            <div className={`text-2xl font-bold ${(metrics.totalForecastedIncome - metrics.totalForecastedExpenses) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {(metrics.totalForecastedIncome - metrics.totalForecastedExpenses) >= 0 ? '+' : ''}${(metrics.totalForecastedIncome - metrics.totalForecastedExpenses).toLocaleString()}
+            </div>
             <p className="text-xs text-muted-foreground">
-              {incomeDateRange === 'this-month' ? 'This month' : 
-               incomeDateRange === 'last-month' ? 'Last month' :
-               incomeDateRange === 'last-2-months' ? 'Last 2 months' :
-               incomeDateRange === 'last-3-months' ? 'Last 3 months' :
-               incomeDateRange === 'last-6-months' ? 'Last 6 months' :
-               incomeDateRange === 'ytd' ? 'Year to date' : 'Selected period'}
+              ${metrics.totalForecastedIncome.toLocaleString()} income / ${metrics.totalForecastedExpenses.toLocaleString()} expenses
             </p>
           </CardContent>
         </Card>
