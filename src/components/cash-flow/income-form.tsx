@@ -578,7 +578,7 @@ export const IncomeForm = ({
         onOpenChange={setShowAddCategory}
         onAddCategory={async (name) => {
           const addFn = formData.type === "income" ? addIncomeCategory : addExpenseCategory;
-          await addFn(name);
+          await addFn(name, isRecurring);
           handleInputChange("category", name);
         }}
         type={formData.type}
