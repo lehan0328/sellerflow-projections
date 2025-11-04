@@ -845,7 +845,7 @@ const Dashboard = () => {
       const transactionData = {
         type: 'purchase_order' as const,
         amount: amount,
-        description: (orderData.lineItemDescription && orderData.lineItemDescription.trim()) || orderData.poName || `PO - ${orderData.vendor}`,
+        description: orderData.poName || `PO - ${orderData.vendor}`, // Use PO name/number, not line item description
         vendorId: vendorId,
         transactionDate: orderData.poDate || new Date(),
         dueDate: dueDate,
@@ -884,14 +884,18 @@ const Dashboard = () => {
                       return null;
                     }
                     
+                    const unitPrice = item.unitPrice || item.unit_price || null;
+                    const quantity = item.quantity || 1;
+                    const totalPrice = unitPrice && quantity ? unitPrice * quantity : null;
+                    
                     return {
                       transaction_id: newTransaction.id,
                       account_id: profile.account_id,
                       product_name: productName,
                       sku: item.sku || item.SKU || null,
-                      quantity: item.quantity || 1,
-                      unit_price: null,
-                      total_price: null
+                      quantity: quantity,
+                      unit_price: unitPrice,
+                      total_price: totalPrice
                     };
                   })
                   .filter((item: any) => item !== null); // Remove null items

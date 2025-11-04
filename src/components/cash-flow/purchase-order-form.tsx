@@ -576,7 +576,7 @@ export const PurchaseOrderForm = ({
         // Auto-fill form fields with extracted data
         setFormData(prev => ({
           ...prev,
-          poName: extracted.poName || prev.poName,
+          poName: extracted.poNumber || extracted.orderNumber || prev.poName, // Use PO number or Order number
           amount: extracted.amount || prev.amount,
           description: extracted.description || prev.description,
           category: extracted.category || prev.category,
