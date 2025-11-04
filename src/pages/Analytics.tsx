@@ -602,7 +602,7 @@ export default function Analytics() {
             <Package className="h-4 w-4 text-purple-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-purple-600">${metrics.amazonRevenue.toLocaleString()}</div>
+            <div className="text-2xl font-bold text-purple-600">${metrics.amazonRevenueFiltered.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">
               {incomeDateRange === 'this-month' ? 'This month' : 
                incomeDateRange === 'last-month' ? 'Last month' :
