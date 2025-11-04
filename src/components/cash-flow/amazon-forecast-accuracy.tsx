@@ -1,7 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingUp, TrendingDown, Target, Calendar, Brain, AlertCircle, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { format, differenceInDays } from "date-fns";
+import { format, differenceInDays, parseISO } from "date-fns";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -305,7 +305,7 @@ export const AmazonForecastAccuracy = () => {
             
             // Calculate days between start and end (Amazon's convention: "Nov 1 - Nov 3" means 2 days)
             const calculatedDays = log.settlement_period_start && log.settlement_close_date
-              ? differenceInDays(new Date(log.settlement_close_date), new Date(log.settlement_period_start))
+              ? differenceInDays(parseISO(log.settlement_close_date), parseISO(log.settlement_period_start))
               : log.days_accumulated || 1;
 
             return (
@@ -318,7 +318,7 @@ export const AmazonForecastAccuracy = () => {
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4 text-muted-foreground" />
                       <span className="font-medium">
-                        Settlement Closed: {format(new Date(log.settlement_close_date || log.payout_date), 'MMM d, yyyy')}
+                        Settlement Closed: {format(parseISO(log.settlement_close_date || log.payout_date), 'MMM d, yyyy')}
                       </span>
                       <Badge variant="secondary" className="text-xs">
                         {modelDisplay}
@@ -326,11 +326,11 @@ export const AmazonForecastAccuracy = () => {
                     </div>
                     {log.settlement_period_start && log.settlement_close_date && (
                       <div className="text-xs text-muted-foreground ml-6 mt-1">
-                        Period: {format(new Date(log.settlement_period_start), 'MMM d')} - {format(new Date(log.settlement_close_date), 'MMM d')} ({calculatedDays} day{calculatedDays > 1 ? 's' : ''})
+                        Period: {format(parseISO(log.settlement_period_start), 'MMM d')} - {format(parseISO(log.settlement_close_date), 'MMM d')} ({calculatedDays} day{calculatedDays > 1 ? 's' : ''})
                       </div>
                     )}
                     <div className="text-xs text-muted-foreground ml-6">
-                      Payout received: {format(new Date(log.payout_date), 'MMM d, yyyy')}
+                      Payout received: {format(parseISO(log.payout_date), 'MMM d, yyyy')}
                     </div>
                   </div>
                   <Badge variant={accuracy >= 90 ? "default" : accuracy >= 75 ? "secondary" : "outline"}>
