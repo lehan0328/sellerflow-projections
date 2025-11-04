@@ -117,7 +117,11 @@ serve(async (req) => {
 
     console.log("Sending to AI for extraction");
 
-    // Use Gemini Flash with proper document/image handling
+    // Choose model based on file type (Pro handles PDFs more reliably)
+    const modelName = mimeType.startsWith('application/pdf') ? 'google/gemini-2.5-pro' : 'google/gemini-2.5-flash';
+    console.log("Using model:", modelName, "for mimeType:", mimeType);
+
+    // Use Lovable AI Gateway with proper document/image handling
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -125,7 +129,7 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: modelName,
         messages: [
           {
             role: "user",
@@ -208,6 +212,110 @@ serve(async (req) => {
         }
       } catch (e) {
         errorMessage = errorText;
+      }
+
+      // Retry once with Pro model if extraction failed and Pro wasn't used yet
+      if (response.status === 400 && errorMessage.includes("extract") && modelName !== "google/gemini-2.5-pro") {
+        try {
+          console.log("Retrying with pro model due to image extraction failure");
+          const retryResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${LOVABLE_API_KEY}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              model: "google/gemini-2.5-pro",
+              messages: [
+                {
+                  role: "user",
+                  content: messageContent
+                }
+              ],
+              tools: [
+                {
+                  type: "function",
+                  function: {
+                    name: "extract_purchase_order",
+                    description: "Extract purchase order information from a document",
+                    parameters: {
+                      type: "object",
+                      properties: {
+                        documentType: {
+                          type: "string",
+                          enum: ["sales_order", "invoice", "proforma_invoice", "purchase_order"],
+                          description: "Type of document: 'sales_order', 'invoice' (only for documents explicitly labeled INVOICE), 'proforma_invoice', or 'purchase_order'"
+                        },
+                        vendorName: {
+                          type: "string",
+                          description: "The name of the vendor/supplier"
+                        },
+                        poName: {
+                          type: "string",
+                          description: "Purchase order name, number, or invoice number"
+                        },
+                        amount: {
+                          type: "string",
+                          description: "Total amount as a number string (e.g., '1500.50')"
+                        },
+                        description: {
+                          type: "string",
+                          description: "Description of goods or services"
+                        },
+                        category: {
+                          type: "string",
+                          enum: ["Inventory", "Packaging Materials", "Marketing/PPC", "Shipping & Logistics", "Professional Services", "Other"],
+                          description: "Category of purchase"
+                        },
+                        dueDate: {
+                          type: "string",
+                          description: "Due date in YYYY-MM-DD format if specified"
+                        },
+                        deliveryDate: {
+                          type: "string",
+                          description: "Delivery date in YYYY-MM-DD format if specified"
+                        },
+                        netTermsDays: {
+                          type: "string",
+                          enum: ["30", "60", "90"],
+                          description: "Net payment terms in days (30, 60, or 90)"
+                        },
+                        notes: {
+                          type: "string",
+                          description: "Any additional notes or terms"
+                        }
+                      },
+                      required: ["vendorName", "amount"],
+                      additionalProperties: false
+                    }
+                  }
+                }
+              ],
+              tool_choice: { type: "function", function: { name: "extract_purchase_order" } }
+            }),
+          });
+
+          if (retryResponse.ok) {
+            const retryData = await retryResponse.json();
+            console.log("AI Response received after retry");
+            const toolCallRetry = retryData.choices?.[0]?.message?.tool_calls?.[0];
+            if (toolCallRetry?.function?.arguments) {
+              const extractedData = JSON.parse(toolCallRetry.function.arguments);
+              console.log("Extracted PO data (retry):", extractedData);
+              return new Response(
+                JSON.stringify({ success: true, data: extractedData }),
+                { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+              );
+            } else {
+              console.error("No tool call in retry response:", JSON.stringify(retryData.choices?.[0]?.message));
+            }
+          } else {
+            const rt = await retryResponse.text();
+            console.error("Retry AI gateway error:", retryResponse.status, rt);
+          }
+        } catch (retryErr) {
+          console.error("Retry with pro model failed:", retryErr);
+        }
       }
       
       if (response.status === 429) {
