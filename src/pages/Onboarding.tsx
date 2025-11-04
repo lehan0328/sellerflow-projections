@@ -1020,8 +1020,8 @@ export default function Onboarding() {
                 </p>
                 
                 {/* Signature Features Preview */}
-                <div className="grid gap-3 md:grid-cols-2">
-                  <div className="group md:col-span-2">
+                <div className="grid gap-3">
+                  <div className="group">
                     <div className="relative overflow-hidden rounded-lg border bg-card p-4 hover:shadow-md transition-all duration-300">
                       <div className="flex items-start gap-3">
                         <div className="p-2 rounded-lg bg-gradient-to-br from-cyan-500 to-sky-500 flex-shrink-0">
@@ -1089,7 +1089,7 @@ export default function Onboarding() {
                     </div>
                   </div>
 
-                  <div className="group md:col-span-2">
+                  <div className="group">
                     <div className="relative overflow-hidden rounded-lg border bg-card p-4 hover:shadow-md transition-all duration-300">
                       <div className="flex items-start gap-3">
                         <div className="p-2 rounded-lg bg-gradient-to-br from-orange-500 to-amber-500 flex-shrink-0">
