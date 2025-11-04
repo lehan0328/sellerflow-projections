@@ -105,7 +105,7 @@ serve(async (req) => {
     const messageContent = [
       {
         type: "text",
-        text: "Extract ONLY vendor name, total amount, documentType, and the COMPLETE line items from this document. The input may be a multi‑page PDF or a tall stitched image containing multiple pages stacked vertically.\n\nAbsolute rules:\n- Do NOT extract or return any PO/Order/Sales Order/Invoice/Ref numbers; set poName to an empty string \"\".\n- Focus on the line items table(s). SCAN THE ENTIRE IMAGE from top to bottom, including lower sections after totals/footers and across stitched pages.\n- When descriptions wrap across lines, concatenate them into a single productName, preserving punctuation and hyphens.\n\nDOCUMENT TYPE DETECTION (priority order):\n1. 'Sales Order'/'SO' → sales_order\n2. 'INVOICE' (not Pro-forma) → invoice\n3. 'Pro-forma/Proforma' → proforma_invoice\n4. 'Purchase Order'/'PO' → purchase_order\n5. Default → purchase_order\n\nTOTAL AMOUNT:\n- Return the FINAL payable amount: labels 'Total', 'Grand Total', 'Amount Due', 'Balance Due', 'Total Payable', 'Total Price'.\n- Ignore 'Subtotal', 'Discount', 'Deposit', 'Tax/VAT', 'Shipping/Handling', 'Adjustment', 'Credit'.\n- If multiple totals, use the LAST valid final amount.\n- Return as plain number string without symbols/commas, e.g. 13992.00.\n\nLINE ITEMS (critical):\n- Table headers may include: 'Item', 'Item ID', 'Item No.', 'Description', 'SKU', 'UPC Code', 'Product', 'Qty', 'Quantity', 'Qty Ordered'.\n- For EACH row, return:\n  - sku: value from 'Item ID'/'Item No.'/'SKU'/'UPC Code'/'Product Code'.\n  - productName: the FULL text from 'Item'/'Description'/'Product' (merge wrapped lines).\n  - quantity: numeric from 'Qty'/'Quantity' (strip commas; default 1 if missing).\n- Remove thousands separators in quantity (e.g., '1,200' → 1200).\n- Do not drop ANY rows. If multiple tables appear across pages, MERGE all rows into one array.\n\nDESCRIPTION FIELD (fill reliably):\n- Always set the top-level 'description'.\n- If line items are found, set description to a concise summary of the first 1–3 productName values joined by '; ' (no SKUs or codes).\n- If no line items can be parsed, set description to the clearest visible product/description text block (e.g., a standalone \"Description\" or \"Items\" section), trimming extra whitespace.\n\nREGO TRADING SPECIFICS:\n- If the document is from ReGo Trading, set vendorName to 'ReGo Trading' when a 'ReGo' header/logo/text is present.\n- ReGo rows often look like: Item ID like '2204-...' and Item like 'Air Wick Freshmatic Ultra - ...'.\n- Set productName to the entire 'Item' cell text verbatim (include hyphenated continuations).\n- sku should be the full Item ID string (e.g., '2204-62338-82314').\n\nVENDOR AND TERMS (optional):\n- For vendorName, prefer in order: 'Ordered From', 'From', 'Vendor', 'Supplier', 'Sold By', 'Issued By', 'Ship From', 'Company'.\n- Extract payment terms (Net 30/60/90 or immediate), due date, delivery date, category (Inventory, Packaging Materials, Marketing/PPC, Shipping & Logistics, Professional Services, Other), and notes when present.\n\nOutput to function 'extract_purchase_order'. Ensure lineItems[].productName is always populated; set poName to \"\". If no line‑item table exists at all, it's acceptable to return an empty lineItems array, but if rows are visible anywhere in the image, include them all."
+        text: "Extract vendor, totals, document numbers, and COMPLETE line items from this document (PDF or stitched image with multiple pages).\n\nKey requirements:\n1) Numbers:\n- orderNumber: value labeled 'Sales Order', 'SO', 'Order #', 'Order Number' (do NOT map these to PO).\n- poNumber: value labeled 'PO#', 'Customer PO', 'Purchase Order', 'Purchase Order Number'.\n- Never set poNumber/orderNumber from descriptions or addresses.\n\n2) Document type (priority): 'sales_order' if 'Sales Order/SO' present; 'invoice' only if explicitly labeled INVOICE; 'proforma_invoice' if Pro‑forma/Proforma; else 'purchase_order'.\n\n3) Total amount:\n- Return the FINAL payable amount: labels 'Total', 'Grand Total', 'Amount Due', 'Balance Due', 'Total Payable'.\n- Ignore Subtotal/Discount/Tax/Shipping/Deposit/Adjustment/Credit. Use the LAST valid final amount. Return as plain number string (e.g., 13992.00).\n\n4) Line items (critical):\n- Find tables with headers like Qty/Quantity, Item/Description/Product, Item ID/SKU/UPC, 'Unit P.'/'Unit Price', 'Ext. Price'.\n- For EACH visible row across all pages return: \n  • sku: from Item ID/SKU/UPC/Product Code.\n  • productName: FULL description from Item/Description (merge wrapped lines with punctuation kept).\n  • quantity: numeric (strip commas; default 1 if missing).\n  • unitPrice: numeric price per unit when visible (from 'Unit P.'/'Unit Price'/'Price'); omit if not shown.\n- Do not drop rows. Merge rows from multiple tables/pages.\n\n5) Description (top‑level):\n- Always set a concise summary from the first 1–3 productName values joined by '; '.\n\nReGo Trading specifics:\n- If ReGo logo/text present, vendorName='ReGo Trading'. Item ID often like '2204‑…'; description like 'Air Wick …'.\n\nOutput via function 'extract_purchase_order'. Ensure lineItems[].productName is populated."
       },
       {
         type: "image_url",
@@ -154,9 +154,13 @@ serve(async (req) => {
                     type: "string",
                     description: "The name of the vendor/supplier"
                   },
-                  poName: {
+                  poNumber: {
                     type: "string",
-                    description: "Purchase order name, number, or invoice number"
+                    description: "Customer PO / Purchase Order number if present"
+                  },
+                  orderNumber: {
+                    type: "string",
+                    description: "Sales Order/Order number if present (e.g., 'SO260853' or 'Order #')"
                   },
                   amount: {
                     type: "string",
@@ -170,21 +174,25 @@ serve(async (req) => {
                     type: "array",
                     description: "Array of line items with product details",
                     items: {
-                      type: "object",
-                      properties: {
-                        sku: {
-                          type: "string",
-                          description: "Product SKU or item code"
-                        },
-                        productName: {
-                          type: "string",
-                          description: "Product name or description"
-                        },
-                        quantity: {
-                          type: "number",
-                          description: "Quantity ordered"
-                        }
+                    type: "object",
+                    properties: {
+                      sku: {
+                        type: "string",
+                        description: "Product SKU or item code"
                       },
+                      productName: {
+                        type: "string",
+                        description: "Product name or description"
+                      },
+                      quantity: {
+                        type: "number",
+                        description: "Quantity ordered"
+                      },
+                      unitPrice: {
+                        type: "number",
+                        description: "Unit price if available"
+                      }
+                    },
                       required: ["productName"]
                     }
                   },
@@ -272,9 +280,13 @@ serve(async (req) => {
                           type: "string",
                           description: "The name of the vendor/supplier"
                         },
-                        poName: {
+                        poNumber: {
                           type: "string",
-                          description: "Purchase order name, number, or invoice number"
+                          description: "Customer PO / Purchase Order number if present"
+                        },
+                        orderNumber: {
+                          type: "string",
+                          description: "Sales Order/Order number if present (e.g., 'SO260853' or 'Order #')"
                         },
                         amount: {
                           type: "string",
