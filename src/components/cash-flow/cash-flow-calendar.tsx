@@ -896,7 +896,7 @@ export const CashFlowCalendar = ({
   };
 
   return (
-    <Card className="shadow-card h-[700px] flex flex-col bg-background/50 backdrop-blur-sm">
+    <Card className="shadow-card h-[700px] flex flex-col bg-background/10 backdrop-blur-sm">
       <div className="relative flex-shrink-0">        
         <CardHeader className="pb-4 flex-shrink-0">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">

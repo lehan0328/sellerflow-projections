@@ -2953,7 +2953,7 @@ const Dashboard = () => {
               <img 
                 src="/auren-icon-blue.png" 
                 alt="" 
-                className="w-[800px] h-auto opacity-[0.08]"
+                className="w-[800px] h-auto opacity-[0.15]"
               />
             </div>
             
