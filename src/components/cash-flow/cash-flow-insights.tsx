@@ -570,7 +570,7 @@ export const CashFlowInsights = memo(({
   }, [events, amazonPayouts, allBuyingOpportunities, currentBalance, reserveAmount, creditCards]);
 
 
-  return <Card className="shadow-card h-full flex flex-col">
+  return <Card className="shadow-card h-full flex flex-col bg-background/80 backdrop-blur-sm">
       <CardHeader>
         <CardTitle className="text-lg flex items-center justify-between">
           <div className="flex items-center gap-2">
