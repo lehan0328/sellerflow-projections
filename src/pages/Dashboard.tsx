@@ -910,19 +910,63 @@ const Dashboard = () => {
                   console.warn("⚠️ No valid line items to insert after filtering");
                 }
               } else if (orderData.lineItemDescription && orderData.lineItemDescription.trim()) {
-                // Fallback: create single line item from description
-                await supabase
-                  .from('purchase_order_line_items')
-                  .insert({
+                // Fallback: split description into multiple line items (one row per described item)
+                const raw = orderData.lineItemDescription.trim();
+                const parts = raw
+                  .split(/\r?\n|•|;|\u2022/g) // newline, bullets, semicolons
+                  .map((p: string) => p.trim())
+                  .filter((p: string) => p.length > 0);
+
+                const parseQty = (text: string) => {
+                  // Look for common qty patterns: "qty 3", "3x", "x3", "3 ea"
+                  const qtyPatterns = [
+                    /(?:qty|quantity)\s*[:\-]?\s*(\d+(?:\.\d+)?)/i,
+                    /(\d+(?:\.\d+)?)\s*(?:x|ea|pcs?)/i,
+                    /x\s*(\d+(?:\.\d+)?)/i
+                  ];
+                  for (const r of qtyPatterns) {
+                    const m = text.match(r);
+                    if (m && m[1]) return Number(m[1]);
+                  }
+                  return 1;
+                };
+
+                const parseUnit = (text: string) => {
+                  // Try to find a unit price like $12.34 or 12.34 preceded by 'unit', '/ea', etc.
+                  const money = text.match(/\$\s*(\d{1,3}(?:,\d{3})*(?:\.\d{2})?|\d+(?:\.\d{2}))/);
+                  if (money && money[1]) return Number(money[1].replace(/,/g, ''));
+                  const unitAfter = text.match(/(?:unit|each|ea|price)\s*[:\-]?\s*\$?\s*(\d+(?:\.\d{2})?)/i);
+                  if (unitAfter && unitAfter[1]) return Number(unitAfter[1]);
+                  return null;
+                };
+
+                const lineItemsToInsert = (parts.length ? parts : [raw]).map((line: string) => {
+                  const quantity = parseQty(line);
+                  const unitPrice = parseUnit(line);
+                  const totalPrice = unitPrice != null ? Number((unitPrice * quantity).toFixed(2)) : null;
+
+                  // Clean product name by removing obvious qty/price tokens
+                  const cleaned = line
+                    .replace(/(?:qty|quantity)\s*[:\-]?\s*\d+(?:\.\d+)?/ig, '')
+                    .replace(/\b\d+(?:\.\d+)?\s*(?:x|ea|pcs?)\b/ig, '')
+                    .replace(/\$\s*\d{1,3}(?:,\d{3})*(?:\.\d{2})?|\b(?:unit|each|ea|price)\s*[:\-]?\s*\$?\s*\d+(?:\.\d{2})?/ig, '')
+                    .replace(/\s{2,}/g, ' ')
+                    .trim();
+
+                  return {
                     transaction_id: newTransaction.id,
                     account_id: profile.account_id,
-                    product_name: orderData.lineItemDescription.trim(),
+                    product_name: cleaned || line, // ensure not empty
                     sku: null,
-                    quantity: 1,
-                    unit_price: null,
-                    total_price: null
-                  });
-                console.info("✅ Line item created from description:", orderData.lineItemDescription);
+                    quantity,
+                    unit_price: unitPrice,
+                    total_price: totalPrice
+                  };
+                });
+
+                console.info("📝 Inserting fallback line items from description:", lineItemsToInsert);
+                await supabase.from('purchase_order_line_items').insert(lineItemsToInsert);
+                console.info(`✅ Created ${lineItemsToInsert.length} line item(s) from description fallback`);
               }
             }
           }
