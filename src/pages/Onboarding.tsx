@@ -1033,7 +1033,6 @@ export default function Onboarding() {
                             Plan out your cash balance projection no matter the scenario fully customizable
                           </p>
                         </div>
-                        <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                       </div>
                     </div>
                   </div>
@@ -1050,7 +1049,6 @@ export default function Onboarding() {
                             Project pending POs & buying opportunities
                           </p>
                         </div>
-                        <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                       </div>
                     </div>
                   </div>
@@ -1067,7 +1065,6 @@ export default function Onboarding() {
                             Find earliest date to spend any amount
                           </p>
                         </div>
-                        <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                       </div>
                     </div>
                   </div>
@@ -1084,7 +1081,6 @@ export default function Onboarding() {
                             Know what you can spend on any date
                           </p>
                         </div>
-                        <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                       </div>
                     </div>
                   </div>
@@ -1101,7 +1097,6 @@ export default function Onboarding() {
                             Forecast payouts 3 months in advance based on direct Amazon data connection
                           </p>
                         </div>
-                        <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                       </div>
                     </div>
                   </div>
