@@ -332,7 +332,8 @@ export const PurchaseOrderForm = ({
     const orderData = {
       ...formData,
       dueDate: calculatedDueDate,
-      paymentSchedule: formData.paymentType === "preorder" ? paymentSchedule : undefined
+      paymentSchedule: formData.paymentType === "preorder" ? paymentSchedule : undefined,
+      lineItemDescription: formData.description // Pass description separately for line item creation
     };
     console.log("Submitting purchase order:", orderData);
     onSubmitOrder(orderData);

@@ -857,8 +857,8 @@ const Dashboard = () => {
       const newTransaction = await addTransaction(transactionData);
       console.info("🔍 Transaction created:", newTransaction);
 
-      // Create line item from description if provided
-      if (newTransaction && orderData.description && orderData.description.trim()) {
+      // Create line item from lineItemDescription if provided
+      if (newTransaction && orderData.lineItemDescription && orderData.lineItemDescription.trim()) {
         try {
           const { data: { user } } = await supabase.auth.getUser();
           if (user) {
@@ -874,13 +874,13 @@ const Dashboard = () => {
                 .insert({
                   transaction_id: newTransaction.id,
                   account_id: profile.account_id,
-                  product_name: orderData.description.trim(),
+                  product_name: orderData.lineItemDescription.trim(),
                   sku: null,
                   quantity: 1,
                   unit_price: null,
                   total_price: null
                 });
-              console.info("✅ Line item created from description");
+              console.info("✅ Line item created from description:", orderData.lineItemDescription);
             }
           }
         } catch (error) {
