@@ -684,6 +684,20 @@ export const CashFlowInsights = memo(({
                       </p>
                     </div>
                   )}
+                  
+                  {lowestBalanceDate && (
+                    <p className="text-xs text-muted-foreground italic mt-2 pt-2 border-t border-border/50">
+                      Lowest point in next 3 months: {(() => {
+                        const [year, month, day] = lowestBalanceDate.split('-').map(Number);
+                        const date = new Date(year, month - 1, day);
+                        return date.toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric'
+                        });
+                      })()}
+                    </p>
+                  )}
                 </div>
 
                 {/* Opportunity #2 Preview - only show if current safe spending is positive */}
@@ -767,17 +781,6 @@ export const CashFlowInsights = memo(({
                    {lowestBalanceDate && <p className="text-xs text-muted-foreground italic p-2 border-t border-border/50 mt-2 pt-2">
                        📊 <strong>Formula:</strong> Lowest Projected ${projectedLowestBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} - Reserve ${reserveAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} = Available to Spend ${safeSpendingLimit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                      </p>}
-                   {lowestBalanceDate && <p className="text-xs text-muted-foreground italic p-2">
-                       Lowest point in next 3 months: {(() => {
-                        const [year, month, day] = lowestBalanceDate.split('-').map(Number);
-                        const date = new Date(year, month - 1, day);
-                        return date.toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          year: 'numeric'
-                        });
-                      })()}
-                    </p>}
                   
                   {allBuyingOpportunities && allBuyingOpportunities.filter(opp => opp.balance > 0).length > 0 && (
                     <Button 
