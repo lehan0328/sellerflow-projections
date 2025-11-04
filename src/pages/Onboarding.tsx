@@ -1096,9 +1096,9 @@ export default function Onboarding() {
                           <TrendingUp className="h-4 w-4 text-white" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h4 className="font-semibold text-sm mb-1">Payout Forecasting</h4>
+                          <h4 className="font-semibold text-sm mb-1">Advanced Payout Forecasting (Amazon Connection Required)</h4>
                           <p className="text-xs text-muted-foreground line-clamp-2">
-                            Forecast payouts 3 months in advance
+                            Forecast payouts 3 months in advance based on direct Amazon data connection
                           </p>
                         </div>
                         <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
