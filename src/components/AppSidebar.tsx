@@ -335,6 +335,7 @@ export function AppSidebar({
                             {'showSupportBadge' in section && section.showSupportBadge && unreadSupportCount > 0 && <Badge variant="destructive" className="text-[10px] font-bold px-1.5 py-0 min-w-[18px] h-[18px] flex items-center justify-center">
                                 {unreadSupportCount}
                               </Badge>}
+                            {section.id === "guides" && <Badge variant="secondary" className="ml-auto text-[10px] bg-gradient-to-r from-blue-500/20 to-cyan-500/20 text-blue-700 dark:text-blue-400 border-blue-500/30 font-bold px-1.5 py-0">Start Here</Badge>}
                             {section.id === "referrals" && <Badge variant="secondary" className="ml-auto text-[10px] bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-yellow-700 dark:text-yellow-400 border-yellow-500/30 font-bold px-1.5 py-0">Earn $2k</Badge>}
                             {section.id === "document-storage" && 
                              !subscription.isLoading &&
