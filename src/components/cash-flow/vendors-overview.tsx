@@ -652,47 +652,18 @@ export const VendorsOverview = ({
                             </div>
                           )}
 
-                          {/* Additional Details */}
-                          <div className="grid grid-cols-2 gap-4 text-sm pt-4 border-t">
-                            <div>
-                              <div className="text-xs text-muted-foreground font-medium mb-1">Category</div>
-                              <div className="font-medium">{tx.category || 'Uncategorized'}</div>
-                            </div>
-                            <div>
-                              <div className="text-xs text-muted-foreground font-medium mb-1">Payment Method</div>
-                              <div className="flex items-center gap-2">
-                                {tx.creditCardId ? (
-                                  <>
-                                    <CreditCard className="h-4 w-4 text-primary" />
-                                    <span>Credit Card</span>
-                                  </>
-                                ) : (
-                                  <>
-                                    <Banknote className="h-4 w-4 text-green-600" />
-                                    <span>Cash</span>
-                                  </>
-                                )}
+                          {tx.amountPaid && tx.remainingBalance && (
+                            <div className="grid grid-cols-2 gap-4 text-sm pt-4 border-t">
+                              <div>
+                                <div className="text-xs text-muted-foreground font-medium mb-1">Amount Paid</div>
+                                <div className="font-medium text-green-600">${tx.amountPaid.toLocaleString()}</div>
+                              </div>
+                              <div>
+                                <div className="text-xs text-muted-foreground font-medium mb-1">Remaining Balance</div>
+                                <div className="font-medium text-orange-600">${tx.remainingBalance.toLocaleString()}</div>
                               </div>
                             </div>
-                            <div>
-                              <div className="text-xs text-muted-foreground font-medium mb-1">Transaction Date</div>
-                              <div className="font-medium">
-                                {new Date(tx.transactionDate).toLocaleDateString()}
-                              </div>
-                            </div>
-                            {tx.amountPaid && tx.remainingBalance && (
-                              <>
-                                <div>
-                                  <div className="text-xs text-muted-foreground font-medium mb-1">Amount Paid</div>
-                                  <div className="font-medium text-green-600">${tx.amountPaid.toLocaleString()}</div>
-                                </div>
-                                <div>
-                                  <div className="text-xs text-muted-foreground font-medium mb-1">Remaining Balance</div>
-                                  <div className="font-medium text-orange-600">${tx.remainingBalance.toLocaleString()}</div>
-                                </div>
-                              </>
-                            )}
-                          </div>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>

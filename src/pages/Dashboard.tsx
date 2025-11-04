@@ -856,6 +856,37 @@ const Dashboard = () => {
       console.info("🔍 Creating transaction:", transactionData);
       const newTransaction = await addTransaction(transactionData);
       console.info("🔍 Transaction created:", newTransaction);
+
+      // Create line item from description if provided
+      if (newTransaction && orderData.description && orderData.description.trim()) {
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('account_id')
+              .eq('user_id', user.id)
+              .single();
+
+            if (profile?.account_id) {
+              await supabase
+                .from('purchase_order_line_items')
+                .insert({
+                  transaction_id: newTransaction.id,
+                  account_id: profile.account_id,
+                  product_name: orderData.description.trim(),
+                  sku: null,
+                  quantity: 1,
+                  unit_price: null,
+                  total_price: null
+                });
+              console.info("✅ Line item created from description");
+            }
+          }
+        } catch (error) {
+          console.error('Error creating line item:', error);
+        }
+      }
     }
 
     console.info("Transaction(s) created, refreshing data");
