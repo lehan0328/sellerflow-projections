@@ -298,6 +298,13 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string)
         // Skip open/future settlements - let fetch-amazon-open-settlement handle them
         return null
       }
+
+      // Only process Succeeded settlements (skip invoiced, processing, failed, unknown)
+      const isSucceededSettlement = group.FundTransferStatus === 'Succeeded';
+      if (!isSucceededSettlement) {
+        console.log(`[SYNC] Skipping non-succeeded settlement: ${group.FinancialEventGroupId} (Status: ${group.FundTransferStatus})`);
+        return null;
+      }
       
       // Closed settlement - payout is received the same day the settlement closes
       // (Settlement closes at night e.g. Nov 1 8pm = Nov 2 00:01 UTC, payout received Nov 2)
@@ -741,6 +748,26 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string)
     }
     
     console.log('[SYNC] ===== SYNC COMPLETE =====')
+    
+    // Trigger rollover check after sync completes
+    console.log('[SYNC] Triggering forecast rollover check...');
+    try {
+      const { data: rolloverResult, error: rolloverError } = await supabase.functions.invoke('rollover-forecast', {
+        body: { 
+          amazonAccountId: amazonAccountId, 
+          userId: userId 
+        }
+      });
+      
+      if (rolloverError) {
+        console.error('[SYNC] Rollover check failed:', rolloverError);
+      } else {
+        console.log('[SYNC] Rollover check completed:', rolloverResult);
+      }
+    } catch (rolloverErr) {
+      console.error('[SYNC] Error invoking rollover function:', rolloverErr);
+      // Don't fail the sync if rollover fails
+    }
     
     // Update sync log with completion
     if (syncLogId) {
