@@ -24,6 +24,14 @@ const Guides = () => {
   const [activeSection, setActiveSection] = useState("guides");
   const navigate = useNavigate();
 
+  const handleSectionChange = (section: string) => {
+    if (section === 'guides') {
+      setActiveSection(section);
+    } else {
+      navigate('/dashboard', { state: { activeSection: section } });
+    }
+  };
+
   useEffect(() => {
     console.log("🎯 Guides page mounted successfully!");
   }, []);
@@ -110,7 +118,7 @@ const Guides = () => {
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-background">
-        <AppSidebar activeSection={activeSection} onSectionChange={setActiveSection} />
+        <AppSidebar activeSection={activeSection} onSectionChange={handleSectionChange} />
         <SidebarInset className="flex-1 bg-background">
           <Helmet>
             <title>Guides - Auren</title>

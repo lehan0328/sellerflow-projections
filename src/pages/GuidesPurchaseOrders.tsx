@@ -11,10 +11,18 @@ const GuidesPurchaseOrders = () => {
   const [activeSection, setActiveSection] = useState("guides");
   const navigate = useNavigate();
   
+  const handleSectionChange = (section: string) => {
+    if (section === 'guides') {
+      navigate('/guides');
+    } else {
+      navigate('/dashboard', { state: { activeSection: section } });
+    }
+  };
+  
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
-        <AppSidebar activeSection={activeSection} onSectionChange={setActiveSection} />
+        <AppSidebar activeSection={activeSection} onSectionChange={handleSectionChange} />
         <SidebarInset className="flex-1">
           <Helmet>
             <title>Purchase Order Guides - Auren</title>
