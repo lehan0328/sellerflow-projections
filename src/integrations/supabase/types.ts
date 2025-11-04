@@ -2320,6 +2320,7 @@ export type Database = {
           total_cash: number | null
           updated_at: string
           user_id: string
+          welcome_animation_shown: boolean | null
         }
         Insert: {
           account_id?: string | null
@@ -2351,6 +2352,7 @@ export type Database = {
           total_cash?: number | null
           updated_at?: string
           user_id: string
+          welcome_animation_shown?: boolean | null
         }
         Update: {
           account_id?: string | null
@@ -2382,6 +2384,7 @@ export type Database = {
           total_cash?: number | null
           updated_at?: string
           user_id?: string
+          welcome_animation_shown?: boolean | null
         }
         Relationships: []
       }

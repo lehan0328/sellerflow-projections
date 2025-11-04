@@ -59,6 +59,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCreditCards } from "@/hooks/useCreditCards";
 import { usePlanLimits } from "@/hooks/usePlanLimits";
 import { LimitEnforcementModal } from "@/components/LimitEnforcementModal";
+import { WelcomeAnimation } from "@/components/WelcomeAnimation";
 
 import { useVendors, type Vendor } from "@/hooks/useVendors";
 import { useTransactions } from "@/hooks/useTransactions";
@@ -106,6 +107,7 @@ const Dashboard = () => {
   const [companyName, setCompanyName] = useState('');
   const [selectedCurrency, setSelectedCurrency] = useState<string>('USD');
   const [clearDataConfirmation, setClearDataConfirmation] = useState(false);
+  const [showWelcomeAnimation, setShowWelcomeAnimation] = useState(false);
   const { theme, setTheme } = useTheme();
   
   // Handle URL params for settings navigation
@@ -195,6 +197,57 @@ const Dashboard = () => {
       setCompanyName(profile.company);
     }
   }, [profile]);
+
+  // Check if welcome animation should be shown
+  const { data: userSettings } = useQuery({
+    queryKey: ['user-settings', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      const { data, error } = await supabase
+        .from('user_settings')
+        .select('welcome_animation_shown')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      if (error) {
+        console.error('Error fetching user settings:', error);
+        return null;
+      }
+      return data;
+    },
+    enabled: !!user?.id,
+  });
+
+  // Show welcome animation if it hasn't been shown yet
+  useEffect(() => {
+    if (userSettings && userSettings.welcome_animation_shown === false) {
+      setShowWelcomeAnimation(true);
+    }
+  }, [userSettings]);
+
+  // Handle animation completion
+  const handleAnimationComplete = async () => {
+    setShowWelcomeAnimation(false);
+    
+    // Update the flag in database
+    if (user?.id) {
+      try {
+        const { error } = await supabase
+          .from('user_settings')
+          .update({ welcome_animation_shown: true })
+          .eq('user_id', user.id);
+        
+        if (error) {
+          console.error('Error updating welcome animation flag:', error);
+        } else {
+          // Invalidate the query to update the cache
+          queryClient.invalidateQueries({ queryKey: ['user-settings', user.id] });
+        }
+      } catch (error) {
+        console.error('Error updating welcome animation flag:', error);
+      }
+    }
+  };
 
   // Handle profile field changes
   const handleProfileChange = (field: string, value: string) => {
@@ -2917,8 +2970,14 @@ const Dashboard = () => {
   };
 
   return (
-    <SidebarProvider>
-      <div className="h-screen flex w-full bg-background overflow-hidden">
+    <>
+      {/* Welcome Animation Overlay */}
+      {showWelcomeAnimation && (
+        <WelcomeAnimation onComplete={handleAnimationComplete} />
+      )}
+      
+      <SidebarProvider>
+        <div className="h-screen flex w-full bg-background overflow-hidden">
         <AppSidebar 
           activeSection={activeSection} 
           onSectionChange={handleSectionChange}
@@ -3102,6 +3161,7 @@ const Dashboard = () => {
         </div>
       </div>
     </SidebarProvider>
+    </>
   );
 };
 
