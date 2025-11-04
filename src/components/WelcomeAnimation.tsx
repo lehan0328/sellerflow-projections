@@ -14,15 +14,15 @@ export const WelcomeAnimation = ({ onComplete }: WelcomeAnimationProps) => {
       setStage('message');
     }, 1000);
 
-    // Stage 2: Show message (1.5s)
+    // Stage 2: Show message (2.5s)
     const messageTimer = setTimeout(() => {
       setStage('fadeout');
-    }, 2500);
+    }, 3500);
 
     // Stage 3: Fade out and complete (1s)
     const completeTimer = setTimeout(() => {
       onComplete();
-    }, 3500);
+    }, 4500);
 
     return () => {
       clearTimeout(spotlightTimer);
