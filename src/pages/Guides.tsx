@@ -165,29 +165,28 @@ const Guides = () => {
                   <p className="text-muted-foreground">Explore Auren's most powerful capabilities</p>
                 </div>
                 
-                <Link to="/guides/search-by-amount">
-                  <Card className="group relative overflow-hidden shadow-card hover:shadow-elevated transition-all duration-300 cursor-pointer border-2 hover:border-primary/50 animate-fade-in">
-                    <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                    <CardHeader className="relative">
-                      <div className="flex items-start justify-between">
-                        <div className="space-y-2 flex-1">
-                          <CardTitle className="text-2xl group-hover:text-primary transition-colors">
-                            Search by Amount
-                          </CardTitle>
-                          <p className="text-muted-foreground">
-                            Search how much you want to spend and we find the earliest date you can spend it
-                          </p>
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  <Link to="/guides/search-by-amount" className="group">
+                    <Card className="relative overflow-hidden h-full shadow-card hover:shadow-elevated transition-all duration-300 cursor-pointer border-0 hover-scale">
+                      <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 via-purple-500/20 to-pink-500/20" />
+                      <div className="absolute inset-0 bg-gradient-to-br from-blue-600/0 via-purple-600/0 to-pink-600/0 group-hover:from-blue-600/10 group-hover:via-purple-600/10 group-hover:to-pink-600/10 transition-all duration-300" />
+                      <CardHeader className="relative pb-3">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="p-2 rounded-lg bg-gradient-to-br from-blue-500 to-purple-500">
+                            <Search className="h-5 w-5 text-white" />
+                          </div>
+                          <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
                         </div>
-                        <ChevronRight className="h-6 w-6 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all flex-shrink-0 ml-4" />
-                      </div>
-                    </CardHeader>
-                    <CardContent className="relative">
-                      <div className="flex items-center gap-2 text-sm text-primary font-medium">
-                        <span>View Interactive Guide</span>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
+                        <CardTitle className="text-lg">Search by Amount</CardTitle>
+                      </CardHeader>
+                      <CardContent className="relative">
+                        <p className="text-sm text-muted-foreground line-clamp-2">
+                          Find the earliest date you can spend any amount
+                        </p>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                </div>
               </div>
 
               <Separator className="my-8" />
