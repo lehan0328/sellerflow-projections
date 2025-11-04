@@ -23,6 +23,7 @@ import { useTransactionMatching } from "@/hooks/useTransactionMatching";
 import { BankTransaction } from "./bank-transaction-log";
 import { toast } from "sonner";
 import * as React from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface VendorsOverviewProps {
   bankTransactions?: BankTransaction[];
@@ -64,9 +65,34 @@ export const VendorsOverview = ({
   const [paymentDialogOpen, setPaymentDialogOpen] = useState<string | null>(null);
   const [paymentMethodFilter, setPaymentMethodFilter] = useState<'all' | 'cash' | 'credit'>('all');
   const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
+  const [lineItemsByTransaction, setLineItemsByTransaction] = useState<Record<string, any[]>>({});
 
   const toggleRow = (transactionId: string) => {
     setExpandedRows(prev => ({ ...prev, [transactionId]: !prev[transactionId] }));
+    
+    // Fetch line items if not already loaded
+    if (!lineItemsByTransaction[transactionId]) {
+      fetchLineItems(transactionId);
+    }
+  };
+
+  const fetchLineItems = async (transactionId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('purchase_order_line_items')
+        .select('*')
+        .eq('transaction_id', transactionId)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+      
+      setLineItemsByTransaction(prev => ({
+        ...prev,
+        [transactionId]: data || []
+      }));
+    } catch (error) {
+      console.error('Error fetching line items:', error);
+    }
   };
 
   // Force refresh when parent signals
@@ -593,11 +619,49 @@ export const VendorsOverview = ({
                     <TableRow className="bg-muted/30">
                       <TableCell colSpan={8}>
                         <div className="border rounded-md p-4 bg-card space-y-4">
-                          <div className="grid grid-cols-2 gap-4 text-sm">
+                          {/* Line Items Section */}
+                          {lineItemsByTransaction[tx.id] && lineItemsByTransaction[tx.id].length > 0 ? (
                             <div>
-                              <div className="text-xs text-muted-foreground font-medium mb-1">Description</div>
-                              <div className="font-medium">{tx.description || 'No description'}</div>
+                              <div className="text-sm text-muted-foreground mb-3">
+                                Items in purchase order {tx.description}
+                              </div>
+                              <div className="overflow-x-auto">
+                                <table className="w-full text-sm border-collapse">
+                                  <thead>
+                                    <tr className="border-b">
+                                      <th className="text-left py-2 px-3 font-medium text-muted-foreground">SKU</th>
+                                      <th className="text-left py-2 px-3 font-medium text-muted-foreground">Product Name</th>
+                                      <th className="text-right py-2 px-3 font-medium text-muted-foreground">Qty</th>
+                                      <th className="text-right py-2 px-3 font-medium text-muted-foreground">Unit Price</th>
+                                      <th className="text-right py-2 px-3 font-medium text-muted-foreground">Total</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {lineItemsByTransaction[tx.id].map((item: any) => (
+                                      <tr key={item.id} className="border-b last:border-0 hover:bg-muted/50">
+                                        <td className="py-2 px-3 font-mono text-xs">{item.sku || 'N/A'}</td>
+                                        <td className="py-2 px-3">{item.product_name}</td>
+                                        <td className="py-2 px-3 text-right font-medium">{item.quantity}</td>
+                                        <td className="py-2 px-3 text-right">
+                                          {item.unit_price ? `$${parseFloat(item.unit_price).toLocaleString()}` : '-'}
+                                        </td>
+                                        <td className="py-2 px-3 text-right font-semibold">
+                                          {item.total_price ? `$${parseFloat(item.total_price).toLocaleString()}` : '-'}
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
                             </div>
+                          ) : (
+                            <div className="text-sm text-muted-foreground text-center py-4">
+                              No line items added for this purchase order
+                            </div>
+                          )}
+
+                          {/* Additional Details */}
+                          <div className="grid grid-cols-2 gap-4 text-sm pt-4 border-t">
                             <div>
                               <div className="text-xs text-muted-foreground font-medium mb-1">Category</div>
                               <div className="font-medium">{tx.category || 'Uncategorized'}</div>
