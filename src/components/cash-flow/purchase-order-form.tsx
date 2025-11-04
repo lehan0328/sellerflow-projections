@@ -645,12 +645,8 @@ export const PurchaseOrderForm = ({
                     type="button" 
                     variant="default"
                     onClick={() => {
-                      if (!hasPlanAccess(subscription.plan, 'growing')) {
-                        setShowUpgradeModal(true);
-                        return;
-                      }
                       fileInputRef.current?.click();
-                    }} 
+                    }}
                     disabled={isProcessingDocument} 
                     className="w-full shadow-sm h-9"
                   >
