@@ -217,7 +217,15 @@ export default function Analytics() {
       })
       .reduce((sum, i) => sum + i.amount, 0);
 
-    const totalInflow = bankInflow + transactionInflow + incomeInflow;
+    // Amazon payouts filtered by income date range (confirmed only, NET after fees)
+    const amazonRevenueFiltered = amazonPayouts
+      .filter(p => {
+        const payoutDate = new Date(p.payout_date);
+        return p.status === 'confirmed' && payoutDate >= incomeStart && payoutDate <= incomeEnd;
+      })
+      .reduce((sum, p) => sum + (p.total_amount || 0), 0);
+
+    const totalInflow = bankInflow + transactionInflow + incomeInflow + amazonRevenueFiltered;
 
     // Total cash outflow from bank transactions (debits) - FILTERED BY DATE RANGE
     const bankOutflow = bankTransactions
@@ -251,14 +259,6 @@ export default function Analytics() {
     const totalCreditLimit = creditCards.reduce((sum, c) => sum + (c.credit_limit || 0), 0);
     const totalCreditUsed = creditCards.reduce((sum, c) => sum + (c.balance || 0), 0);
     const creditUtilization = totalCreditLimit > 0 ? (totalCreditUsed / totalCreditLimit) * 100 : 0;
-
-    // Amazon payouts filtered by income date range (confirmed only, NET after fees)
-    const amazonRevenueFiltered = amazonPayouts
-      .filter(p => {
-        const payoutDate = new Date(p.payout_date);
-        return p.status === 'confirmed' && payoutDate >= incomeStart && payoutDate <= incomeEnd;
-      })
-      .reduce((sum, p) => sum + (p.total_amount || 0), 0);
 
     // Total expenses from vendors + purchase orders
     const vendorExpenses = vendors.reduce((sum, v) => sum + (v.totalOwed || 0), 0);
