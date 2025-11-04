@@ -58,6 +58,18 @@ serve(async (req) => {
 
     console.log("Processing document:", file.name, file.type);
 
+    // Validate file size (max 20MB)
+    const maxSize = 20 * 1024 * 1024; // 20MB
+    if (file.size > maxSize) {
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          error: "File size exceeds 20MB limit. Please use a smaller file."
+        }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // Convert file to base64 for AI processing (works for both PDFs and images)
     const arrayBuffer = await file.arrayBuffer();
     const bytes = new Uint8Array(arrayBuffer);
@@ -71,7 +83,24 @@ serve(async (req) => {
     }
     base64 = btoa(base64);
 
-    console.log("Processing document with AI vision...");
+    console.log("Document converted to base64, size:", base64.length);
+
+    // Determine MIME type for data URL
+    let mimeType = file.type;
+    if (!mimeType || mimeType === '') {
+      // Infer from extension
+      if (file.name.toLowerCase().endsWith('.pdf')) {
+        mimeType = 'application/pdf';
+      } else if (file.name.toLowerCase().endsWith('.png')) {
+        mimeType = 'image/png';
+      } else if (file.name.toLowerCase().endsWith('.jpg') || file.name.toLowerCase().endsWith('.jpeg')) {
+        mimeType = 'image/jpeg';
+      } else if (file.name.toLowerCase().endsWith('.webp')) {
+        mimeType = 'image/webp';
+      } else {
+        mimeType = 'application/octet-stream';
+      }
+    }
 
     const messageContent = [
       {
@@ -81,7 +110,7 @@ serve(async (req) => {
       {
         type: "image_url",
         image_url: {
-          url: `data:${file.type};base64,${base64}`
+          url: `data:${mimeType};base64,${base64}`
         }
       }
     ];
@@ -170,6 +199,17 @@ serve(async (req) => {
       const errorText = await response.text();
       console.error("AI gateway error:", response.status, errorText);
       
+      // Parse error details if available
+      let errorMessage = "AI service error";
+      try {
+        const errorData = JSON.parse(errorText);
+        if (errorData.error?.message) {
+          errorMessage = errorData.error.message;
+        }
+      } catch (e) {
+        errorMessage = errorText;
+      }
+      
       if (response.status === 429) {
         return new Response(
           JSON.stringify({ 
@@ -188,11 +228,20 @@ serve(async (req) => {
           { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
+      if (response.status === 400 && errorMessage.includes("extract")) {
+        return new Response(
+          JSON.stringify({ 
+            success: false,
+            error: "Unable to process this document. Please ensure it's a clear, readable PDF or image file (PNG, JPG, WEBP). Try converting scanned PDFs to high-quality images." 
+          }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
       
       return new Response(
         JSON.stringify({ 
           success: false,
-          error: `AI service error: ${errorText}` 
+          error: `Failed to process document: ${errorMessage}` 
         }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
