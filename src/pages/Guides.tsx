@@ -45,7 +45,10 @@ const Guides = () => {
           title: "AI PO autofill (Growing+ plans only)",
           path: "/guides/ai-po-autofill"
         },
-        "Tracking Expenses",
+        {
+          title: "Adding Additional Income",
+          path: "/guides/adding-income"
+        },
         "Categorizing Transactions"
       ]
     },

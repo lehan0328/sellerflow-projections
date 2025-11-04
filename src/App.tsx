@@ -27,6 +27,7 @@ import DocsFAQ from "./pages/DocsFAQ";
 import Guides from "./pages/Guides";
 import GuidesPurchaseOrders from "./pages/GuidesPurchaseOrders";
 import GuidesAiPOAutofill from "./pages/GuidesAiPOAutofill";
+import GuidesAddingIncome from "./pages/GuidesAddingIncome";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import { Auth } from "./pages/Auth";
@@ -103,6 +104,11 @@ const App = () => (
           <Route path="/guides/ai-po-autofill" element={
             <ProtectedRoute>
               <GuidesAiPOAutofill />
+            </ProtectedRoute>
+          } />
+          <Route path="/guides/adding-income" element={
+            <ProtectedRoute>
+              <GuidesAddingIncome />
             </ProtectedRoute>
           } />
           <Route path="/privacy" element={<PrivacyPolicy />} />
