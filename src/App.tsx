@@ -31,6 +31,7 @@ import GuidesAddingIncome from "./pages/GuidesAddingIncome";
 import GuidesSearchByAmount from "./pages/GuidesSearchByAmount";
 import GuidesSearchByDate from "./pages/GuidesSearchByDate";
 import GuidesPayoutForecasting from "./pages/GuidesPayoutForecasting";
+import GuidesAdvancedPOPlanning from "./pages/GuidesAdvancedPOPlanning";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import { Auth } from "./pages/Auth";
@@ -114,12 +115,17 @@ const App = () => (
               <GuidesAddingIncome />
             </ProtectedRoute>
           } />
-          <Route path="/guides/payout-forecasting" element={
-            <ProtectedRoute>
-              <GuidesPayoutForecasting />
-            </ProtectedRoute>
-          } />
-          <Route path="/guides/search-by-amount" element={
+            <Route path="/guides/payout-forecasting" element={
+              <ProtectedRoute>
+                <GuidesPayoutForecasting />
+              </ProtectedRoute>
+            } />
+            <Route path="/guides/advanced-po-planning" element={
+              <ProtectedRoute>
+                <GuidesAdvancedPOPlanning />
+              </ProtectedRoute>
+            } />
+            <Route path="/guides/search-by-amount" element={
             <ProtectedRoute>
               <GuidesSearchByAmount />
             </ProtectedRoute>

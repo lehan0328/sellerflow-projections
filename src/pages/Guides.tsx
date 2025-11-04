@@ -187,6 +187,27 @@ const Guides = () => {
                   </Card>
                 </Link>
 
+                <Link to="/guides/advanced-po-planning" className="group">
+                  <Card className="relative overflow-hidden h-full shadow-card hover:shadow-elevated transition-all duration-300 cursor-pointer border-0 hover-scale">
+                    <div className="absolute inset-0 bg-gradient-to-br from-purple-500/20 via-violet-500/20 to-indigo-500/20" />
+                    <div className="absolute inset-0 bg-gradient-to-br from-purple-600/0 via-violet-600/0 to-indigo-600/0 group-hover:from-purple-600/10 group-hover:via-violet-600/10 group-hover:to-indigo-600/10 transition-all duration-300" />
+                    <CardHeader className="relative pb-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="p-2 rounded-lg bg-gradient-to-br from-purple-500 to-violet-500">
+                          <ShoppingCart className="h-5 w-5 text-white" />
+                        </div>
+                        <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                      </div>
+                      <CardTitle className="text-lg">Advanced PO planning</CardTitle>
+                    </CardHeader>
+                    <CardContent className="relative">
+                      <p className="text-sm text-muted-foreground line-clamp-2">
+                        Project your pending POs and view updated buying opportunities
+                      </p>
+                    </CardContent>
+                  </Card>
+                </Link>
+
                 <Link to="/guides/search-by-amount" className="group">
                   <Card className="relative overflow-hidden h-full shadow-card hover:shadow-elevated transition-all duration-300 cursor-pointer border-0 hover-scale">
                     <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 via-purple-500/20 to-pink-500/20" />
