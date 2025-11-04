@@ -56,7 +56,7 @@ const transactionSections = [{
 }];
 const resourceSections = [{
   id: "guides",
-  title: "📚 Guides",
+  title: "Guides",
   icon: BookOpen,
   isExternal: true,
   url: "https://docs.lovable.dev"
