@@ -2947,8 +2947,20 @@ const Dashboard = () => {
             </div>
           </div>
           
-          <div className="p-6 space-y-6">
-            {renderSection()}
+          <div className="p-6 space-y-6 relative">
+            {/* Giant watermark behind content */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden">
+              <img 
+                src="https://ruvdqtqyfzaxlobmxgaj.supabase.co/storage/v1/object/public/documents/auren-icon-blue.png" 
+                alt="" 
+                className="w-[800px] h-auto opacity-[0.02]"
+              />
+            </div>
+            
+            {/* Content on top of watermark */}
+            <div className="relative z-10">
+              {renderSection()}
+            </div>
           </div>
 
           <FloatingMenu
