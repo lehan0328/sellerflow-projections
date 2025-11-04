@@ -747,8 +747,34 @@ export const VendorsOverview = ({
                               </div>
                             </div>
                           ) : (
-                            <div className="text-sm text-muted-foreground text-center py-4">
-                              No line items added for this purchase order
+                            <div className="py-2">
+                              {tx.description ? (
+                                <div>
+                                  <div className="text-sm text-muted-foreground mb-2">
+                                    No saved line items yet. Showing description as fallback:
+                                  </div>
+                                  <div className="overflow-x-auto">
+                                    <table className="w-full text-sm">
+                                      <thead>
+                                        <tr className="border-b">
+                                          <th className="text-left py-2 px-2 font-medium">Product Name</th>
+                                          <th className="text-right py-2 px-2 font-medium">Qty</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        <tr className="border-b last:border-0">
+                                          <td className="py-2 px-2 text-muted-foreground">{tx.description}</td>
+                                          <td className="py-2 px-2 text-right">1</td>
+                                        </tr>
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="text-sm text-muted-foreground text-center py-4">
+                                  No line items added for this purchase order
+                                </div>
+                              )}
                             </div>
                           )}
 
