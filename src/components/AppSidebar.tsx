@@ -58,7 +58,7 @@ const resourceSections = [{
   id: "guides",
   title: "Guides",
   icon: BookOpen,
-  isExternal: false,
+  isRoute: true,
   url: "/guides"
 }, {
   id: "settings",
