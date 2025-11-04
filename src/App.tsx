@@ -102,9 +102,7 @@ const App = () => (
           } />
           <Route path="/guides/ai-po-autofill" element={
             <ProtectedRoute>
-              <PlanProtectedRoute minimumPlan="growing">
-                <GuidesAiPOAutofill />
-              </PlanProtectedRoute>
+              <GuidesAiPOAutofill />
             </ProtectedRoute>
           } />
           <Route path="/privacy" element={<PrivacyPolicy />} />
