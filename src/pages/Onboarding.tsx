@@ -1062,7 +1062,7 @@ export default function Onboarding() {
                           <Search className="h-4 w-4 text-white" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h4 className="font-semibold text-sm mb-1">Search by Amount</h4>
+                          <h4 className="font-semibold text-sm mb-1">Advanced Spending Lookup</h4>
                           <p className="text-xs text-muted-foreground line-clamp-2">
                             Find earliest date to spend any amount
                           </p>
