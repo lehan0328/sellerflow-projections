@@ -20,18 +20,18 @@ serve(async (req) => {
 
     console.log('[ACCURACY] Tracking forecast accuracy for payout:', actualPayout.id);
 
-    // Helper function to convert UTC timestamp to Pacific Time date
-    const toPacificDate = (utcTimestamp: string): string => {
+    // Helper function to convert UTC timestamp to EST date
+    const toESTDate = (utcTimestamp: string): string => {
       const date = new Date(utcTimestamp);
-      // Format in Pacific timezone
-      const pacificDateStr = date.toLocaleString('en-US', { 
-        timeZone: 'America/Los_Angeles',
+      // Format in EST timezone
+      const estDateStr = date.toLocaleString('en-US', { 
+        timeZone: 'America/New_York',
         year: 'numeric',
         month: '2-digit',
         day: '2-digit'
       });
       // Convert from "MM/DD/YYYY" to "YYYY-MM-DD"
-      const [month, day, year] = pacificDateStr.split(',')[0].split('/');
+      const [month, day, year] = estDateStr.split(',')[0].split('/');
       return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
     };
 
@@ -44,14 +44,14 @@ serve(async (req) => {
       ? new Date(actualPayout.raw_settlement_data.FinancialEventGroupStart)
       : null;
     
-    // CRITICAL: Convert UTC timestamps to Pacific Time (Amazon operates in PT)
-    // This ensures our displayed dates match Amazon Seller Central
+    // CRITICAL: Convert UTC timestamps to EST for consistent timezone
+    // This ensures dates are consistent across the app
     const settlementCloseDate = actualPayout.raw_settlement_data?.FinancialEventGroupEnd
-      ? toPacificDate(actualPayout.raw_settlement_data.FinancialEventGroupEnd)
+      ? toESTDate(actualPayout.raw_settlement_data.FinancialEventGroupEnd)
       : settlementEndDate.toISOString().split('T')[0];
     
     const settlementStartDateStr = actualPayout.raw_settlement_data?.FinancialEventGroupStart
-      ? toPacificDate(actualPayout.raw_settlement_data.FinancialEventGroupStart)
+      ? toESTDate(actualPayout.raw_settlement_data.FinancialEventGroupStart)
       : null;
     
     // Look back up to 7 days from settlement close
