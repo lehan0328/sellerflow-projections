@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Building2, MoreVertical, Settings, RefreshCw, Plus, Edit, Trash2 } from "lucide-react";
+import { Building2, MoreVertical, Settings, RefreshCw, Plus, Edit, Trash2, CreditCard } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useBankAccounts } from "@/hooks/useBankAccounts";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { useState, useEffect } from "react";
 import { ManualBankAccountDialog } from "./manual-bank-account-dialog";
 import { PlaidAccountConfirmationDialog } from "./plaid-account-confirmation-dialog";
+import { BankTransactionLog } from "./bank-transaction-log";
 import { usePlaidLink } from "react-plaid-link";
 import { useAuth } from "@/hooks/useAuth";
 import { usePlanLimits } from "@/hooks/usePlanLimits";
@@ -63,6 +64,7 @@ export function BankAccounts({ useAvailableBalance, onToggleBalance }: { useAvai
   const [plaidMetadata, setPlaidMetadata] = useState<any>(null);
   const [plaidPublicToken, setPlaidPublicToken] = useState<string | null>(null);
   const [showPlaidConfirmation, setShowPlaidConfirmation] = useState(false);
+  const [showTransactions, setShowTransactions] = useState(false);
 
   // Use prop value if provided, otherwise use local state
   const useActualBalance = useAvailableBalance === undefined ? localUseActualBalance : !useAvailableBalance;
@@ -358,14 +360,23 @@ export function BankAccounts({ useAvailableBalance, onToggleBalance }: { useAvai
   }
 
   return (
-    <Card className="shadow-card">
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <Building2 className="h-5 w-5 text-primary" />
-            <CardTitle>Bank Accounts</CardTitle>
-          </div>
-          <div className="flex items-center gap-3">
+    <>
+      <Card className="shadow-card">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Building2 className="h-5 w-5 text-primary" />
+              <CardTitle>Bank Accounts</CardTitle>
+            </div>
+            <div className="flex items-center gap-3">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setShowTransactions(!showTransactions)}
+              >
+                <CreditCard className="h-4 w-4 mr-1" />
+                {showTransactions ? "Hide" : "View"} Bank Transactions
+              </Button>
             <div className="flex items-center gap-2 mr-4">
               <div className="flex items-center gap-1">
                 <Label htmlFor="balance-toggle" className="text-xs text-muted-foreground cursor-pointer">
@@ -640,5 +651,12 @@ export function BankAccounts({ useAvailableBalance, onToggleBalance }: { useAvai
         />
       </CardContent>
     </Card>
+    
+    {showTransactions && (
+      <div className="mt-4">
+        <BankTransactionLog />
+      </div>
+    )}
+    </>
   );
 }

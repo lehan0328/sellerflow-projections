@@ -46,10 +46,6 @@ const transactionSections = [{
   title: "Recurring",
   icon: Repeat
 }, {
-  id: "bank-transactions",
-  title: "Bank Transactions",
-  icon: Building2
-}, {
   id: "financials",
   title: "Financial Connections",
   icon: Wallet
