@@ -871,21 +871,40 @@ const Dashboard = () => {
             if (profile?.account_id) {
               // Check if we have extracted line items
               if (orderData.extractedLineItems && Array.isArray(orderData.extractedLineItems) && orderData.extractedLineItems.length > 0) {
-                // Insert all extracted line items
-                const lineItemsToInsert = orderData.extractedLineItems.map((item: any) => ({
-                  transaction_id: newTransaction.id,
-                  account_id: profile.account_id,
-                  product_name: item.productName,
-                  sku: item.sku || null,
-                  quantity: item.quantity || 1,
-                  unit_price: null,
-                  total_price: null
-                }));
+                console.info("🔍 Raw extracted line items:", orderData.extractedLineItems);
                 
-                await supabase
-                  .from('purchase_order_line_items')
-                  .insert(lineItemsToInsert);
-                console.info("✅ Line items created from extracted data:", lineItemsToInsert.length);
+                // Insert all extracted line items with flexible field mapping
+                const lineItemsToInsert = orderData.extractedLineItems
+                  .map((item: any) => {
+                    // Handle various field name possibilities from AI extraction
+                    const productName = item.productName || item.product_name || item.description || item.item_description || null;
+                    
+                    if (!productName) {
+                      console.warn("⚠️ Skipping line item without product name:", item);
+                      return null;
+                    }
+                    
+                    return {
+                      transaction_id: newTransaction.id,
+                      account_id: profile.account_id,
+                      product_name: productName,
+                      sku: item.sku || item.SKU || null,
+                      quantity: item.quantity || 1,
+                      unit_price: null,
+                      total_price: null
+                    };
+                  })
+                  .filter((item: any) => item !== null); // Remove null items
+                
+                if (lineItemsToInsert.length > 0) {
+                  console.info("📝 Inserting line items:", lineItemsToInsert);
+                  await supabase
+                    .from('purchase_order_line_items')
+                    .insert(lineItemsToInsert);
+                  console.info("✅ Line items created from extracted data:", lineItemsToInsert.length);
+                } else {
+                  console.warn("⚠️ No valid line items to insert after filtering");
+                }
               } else if (orderData.lineItemDescription && orderData.lineItemDescription.trim()) {
                 // Fallback: create single line item from description
                 await supabase
