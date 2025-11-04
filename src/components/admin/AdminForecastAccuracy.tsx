@@ -26,6 +26,8 @@ interface AccountAccuracyMetrics {
   userEmail: string;
   marketplace: string;
   payoutCount: number;
+  originalPayoutCount?: number;
+  excludedCount?: number;
   overallAccuracy: number; // 100 - avgError
   mape: number; // Mean Absolute Percentage Error
   accuracyTrend: number; // Change in last 5 vs previous 5
@@ -100,46 +102,95 @@ export function AdminForecastAccuracy() {
         return acc;
       }, {} as Record<string, AccuracyLog[]>);
 
+      // Apply same outlier filtering that users see
+      const applyOutlierFiltering = (logs: AccuracyLog[]) => {
+        // Stage 1: Exclude extreme outliers with errors over 200%
+        const thresholdFiltered = logs.filter(log => 
+          Math.abs(log.difference_percentage) <= 200
+        );
+        
+        if (thresholdFiltered.length === 0) return { filtered: [], excluded: logs.length };
+        if (thresholdFiltered.length < 4) return { filtered: thresholdFiltered, excluded: logs.length - thresholdFiltered.length };
+        
+        // Stage 2: IQR outlier detection
+        const errors = thresholdFiltered.map(log => Math.abs(log.difference_percentage));
+        const sortedErrors = [...errors].sort((a, b) => a - b);
+        
+        const q1Index = Math.floor(sortedErrors.length * 0.25);
+        const q3Index = Math.floor(sortedErrors.length * 0.75);
+        const q1 = sortedErrors[q1Index];
+        const q3 = sortedErrors[q3Index];
+        const iqr = q3 - q1;
+        const lowerBound = q1 - 1.5 * iqr;
+        const upperBound = q3 + 1.5 * iqr;
+        
+        const filtered = thresholdFiltered.filter((log, idx) => {
+          const error = errors[idx];
+          return error >= lowerBound && error <= upperBound;
+        });
+        
+        return { 
+          filtered, 
+          excluded: logs.length - filtered.length 
+        };
+      };
+
       // Calculate metrics per account
       const metrics: AccountAccuracyMetrics[] = Object.entries(accountGroups).map(([accountId, logs]) => {
         const sortedLogs = logs.sort((a, b) => 
           new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
         );
 
-        // MAPE (Mean Absolute Percentage Error) - already calculated correctly in logs
-        const mape = sortedLogs.reduce((sum, log) => 
-          sum + log.difference_percentage, 0
-        ) / sortedLogs.length;
+        // Apply outlier filtering (same as user-facing component)
+        const { filtered: filteredLogs, excluded: excludedCount } = applyOutlierFiltering(sortedLogs);
+        
+        // MAPE from filtered logs only
+        const mape = filteredLogs.length > 0
+          ? filteredLogs.reduce((sum, log) => sum + Math.abs(log.difference_percentage), 0) / filteredLogs.length
+          : 0;
 
-        // Overall Accuracy (100 - MAPE)
-        const overallAccuracy = Math.max(0, 100 - mape);
+        // Overall Accuracy (100 - MAPE) from filtered logs
+        const overallAccuracy = filteredLogs.length > 0
+          ? Math.max(0, 100 - mape)
+          : 0;
 
-        // Accuracy trend: compare recent 5 vs previous 5
-        const recentLogs = sortedLogs.slice(0, Math.min(5, sortedLogs.length));
-        const previousLogs = sortedLogs.slice(5, Math.min(10, sortedLogs.length));
+        // Accuracy trend: compare recent 5 vs previous 5 (using filtered data)
+        const { filtered: recentLogsFiltered } = applyOutlierFiltering(
+          sortedLogs.slice(0, Math.min(5, sortedLogs.length))
+        );
+        const { filtered: previousLogsFiltered } = applyOutlierFiltering(
+          sortedLogs.slice(5, Math.min(10, sortedLogs.length))
+        );
 
-        const recentMape = recentLogs.length > 0
-          ? recentLogs.reduce((sum, log) => sum + log.difference_percentage, 0) / recentLogs.length
+        const recentMape = recentLogsFiltered.length > 0
+          ? recentLogsFiltered.reduce((sum, log) => sum + Math.abs(log.difference_percentage), 0) / recentLogsFiltered.length
           : mape;
 
-        const previousMape = previousLogs.length > 0
-          ? previousLogs.reduce((sum, log) => sum + log.difference_percentage, 0) / previousLogs.length
+        const previousMape = previousLogsFiltered.length > 0
+          ? previousLogsFiltered.reduce((sum, log) => sum + Math.abs(log.difference_percentage), 0) / previousLogsFiltered.length
           : recentMape;
 
-        const accuracyTrend = previousMape - recentMape; // Positive = improving
+        const accuracyTrend = previousMape - recentMape;
+        const recentAccuracy = recentLogsFiltered.length > 0
+          ? Math.max(0, 100 - recentMape)
+          : 0;
 
-        const recentAccuracy = Math.max(0, 100 - recentMape);
-
-        // Percentage within thresholds (MAPE is already absolute)
-        const within5 = (sortedLogs.filter(log => log.difference_percentage <= 5).length / sortedLogs.length) * 100;
-        const within10 = (sortedLogs.filter(log => log.difference_percentage <= 10).length / sortedLogs.length) * 100;
+        // Percentage within thresholds (using filtered logs)
+        const within5 = filteredLogs.length > 0
+          ? (filteredLogs.filter(log => Math.abs(log.difference_percentage) <= 5).length / filteredLogs.length) * 100
+          : 0;
+        const within10 = filteredLogs.length > 0
+          ? (filteredLogs.filter(log => Math.abs(log.difference_percentage) <= 10).length / filteredLogs.length) * 100
+          : 0;
 
         return {
           accountId,
           userName: sortedLogs[0].user_name || 'Unknown',
           userEmail: sortedLogs[0].user_email || 'Unknown',
           marketplace: sortedLogs[0].marketplace_name || 'N/A',
-          payoutCount: sortedLogs.length,
+          payoutCount: filteredLogs.length,
+          originalPayoutCount: sortedLogs.length,
+          excludedCount,
           overallAccuracy,
           mape,
           accuracyTrend,
@@ -328,7 +379,14 @@ export function AdminForecastAccuracy() {
                         <Badge variant="outline">{metrics.marketplace}</Badge>
                       </TableCell>
                       <TableCell className="text-center font-medium">
-                        {metrics.payoutCount}
+                        <div className="flex flex-col items-center">
+                          <span>{metrics.payoutCount}</span>
+                          {metrics.excludedCount > 0 && (
+                            <span className="text-xs text-muted-foreground">
+                              ({metrics.excludedCount} excluded)
+                            </span>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell className="text-center">
                         <div className="flex flex-col items-center">
