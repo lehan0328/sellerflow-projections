@@ -38,10 +38,10 @@ export function useCategories(type: 'expense' | 'income', isRecurring?: boolean)
         .eq('type', type)
         .eq('account_id', profile.account_id);
 
-      // Filter by is_recurring if specified
-      if (isRecurring !== undefined) {
-        query = query.eq('is_recurring', isRecurring);
-      }
+      // IMPORTANT: Default to non-recurring (false) if not specified
+      // This ensures regular and recurring categories are completely separate
+      const recurringFilter = isRecurring === true ? true : false;
+      query = query.eq('is_recurring', recurringFilter);
 
       const { data, error } = await query
         .order('is_default', { ascending: false })
@@ -63,7 +63,7 @@ export function useCategories(type: 'expense' | 'income', isRecurring?: boolean)
         uniqueCategories = uniqueCategories.filter(cat => !cat.is_default);
       }
       
-      console.log('[Categories] Type:', type, 'Account:', profile.account_id, 'Fetched:', uniqueCategories.length);
+      console.log('[Categories] Type:', type, 'Recurring:', recurringFilter, 'Account:', profile.account_id, 'Fetched:', uniqueCategories.length);
       setCategories(uniqueCategories);
     } catch (error) {
       console.error('Error fetching categories:', error);
