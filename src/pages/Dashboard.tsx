@@ -2953,7 +2953,7 @@ const Dashboard = () => {
               <img 
                 src="https://ruvdqtqyfzaxlobmxgaj.supabase.co/storage/v1/object/public/documents/auren-icon-blue.png" 
                 alt="" 
-                className="w-[800px] h-auto opacity-[0.02]"
+                className="w-[800px] h-auto opacity-[0.08]"
               />
             </div>
             
