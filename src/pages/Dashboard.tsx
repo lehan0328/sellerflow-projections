@@ -2922,7 +2922,7 @@ const Dashboard = () => {
       <div className="h-screen flex w-full bg-background overflow-hidden relative">
         {/* Floating watermark behind everything */}
         <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-0">
-          <div className="absolute inset-0 flex items-center justify-center opacity-[0.15]">
+          <div className="absolute inset-0 flex items-center justify-center opacity-[0.10]">
             <img 
               src="/auren-icon-blue.png" 
               alt="" 
