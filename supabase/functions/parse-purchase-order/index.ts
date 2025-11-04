@@ -1,8 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
-// @deno-types="https://esm.sh/v135/pdf-parse@1.1.1/index.d.ts"
-import pdf from "https://esm.sh/pdf-parse@1.1.1";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -60,73 +58,33 @@ serve(async (req) => {
 
     console.log("Processing document:", file.name, file.type);
 
-    let messageContent: any[] = [];
-
-    // Handle PDFs using text extraction
-    if (file.type === 'application/pdf') {
-      try {
-        const arrayBuffer = await file.arrayBuffer();
-        const buffer = new Uint8Array(arrayBuffer);
-        
-        console.log("Parsing PDF...");
-        const data = await pdf(buffer);
-        const extractedText = data.text || "";
-        
-        console.log("Extracted PDF text length:", extractedText.length);
-
-        if (!extractedText.trim()) {
-          return new Response(
-            JSON.stringify({ 
-              success: false,
-              error: "Could not extract text from PDF. The PDF may be scanned or image-based. Please convert it to an image format (PNG, JPG) and try again."
-            }),
-            { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
-        }
-
-        messageContent = [
-          {
-            type: "text",
-            text: `Extract all purchase order, sales order, and invoice information from this document text.\n\nDocument content:\n${extractedText}\n\nIMPORTANT - DOCUMENT TYPE DETECTION (check in this exact order):\n1. If document says 'SALES ORDER' or 'SO' → set documentType to 'sales_order'\n2. If document says 'INVOICE' (not 'Pro-forma' or 'Proforma') → set documentType to 'invoice'\n3. If document says 'Pro-forma Invoice', 'Proforma Invoice', 'Pro forma Invoice', 'PERFORMA INVOICE' → set documentType to 'proforma_invoice'\n4. If document says 'Purchase Order' or 'PO' → set documentType to 'purchase_order'\n5. Default to 'purchase_order' if unclear\n\nIMPORTANT - TOTAL AMOUNT EXTRACTION RULES:\n1. Look for the FINAL payable amount with labels: 'Total:', 'Total Amount:', 'Grand Total:', 'Amount Due:', 'Balance Due:', or 'Total Payable:'\n2. IGNORE lines with: 'Subtotal:', 'Discount:', 'Deposit:', 'Tax:', 'VAT:', 'Shipping:', 'Handling:', 'Adjustment:', or 'Credit:'\n3. If multiple 'Total' entries exist, capture the LAST valid total that represents the final amount due (typically after all discounts, taxes, and adjustments)\n4. The correct total is usually the last monetary value before payment instructions or terms\n5. Return the amount as a number string without currency symbols (e.g., '1500.50' not '$1,500.50')\n\nFor the vendor name, check these fields in order of priority: 'From:', 'Vendor:', 'Supplier:', 'Sold By:', 'Issued By:', 'Ship From:', 'Company:'. Use whichever field is present to identify the vendor (required). Also extract: purchase order or invoice number, item description, payment terms (Net 30/60/90 or immediate), due date, delivery date, category (Inventory, Packaging Materials, Marketing/PPC, Shipping & Logistics, Professional Services, or Other), and additional notes.`
-          }
-        ];
-      } catch (pdfError) {
-        console.error("PDF parsing error:", pdfError);
-        return new Response(
-          JSON.stringify({ 
-            success: false,
-            error: "Failed to parse PDF. The file may be corrupted or password-protected. Please try converting it to an image format."
-          }),
-          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-    } else {
-      // Handle images using vision API
-      const arrayBuffer = await file.arrayBuffer();
-      const bytes = new Uint8Array(arrayBuffer);
-      
-      // Convert to base64
-      let base64 = '';
-      const chunkSize = 0x8000; // 32KB chunks to avoid stack overflow
-      for (let i = 0; i < bytes.length; i += chunkSize) {
-        const chunk = bytes.subarray(i, Math.min(i + chunkSize, bytes.length));
-        base64 += String.fromCharCode(...chunk);
-      }
-      base64 = btoa(base64);
-
-      messageContent = [
-        {
-          type: "text",
-          text: "Extract all purchase order, sales order, and invoice information from this document.\n\nIMPORTANT - DOCUMENT TYPE DETECTION (check in this exact order):\n1. If document says 'SALES ORDER' or 'SO' → set documentType to 'sales_order'\n2. If document says 'INVOICE' (not 'Pro-forma' or 'Proforma') → set documentType to 'invoice'\n3. If document says 'Pro-forma Invoice', 'Proforma Invoice', 'Pro forma Invoice', 'PERFORMA INVOICE' → set documentType to 'proforma_invoice'\n4. If document says 'Purchase Order' or 'PO' → set documentType to 'purchase_order'\n5. Default to 'purchase_order' if unclear\n\nIMPORTANT - TOTAL AMOUNT EXTRACTION RULES:\n1. Look for the FINAL payable amount with labels: 'Total:', 'Total Amount:', 'Grand Total:', 'Amount Due:', 'Balance Due:', or 'Total Payable:'\n2. IGNORE lines with: 'Subtotal:', 'Discount:', 'Deposit:', 'Tax:', 'VAT:', 'Shipping:', 'Handling:', 'Adjustment:', or 'Credit:'\n3. If multiple 'Total' entries exist, capture the LAST valid total that represents the final amount due (typically after all discounts, taxes, and adjustments)\n4. The correct total is usually the last monetary value before payment instructions or terms\n5. Return the amount as a number string without currency symbols (e.g., '1500.50' not '$1,500.50')\n\nFor the vendor name, check these fields in order of priority: 'From:', 'Vendor:', 'Supplier:', 'Sold By:', 'Issued By:', 'Ship From:', 'Company:'. Use whichever field is present to identify the vendor (required). Also extract: purchase order or invoice number, item description, payment terms (Net 30/60/90 or immediate), due date, delivery date, category (Inventory, Packaging Materials, Marketing/PPC, Shipping & Logistics, Professional Services, or Other), and additional notes."
-        },
-        {
-          type: "image_url",
-          image_url: {
-            url: `data:${file.type};base64,${base64}`
-          }
-        }
-      ];
+    // Convert file to base64 for AI processing (works for both PDFs and images)
+    const arrayBuffer = await file.arrayBuffer();
+    const bytes = new Uint8Array(arrayBuffer);
+    
+    // Convert to base64
+    let base64 = '';
+    const chunkSize = 0x8000; // 32KB chunks to avoid stack overflow
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+      const chunk = bytes.subarray(i, Math.min(i + chunkSize, bytes.length));
+      base64 += String.fromCharCode(...chunk);
     }
+    base64 = btoa(base64);
+
+    console.log("Processing document with AI vision...");
+
+    const messageContent = [
+      {
+        type: "text",
+        text: "Extract all purchase order, sales order, and invoice information from this document.\n\nIMPORTANT - DOCUMENT TYPE DETECTION (check in this exact order):\n1. If document says 'SALES ORDER' or 'SO' → set documentType to 'sales_order'\n2. If document says 'INVOICE' (not 'Pro-forma' or 'Proforma') → set documentType to 'invoice'\n3. If document says 'Pro-forma Invoice', 'Proforma Invoice', 'Pro forma Invoice', 'PERFORMA INVOICE' → set documentType to 'proforma_invoice'\n4. If document says 'Purchase Order' or 'PO' → set documentType to 'purchase_order'\n5. Default to 'purchase_order' if unclear\n\nIMPORTANT - TOTAL AMOUNT EXTRACTION RULES:\n1. Look for the FINAL payable amount with labels: 'Total:', 'Total Amount:', 'Grand Total:', 'Amount Due:', 'Balance Due:', or 'Total Payable:'\n2. IGNORE lines with: 'Subtotal:', 'Discount:', 'Deposit:', 'Tax:', 'VAT:', 'Shipping:', 'Handling:', 'Adjustment:', or 'Credit:'\n3. If multiple 'Total' entries exist, capture the LAST valid total that represents the final amount due (typically after all discounts, taxes, and adjustments)\n4. The correct total is usually the last monetary value before payment instructions or terms\n5. Return the amount as a number string without currency symbols (e.g., '1500.50' not '$1,500.50')\n\nFor the vendor name, check these fields in order of priority: 'From:', 'Vendor:', 'Supplier:', 'Sold By:', 'Issued By:', 'Ship From:', 'Company:'. Use whichever field is present to identify the vendor (required). Also extract: purchase order or invoice number, item description, payment terms (Net 30/60/90 or immediate), due date, delivery date, category (Inventory, Packaging Materials, Marketing/PPC, Shipping & Logistics, Professional Services, or Other), and additional notes."
+      },
+      {
+        type: "image_url",
+        image_url: {
+          url: `data:${file.type};base64,${base64}`
+        }
+      }
+    ];
 
     console.log("Sending to AI for extraction");
 
