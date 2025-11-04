@@ -39,19 +39,6 @@ const GuidesPurchaseOrders = () => {
             <div className="max-w-5xl mx-auto space-y-8">
               {/* Manually Adding a Purchase Order */}
               <Card className="shadow-card">
-                <CardHeader>
-                  <div className="flex items-center space-x-3">
-                    <div className="p-2 rounded-lg bg-primary/10 text-primary">
-                      <FileText className="h-6 w-6" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-2xl">Manually Adding a Purchase Order</CardTitle>
-                      <p className="text-sm text-muted-foreground mt-2">
-                        Follow this step-by-step guide to create a new purchase order in Auren
-                      </p>
-                    </div>
-                  </div>
-                </CardHeader>
                 <CardContent>
                   <div className="w-full">
                     <iframe 
