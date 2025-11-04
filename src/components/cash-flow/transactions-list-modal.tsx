@@ -74,7 +74,10 @@ export function TransactionsListModal({
     return 'No description';
   };
 
-  const totalAmount = transactions.reduce((sum, tx) => sum + tx.amount, 0);
+  const totalAmount = transactions.reduce((sum, tx) => {
+    // Inflows are positive, everything else (outflows, credit payments, purchase orders) are negative
+    return sum + (tx.type === 'inflow' ? tx.amount : -tx.amount);
+  }, 0);
 
   // Sort transactions by date
   const sortedTransactions = [...transactions].sort((a, b) => 
@@ -143,9 +146,9 @@ export function TransactionsListModal({
                     </div>
                     <div className="text-right ml-4">
                       <p className={`text-sm font-semibold ${
-                        type === 'incoming' ? 'text-green-600' : 'text-amber-600'
+                        transaction.type === 'inflow' ? 'text-green-600' : 'text-red-600'
                       }`}>
-                        {type === 'incoming' ? '+' : '-'}{formatCurrency(transaction.amount)}
+                        {transaction.type === 'inflow' ? '+' : '-'}{formatCurrency(transaction.amount)}
                       </p>
                     </div>
                   </div>
