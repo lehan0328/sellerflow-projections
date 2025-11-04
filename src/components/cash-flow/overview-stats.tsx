@@ -825,7 +825,10 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
         transactions={events.filter(event => {
           const today = new Date();
           today.setHours(0, 0, 0, 0);
-          const eventDate = new Date(event.date);
+          // Use balanceImpactDate if it exists (for forecasted payouts with T+1),
+          // otherwise use the regular date
+          const effectiveDate = (event as any).balanceImpactDate || event.date;
+          const eventDate = new Date(effectiveDate);
           eventDate.setHours(0, 0, 0, 0);
           return eventDate.getTime() === today.getTime();
         }) as any}
