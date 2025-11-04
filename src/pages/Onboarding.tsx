@@ -1016,7 +1016,7 @@ export default function Onboarding() {
             <CardContent className="space-y-6">
               <div className="space-y-4">
                 <p className="text-sm text-muted-foreground">
-                  Explore Auren's signature features with visual step-by-step guides
+                  Explore Auren's <strong className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent font-bold animate-gradient" style={{ backgroundSize: '200% auto' }}>signature features</strong> with visual step-by-step guides
                 </p>
                 
                 {/* Signature Features Preview */}
