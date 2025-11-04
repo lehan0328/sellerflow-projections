@@ -1088,6 +1088,23 @@ export default function Onboarding() {
                       </div>
                     </div>
                   </div>
+
+                  <div className="group md:col-span-2">
+                    <div className="relative overflow-hidden rounded-lg border bg-card p-4 hover:shadow-md transition-all duration-300">
+                      <div className="flex items-start gap-3">
+                        <div className="p-2 rounded-lg bg-gradient-to-br from-cyan-500 to-sky-500 flex-shrink-0">
+                          <TrendingUp className="h-4 w-4 text-white" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-semibold text-sm mb-1">Scenario Planning</h4>
+                          <p className="text-xs text-muted-foreground line-clamp-2">
+                            Plan out your cash balance projection no matter the scenario fully customizable
+                          </p>
+                        </div>
+                        <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
