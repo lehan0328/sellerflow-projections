@@ -17,6 +17,12 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const supabaseClient = createClient(
+    Deno.env.get("SUPABASE_URL") ?? "",
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+    { auth: { persistSession: false } }
+  );
+
   try {
     logStep("Function started");
 
@@ -37,21 +43,10 @@ serve(async (req) => {
     }
     logStep("Authorization header found");
 
-    // Create authenticated client using the user's JWT token
-    const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
-      {
-        global: {
-          headers: { Authorization: authHeader },
-        },
-        auth: { persistSession: false }
-      }
-    );
-
+    const token = authHeader.replace("Bearer ", "");
     logStep("Authenticating user with token");
     
-    const { data: userData, error: userError } = await supabaseClient.auth.getUser();
+    const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
     if (userError || !userData.user?.email) {
       logStep("Authentication failed", { error: userError?.message });
       return new Response(JSON.stringify({ 
@@ -65,15 +60,8 @@ serve(async (req) => {
     const user = userData.user;
     logStep("User authenticated", { userId: user.id, email: user.email });
 
-    // Create service role client for database operations
-    const supabaseAdmin = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-      { auth: { persistSession: false } }
-    );
-
     // Check for plan override and trial status
-    const { data: profile } = await supabaseAdmin
+    const { data: profile } = await supabaseClient
       .from('profiles')
       .select('plan_override, discount_redeemed_at, trial_end')
       .eq('user_id', user.id)
@@ -110,7 +98,7 @@ serve(async (req) => {
       logStep("No customer found - checking trial status");
       
       // Check if trial has expired
-      const { data: profileData } = await supabaseAdmin
+      const { data: profileData } = await supabaseClient
         .from('profiles')
         .select('discount_redeemed_at, trial_end')
         .eq('user_id', user.id)
@@ -141,7 +129,7 @@ serve(async (req) => {
     logStep("Found Stripe customer", { customerId });
 
     // Save stripe_customer_id to profile if not already saved
-    const { error: updateError } = await supabaseAdmin
+    const { error: updateError } = await supabaseClient
       .from('profiles')
       .update({ stripe_customer_id: customerId })
       .eq('user_id', user.id)
@@ -430,7 +418,7 @@ serve(async (req) => {
 
     // Clear trial fields from profile if user has an active paid subscription
     if (hasActiveSub && !isTrialing) {
-      const { error: updateError } = await supabaseAdmin
+      const { error: updateError } = await supabaseClient
         .from('profiles')
         .update({ 
           trial_start: null, 
@@ -448,7 +436,7 @@ serve(async (req) => {
     }
 
     // Check if user ever redeemed a discount
-    const { data: profileData } = await supabaseAdmin
+    const { data: profileData } = await supabaseClient
       .from('profiles')
       .select('discount_redeemed_at')
       .eq('user_id', user.id)
