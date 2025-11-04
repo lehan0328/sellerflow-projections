@@ -2920,17 +2920,6 @@ const Dashboard = () => {
   return (
     <SidebarProvider>
       <div className="h-screen flex w-full bg-background overflow-hidden relative">
-        {/* Dashboard watermark background - matches animation exit */}
-        <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-0">
-          <div className="absolute inset-0 flex items-center justify-center opacity-[0.03]">
-            <img 
-              src="/auren-icon-blue.png" 
-              alt="" 
-              className="w-[600px] h-auto"
-            />
-          </div>
-        </div>
-
         <AppSidebar 
           activeSection={activeSection} 
           onSectionChange={handleSectionChange}
