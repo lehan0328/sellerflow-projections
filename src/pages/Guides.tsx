@@ -188,7 +188,7 @@ const Guides = () => {
                                   className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center justify-between group"
                                 >
                                   <span>{guideTitle}</span>
-                                  <ChevronRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                  <ChevronRight className="h-4 w-4" />
                                 </Link>
                               </li>
                             );
