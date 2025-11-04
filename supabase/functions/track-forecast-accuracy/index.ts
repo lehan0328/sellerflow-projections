@@ -20,6 +20,21 @@ serve(async (req) => {
 
     console.log('[ACCURACY] Tracking forecast accuracy for payout:', actualPayout.id);
 
+    // Helper function to convert UTC timestamp to Pacific Time date
+    const toPacificDate = (utcTimestamp: string): string => {
+      const date = new Date(utcTimestamp);
+      // Format in Pacific timezone
+      const pacificDateStr = date.toLocaleString('en-US', { 
+        timeZone: 'America/Los_Angeles',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      });
+      // Convert from "MM/DD/YYYY" to "YYYY-MM-DD"
+      const [month, day, year] = pacificDateStr.split(',')[0].split('/');
+      return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+    };
+
     // Extract settlement dates from raw data
     const settlementEndDate = actualPayout.raw_settlement_data?.FinancialEventGroupEnd
       ? new Date(actualPayout.raw_settlement_data.FinancialEventGroupEnd)
@@ -29,11 +44,15 @@ serve(async (req) => {
       ? new Date(actualPayout.raw_settlement_data.FinancialEventGroupStart)
       : null;
     
-    // CRITICAL: Use settlement close date (NOT payout date) to find forecasts
-    // Settlement closes at night (e.g., Nov 1 8pm = Nov 2 00:01 UTC)
-    // We want forecasts BEFORE the settlement closed (e.g., Oct 31 + Nov 1)
-    const settlementCloseDate = settlementEndDate.toISOString().split('T')[0];
-    const settlementStartDateStr = settlementStartDate?.toISOString().split('T')[0];
+    // CRITICAL: Convert UTC timestamps to Pacific Time (Amazon operates in PT)
+    // This ensures our displayed dates match Amazon Seller Central
+    const settlementCloseDate = actualPayout.raw_settlement_data?.FinancialEventGroupEnd
+      ? toPacificDate(actualPayout.raw_settlement_data.FinancialEventGroupEnd)
+      : settlementEndDate.toISOString().split('T')[0];
+    
+    const settlementStartDateStr = actualPayout.raw_settlement_data?.FinancialEventGroupStart
+      ? toPacificDate(actualPayout.raw_settlement_data.FinancialEventGroupStart)
+      : null;
     
     // Look back up to 7 days from settlement close
     const lookbackStart = new Date(settlementCloseDate);
