@@ -41,7 +41,10 @@ const Guides = () => {
           title: "Manually Adding a Purchase Order",
           path: "/guides/purchase-orders"
         },
-        "Recording Income",
+        {
+          title: "AI PO autofill (Growing+ plans only)",
+          path: "/guides/ai-po-autofill"
+        },
         "Tracking Expenses",
         "Categorizing Transactions"
       ]
