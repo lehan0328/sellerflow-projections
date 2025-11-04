@@ -1079,7 +1079,7 @@ export default function Onboarding() {
                           <FileText className="h-4 w-4 text-white" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h4 className="font-semibold text-sm mb-1">Search by Date</h4>
+                          <h4 className="font-semibold text-sm mb-1">Spending Search by Date</h4>
                           <p className="text-xs text-muted-foreground line-clamp-2">
                             Know what you can spend on any date
                           </p>
