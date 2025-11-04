@@ -2920,6 +2920,17 @@ const Dashboard = () => {
   return (
     <SidebarProvider>
       <div className="h-screen flex w-full bg-background overflow-hidden relative">
+        {/* Floating watermark behind everything */}
+        <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-0">
+          <div className="absolute inset-0 flex items-center justify-center opacity-[0.15]">
+            <img 
+              src="/auren-icon-blue.png" 
+              alt="" 
+              className="w-[800px] h-auto"
+            />
+          </div>
+        </div>
+
         <AppSidebar 
           activeSection={activeSection} 
           onSectionChange={handleSectionChange}
@@ -2937,15 +2948,6 @@ const Dashboard = () => {
           </div>
           
           <div className="p-6 space-y-6 relative">
-            {/* Giant watermark behind content */}
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden">
-              <img 
-                src="/auren-icon-blue.png" 
-                alt="" 
-                className="w-[800px] h-auto opacity-[0.15]"
-              />
-            </div>
-            
             {/* Content on top of watermark */}
             <div className="relative z-10">
               {renderSection()}
