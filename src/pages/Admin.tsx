@@ -11,7 +11,8 @@ import {
   Gift,
   MessageSquare,
   UserCog,
-  Target
+  Target,
+  Settings
 } from "lucide-react";
 import { AdminCustomers } from "@/components/admin/AdminCustomers";
 import { AdminSupportTickets } from "@/components/admin/AdminSupportTickets";
@@ -20,6 +21,7 @@ import AdminReferrals from "@/components/admin/AdminReferrals";
 import AdminAffiliates from "@/components/admin/AdminAffiliates";
 import { AdminFeatureRequests } from "@/components/admin/AdminFeatureRequests";
 import { AdminForecastAccuracy } from "@/components/admin/AdminForecastAccuracy";
+import { SetPlanOverride } from "@/components/admin/SetPlanOverride";
 
 const Admin = () => {
   const navigate = useNavigate();
@@ -51,7 +53,7 @@ const Admin = () => {
 
       <div className="max-w-7xl mx-auto px-4 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-7 max-w-6xl">
+          <TabsList className="grid w-full grid-cols-8 max-w-7xl">
             <TabsTrigger value="customers" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
               Customers
@@ -79,6 +81,10 @@ const Admin = () => {
             <TabsTrigger value="forecast-accuracy" className="flex items-center gap-2">
               <Target className="h-4 w-4" />
               Accuracy
+            </TabsTrigger>
+            <TabsTrigger value="plan-override" className="flex items-center gap-2">
+              <Settings className="h-4 w-4" />
+              Plans
             </TabsTrigger>
           </TabsList>
 
@@ -108,6 +114,10 @@ const Admin = () => {
 
           <TabsContent value="forecast-accuracy" className="mt-6">
             <AdminForecastAccuracy />
+          </TabsContent>
+
+          <TabsContent value="plan-override" className="mt-6">
+            <SetPlanOverride />
           </TabsContent>
         </Tabs>
       </div>
