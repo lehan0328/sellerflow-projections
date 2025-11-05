@@ -1747,6 +1747,8 @@ export type Database = {
       purchase_order_line_items: {
         Row: {
           created_at: string
+          description: string | null
+          document_id: string | null
           id: string
           product_name: string
           quantity: number
@@ -1758,6 +1760,8 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          description?: string | null
+          document_id?: string | null
           id?: string
           product_name: string
           quantity?: number
@@ -1769,6 +1773,8 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          description?: string | null
+          document_id?: string | null
           id?: string
           product_name?: string
           quantity?: number
@@ -1779,6 +1785,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "purchase_order_line_items_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents_metadata"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "purchase_order_line_items_transaction_id_fkey"
             columns: ["transaction_id"]
