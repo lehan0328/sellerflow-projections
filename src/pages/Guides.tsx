@@ -62,6 +62,10 @@ const Guides = () => {
           path: "/guides/add-recurring-income"
         },
         {
+          title: "Add Recurring Expense",
+          path: "/guides/add-recurring-expense"
+        },
+        {
           title: "Editing transactions",
           path: "/guides/editing-transactions"
         }
