@@ -930,15 +930,15 @@ export default function DocumentStorage() {
             ) : (
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[280px]">Name</TableHead>
-                    <TableHead className="w-[120px]">Type</TableHead>
-                    <TableHead className="w-[150px]">Vendor</TableHead>
-                    <TableHead className="w-[120px]">Amount</TableHead>
-                    <TableHead className="w-[130px]">Document Date</TableHead>
-                    <TableHead className="w-[100px]">Size</TableHead>
-                    <TableHead className="w-[160px]">Uploaded</TableHead>
-                    <TableHead className="w-[180px] text-right">Actions</TableHead>
+                  <TableRow className="bg-background border-b hover:bg-background">
+                    <TableHead className="w-[280px] bg-background font-semibold">Name</TableHead>
+                    <TableHead className="w-[120px] bg-background font-semibold">Type</TableHead>
+                    <TableHead className="w-[150px] bg-background font-semibold">Vendor</TableHead>
+                    <TableHead className="w-[120px] bg-background font-semibold">Amount</TableHead>
+                    <TableHead className="w-[130px] bg-background font-semibold">Document Date</TableHead>
+                    <TableHead className="w-[100px] bg-background font-semibold">Size</TableHead>
+                    <TableHead className="w-[160px] bg-background font-semibold">Uploaded</TableHead>
+                    <TableHead className="w-[180px] bg-background font-semibold text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
