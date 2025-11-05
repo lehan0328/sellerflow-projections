@@ -16,6 +16,7 @@ interface VendorFormData {
   name: string;
   category: string;
   paymentType: string;
+  paymentMethod: string;
   netTermsDays: string;
 }
 
@@ -34,17 +35,27 @@ const paymentTypeOptions = [
   { value: 'preorder', label: 'Pre-order with Deposit' }
 ];
 
+const paymentMethodOptions = [
+  { value: 'bank-transfer', label: 'Bank Transfer' },
+  { value: 'ach', label: 'ACH' },
+  { value: 'credit-card', label: 'Credit Card' },
+  { value: 'wire', label: 'Wire Transfer' },
+  { value: 'check', label: 'Check' },
+  { value: 'cash', label: 'Cash' }
+];
+
 export function VendorManagement() {
   const { vendors, loading, addVendor, updateVendor, deleteVendor } = useVendors();
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
-  const [editingVendor, setEditingVendor] = useState<{ id: string; name: string; category: string; paymentType: string; netTermsDays: string } | null>(null);
+  const [editingVendor, setEditingVendor] = useState<{ id: string; name: string; category: string; paymentType: string; paymentMethod: string; netTermsDays: string } | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'recent' | 'oldest' | 'a-z' | 'z-a'>('recent');
   const [formData, setFormData] = useState<VendorFormData>({
     name: '',
     category: '',
     paymentType: 'total',
+    paymentMethod: 'bank-transfer',
     netTermsDays: '30'
   });
 
@@ -56,6 +67,7 @@ export function VendorManagement() {
       name: '',
       category: '',
       paymentType: 'total',
+      paymentMethod: 'bank-transfer',
       netTermsDays: '30'
     });
   };
@@ -81,6 +93,7 @@ export function VendorManagement() {
         status: 'upcoming',
         category: formData.category,
         paymentType: formData.paymentType as any,
+        paymentMethod: formData.paymentMethod as any,
         netTermsDays: formData.netTermsDays,
         source: 'management'
       });
@@ -98,12 +111,14 @@ export function VendorManagement() {
       name: vendor.name, 
       category: vendor.category || '',
       paymentType: vendor.paymentType || 'total',
+      paymentMethod: vendor.paymentMethod || 'bank-transfer',
       netTermsDays: vendor.netTermsDays || '30'
     });
     setFormData({ 
       name: vendor.name, 
       category: vendor.category || '',
       paymentType: vendor.paymentType || 'total',
+      paymentMethod: vendor.paymentMethod || 'bank-transfer',
       netTermsDays: vendor.netTermsDays || '30'
     });
     setShowEditDialog(true);
@@ -120,6 +135,7 @@ export function VendorManagement() {
         name: formData.name,
         category: formData.category,
         paymentType: formData.paymentType as any,
+        paymentMethod: formData.paymentMethod as any,
         netTermsDays: formData.netTermsDays
       });
       setShowEditDialog(false);
@@ -156,6 +172,11 @@ export function VendorManagement() {
       return `${label} (Net ${netTermsDays} days)`;
     }
     return label;
+  };
+
+  const getPaymentMethodLabel = (paymentMethod?: string) => {
+    const option = paymentMethodOptions.find(opt => opt.value === paymentMethod);
+    return option ? option.label : 'Bank Transfer';
   };
 
   // Filter and sort vendors
@@ -269,6 +290,21 @@ export function VendorManagement() {
                     </SelectContent>
                   </Select>
                 </div>
+                <div>
+                  <Label htmlFor="paymentMethod">Payment Method</Label>
+                  <Select value={formData.paymentMethod} onValueChange={(value) => setFormData({ ...formData, paymentMethod: value })}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {paymentMethodOptions.map(option => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
                 {formData.paymentType === 'net-terms' && (
                   <div>
                     <Label htmlFor="netTermsDays">Net Terms (Days)</Label>
@@ -336,15 +372,18 @@ export function VendorManagement() {
                       <div className="p-2 bg-muted rounded-full">
                         <Building2 className="h-4 w-4" />
                       </div>
-                      <div>
-                        <p className="font-medium">{vendor.name}</p>
-                        {vendor.category && (
-                          <p className="text-xs text-muted-foreground">{vendor.category}</p>
-                        )}
-                        <p className="text-sm text-muted-foreground">
-                          Payment Terms: {getPaymentTypeLabel(vendor.paymentType || 'total', vendor.netTermsDays)}
-                        </p>
-                      </div>
+                       <div>
+                         <p className="font-medium">{vendor.name}</p>
+                         {vendor.category && (
+                           <p className="text-xs text-muted-foreground">{vendor.category}</p>
+                         )}
+                         <p className="text-sm text-muted-foreground">
+                           Payment Terms: {getPaymentTypeLabel(vendor.paymentType || 'total', vendor.netTermsDays)}
+                         </p>
+                         <p className="text-xs text-muted-foreground">
+                           Method: {getPaymentMethodLabel(vendor.paymentMethod)}
+                         </p>
+                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
                       <Badge variant="secondary">Active</Badge>
@@ -447,6 +486,21 @@ export function VendorManagement() {
                       </SelectContent>
                     </Select>
                   </div>
+                  <div>
+                    <Label htmlFor="paymentMethod">Payment Method</Label>
+                    <Select value={formData.paymentMethod} onValueChange={(value) => setFormData({ ...formData, paymentMethod: value })}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {paymentMethodOptions.map(option => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                   {formData.paymentType === 'net-terms' && (
                     <div>
                       <Label htmlFor="netTermsDays">Net Terms (Days)</Label>
@@ -522,6 +576,24 @@ export function VendorManagement() {
                 </SelectTrigger>
                 <SelectContent>
                   {paymentTypeOptions.map(option => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="edit-paymentMethod">Payment Method</Label>
+              <Select 
+                value={formData.paymentMethod}
+                onValueChange={(value) => setFormData({ ...formData, paymentMethod: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {paymentMethodOptions.map(option => (
                     <SelectItem key={option.value} value={option.value}>
                       {option.label}
                     </SelectItem>

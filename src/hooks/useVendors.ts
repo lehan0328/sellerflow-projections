@@ -11,7 +11,7 @@ export interface Vendor {
   status: 'upcoming' | 'current' | 'overdue' | 'paid';
   category: string;
   paymentType?: 'total' | 'preorder' | 'net-terms';
-  paymentMethod?: 'bank-transfer' | 'credit-card'; // Add payment method
+  paymentMethod?: 'bank-transfer' | 'credit-card' | 'ach' | 'check' | 'wire' | 'cash';
   netTermsDays?: string;
   poName?: string;
   description?: string;
@@ -195,6 +195,7 @@ export const useVendors = () => {
       if (updates.status !== undefined) dbUpdates.status = updates.status;
       if (updates.category !== undefined) dbUpdates.category = updates.category;
       if (updates.paymentType !== undefined) dbUpdates.payment_type = updates.paymentType;
+      if (updates.paymentMethod !== undefined) dbUpdates.payment_method = updates.paymentMethod;
       if (updates.netTermsDays !== undefined) dbUpdates.net_terms_days = parseInt(updates.netTermsDays);
       if (updates.poName !== undefined) dbUpdates.po_name = updates.poName;
       if (updates.description !== undefined) dbUpdates.description = updates.description;
