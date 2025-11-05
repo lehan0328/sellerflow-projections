@@ -1091,12 +1091,7 @@ const Dashboard = () => {
     
     // Check if this is a recurring transaction
     if (incomeData.isRecurring) {
-      // Map quarterly to monthly for database (or handle separately)
-      let frequency = incomeData.recurringFrequency;
-      if (frequency === 'quarterly') {
-        // Convert quarterly to monthly with a note
-        frequency = 'monthly';
-      }
+      const frequency = incomeData.recurringFrequency;
 
       // Save to recurring_expenses table
       await createRecurringExpense({
@@ -1174,12 +1169,7 @@ const Dashboard = () => {
     
     // Check if this is a recurring transaction
     if (expenseData.isRecurring) {
-      // Map quarterly to monthly for database (or handle separately)
-      let frequency = expenseData.recurringFrequency;
-      if (frequency === 'quarterly') {
-        // Convert quarterly to monthly with a note
-        frequency = 'monthly';
-      }
+      const frequency = expenseData.recurringFrequency;
 
       // Save to recurring_expenses table
       await createRecurringExpense({

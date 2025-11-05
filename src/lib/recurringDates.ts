@@ -1,6 +1,6 @@
 import { addDays, addWeeks, addMonths, addYears, startOfDay, isBefore, isAfter, getDay } from 'date-fns';
 
-export type RecurringFrequency = 'daily' | 'weekly' | 'bi-weekly' | 'monthly' | 'yearly' | 'weekdays';
+export type RecurringFrequency = 'daily' | 'weekly' | 'bi-weekly' | 'monthly' | '2-months' | '3-months' | 'yearly' | 'weekdays';
 
 export interface RecurringTransaction {
   id: string;
@@ -68,6 +68,14 @@ export function generateRecurringDates(
 
       case 'monthly':
         currentDate = addMonths(currentDate, 1);
+        break;
+
+      case '2-months':
+        currentDate = addMonths(currentDate, 2);
+        break;
+
+      case '3-months':
+        currentDate = addMonths(currentDate, 3);
         break;
 
       case 'yearly':

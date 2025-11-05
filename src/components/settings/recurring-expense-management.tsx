@@ -19,7 +19,7 @@ interface RecurringExpenseFormData {
   name: string;
   transaction_name: string;
   amount: string;
-  frequency: 'daily' | 'weekly' | 'bi-weekly' | 'monthly' | 'yearly' | 'weekdays';
+  frequency: 'daily' | 'weekly' | 'bi-weekly' | 'monthly' | '2-months' | '3-months' | 'yearly' | 'weekdays';
   start_date: string;
   end_date: string;
   is_active: boolean;
@@ -276,6 +276,8 @@ export function RecurringExpenseManagement() {
                       <SelectItem value="bi-weekly">Bi-Weekly</SelectItem>
                       <SelectItem value="weekdays">Weekdays</SelectItem>
                       <SelectItem value="monthly">Monthly</SelectItem>
+                      <SelectItem value="2-months">Every 2 Months</SelectItem>
+                      <SelectItem value="3-months">Every 3 Months</SelectItem>
                       <SelectItem value="yearly">Yearly</SelectItem>
                     </SelectContent>
                   </Select>
@@ -520,6 +522,8 @@ export function RecurringExpenseManagement() {
                         <SelectItem value="bi-weekly">Bi-Weekly</SelectItem>
                         <SelectItem value="weekdays">Weekdays</SelectItem>
                         <SelectItem value="monthly">Monthly</SelectItem>
+                        <SelectItem value="2-months">Every 2 Months</SelectItem>
+                        <SelectItem value="3-months">Every 3 Months</SelectItem>
                         <SelectItem value="yearly">Yearly</SelectItem>
                       </SelectContent>
                     </Select>
@@ -608,6 +612,8 @@ export function RecurringExpenseManagement() {
                   <SelectItem value="bi-weekly">Bi-Weekly</SelectItem>
                   <SelectItem value="weekdays">Weekdays</SelectItem>
                   <SelectItem value="monthly">Monthly</SelectItem>
+                  <SelectItem value="2-months">Every 2 Months</SelectItem>
+                  <SelectItem value="3-months">Every 3 Months</SelectItem>
                   <SelectItem value="yearly">Yearly</SelectItem>
                 </SelectContent>
               </Select>
