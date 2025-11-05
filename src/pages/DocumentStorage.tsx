@@ -1075,37 +1075,32 @@ export default function DocumentStorage() {
                       <TableRow>
                         <TableCell colSpan={8} className="p-0 border-0">
                           <CollapsibleContent>
-                            <div className="px-4 py-3 bg-muted/30">
-                              <div className="text-sm font-medium mb-2">Details</div>
+                            <div className="px-4 py-4 bg-muted/30">
                               {doc.line_items && doc.line_items.length > 0 ? (
-                                <Table>
-                                  <TableHeader>
-                                    <TableRow>
-                                      <TableHead>Description</TableHead>
-                                      <TableHead className="text-right">Qty</TableHead>
-                                      <TableHead className="text-right">Amount per Unit</TableHead>
-                                      <TableHead className="text-right">Total Amount</TableHead>
-                                    </TableRow>
-                                  </TableHeader>
-                                  <TableBody>
+                                <div className="space-y-2">
+                                  <div className="text-sm font-semibold mb-3">Line Items ({doc.line_items.length})</div>
+                                  <div className="space-y-1.5">
                                     {doc.line_items.map((item, idx) => (
-                                      <TableRow key={idx}>
-                                        <TableCell className="text-sm">
+                                      <div key={idx} className="flex items-start justify-between text-sm py-1">
+                                        <div className="flex-1 pr-4">
                                           {item.description || item.product_name || '-'}
-                                        </TableCell>
-                                        <TableCell className="text-right text-sm">{item.quantity || '-'}</TableCell>
-                                        <TableCell className="text-right text-sm">
-                                          {item.unit_price ? `$${Number(item.unit_price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-'}
-                                        </TableCell>
-                                        <TableCell className="text-right text-sm font-medium">
-                                          {item.total_price ? `$${Number(item.total_price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-'}
-                                        </TableCell>
-                                      </TableRow>
+                                        </div>
+                                        <div className="text-right whitespace-nowrap">
+                                          <span className="text-muted-foreground">Qty: </span>
+                                          <span>{item.quantity || '-'}</span>
+                                          <span className="mx-1.5 text-muted-foreground">@</span>
+                                          <span>{item.unit_price ? Number(item.unit_price).toFixed(2) : '-'}</span>
+                                          <span className="ml-3 font-medium">
+                                            {item.total_price ? Number(item.total_price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}
+                                          </span>
+                                        </div>
+                                      </div>
                                     ))}
-                                  </TableBody>
-                                </Table>
+                                  </div>
+                                </div>
                               ) : (
                                 <div className="space-y-3">
+                                  <div className="text-sm font-semibold mb-2">Details</div>
                                   <div className="text-sm text-muted-foreground">No line items found for this document.</div>
                                   <div className="grid md:grid-cols-3 gap-4 text-sm">
                                     <div>
