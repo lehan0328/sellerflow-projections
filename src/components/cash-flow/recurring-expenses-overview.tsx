@@ -362,19 +362,13 @@ export const RecurringExpensesOverview = () => {
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="type">Type *</Label>
-            <Select
-              value={formData.type}
-              onValueChange={(value: 'income' | 'expense') => setFormData({ ...formData, type: value })}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="income">Income</SelectItem>
-                <SelectItem value="expense">Expense</SelectItem>
-              </SelectContent>
-            </Select>
+            <Label htmlFor="type">Type</Label>
+            <Input
+              id="type"
+              value={formData.type === 'income' ? 'Income' : 'Expense'}
+              disabled
+              className="bg-muted cursor-not-allowed capitalize"
+            />
           </div>
 
           <div>
