@@ -195,7 +195,7 @@ export default function AmazonForecast() {
       const results = [];
 
       for (const account of activeAccounts) {
-        const { data, error } = await supabase.functions.invoke("rollover-forecast", {
+        const { data, error } = await supabase.functions.invoke("handle-forecast-workflow", {
           body: {
             amazonAccountId: account.id,
             userId: user.id
@@ -203,20 +203,28 @@ export default function AmazonForecast() {
         });
 
         if (error) {
-          console.error(`Rollover error for ${account.account_name}:`, error);
+          console.error(`Workflow error for ${account.account_name}:`, error);
           results.push({ account: account.account_name, error: error.message });
-        } else if (data?.rolloverOccurred) {
+        } else if (data?.scenario === 'no_settlement' && data?.rolloverResult?.rolloverOccurred) {
+          // Rollover happened (Scenario 2)
           totalRollovers++;
           results.push({ 
             account: account.account_name, 
             rolled: true, 
-            message: data.message 
+            message: 'Forecast rolled over (no settlement detected)' 
+          });
+        } else if (data?.scenario === 'settlement_detected') {
+          // Settlement detected, forecasts regenerated (Scenario 1)
+          results.push({ 
+            account: account.account_name, 
+            rolled: false, 
+            message: 'Settlement detected - forecasts regenerated' 
           });
         } else {
           results.push({ 
             account: account.account_name, 
             rolled: false, 
-            message: data?.message 
+            message: data?.message || 'No action needed'
           });
         }
       }
