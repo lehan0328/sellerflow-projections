@@ -121,17 +121,26 @@ export default function DocumentStorage() {
 
       if (metadataError) throw metadataError;
 
-      // Try to fetch files from storage
+      // Try to fetch files from storage with pagination to avoid 100-item default limit
       let files: any[] = [];
       try {
-        const { data: storageFiles, error: filesError } = await supabase.storage
-          .from('purchase-orders')
-          .list(profile.account_id, {
-            sortBy: { column: 'created_at', order: 'desc' }
-          });
+        const pageSize = 1000;
+        let offset = 0;
+        while (true) {
+          const { data: storageFiles, error: filesError } = await supabase.storage
+            .from('purchase-orders')
+            .list(profile.account_id, {
+              limit: pageSize,
+              offset,
+              sortBy: { column: 'created_at', order: 'desc' }
+            });
 
-        if (!filesError && storageFiles) {
-          files = storageFiles;
+          if (filesError) break;
+          if (!storageFiles || storageFiles.length === 0) break;
+
+          files = files.concat(storageFiles);
+          if (storageFiles.length < pageSize) break;
+          offset += pageSize;
         }
       } catch (error) {
         console.warn('Could not fetch storage files:', error);
