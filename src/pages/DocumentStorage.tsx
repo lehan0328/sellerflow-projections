@@ -1075,7 +1075,7 @@ export default function DocumentStorage() {
                       <TableRow>
                         <TableCell colSpan={8} className="p-0 border-0">
                           <CollapsibleContent>
-                            <div className="px-4 py-4 bg-muted/30">
+                            <div className="py-4 bg-muted/30">
                               {doc.line_items && doc.line_items.length > 0 ? (
                                 <div className="space-y-2">
                                   <div className="text-sm font-semibold mb-3">Line Items ({doc.line_items.length})</div>
