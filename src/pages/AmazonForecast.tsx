@@ -60,6 +60,7 @@ export default function AmazonForecast() {
   const [showAllForecasts, setShowAllForecasts] = useState(false);
   const [chartType, setChartType] = useState<'bar' | 'line'>('bar');
   const [isDeletingSampleData, setIsDeletingSampleData] = useState(false);
+  const [isCheckingRollover, setIsCheckingRollover] = useState(false);
   const [growthTimeframe, setGrowthTimeframe] = useState<'30d' | '60d' | '90d' | '6m' | '1y'>('1y');
   const [avgPayoutPeriod, setAvgPayoutPeriod] = useState<string>(format(new Date(), 'yyyy-MM'));
 
@@ -171,6 +172,71 @@ export default function AmazonForecast() {
       toast.error(error.message || "Failed to delete sample data");
     } finally {
       setIsDeletingSampleData(false);
+    }
+  };
+
+  const checkRollover = async () => {
+    setIsCheckingRollover(true);
+    toast.loading("Checking for forecast rollovers...");
+    
+    try {
+      if (!user) throw new Error("Not authenticated");
+      
+      // Get active Amazon accounts
+      const activeAccounts = amazonAccounts.filter(acc => acc.is_active);
+      
+      if (activeAccounts.length === 0) {
+        toast.dismiss();
+        toast.info("No active Amazon accounts found");
+        return;
+      }
+
+      let totalRollovers = 0;
+      const results = [];
+
+      for (const account of activeAccounts) {
+        const { data, error } = await supabase.functions.invoke("rollover-forecast", {
+          body: {
+            amazonAccountId: account.id,
+            userId: user.id
+          }
+        });
+
+        if (error) {
+          console.error(`Rollover error for ${account.account_name}:`, error);
+          results.push({ account: account.account_name, error: error.message });
+        } else if (data?.rolloverOccurred) {
+          totalRollovers++;
+          results.push({ 
+            account: account.account_name, 
+            rolled: true, 
+            message: data.message 
+          });
+        } else {
+          results.push({ 
+            account: account.account_name, 
+            rolled: false, 
+            message: data?.message 
+          });
+        }
+      }
+
+      toast.dismiss();
+      
+      if (totalRollovers > 0) {
+        toast.success(`✅ Rolled over ${totalRollovers} forecast(s)! Refreshing...`);
+        setTimeout(() => window.location.reload(), 1500);
+      } else {
+        toast.info("No forecasts needed rollover");
+      }
+      
+      console.log('Rollover results:', results);
+    } catch (error: any) {
+      console.error("Rollover error:", error);
+      toast.dismiss();
+      toast.error(error.message || "Failed to check rollovers");
+    } finally {
+      setIsCheckingRollover(false);
     }
   };
 
@@ -422,17 +488,28 @@ export default function AmazonForecast() {
             <CardTitle>Overview Metrics</CardTitle>
             <CardDescription>Key performance indicators for your Amazon payouts</CardDescription>
           </div>
-          {amazonPayouts.some(p => p.marketplace_name === 'Amazon.com') && (
+          <div className="flex gap-2">
             <Button 
-              onClick={deleteSampleData} 
-              disabled={isDeletingSampleData}
+              onClick={checkRollover} 
+              disabled={isCheckingRollover}
               variant="outline"
               size="sm"
-              className="border-red-300 text-red-700 hover:bg-red-50"
+              className="border-blue-300 text-blue-700 hover:bg-blue-50"
             >
-              {isDeletingSampleData ? 'Deleting...' : 'Delete Sample Data'}
+              {isCheckingRollover ? 'Checking...' : 'Check Rollovers'}
             </Button>
-          )}
+            {amazonPayouts.some(p => p.marketplace_name === 'Amazon.com') && (
+              <Button 
+                onClick={deleteSampleData} 
+                disabled={isDeletingSampleData}
+                variant="outline"
+                size="sm"
+                className="border-red-300 text-red-700 hover:bg-red-50"
+              >
+                {isDeletingSampleData ? 'Deleting...' : 'Delete Sample Data'}
+              </Button>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-4">
