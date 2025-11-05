@@ -203,24 +203,14 @@ export const RecurringExpensesOverview = () => {
               <Repeat className="h-5 w-5" />
               Recurring Transactions
             </CardTitle>
-            <div className="flex items-center gap-2">
-              <Button 
-                variant="ghost" 
-                size="sm"
-                onClick={() => setShowInactive(!showInactive)}
-              >
-                <Filter className="h-4 w-4 mr-1" />
-                {showInactive ? 'Hide' : 'Show'} Inactive
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => navigate('/dashboard?view=settings&section=recurring-expenses')}
-              >
-                <Plus className="h-4 w-4 mr-1" />
-                Add New
-              </Button>
-            </div>
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => setShowInactive(!showInactive)}
+            >
+              <Filter className="h-4 w-4 mr-1" />
+              {showInactive ? 'Hide' : 'Show'} Inactive
+            </Button>
           </div>
           
           <div className="flex items-center gap-4 flex-wrap">
