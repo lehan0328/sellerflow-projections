@@ -931,66 +931,66 @@ export default function DocumentStorage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Vendor</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Document Date</TableHead>
-                    <TableHead>Size</TableHead>
-                    <TableHead>Uploaded</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead className="w-[280px]">Name</TableHead>
+                    <TableHead className="w-[120px]">Type</TableHead>
+                    <TableHead className="w-[150px]">Vendor</TableHead>
+                    <TableHead className="w-[120px]">Amount</TableHead>
+                    <TableHead className="w-[130px]">Document Date</TableHead>
+                    <TableHead className="w-[100px]">Size</TableHead>
+                    <TableHead className="w-[160px]">Uploaded</TableHead>
+                    <TableHead className="w-[180px] text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredDocuments.map((doc) => (
                     <Collapsible key={doc.id}>
                       <TableRow>
-                        <TableCell className="font-medium">
+                        <TableCell className="font-medium w-[280px]">
                           <div className="flex items-center space-x-2">
-                            <FileText className="h-4 w-4 text-muted-foreground" />
+                            <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                             <span 
-                              className="cursor-pointer hover:text-primary transition-colors"
+                              className="cursor-pointer hover:text-primary transition-colors truncate"
                               onClick={() => setEditingDoc(doc)}
                               title="Click to edit document name"
                             >
                               {doc.display_name || doc.name}
                             </span>
                             {!(doc as any).storage_exists && (
-                              <Badge variant="destructive" className="text-xs ml-2">
+                              <Badge variant="destructive" className="text-xs ml-2 flex-shrink-0">
                                 Missing File
                               </Badge>
                             )}
                             {(doc as any).untracked && (
-                              <Badge variant="secondary" className="text-xs ml-2">
+                              <Badge variant="secondary" className="text-xs ml-2 flex-shrink-0">
                                 Untracked
                               </Badge>
                             )}
                             <CollapsibleTrigger asChild>
-                              <Button variant="ghost" size="sm" className="h-6 w-6 p-0" aria-label="Toggle document details">
+                              <Button variant="ghost" size="sm" className="h-6 w-6 p-0 flex-shrink-0" aria-label="Toggle document details">
                                 <ChevronDown className="h-4 w-4" />
                               </Button>
                             </CollapsibleTrigger>
                           </div>
                         </TableCell>
-                        <TableCell className="text-sm">
+                        <TableCell className="text-sm w-[120px]">
                           {doc.document_type ? (
                             <span className="capitalize">{doc.document_type.replace('_', ' ')}</span>
                           ) : (
                             <span className="text-muted-foreground">-</span>
                           )}
                         </TableCell>
-                        <TableCell className="text-sm">
+                        <TableCell className="text-sm w-[150px]">
                           {doc.vendor_name || <span className="text-muted-foreground">-</span>}
                         </TableCell>
-                        <TableCell className="text-sm font-medium">
+                        <TableCell className="text-sm font-medium w-[120px]">
                           {doc.amount ? `$${doc.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : <span className="text-muted-foreground">-</span>}
                         </TableCell>
-                        <TableCell className="text-sm">
+                        <TableCell className="text-sm w-[130px]">
                           {doc.document_date ? format(new Date(doc.document_date), "MMM dd, yyyy") : <span className="text-muted-foreground">-</span>}
                         </TableCell>
-                        <TableCell>{formatFileSize((doc as any).file_size || 0)}</TableCell>
-                        <TableCell>{formatDate(doc.created_at)}</TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="w-[100px]">{formatFileSize((doc as any).file_size || 0)}</TableCell>
+                        <TableCell className="w-[160px]">{formatDate(doc.created_at)}</TableCell>
+                        <TableCell className="text-right w-[180px]">
                           <div className="flex justify-end space-x-2">
                             {doc.document_type === 'purchase_order' && (
                               <>
