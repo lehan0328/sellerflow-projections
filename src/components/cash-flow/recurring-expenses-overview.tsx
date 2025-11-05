@@ -389,16 +389,6 @@ export const RecurringExpensesOverview = () => {
           </div>
 
           <div>
-            <Label htmlFor="transaction_name">Transaction Name</Label>
-            <Input
-              id="transaction_name"
-              value={formData.transaction_name}
-              onChange={(e) => setFormData({ ...formData, transaction_name: e.target.value })}
-              placeholder="e.g., Monthly Office Rent Payment"
-            />
-          </div>
-
-          <div>
             <Label htmlFor="amount">Amount *</Label>
             <Input
               id="amount"
