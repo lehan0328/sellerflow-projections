@@ -579,7 +579,9 @@ export const IncomeForm = ({
         onAddCategory={async (name) => {
           const addFn = formData.type === "income" ? addIncomeCategory : addExpenseCategory;
           await addFn(name, isRecurring);
-          handleInputChange("category", name);
+          // Capitalize first letter to match what's saved in the database
+          const capitalizedName = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+          handleInputChange("category", capitalizedName);
         }}
         type={formData.type}
       />

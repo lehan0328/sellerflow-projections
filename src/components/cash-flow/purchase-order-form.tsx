@@ -1247,9 +1247,11 @@ export const PurchaseOrderForm = ({
     onAddCategory={async (name) => {
       await addCategory(name);
       await refetchCategories();
+      // Capitalize first letter to match what's saved in the database
+      const capitalizedName = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
       setFormData(prev => ({
         ...prev,
-        category: name
+        category: capitalizedName
       }));
     }}
     type="expense"

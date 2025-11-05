@@ -456,7 +456,9 @@ export const SalesOrderForm = ({ open, onOpenChange, customers, onSubmitOrder }:
         onOpenChange={setShowAddCategory}
         onAddCategory={async (name) => {
           await addCategory(name);
-          handleInputChange("category", name);
+          // Capitalize first letter to match what's saved in the database
+          const capitalizedName = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+          handleInputChange("category", capitalizedName);
         }}
         type="income"
       />
