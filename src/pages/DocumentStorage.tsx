@@ -123,31 +123,29 @@ export default function DocumentStorage() {
 
       if (metadataError) throw metadataError;
 
-      // Optionally fetch files from storage (heavy) only when including untracked files
+      // Always fetch storage files to verify existence
       let files: any[] = [];
-      if (includeUntracked) {
-        try {
-          const pageSize = 1000;
-          let offset = 0;
-          while (true) {
-            const { data: storageFiles, error: filesError } = await supabase.storage
-              .from('purchase-orders')
-              .list(profile.account_id, {
-                limit: pageSize,
-                offset,
-                sortBy: { column: 'created_at', order: 'desc' }
-              });
+      try {
+        const pageSize = 1000;
+        let offset = 0;
+        while (true) {
+          const { data: storageFiles, error: filesError } = await supabase.storage
+            .from('purchase-orders')
+            .list(profile.account_id, {
+              limit: pageSize,
+              offset,
+              sortBy: { column: 'created_at', order: 'desc' }
+            });
 
-            if (filesError) break;
-            if (!storageFiles || storageFiles.length === 0) break;
+          if (filesError) break;
+          if (!storageFiles || storageFiles.length === 0) break;
 
-            files = files.concat(storageFiles);
-            if (storageFiles.length < pageSize) break;
-            offset += pageSize;
-          }
-        } catch (error) {
-          console.warn('Could not fetch storage files:', error);
+          files = files.concat(storageFiles);
+          if (storageFiles.length < pageSize) break;
+          offset += pageSize;
         }
+      } catch (error) {
+        console.warn('Could not fetch storage files:', error);
       }
 
       // Create a map of storage files for quick lookup
