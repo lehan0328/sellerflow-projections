@@ -987,8 +987,8 @@ export default function DocumentStorage() {
                               </Badge>
                             )}
                             <CollapsibleTrigger asChild>
-                              <Button variant="ghost" size="sm" className="h-6 w-6 p-0 flex-shrink-0" aria-label="Toggle document details">
-                                <ChevronDown className="h-4 w-4" />
+                              <Button variant="ghost" size="sm" className="h-6 w-6 p-0 flex-shrink-0 group" aria-label="Toggle document details">
+                                <ChevronDown className="h-4 w-4 transition-transform group-data-[state=open]:rotate-180" />
                               </Button>
                             </CollapsibleTrigger>
                           </div>
@@ -1075,7 +1075,7 @@ export default function DocumentStorage() {
                       <TableRow>
                         <TableCell colSpan={8} className="p-0 border-0">
                           <CollapsibleContent>
-                            <div className="py-4 bg-muted/30">
+                            <div className="w-full py-4 bg-muted/30">
                               {doc.line_items && doc.line_items.length > 0 ? (
                                 <div className="space-y-2 px-4">
                                   <div className="text-sm font-semibold mb-3">Line Items ({doc.line_items.length})</div>
