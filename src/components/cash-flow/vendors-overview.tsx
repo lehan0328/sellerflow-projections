@@ -25,7 +25,7 @@ import { toast } from "sonner";
 import * as React from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { calculateSimilarity } from "@/lib/similarityUtils";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+
 
 interface VendorsOverviewProps {
   bankTransactions?: BankTransaction[];
@@ -786,8 +786,8 @@ export const VendorsOverview = ({
                               </div>
                               <div className="space-y-2">
                                 {matchingPOsByTransaction[tx.id].map((matchingPO) => (
-                                  <Collapsible key={matchingPO.id}>
-                                    <div className="flex items-start justify-between p-3 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors">
+                                  <div key={matchingPO.id} className="p-3 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors">
+                                    <div className="flex items-start justify-between">
                                       <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-2 mb-1">
                                           <span className="font-medium text-sm truncate">
@@ -802,34 +802,26 @@ export const VendorsOverview = ({
                                           <span>•</span>
                                           <span>{new Date(matchingPO.due_date).toLocaleDateString()}</span>
                                         </div>
-                                        <CollapsibleTrigger asChild>
-                                          <Button variant="ghost" size="sm" className="h-6 text-xs px-2">
-                                            <ChevronRight className="h-3 w-3 mr-1" />
-                                            View {matchingPO.matching_items.length} matching item{matchingPO.matching_items.length !== 1 ? 's' : ''}
-                                          </Button>
-                                        </CollapsibleTrigger>
+                                        <div className="flex flex-col gap-1 mt-2">
+                                          {matchingPO.matching_items.slice(0, 3).map((item, idx) => (
+                                            <div key={idx} className="text-xs flex items-center gap-2">
+                                              <Badge variant="secondary" className="text-xs">
+                                                {item.similarity}%
+                                              </Badge>
+                                              <span className="text-muted-foreground">
+                                                {item.description}
+                                              </span>
+                                            </div>
+                                          ))}
+                                          {matchingPO.matching_items.length > 3 && (
+                                            <span className="text-xs text-muted-foreground">
+                                              +{matchingPO.matching_items.length - 3} more items
+                                            </span>
+                                          )}
+                                        </div>
                                       </div>
                                     </div>
-                                    <CollapsibleContent className="mt-2 ml-3">
-                                      <div className="flex flex-col gap-1 pl-3 border-l-2 border-muted">
-                                        {matchingPO.matching_items.slice(0, 5).map((item, idx) => (
-                                          <div key={idx} className="text-xs flex items-center gap-2 py-1">
-                                            <Badge variant="secondary" className="text-xs">
-                                              {item.similarity}%
-                                            </Badge>
-                                            <span className="text-muted-foreground">
-                                              {item.description}
-                                            </span>
-                                          </div>
-                                        ))}
-                                        {matchingPO.matching_items.length > 5 && (
-                                          <span className="text-xs text-muted-foreground pl-1">
-                                            +{matchingPO.matching_items.length - 5} more
-                                          </span>
-                                        )}
-                                      </div>
-                                    </CollapsibleContent>
-                                  </Collapsible>
+                                  </div>
                                 ))}
                               </div>
                             </div>
