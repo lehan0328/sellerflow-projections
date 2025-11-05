@@ -2,7 +2,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Calendar, DollarSign, Building2, CreditCard, ShoppingCart, Wallet, Clock, FileText } from "lucide-react";
+import { Calendar, DollarSign, Building2, CreditCard, ShoppingCart, Wallet, FileText } from "lucide-react";
 import { format } from "date-fns";
 
 interface CashFlowEvent {
@@ -169,12 +169,6 @@ export const DayTransactionsModal = ({ transactions, date, open, onOpenChange }:
                       <span className="text-sm font-medium">{transaction.creditCard}</span>
                     </div>
                   )}
-
-                  <div className="flex items-center space-x-2">
-                    <Clock className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">Time: </span>
-                    <span className="text-sm font-medium">{format(transaction.date, 'p')}</span>
-                  </div>
                 </div>
 
                 {index < transactions.length - 1 && <Separator className="mt-3" />}
