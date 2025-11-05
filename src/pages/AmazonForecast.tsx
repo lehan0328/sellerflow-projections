@@ -62,7 +62,7 @@ export default function AmazonForecast() {
   const [isDeletingSampleData, setIsDeletingSampleData] = useState(false);
   const [isCheckingRollover, setIsCheckingRollover] = useState(false);
   const [growthTimeframe, setGrowthTimeframe] = useState<'30d' | '60d' | '90d' | '6m' | '1y'>('1y');
-  const [avgPayoutPeriod, setAvgPayoutPeriod] = useState<string>('12-months'); // Default to 12 months, not current month
+  const [avgPayoutPeriod, setAvgPayoutPeriod] = useState<string>(format(new Date(), 'yyyy-MM')); // Current month
 
   // Check if user has 3+ confirmed payouts
   const confirmedPayouts = amazonPayouts.filter(p => p.status === 'confirmed');
@@ -581,7 +581,20 @@ export default function AmazonForecast() {
             <div className="bg-background rounded-lg border p-4">
               <div className="flex items-center justify-between space-y-0 pb-2">
                 <div className="flex items-center gap-2">
-                  <p className="text-sm font-medium">Avg Daily Payout</p>
+                  <p className="text-sm font-medium">Avg Daily Revenue</p>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-xs">
+                        <p className="text-sm">
+                          Total payouts in period ÷ total days in period. 
+                          {avgPayoutPeriod !== '12-months' && ' Example: $11,218 in November ÷ 30 days = $374/day'}
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                   <Select value={avgPayoutPeriod} onValueChange={setAvgPayoutPeriod}>
                     <SelectTrigger className="h-7 w-[120px] text-xs">
                       <SelectValue />
