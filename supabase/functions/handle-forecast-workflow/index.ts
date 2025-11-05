@@ -56,25 +56,32 @@ serve(async (req) => {
           const settlementEnd = settlement.raw_settlement_data?.FinancialEventGroupEnd;
           
           if (settlementEnd) {
-            const endDate = new Date(settlementEnd);
-            const endDateStr = endDate.toISOString().split('T')[0];
+            // Convert UTC timestamp to EST date
+            const endDateUTC = new Date(settlementEnd);
+            const estOffset = -5 * 60; // EST is UTC-5
+            const endDateEST = new Date(endDateUTC.getTime() + estOffset * 60 * 1000);
+            const endDateStr = endDateEST.toISOString().split('T')[0]; // Now in EST
             
             // Check settlement duration (exclude 14-day invoiced settlements)
             const settlementStart = settlement.raw_settlement_data?.FinancialEventGroupStart;
             let isDailySettlement = true;
             
             if (settlementStart) {
-              const startDate = new Date(settlementStart);
-              const durationDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+              // Also convert start date to EST
+              const startDateUTC = new Date(settlementStart);
+              const startDateEST = new Date(startDateUTC.getTime() + estOffset * 60 * 1000);
+              const startDateStr = startDateEST.toISOString().split('T')[0];
+              
+              const durationDays = Math.ceil((endDateEST.getTime() - startDateEST.getTime()) / (1000 * 60 * 60 * 24));
               isDailySettlement = durationDays <= 3;
               
-              console.log(`[WORKFLOW] Settlement ${settlement.id}: closed=${endDateStr}, duration=${durationDays}d, payout=${settlement.payout_date}`);
+              console.log(`[WORKFLOW] Settlement ${settlement.id}: closed=${endDateStr} EST (was ${endDateUTC.toISOString().split('T')[0]} UTC), period=${startDateStr} to ${endDateStr}, duration=${durationDays}d, payout=${settlement.payout_date}`);
             }
             
-            // Found a daily settlement that closed yesterday
+            // Found a daily settlement that closed yesterday (EST)
             if (endDateStr === yesterdayStr && isDailySettlement) {
               settlementClosedYesterday = settlement;
-              console.log(`[WORKFLOW] ✅ Found settlement closed yesterday: ${settlement.id}`);
+              console.log(`[WORKFLOW] ✅ Found settlement closed yesterday (EST): ${settlement.id}`);
               break;
             }
           }
