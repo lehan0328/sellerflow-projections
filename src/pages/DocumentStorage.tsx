@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Upload, FileText, Download, Trash2, Search, Calendar as CalendarIcon, Plus, Loader2, RefreshCw, Edit, HardDrive, ChevronDown } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
@@ -195,7 +195,41 @@ export default function DocumentStorage() {
     },
     enabled: !!profile?.account_id,
     staleTime: 0, // Always refetch when query is invalidated
+    refetchInterval: 30000, // Periodic refresh for eventual consistency
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
   });
+
+  // Realtime updates: refresh when metadata or storage objects change
+  useEffect(() => {
+    if (!profile?.account_id) return;
+    const channel = supabase
+      .channel('document-storage-realtime')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'documents_metadata',
+        filter: `account_id=eq.${profile.account_id}`
+      }, () => {
+        queryClient.invalidateQueries({ queryKey: ['documents', profile.account_id] });
+      })
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'storage',
+        table: 'objects',
+        filter: 'bucket_id=eq.purchase-orders'
+      }, (payload) => {
+        const objectName = (payload.new as any)?.name || (payload.old as any)?.name || '';
+        if (typeof objectName === 'string' && objectName.startsWith(`${profile.account_id}/`)) {
+          queryClient.invalidateQueries({ queryKey: ['documents', profile.account_id] });
+        }
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [profile?.account_id, queryClient]);
 
   // Calculate total storage used
   const totalStorageUsed = useMemo(() => {
