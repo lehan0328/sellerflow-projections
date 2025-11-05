@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -74,6 +75,7 @@ export default function DocumentStorage() {
   const [showNewCustomerDialog, setShowNewCustomerDialog] = useState(false);
   const [newCustomerName, setNewCustomerName] = useState("");
   const [replacingDocument, setReplacingDocument] = useState<string | null>(null);
+  const [includeUntracked, setIncludeUntracked] = useState(false);
 
   // Storage limit: 2GB
   const STORAGE_LIMIT_BYTES = 2 * 1024 * 1024 * 1024; // 2GB in bytes
@@ -99,7 +101,7 @@ export default function DocumentStorage() {
 
   // Fetch documents with metadata
   const { data: documents, isLoading, refetch } = useQuery({
-    queryKey: ['documents', profile?.account_id],
+    queryKey: ['documents', profile?.account_id, includeUntracked],
     queryFn: async () => {
       if (!profile?.account_id) return [];
       
@@ -121,29 +123,31 @@ export default function DocumentStorage() {
 
       if (metadataError) throw metadataError;
 
-      // Try to fetch files from storage with pagination to avoid 100-item default limit
+      // Optionally fetch files from storage (heavy) only when including untracked files
       let files: any[] = [];
-      try {
-        const pageSize = 1000;
-        let offset = 0;
-        while (true) {
-          const { data: storageFiles, error: filesError } = await supabase.storage
-            .from('purchase-orders')
-            .list(profile.account_id, {
-              limit: pageSize,
-              offset,
-              sortBy: { column: 'created_at', order: 'desc' }
-            });
+      if (includeUntracked) {
+        try {
+          const pageSize = 1000;
+          let offset = 0;
+          while (true) {
+            const { data: storageFiles, error: filesError } = await supabase.storage
+              .from('purchase-orders')
+              .list(profile.account_id, {
+                limit: pageSize,
+                offset,
+                sortBy: { column: 'created_at', order: 'desc' }
+              });
 
-          if (filesError) break;
-          if (!storageFiles || storageFiles.length === 0) break;
+            if (filesError) break;
+            if (!storageFiles || storageFiles.length === 0) break;
 
-          files = files.concat(storageFiles);
-          if (storageFiles.length < pageSize) break;
-          offset += pageSize;
+            files = files.concat(storageFiles);
+            if (storageFiles.length < pageSize) break;
+            offset += pageSize;
+          }
+        } catch (error) {
+          console.warn('Could not fetch storage files:', error);
         }
-      } catch (error) {
-        console.warn('Could not fetch storage files:', error);
       }
 
       // Create a map of storage files for quick lookup
@@ -173,33 +177,35 @@ export default function DocumentStorage() {
         } as StoredDocument & { storage_exists: boolean; storage_file?: any; file_size: number };
       });
 
-      const metaNames = new Set(docsFromMeta.map(d => d.name));
+      // Add storage-only files that don't have metadata rows yet (optional)
+      const untrackedFromStorage = includeUntracked ? (
+        files
+          .filter(f => !metaNames.has(f.name))
+          .map(f => ({
+            id: `storage-${f.name}`,
+            name: f.name,
+            created_at: (f as any).created_at || new Date().toISOString(),
+            metadata: f.metadata || {},
+            vendor_id: undefined,
+            vendor_name: undefined,
+            notes: undefined,
+            document_date: undefined,
+            display_name: f.name,
+            amount: undefined,
+            description: undefined,
+            document_type: undefined,
+            file_path: `${profile.account_id}/${f.name}`,
+            storage_exists: true,
+            storage_file: f,
+            file_size: f.metadata?.size || 0,
+            line_items: [],
+            untracked: true
+          }))
+      ) : [] as any[];
 
-      // Add storage-only files that don't have metadata rows yet
-      const untrackedFromStorage = files
-        .filter(f => !metaNames.has(f.name))
-        .map(f => ({
-          id: `storage-${f.name}`,
-          name: f.name,
-          created_at: (f as any).created_at || new Date().toISOString(),
-          metadata: f.metadata || {},
-          vendor_id: undefined,
-          vendor_name: undefined,
-          notes: undefined,
-          document_date: undefined,
-          display_name: f.name,
-          amount: undefined,
-          description: undefined,
-          document_type: undefined,
-          file_path: `${profile.account_id}/${f.name}`,
-          storage_exists: true,
-          storage_file: f,
-          file_size: f.metadata?.size || 0,
-          line_items: [],
-          untracked: true
-        })) as Array<StoredDocument & { storage_exists: boolean; storage_file?: any; file_size: number }>;
+      const allDocs = includeUntracked ? [...docsFromMeta, ...untrackedFromStorage] : docsFromMeta;
 
-      return [...docsFromMeta, ...untrackedFromStorage]
+      return allDocs
         .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     },
     enabled: !!profile?.account_id,
@@ -909,6 +915,11 @@ export default function DocumentStorage() {
                     className="w-full pl-9"
                   />
                 </div>
+
+                <div className="flex items-center gap-2 pl-1">
+                  <Switch id="toggle-untracked" checked={includeUntracked} onCheckedChange={setIncludeUntracked} />
+                  <Label htmlFor="toggle-untracked" className="text-sm text-muted-foreground">Include untracked files</Label>
+                </div>
               </div>
             </div>
           </CardHeader>
@@ -928,7 +939,17 @@ export default function DocumentStorage() {
                 </p>
               </div>
             ) : (
-              <Table>
+              <Table className="table-fixed w-full">
+                <colgroup>
+                  <col style={{ width: '280px' }} />
+                  <col style={{ width: '120px' }} />
+                  <col style={{ width: '150px' }} />
+                  <col style={{ width: '120px' }} />
+                  <col style={{ width: '130px' }} />
+                  <col style={{ width: '100px' }} />
+                  <col style={{ width: '160px' }} />
+                  <col style={{ width: '180px' }} />
+                </colgroup>
                 <TableHeader>
                   <TableRow className="bg-background border-b hover:bg-background">
                     <TableHead className="w-[280px] bg-background font-semibold">Name</TableHead>
@@ -944,7 +965,7 @@ export default function DocumentStorage() {
                 <TableBody>
                   {filteredDocuments.map((doc) => (
                     <Collapsible key={doc.id}>
-                      <TableRow>
+                      <TableRow className="align-top">
                         <TableCell className="font-medium w-[280px]">
                           <div className="flex items-center space-x-2">
                             <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
@@ -972,9 +993,6 @@ export default function DocumentStorage() {
                             </CollapsibleTrigger>
                           </div>
                         </TableCell>
-                        <TableCell className="text-sm w-[120px]">
-                          {doc.document_type ? (
-                            <span className="capitalize">{doc.document_type.replace('_', ' ')}</span>
                           ) : (
                             <span className="text-muted-foreground">-</span>
                           )}
@@ -1051,7 +1069,6 @@ export default function DocumentStorage() {
                           </div>
                         </TableCell>
                       </TableRow>
-                        <TableRow>
                           <TableCell colSpan={8} className="p-0 border-0">
                             <CollapsibleContent>
                               <div className="px-4 py-3 bg-muted/30">
@@ -1110,8 +1127,6 @@ export default function DocumentStorage() {
                             </CollapsibleContent>
                           </TableCell>
                         </TableRow>
-                    </Collapsible>
-                  ))}
                 </TableBody>
               </Table>
             )}
