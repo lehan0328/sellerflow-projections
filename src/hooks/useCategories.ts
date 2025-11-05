@@ -50,18 +50,13 @@ export function useCategories(type: 'expense' | 'income', isRecurring?: boolean)
       if (error) throw error;
       
       // Deduplicate by NAME (case-insensitive) for the same account
-      let uniqueCategories = (data || []).reduce((acc, category) => {
+      const uniqueCategories = (data || []).reduce((acc, category) => {
         const normalizedName = category.name.toLowerCase().trim();
         if (!acc.find(c => c.name.toLowerCase().trim() === normalizedName)) {
           acc.push(category as Category);
         }
         return acc;
       }, [] as Category[]);
-      
-      // Filter out default categories for recurring transactions
-      if (isRecurring === true) {
-        uniqueCategories = uniqueCategories.filter(cat => !cat.is_default);
-      }
       
       console.log('[Categories] Type:', type, 'Recurring:', recurringFilter, 'Account:', profile.account_id, 'Fetched:', uniqueCategories.length);
       setCategories(uniqueCategories);
