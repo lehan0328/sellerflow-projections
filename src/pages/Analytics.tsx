@@ -24,7 +24,7 @@ import {
   AlertTriangle,
   Target,
   BarChart3,
-  Activity
+  Hash
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -136,7 +136,7 @@ export default function Analytics() {
   const defaultEndDate = new Date(now.getFullYear(), now.getMonth() + 3, 0);
   
   const [vendorDateRange, setVendorDateRange] = useState<string>("this-month");
-  const [vendorViewType, setVendorViewType] = useState<"chart" | "numbers">("chart");
+  const [vendorViewType, setVendorViewType] = useState<"chart" | "numbers">("numbers");
   const [incomeDateRange, setIncomeDateRange] = useState<string>("this-month");
   const [customStartDate, setCustomStartDate] = useState<Date>(defaultStartDate);
   const [customEndDate, setCustomEndDate] = useState<Date>(defaultEndDate);
@@ -692,7 +692,7 @@ export default function Analytics() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Net Cash Flow</CardTitle>
-            <Activity className="h-4 w-4 text-primary" />
+            <TrendingUp className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
             <div className={`text-2xl font-bold ${metrics.netCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
@@ -864,7 +864,7 @@ export default function Analytics() {
                       <BarChart3 className="h-4 w-4" />
                     </ToggleGroupItem>
                     <ToggleGroupItem value="numbers" aria-label="Numbers view">
-                      <Activity className="h-4 w-4" />
+                      <Hash className="h-4 w-4" />
                     </ToggleGroupItem>
                   </ToggleGroup>
                   <Select value={vendorDateRange} onValueChange={setVendorDateRange}>
@@ -1030,7 +1030,7 @@ export default function Analytics() {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="flex items-center gap-2">
-                    <Activity className="h-4 w-4 text-purple-600" />
+                    <Calculator className="h-4 w-4 text-purple-600" />
                     Recurring Expenses by Category
                   </CardTitle>
                   <Select value={vendorDateRange} onValueChange={setVendorDateRange}>
@@ -1189,7 +1189,7 @@ export default function Analytics() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Total Recurring (Monthly)</CardTitle>
-                <Activity className="h-4 w-4 text-blue-600" />
+                <Calculator className="h-4 w-4 text-blue-600" />
               </CardHeader>
               <CardContent>
                 <div className="space-y-1">
