@@ -198,15 +198,13 @@ export function CategoryManagement() {
                     className="flex items-center justify-between p-3 rounded-lg border bg-card min-h-[52px]"
                   >
                     <span className="text-sm font-medium">{category.name}</span>
-                    {!category.is_default && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleDeleteClick(category.id, category.name, 'expense', true)}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    )}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleDeleteClick(category.id, category.name, 'expense', true)}
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
                   </div>
                 ))
               )}
@@ -240,15 +238,13 @@ export function CategoryManagement() {
                     className="flex items-center justify-between p-3 rounded-lg border bg-card min-h-[52px]"
                   >
                     <span className="text-sm font-medium">{category.name}</span>
-                    {!category.is_default && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleDeleteClick(category.id, category.name, 'income', true)}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    )}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleDeleteClick(category.id, category.name, 'income', true)}
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
                   </div>
                 ))
               )}

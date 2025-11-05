@@ -90,8 +90,9 @@ export function useCategories(type: 'expense' | 'income', isRecurring?: boolean)
         accountId: profile?.account_id 
       });
 
-      // Trim and normalize the name
+      // Trim, capitalize first letter, lowercase rest
       const normalizedName = name.trim();
+      const capitalizedName = normalizedName.charAt(0).toUpperCase() + normalizedName.slice(1).toLowerCase();
       
       // Check if category already exists (case-insensitive)
       const { data: existing } = await supabase
@@ -116,7 +117,7 @@ export function useCategories(type: 'expense' | 'income', isRecurring?: boolean)
         .insert({
           user_id: user.id,
           account_id: profile?.account_id,
-          name: normalizedName,
+          name: capitalizedName,
           type,
           is_default: false,
           is_recurring: recurring,
@@ -144,7 +145,7 @@ export function useCategories(type: 'expense' | 'income', isRecurring?: boolean)
 
       toast({
         title: "Success",
-        description: `Category "${normalizedName}" added successfully`,
+        description: `Category "${capitalizedName}" added successfully`,
       });
 
       // Optimistically add to local state so UIs reflect it immediately
