@@ -408,9 +408,9 @@ export const RecurringExpensesOverview = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="daily">Daily</SelectItem>
+                <SelectItem value="weekdays">Weekdays (Mon-Fri)</SelectItem>
                 <SelectItem value="weekly">Weekly</SelectItem>
                 <SelectItem value="bi-weekly">Bi-Weekly (Every 2 weeks)</SelectItem>
-                <SelectItem value="weekdays">Weekdays (Mon-Fri)</SelectItem>
                 <SelectItem value="monthly">Monthly</SelectItem>
                 <SelectItem value="2-months">Every 2 Months</SelectItem>
                 <SelectItem value="3-months">Every 3 Months</SelectItem>
