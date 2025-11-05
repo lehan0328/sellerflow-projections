@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useTheme } from "next-themes";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -104,6 +105,7 @@ const Dashboard = () => {
     return state?.activeSection || "overview";
   });
   const [settingsSection, setSettingsSection] = useState("profile");
+  const [profilesTab, setProfilesTab] = useState<'vendors' | 'customers'>('vendors');
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [companyName, setCompanyName] = useState('');
@@ -2904,6 +2906,32 @@ const Dashboard = () => {
       
       case "team-management":
         return <TeamManagement />;
+      
+      case "profiles":
+        return (
+          <div className="space-y-6">
+            <Tabs value={profilesTab} onValueChange={(value) => setProfilesTab(value as 'vendors' | 'customers')}>
+              <TabsList className="grid w-full max-w-md grid-cols-2">
+                <TabsTrigger value="vendors" className="gap-2">
+                  <TrendingDown className="h-4 w-4" />
+                  Vendors
+                </TabsTrigger>
+                <TabsTrigger value="customers" className="gap-2">
+                  <Users className="h-4 w-4" />
+                  Customers
+                </TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="vendors" className="mt-6">
+                <VendorManagement />
+              </TabsContent>
+              
+              <TabsContent value="customers" className="mt-6">
+                <CustomerManagement />
+              </TabsContent>
+            </Tabs>
+          </div>
+        );
       
       case "vendors":
         return <VendorManagement />;

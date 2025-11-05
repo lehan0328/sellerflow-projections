@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import { Home, TrendingUp, TrendingDown, CreditCard, Repeat, Wallet, Users, Calculator, BarChart3, FolderOpen, MessageSquare, Calendar, FileBarChart, Building2, Brain, Bell, Clock, Link2, Lock, Sparkles, Settings, ShoppingCart, BookOpen } from "lucide-react";
+import { Home, TrendingUp, CreditCard, Repeat, Wallet, Users, Calculator, BarChart3, FolderOpen, MessageSquare, Calendar, FileBarChart, Building2, Brain, Bell, Clock, Link2, Lock, Sparkles, Settings, ShoppingCart, BookOpen } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useSupportMessageCount } from "@/hooks/useSupportMessageCount";
@@ -38,12 +38,8 @@ const overviewSections = [{
   icon: Calculator
 }];
 const transactionSections = [{
-  id: "vendors",
-  title: "Vendors",
-  icon: TrendingDown
-}, {
-  id: "customers",
-  title: "Customers",
+  id: "profiles",
+  title: "Profiles",
   icon: Users
 }, {
   id: "transactions",
