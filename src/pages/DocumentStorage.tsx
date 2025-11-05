@@ -953,7 +953,7 @@ export default function DocumentStorage() {
                 <TableHeader>
                   <TableRow className="bg-background border-b hover:bg-background">
                     <TableHead className="bg-background font-semibold px-4 py-3">Name</TableHead>
-                    <TableHead className="bg-background font-semibold px-4 py-3">Type</TableHead>
+                    <TableHead className="bg-background font-semibold px-4 py-3 text-left">Type</TableHead>
                     <TableHead className="bg-background font-semibold px-4 py-3">Vendor</TableHead>
                     <TableHead className="bg-background font-semibold px-4 py-3">Amount</TableHead>
                     <TableHead className="bg-background font-semibold px-4 py-3">Document Date</TableHead>
@@ -993,7 +993,7 @@ export default function DocumentStorage() {
                             </CollapsibleTrigger>
                           </div>
                         </TableCell>
-                        <TableCell className="text-sm px-4 py-3">
+                        <TableCell className="text-sm px-4 py-3 text-left">
                           {doc.document_type ? (
                             <span className="capitalize">{doc.document_type.replace('_', ' ')}</span>
                           ) : (
