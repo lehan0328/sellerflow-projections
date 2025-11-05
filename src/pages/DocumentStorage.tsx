@@ -954,21 +954,21 @@ export default function DocumentStorage() {
                 </colgroup>
                 <TableHeader>
                   <TableRow className="bg-background border-b hover:bg-background">
-                    <TableHead className="w-[280px] bg-background font-semibold">Name</TableHead>
-                    <TableHead className="w-[120px] bg-background font-semibold">Type</TableHead>
-                    <TableHead className="w-[150px] bg-background font-semibold">Vendor</TableHead>
-                    <TableHead className="w-[120px] bg-background font-semibold">Amount</TableHead>
-                    <TableHead className="w-[130px] bg-background font-semibold">Document Date</TableHead>
-                    <TableHead className="w-[100px] bg-background font-semibold">Size</TableHead>
-                    <TableHead className="w-[160px] bg-background font-semibold">Uploaded</TableHead>
-                    <TableHead className="w-[180px] bg-background font-semibold text-right">Actions</TableHead>
+                    <TableHead className="bg-background font-semibold">Name</TableHead>
+                    <TableHead className="bg-background font-semibold">Type</TableHead>
+                    <TableHead className="bg-background font-semibold">Vendor</TableHead>
+                    <TableHead className="bg-background font-semibold">Amount</TableHead>
+                    <TableHead className="bg-background font-semibold">Document Date</TableHead>
+                    <TableHead className="bg-background font-semibold">Size</TableHead>
+                    <TableHead className="bg-background font-semibold">Uploaded</TableHead>
+                    <TableHead className="bg-background font-semibold text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredDocuments.map((doc) => (
                     <Collapsible key={doc.id}>
                       <TableRow className="align-top">
-                        <TableCell className="font-medium w-[280px]">
+                        <TableCell className="font-medium">
                           <div className="flex items-center space-x-2">
                             <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                             <span 
@@ -995,25 +995,25 @@ export default function DocumentStorage() {
                             </CollapsibleTrigger>
                           </div>
                         </TableCell>
-                        <TableCell className="text-sm w-[120px]">
+                        <TableCell className="text-sm">
                           {doc.document_type ? (
                             <span className="capitalize">{doc.document_type.replace('_', ' ')}</span>
                           ) : (
                             <span className="text-muted-foreground">-</span>
                           )}
                         </TableCell>
-                        <TableCell className="text-sm w-[150px]">
+                        <TableCell className="text-sm">
                           {doc.vendor_name || <span className="text-muted-foreground">-</span>}
                         </TableCell>
-                        <TableCell className="text-sm font-medium w-[120px]">
+                        <TableCell className="text-sm font-medium">
                           {doc.amount ? `$${doc.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : <span className="text-muted-foreground">-</span>}
                         </TableCell>
-                        <TableCell className="text-sm w-[130px]">
+                        <TableCell className="text-sm">
                           {doc.document_date ? format(new Date(doc.document_date), "MMM dd, yyyy") : <span className="text-muted-foreground">-</span>}
                         </TableCell>
-                        <TableCell className="w-[100px]">{formatFileSize((doc as any).file_size || 0)}</TableCell>
-                        <TableCell className="w-[160px]">{formatDate(doc.created_at)}</TableCell>
-                        <TableCell className="text-right w-[180px]">
+                        <TableCell>{formatFileSize((doc as any).file_size || 0)}</TableCell>
+                        <TableCell>{formatDate(doc.created_at)}</TableCell>
+                        <TableCell className="text-right">
                           <div className="flex justify-end space-x-2">
                             {doc.document_type === 'purchase_order' && (
                               <>
