@@ -939,16 +939,16 @@ export default function DocumentStorage() {
                 </p>
               </div>
             ) : (
-              <Table className="table-fixed w-full">
+              <Table className="w-full">
                 <colgroup>
-                  <col style={{ width: '280px' }} />
-                  <col style={{ width: '120px' }} />
-                  <col style={{ width: '150px' }} />
-                  <col style={{ width: '120px' }} />
-                  <col style={{ width: '130px' }} />
-                  <col style={{ width: '100px' }} />
-                  <col style={{ width: '160px' }} />
-                  <col style={{ width: '180px' }} />
+                  <col style={{ width: '25%' }} />
+                  <col style={{ width: '10%' }} />
+                  <col style={{ width: '12%' }} />
+                  <col style={{ width: '10%' }} />
+                  <col style={{ width: '11%' }} />
+                  <col style={{ width: '8%' }} />
+                  <col style={{ width: '12%' }} />
+                  <col style={{ width: '12%' }} />
                 </colgroup>
                 <TableHeader>
                   <TableRow className="bg-background border-b hover:bg-background">
