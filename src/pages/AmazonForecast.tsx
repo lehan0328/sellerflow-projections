@@ -287,12 +287,26 @@ export default function AmazonForecast() {
         
         console.log('[AmazonForecast] Month filter (' + avgPayoutLabel + ') - Payouts in range:', filteredPayouts.length);
         
-        // Calculate days in selected month
-        const daysInMonth = new Date(year, month, 0).getDate();
-        const periodTotal = filteredPayouts.reduce((sum, p) => sum + Number(p.total_amount || 0), 0);
-        avgPayout = daysInMonth > 0 ? periodTotal / daysInMonth : 0;
+        // Calculate days to divide by
+        const now = new Date();
+        const isCurrentMonth = now.getFullYear() === year && now.getMonth() === month - 1;
         
-        console.log('[AmazonForecast] Period total: $' + periodTotal, 'Days in month:', daysInMonth, 'Avg per day: $' + avgPayout.toFixed(2));
+        let daysToUse;
+        if (isCurrentMonth) {
+          // For current month: use days elapsed so far (month-to-date)
+          daysToUse = now.getDate(); // Current day of month (1-31)
+          avgPayoutLabel = avgPayoutLabel + ' (MTD)'; // Add MTD indicator
+          console.log('[AmazonForecast] Current month - using days elapsed:', daysToUse);
+        } else {
+          // For past months: use total days in that month
+          daysToUse = new Date(year, month, 0).getDate();
+          console.log('[AmazonForecast] Past month - using total days:', daysToUse);
+        }
+        
+        const periodTotal = filteredPayouts.reduce((sum, p) => sum + Number(p.total_amount || 0), 0);
+        avgPayout = daysToUse > 0 ? periodTotal / daysToUse : 0;
+        
+        console.log('[AmazonForecast] Period total: $' + periodTotal, 'Days:', daysToUse, 'Avg per day: $' + avgPayout.toFixed(2));
       }
     }
     
@@ -589,8 +603,8 @@ export default function AmazonForecast() {
                       </TooltipTrigger>
                       <TooltipContent className="max-w-xs">
                         <p className="text-sm">
-                          Total payouts in period ÷ total days in period. 
-                          {avgPayoutPeriod !== '12-months' && ' Example: $11,218 in November ÷ 30 days = $374/day'}
+                          Total payouts ÷ days elapsed. For current month: month-to-date average. 
+                          Example: $11,218 in first 5 days of Nov = $2,244/day.
                         </p>
                       </TooltipContent>
                     </Tooltip>
