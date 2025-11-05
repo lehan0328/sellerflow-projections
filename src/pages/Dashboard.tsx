@@ -1710,6 +1710,13 @@ const Dashboard = () => {
         }
       }
       
+      // Allow rolled_over forecasts to display even if they're in the past
+      // This shows users the rollover history on the chart
+      if ((payout.status as string) === 'rolled_over') {
+        console.log('[Dashboard] Including rolled_over forecast (shows rollover history):', payout.payout_date);
+        return true; // Don't filter out rolled_over forecasts
+      }
+      
       // Exclude open settlements ONLY for daily settlement accounts
       // (Daily forecasts replace the open settlement calculation)
       // Keep open settlements for bi-weekly accounts (they're the actual payout)
@@ -1747,6 +1754,7 @@ const Dashboard = () => {
       const isOpenSettlement = (payout.status as string) === 'estimated';
       const isForecastedPayout = (payout.status as string) === 'forecasted';
       const isConfirmedPayout = (payout.status as string) === 'confirmed';
+      const isRolledOverForecast = (payout.status as string) === 'rolled_over';
       
       let displayDate: Date;
       
