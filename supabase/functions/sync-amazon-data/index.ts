@@ -802,43 +802,24 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string)
     
     console.log('[SYNC] ===== SYNC COMPLETE =====')
     
-    // Trigger rollover check after sync completes
-    console.log('[SYNC] Triggering forecast rollover check...');
+    // Trigger forecast workflow (handles decision logic)
+    console.log('[SYNC] Triggering forecast workflow...');
     try {
-      const { data: rolloverResult, error: rolloverError } = await supabase.functions.invoke('rollover-forecast', {
+      const { data: workflowResult, error: workflowError } = await supabase.functions.invoke('handle-forecast-workflow', {
         body: { 
           amazonAccountId: amazonAccountId, 
           userId: userId 
         }
       });
       
-      if (rolloverError) {
-        console.error('[SYNC] Rollover check failed:', rolloverError);
+      if (workflowError) {
+        console.error('[SYNC] Forecast workflow failed:', workflowError);
       } else {
-        console.log('[SYNC] Rollover check completed:', rolloverResult);
+        console.log('[SYNC] Forecast workflow completed:', workflowResult);
       }
-    } catch (rolloverErr) {
-      console.error('[SYNC] Error invoking rollover function:', rolloverErr);
-      // Don't fail the sync if rollover fails
-    }
-    
-    // Regenerate forecasts after rollover completes
-    console.log('[SYNC] Regenerating forecasts after settlement detection...');
-    try {
-      const { data: forecastResult, error: forecastError } = await supabase.functions.invoke('forecast-amazon-payouts', {
-        body: { 
-          userId: userId 
-        }
-      });
-      
-      if (forecastError) {
-        console.error('[SYNC] Forecast regeneration failed:', forecastError);
-      } else {
-        console.log('[SYNC] Forecast regeneration completed:', forecastResult);
-      }
-    } catch (forecastErr) {
-      console.error('[SYNC] Error invoking forecast function:', forecastErr);
-      // Don't fail the sync if forecast fails
+    } catch (workflowErr) {
+      console.error('[SYNC] Error invoking forecast workflow:', workflowErr);
+      // Don't fail the sync if workflow fails
     }
     
     // Update sync log with completion

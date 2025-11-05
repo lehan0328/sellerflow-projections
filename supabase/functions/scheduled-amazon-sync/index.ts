@@ -193,49 +193,14 @@ Deno.serve(async (req) => {
 
     console.log(`Sync complete: ${successCount} succeeded, ${skippedCount} skipped, ${failedCount} failed`)
 
-    // Trigger rollover checks for ALL accounts (even if sync was skipped)
-    console.log('🔄 Triggering rollover checks for all active accounts...')
-    const rolloverResults = []
-    
-    for (const account of amazonAccounts) {
-      try {
-        console.log(`Checking rollover for ${account.account_name}...`)
-        const { data: rolloverData, error: rolloverError } = await supabase.functions.invoke('rollover-forecast', {
-          body: { 
-            amazonAccountId: account.id, 
-            userId: account.user_id 
-          }
-        })
-        
-        if (rolloverError) {
-          console.error(`Rollover check failed for ${account.account_name}:`, rolloverError)
-          rolloverResults.push({ accountId: account.id, success: false, error: rolloverError.message })
-        } else if (rolloverData?.rolloverOccurred) {
-          console.log(`✅ Rollover occurred for ${account.account_name}: ${rolloverData.message}`)
-          rolloverResults.push({ accountId: account.id, success: true, rolled: true, message: rolloverData.message })
-        } else {
-          console.log(`No rollover needed for ${account.account_name}: ${rolloverData?.message}`)
-          rolloverResults.push({ accountId: account.id, success: true, rolled: false, message: rolloverData?.message })
-        }
-      } catch (error) {
-        console.error(`Exception during rollover check for ${account.id}:`, error)
-        rolloverResults.push({ 
-          accountId: account.id, 
-          success: false, 
-          error: error instanceof Error ? error.message : 'Unknown error' 
-        })
-      }
-    }
-
-    const rolledCount = rolloverResults.filter(r => r.success && r.rolled).length
-    console.log(`Rollover checks complete: ${rolledCount} rollovers performed`)
+    // Workflow now handles rollover + forecast regeneration decision per account
+    console.log('✅ Sync orchestration complete. Forecast workflow runs during individual sync.')
 
     return new Response(
       JSON.stringify({
         success: true,
-        message: `Sync complete: ${successCount} succeeded, ${skippedCount} skipped, ${failedCount} failed. Rollovers: ${rolledCount}`,
-        syncResults: syncResults,
-        rolloverResults: rolloverResults
+        message: `Sync complete: ${successCount} succeeded, ${skippedCount} skipped, ${failedCount} failed`,
+        syncResults: syncResults
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
