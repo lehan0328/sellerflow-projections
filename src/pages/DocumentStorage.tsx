@@ -868,148 +868,146 @@ export default function DocumentStorage() {
                 </TableHeader>
                 <TableBody>
                   {filteredDocuments.map((doc) => (
-                    <Collapsible key={doc.id} asChild>
-                      <>
-                        <TableRow>
-                          <TableCell className="font-medium">
-                            <div className="flex items-center space-x-2">
-                              <FileText className="h-4 w-4 text-muted-foreground" />
-                              <span 
-                                className="cursor-pointer hover:text-primary transition-colors"
-                                onClick={() => setEditingDoc(doc)}
-                                title="Click to edit document name"
-                              >
-                                {doc.display_name || doc.name}
-                              </span>
-                              {!(doc as any).storage_exists && (
-                                <Badge variant="destructive" className="text-xs ml-2">
-                                  Missing File
-                                </Badge>
-                              )}
-                              {doc.document_type === 'purchase_order' && (doc as any).line_items?.length > 0 && (
-                                <CollapsibleTrigger asChild>
-                                  <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                                    <ChevronDown className="h-4 w-4" />
-                                  </Button>
-                                </CollapsibleTrigger>
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-sm">
-                            {doc.document_type ? (
-                              <span className="capitalize">{doc.document_type.replace('_', ' ')}</span>
-                            ) : (
-                              <span className="text-muted-foreground">-</span>
+                    <Collapsible key={doc.id}>
+                      <TableRow>
+                        <TableCell className="font-medium">
+                          <div className="flex items-center space-x-2">
+                            <FileText className="h-4 w-4 text-muted-foreground" />
+                            <span 
+                              className="cursor-pointer hover:text-primary transition-colors"
+                              onClick={() => setEditingDoc(doc)}
+                              title="Click to edit document name"
+                            >
+                              {doc.display_name || doc.name}
+                            </span>
+                            {!(doc as any).storage_exists && (
+                              <Badge variant="destructive" className="text-xs ml-2">
+                                Missing File
+                              </Badge>
                             )}
-                          </TableCell>
-                          <TableCell className="text-sm">
-                            {doc.vendor_name || <span className="text-muted-foreground">-</span>}
-                          </TableCell>
-                          <TableCell className="text-sm font-medium">
-                            {doc.amount ? `$${doc.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : <span className="text-muted-foreground">-</span>}
-                          </TableCell>
-                          <TableCell className="text-sm">
-                            {doc.document_date ? format(new Date(doc.document_date), "MMM dd, yyyy") : <span className="text-muted-foreground">-</span>}
-                          </TableCell>
-                          <TableCell>{formatFileSize((doc as any).file_size || 0)}</TableCell>
-                          <TableCell>{formatDate(doc.created_at)}</TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end space-x-2">
-                              {doc.document_type === 'purchase_order' && (
-                                <>
-                                  <input
-                                    type="file"
-                                    id={`replace-${doc.id}`}
-                                    className="hidden"
-                                    accept="image/*,.pdf"
-                                    onChange={(e) => {
-                                      const file = e.target.files?.[0];
-                                      if (file) {
-                                        handleReplaceDocument(doc, file);
-                                        e.target.value = ''; // Reset input
-                                      }
-                                    }}
-                                  />
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => document.getElementById(`replace-${doc.id}`)?.click()}
-                                    disabled={replacingDocument === doc.id}
-                                    title="Replace document file"
-                                  >
-                                    {replacingDocument === doc.id ? (
-                                      <Loader2 className="h-4 w-4 animate-spin" />
-                                    ) : (
-                                      <Upload className="h-4 w-4" />
-                                    )}
-                                  </Button>
-                                </>
-                              )}
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => setEditingDoc(doc)}
-                                title="Edit document details"
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleDownload(doc.name, doc)}
-                                title="Download document"
-                                disabled={!(doc as any).storage_exists}
-                              >
-                                <Download className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => setDeleteTarget(doc.name)}
-                                className="text-destructive hover:text-destructive"
-                                title="Delete document"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
+                            {doc.document_type === 'purchase_order' && (doc as any).line_items?.length > 0 && (
+                              <CollapsibleTrigger asChild>
+                                <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                                  <ChevronDown className="h-4 w-4" />
+                                </Button>
+                              </CollapsibleTrigger>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          {doc.document_type ? (
+                            <span className="capitalize">{doc.document_type.replace('_', ' ')}</span>
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          {doc.vendor_name || <span className="text-muted-foreground">-</span>}
+                        </TableCell>
+                        <TableCell className="text-sm font-medium">
+                          {doc.amount ? `$${doc.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : <span className="text-muted-foreground">-</span>}
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          {doc.document_date ? format(new Date(doc.document_date), "MMM dd, yyyy") : <span className="text-muted-foreground">-</span>}
+                        </TableCell>
+                        <TableCell>{formatFileSize((doc as any).file_size || 0)}</TableCell>
+                        <TableCell>{formatDate(doc.created_at)}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end space-x-2">
+                            {doc.document_type === 'purchase_order' && (
+                              <>
+                                <input
+                                  type="file"
+                                  id={`replace-${doc.id}`}
+                                  className="hidden"
+                                  accept="image/*,.pdf"
+                                  onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) {
+                                      handleReplaceDocument(doc, file);
+                                      e.target.value = ''; // Reset input
+                                    }
+                                  }}
+                                />
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => document.getElementById(`replace-${doc.id}`)?.click()}
+                                  disabled={replacingDocument === doc.id}
+                                  title="Replace document file"
+                                >
+                                  {replacingDocument === doc.id ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <Upload className="h-4 w-4" />
+                                  )}
+                                </Button>
+                              </>
+                            )}
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setEditingDoc(doc)}
+                              title="Edit document details"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDownload(doc.name, doc)}
+                              title="Download document"
+                              disabled={!(doc as any).storage_exists}
+                            >
+                              <Download className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setDeleteTarget(doc.name)}
+                              className="text-destructive hover:text-destructive"
+                              title="Delete document"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                      {doc.document_type === 'purchase_order' && (doc as any).line_items?.length > 0 && (
+                        <TableRow>
+                          <TableCell colSpan={8} className="p-0 border-0">
+                            <CollapsibleContent>
+                              <div className="px-4 py-3 bg-muted/30">
+                                <div className="text-sm font-medium mb-2">Purchase Order Line Items</div>
+                                <Table>
+                                  <TableHeader>
+                                    <TableRow>
+                                      <TableHead>Description</TableHead>
+                                      <TableHead className="text-right">Qty</TableHead>
+                                      <TableHead className="text-right">Amount per Unit</TableHead>
+                                      <TableHead className="text-right">Total Amount</TableHead>
+                                    </TableRow>
+                                  </TableHeader>
+                                  <TableBody>
+                                    {(doc as any).line_items.map((item: any, idx: number) => (
+                                      <TableRow key={idx}>
+                                        <TableCell className="text-sm">{item.description || '-'}</TableCell>
+                                        <TableCell className="text-right text-sm">{item.quantity || '-'}</TableCell>
+                                        <TableCell className="text-right text-sm">
+                                          {item.unit_price ? `$${Number(item.unit_price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-'}
+                                        </TableCell>
+                                        <TableCell className="text-right text-sm font-medium">
+                                          {item.total_price ? `$${Number(item.total_price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-'}
+                                        </TableCell>
+                                      </TableRow>
+                                    ))}
+                                  </TableBody>
+                                </Table>
+                              </div>
+                            </CollapsibleContent>
                           </TableCell>
                         </TableRow>
-                        {doc.document_type === 'purchase_order' && (doc as any).line_items?.length > 0 && (
-                          <TableRow>
-                            <TableCell colSpan={8} className="p-0 border-0">
-                              <CollapsibleContent>
-                                <div className="px-4 py-3 bg-muted/30">
-                                  <div className="text-sm font-medium mb-2">Purchase Order Line Items</div>
-                                  <Table>
-                                    <TableHeader>
-                                      <TableRow>
-                                        <TableHead>Description</TableHead>
-                                        <TableHead className="text-right">Qty</TableHead>
-                                        <TableHead className="text-right">Amount per Unit</TableHead>
-                                        <TableHead className="text-right">Total Amount</TableHead>
-                                      </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                      {(doc as any).line_items.map((item: any, idx: number) => (
-                                        <TableRow key={idx}>
-                                          <TableCell className="text-sm">{item.description || '-'}</TableCell>
-                                          <TableCell className="text-right text-sm">{item.quantity || '-'}</TableCell>
-                                          <TableCell className="text-right text-sm">
-                                            {item.unit_price ? `$${Number(item.unit_price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-'}
-                                          </TableCell>
-                                          <TableCell className="text-right text-sm font-medium">
-                                            {item.total_price ? `$${Number(item.total_price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-'}
-                                          </TableCell>
-                                        </TableRow>
-                                      ))}
-                                    </TableBody>
-                                  </Table>
-                                </div>
-                              </CollapsibleContent>
-                            </TableCell>
-                          </TableRow>
-                        )}
-                      </>
+                      )}
                     </Collapsible>
                   ))}
                 </TableBody>
