@@ -62,7 +62,7 @@ export default function AmazonForecast() {
   const [isDeletingSampleData, setIsDeletingSampleData] = useState(false);
   const [isCheckingRollover, setIsCheckingRollover] = useState(false);
   const [growthTimeframe, setGrowthTimeframe] = useState<'30d' | '60d' | '90d' | '6m' | '1y'>('1y');
-  const [avgPayoutPeriod, setAvgPayoutPeriod] = useState<string>(format(new Date(), 'yyyy-MM'));
+  const [avgPayoutPeriod, setAvgPayoutPeriod] = useState<string>('12-months'); // Default to 12 months, not current month
 
   // Check if user has 3+ confirmed payouts
   const confirmedPayouts = amazonPayouts.filter(p => p.status === 'confirmed');
@@ -253,6 +253,11 @@ export default function AmazonForecast() {
     let avgPayout = 0;
     let avgPayoutLabel = '';
     
+    console.log('[AmazonForecast] Calculating avg payout - Total confirmed payouts:', confirmedPayouts.length);
+    confirmedPayouts.forEach(p => {
+      console.log('  - Payout:', p.payout_date, '$' + p.total_amount, p.marketplace_name);
+    });
+    
     if (confirmedPayouts.length > 0) {
       let filteredPayouts = confirmedPayouts;
       
@@ -263,8 +268,12 @@ export default function AmazonForecast() {
         filteredPayouts = confirmedPayouts.filter(p => new Date(p.payout_date) >= twelveMonthsAgo);
         avgPayoutLabel = 'Last 12 months';
         
+        console.log('[AmazonForecast] 12-month filter - Payouts in range:', filteredPayouts.length);
+        
         const periodTotal = filteredPayouts.reduce((sum, p) => sum + Number(p.total_amount || 0), 0);
         avgPayout = periodTotal / 365; // Average per day over 365 days
+        
+        console.log('[AmazonForecast] Period total: $' + periodTotal, 'Avg per day: $' + avgPayout.toFixed(2));
       } else {
         // Specific month (YYYY-MM format)
         const [year, month] = avgPayoutPeriod.split('-').map(Number);
@@ -276,10 +285,14 @@ export default function AmazonForecast() {
         const monthDate = new Date(year, month - 1, 1);
         avgPayoutLabel = format(monthDate, 'MMMM yyyy');
         
+        console.log('[AmazonForecast] Month filter (' + avgPayoutLabel + ') - Payouts in range:', filteredPayouts.length);
+        
         // Calculate days in selected month
         const daysInMonth = new Date(year, month, 0).getDate();
         const periodTotal = filteredPayouts.reduce((sum, p) => sum + Number(p.total_amount || 0), 0);
         avgPayout = daysInMonth > 0 ? periodTotal / daysInMonth : 0;
+        
+        console.log('[AmazonForecast] Period total: $' + periodTotal, 'Days in month:', daysInMonth, 'Avg per day: $' + avgPayout.toFixed(2));
       }
     }
     
