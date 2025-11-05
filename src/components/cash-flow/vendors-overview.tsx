@@ -563,13 +563,6 @@ export const VendorsOverview = ({
                     }
                     toggleRow(tx.id);
                   }}>
-                    <TableCell className="w-[30px]" onClick={() => toggleRow(tx.id)}>
-                      {expandedRows[tx.id] ? (
-                        <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                      ) : (
-                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                      )}
-                    </TableCell>
                     <TableCell className="font-medium">{tx.vendorName}</TableCell>
                     <TableCell>{tx.description || 'N/A'}</TableCell>
                     <TableCell>
