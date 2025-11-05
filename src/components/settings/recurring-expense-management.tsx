@@ -19,7 +19,7 @@ interface RecurringExpenseFormData {
   name: string;
   transaction_name: string;
   amount: string;
-  frequency: 'daily' | 'weekly' | 'bi-weekly' | 'monthly' | '2-months' | '3-months' | 'yearly' | 'weekdays';
+  frequency: 'daily' | 'weekly' | 'bi-weekly' | 'monthly' | '2-months' | '3-months' | 'weekdays';
   start_date: string;
   end_date: string;
   is_active: boolean;
@@ -278,7 +278,6 @@ export function RecurringExpenseManagement() {
                       <SelectItem value="monthly">Monthly</SelectItem>
                       <SelectItem value="2-months">Every 2 Months</SelectItem>
                       <SelectItem value="3-months">Every 3 Months</SelectItem>
-                      <SelectItem value="yearly">Yearly</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -524,7 +523,6 @@ export function RecurringExpenseManagement() {
                         <SelectItem value="monthly">Monthly</SelectItem>
                         <SelectItem value="2-months">Every 2 Months</SelectItem>
                         <SelectItem value="3-months">Every 3 Months</SelectItem>
-                        <SelectItem value="yearly">Yearly</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -614,7 +612,6 @@ export function RecurringExpenseManagement() {
                   <SelectItem value="monthly">Monthly</SelectItem>
                   <SelectItem value="2-months">Every 2 Months</SelectItem>
                   <SelectItem value="3-months">Every 3 Months</SelectItem>
-                  <SelectItem value="yearly">Yearly</SelectItem>
                 </SelectContent>
               </Select>
             </div>

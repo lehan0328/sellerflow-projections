@@ -32,7 +32,7 @@ export const RecurringExpensesOverview = () => {
     name: string;
     transaction_name: string;
     amount: string;
-    frequency: 'daily' | 'weekly' | 'bi-weekly' | 'monthly' | '2-months' | '3-months' | 'yearly' | 'weekdays';
+    frequency: 'daily' | 'weekly' | 'bi-weekly' | 'monthly' | '2-months' | '3-months' | 'weekdays';
     start_date: string;
     end_date: string;
     is_active: boolean;
@@ -86,7 +86,7 @@ export const RecurringExpensesOverview = () => {
           comparison = new Date(a.start_date).getTime() - new Date(b.start_date).getTime();
           break;
         case 'frequency':
-          const frequencyOrder = { daily: 1, weekdays: 2, weekly: 3, 'bi-weekly': 4, monthly: 5, '2-months': 6, '3-months': 7, yearly: 8 };
+          const frequencyOrder = { daily: 1, weekdays: 2, weekly: 3, 'bi-weekly': 4, monthly: 5, '2-months': 6, '3-months': 7 };
           comparison = frequencyOrder[a.frequency] - frequencyOrder[b.frequency];
           break;
       }
@@ -111,7 +111,6 @@ export const RecurringExpensesOverview = () => {
       case 'monthly': return amount;
       case '2-months': return amount / 2; // Every 2 months
       case '3-months': return amount / 3; // Every 3 months
-      case 'yearly': return amount / 12;
       default: return amount;
     }
   };
@@ -414,7 +413,6 @@ export const RecurringExpensesOverview = () => {
                 <SelectItem value="monthly">Monthly</SelectItem>
                 <SelectItem value="2-months">Every 2 Months</SelectItem>
                 <SelectItem value="3-months">Every 3 Months</SelectItem>
-                <SelectItem value="yearly">Yearly</SelectItem>
               </SelectContent>
             </Select>
           </div>

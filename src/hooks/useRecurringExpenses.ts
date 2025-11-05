@@ -8,7 +8,7 @@ export interface RecurringExpense {
   name: string;
   transaction_name: string | null;
   amount: number;
-  frequency: 'daily' | 'weekly' | 'bi-weekly' | 'monthly' | '2-months' | '3-months' | 'yearly' | 'weekdays';
+  frequency: 'daily' | 'weekly' | 'bi-weekly' | 'monthly' | '2-months' | '3-months' | 'weekdays';
   start_date: string;
   end_date: string | null;
   is_active: boolean;
