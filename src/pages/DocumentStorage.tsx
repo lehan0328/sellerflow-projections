@@ -58,6 +58,7 @@ interface StoredDocument {
     unit_price?: number;
     total_price?: number;
   }>;
+  untracked?: boolean; // from storage without metadata
 }
 
 export default function DocumentStorage() {
@@ -139,8 +140,8 @@ export default function DocumentStorage() {
       // Create a map of storage files for quick lookup
       const storageFilesMap = new Map(files.map(f => [f.name, f]));
 
-      // Return all metadata documents, marking which ones have storage files
-      return (metadata || []).map(meta => {
+      // Build documents from metadata and include any storage files missing metadata
+      const docsFromMeta = (metadata || []).map(meta => {
         const storageFile = storageFilesMap.get(meta.file_name);
         return {
           id: meta.id,
@@ -161,7 +162,36 @@ export default function DocumentStorage() {
           file_size: storageFile?.metadata?.size || 0,
           line_items: (meta as any).purchase_order_line_items || []
         } as StoredDocument & { storage_exists: boolean; storage_file?: any; file_size: number };
-      }).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      });
+
+      const metaNames = new Set(docsFromMeta.map(d => d.name));
+
+      // Add storage-only files that don't have metadata rows yet
+      const untrackedFromStorage = files
+        .filter(f => !metaNames.has(f.name))
+        .map(f => ({
+          id: `storage-${f.name}`,
+          name: f.name,
+          created_at: (f as any).created_at || new Date().toISOString(),
+          metadata: f.metadata || {},
+          vendor_id: undefined,
+          vendor_name: undefined,
+          notes: undefined,
+          document_date: undefined,
+          display_name: f.name,
+          amount: undefined,
+          description: undefined,
+          document_type: undefined,
+          file_path: `${profile.account_id}/${f.name}`,
+          storage_exists: true,
+          storage_file: f,
+          file_size: f.metadata?.size || 0,
+          line_items: [],
+          untracked: true
+        })) as Array<StoredDocument & { storage_exists: boolean; storage_file?: any; file_size: number }>;
+
+      return [...docsFromMeta, ...untrackedFromStorage]
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     },
     enabled: !!profile?.account_id,
     staleTime: 0, // Always refetch when query is invalidated
@@ -885,6 +915,11 @@ export default function DocumentStorage() {
                             {!(doc as any).storage_exists && (
                               <Badge variant="destructive" className="text-xs ml-2">
                                 Missing File
+                              </Badge>
+                            )}
+                            {(doc as any).untracked && (
+                              <Badge variant="secondary" className="text-xs ml-2">
+                                Untracked
                               </Badge>
                             )}
                             <CollapsibleTrigger asChild>
