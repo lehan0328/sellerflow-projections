@@ -447,9 +447,9 @@ export const RecurringExpensesOverview = () => {
             <Label htmlFor="category">Category</Label>
             <Input
               id="category"
-              value={formData.category}
-              onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-              placeholder="e.g., Rent, Utilities, Software"
+              value={formData.category || 'No category'}
+              disabled
+              className="bg-muted cursor-not-allowed"
             />
           </div>
 
