@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import { Home, TrendingUp, CreditCard, Repeat, Wallet, Users, Calculator, BarChart3, FolderOpen, MessageSquare, Calendar, FileBarChart, Building2, Brain, Bell, Clock, Link2, Lock, Sparkles, Settings, ShoppingCart, BookOpen } from "lucide-react";
+import { Home, TrendingUp, TrendingDown, CreditCard, Repeat, Wallet, Users, Calculator, BarChart3, FolderOpen, MessageSquare, Calendar, FileBarChart, Building2, Brain, Bell, Clock, Link2, Lock, Sparkles, Settings, ShoppingCart, BookOpen } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useSupportMessageCount } from "@/hooks/useSupportMessageCount";
@@ -54,6 +54,17 @@ const transactionSections = [{
   title: "Amazon Integration",
   icon: ShoppingCart
 }];
+
+const profileSections = [{
+  id: "vendors",
+  title: "Vendors",
+  icon: TrendingDown
+}, {
+  id: "customers",
+  title: "Customers",
+  icon: Users
+}];
+
 const resourceSections = [{
   id: "guides",
   title: "Guides",
@@ -242,6 +253,33 @@ export function AppSidebar({
                       {isCollapsed && showProfessionalLock && <div className="absolute -top-1 -right-1">
                           <Lock className="h-3 w-3 text-muted-foreground" />
                         </div>}
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>;
+            })}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <Separator className="my-0.5" />
+
+        {/* Profiles Section */}
+        <SidebarGroup>
+          <SidebarGroupLabel className="text-xs font-semibold uppercase tracking-wider text-muted-foreground px-2 py-0.5">
+            Profiles
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu className={`space-y-0 ${isCollapsed ? "px-0" : "px-1"}`}>
+              {profileSections.map(section => {
+              const Icon = section.icon;
+              const isActive = activeSection === section.id;
+              return <SidebarMenuItem key={section.id}>
+                    <SidebarMenuButton onClick={() => onSectionChange(section.id)} className={`
+                        relative rounded-lg transition-all duration-200
+                        ${isCollapsed ? "justify-center h-12 w-12" : ""}
+                        ${isActive ? "bg-gradient-to-r from-primary/90 to-accent/90 text-primary-foreground shadow-md hover:shadow-lg font-semibold" : "hover:bg-accent/50 hover:translate-x-1"}
+                      `}>
+                      <Icon className={`${isCollapsed ? "h-5 w-5" : "h-4 w-4"} ${isActive ? "animate-pulse" : ""} ${isCollapsed ? "mx-auto" : ""}`} />
+                      {!isCollapsed && <span>{section.title}</span>}
                     </SidebarMenuButton>
                   </SidebarMenuItem>;
             })}

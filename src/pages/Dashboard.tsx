@@ -2905,6 +2905,12 @@ const Dashboard = () => {
       case "team-management":
         return <TeamManagement />;
       
+      case "vendors":
+        return <VendorManagement />;
+      
+      case "customers":
+        return <CustomerManagement />;
+      
       default:
         return null;
     }
