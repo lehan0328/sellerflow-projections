@@ -177,6 +177,8 @@ export default function DocumentStorage() {
         } as StoredDocument & { storage_exists: boolean; storage_file?: any; file_size: number };
       });
 
+      const metaNames = new Set(docsFromMeta.map(d => d.name));
+
       // Add storage-only files that don't have metadata rows yet (optional)
       const untrackedFromStorage = includeUntracked ? (
         files
@@ -993,6 +995,9 @@ export default function DocumentStorage() {
                             </CollapsibleTrigger>
                           </div>
                         </TableCell>
+                        <TableCell className="text-sm w-[120px]">
+                          {doc.document_type ? (
+                            <span className="capitalize">{doc.document_type.replace('_', ' ')}</span>
                           ) : (
                             <span className="text-muted-foreground">-</span>
                           )}
@@ -1069,64 +1074,67 @@ export default function DocumentStorage() {
                           </div>
                         </TableCell>
                       </TableRow>
-                          <TableCell colSpan={8} className="p-0 border-0">
-                            <CollapsibleContent>
-                              <div className="px-4 py-3 bg-muted/30">
-                                <div className="text-sm font-medium mb-2">Details</div>
-                                {doc.line_items && doc.line_items.length > 0 ? (
-                                  <Table>
-                                    <TableHeader>
-                                      <TableRow>
-                                        <TableHead>Description</TableHead>
-                                        <TableHead className="text-right">Qty</TableHead>
-                                        <TableHead className="text-right">Amount per Unit</TableHead>
-                                        <TableHead className="text-right">Total Amount</TableHead>
+                      <TableRow>
+                        <TableCell colSpan={8} className="p-0 border-0">
+                          <CollapsibleContent>
+                            <div className="px-4 py-3 bg-muted/30">
+                              <div className="text-sm font-medium mb-2">Details</div>
+                              {doc.line_items && doc.line_items.length > 0 ? (
+                                <Table>
+                                  <TableHeader>
+                                    <TableRow>
+                                      <TableHead>Description</TableHead>
+                                      <TableHead className="text-right">Qty</TableHead>
+                                      <TableHead className="text-right">Amount per Unit</TableHead>
+                                      <TableHead className="text-right">Total Amount</TableHead>
+                                    </TableRow>
+                                  </TableHeader>
+                                  <TableBody>
+                                    {doc.line_items.map((item, idx) => (
+                                      <TableRow key={idx}>
+                                        <TableCell className="text-sm">
+                                          {item.description || item.product_name || '-'}
+                                        </TableCell>
+                                        <TableCell className="text-right text-sm">{item.quantity || '-'}</TableCell>
+                                        <TableCell className="text-right text-sm">
+                                          {item.unit_price ? `$${Number(item.unit_price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-'}
+                                        </TableCell>
+                                        <TableCell className="text-right text-sm font-medium">
+                                          {item.total_price ? `$${Number(item.total_price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-'}
+                                        </TableCell>
                                       </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                      {doc.line_items.map((item, idx) => (
-                                        <TableRow key={idx}>
-                                          <TableCell className="text-sm">
-                                            {item.description || item.product_name || '-'}
-                                          </TableCell>
-                                          <TableCell className="text-right text-sm">{item.quantity || '-'}</TableCell>
-                                          <TableCell className="text-right text-sm">
-                                            {item.unit_price ? `$${Number(item.unit_price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-'}
-                                          </TableCell>
-                                          <TableCell className="text-right text-sm font-medium">
-                                            {item.total_price ? `$${Number(item.total_price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-'}
-                                          </TableCell>
-                                        </TableRow>
-                                      ))}
-                                    </TableBody>
-                                  </Table>
-                                ) : (
-                                  <div className="space-y-3">
-                                    <div className="text-sm text-muted-foreground">No line items found for this document.</div>
-                                    <div className="grid md:grid-cols-3 gap-4 text-sm">
-                                      <div>
-                                        <div className="font-medium">Description</div>
-                                        <div>{doc.description || '-'}</div>
-                                      </div>
-                                      <div>
-                                        <div className="font-medium">Qty</div>
-                                        <div>-</div>
-                                      </div>
-                                      <div>
-                                        <div className="font-medium">Amount</div>
-                                        <div>{doc.amount ? `$${Number(doc.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-'}</div>
-                                      </div>
-                                      <div className="md:col-span-3">
-                                        <div className="font-medium">Notes</div>
-                                        <div>{doc.notes || '-'}</div>
-                                      </div>
+                                    ))}
+                                  </TableBody>
+                                </Table>
+                              ) : (
+                                <div className="space-y-3">
+                                  <div className="text-sm text-muted-foreground">No line items found for this document.</div>
+                                  <div className="grid md:grid-cols-3 gap-4 text-sm">
+                                    <div>
+                                      <div className="font-medium">Description</div>
+                                      <div>{doc.description || '-'}</div>
+                                    </div>
+                                    <div>
+                                      <div className="font-medium">Qty</div>
+                                      <div>-</div>
+                                    </div>
+                                    <div>
+                                      <div className="font-medium">Amount</div>
+                                      <div>{doc.amount ? `$${Number(doc.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-'}</div>
+                                    </div>
+                                    <div className="md:col-span-3">
+                                      <div className="font-medium">Notes</div>
+                                      <div>{doc.notes || '-'}</div>
                                     </div>
                                   </div>
-                                )}
-                              </div>
-                            </CollapsibleContent>
-                          </TableCell>
-                        </TableRow>
+                                </div>
+                              )}
+                            </div>
+                          </CollapsibleContent>
+                        </TableCell>
+                      </TableRow>
+                    </Collapsible>
+                  ))}
                 </TableBody>
               </Table>
             )}
