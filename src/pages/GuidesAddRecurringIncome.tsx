@@ -58,6 +58,26 @@ const GuidesAddRecurringIncome = () => {
                 </CardHeader>
               </Card>
 
+              {/* Interactive Guide */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Interactive Step-by-Step Guide</CardTitle>
+                  <CardDescription>
+                    Follow along with this interactive guide to add recurring income
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <iframe 
+                    src="https://scribehow.com/embed/Add_Recurring_Income__TbJBrNi7Tp6XePgCI3-cMw?removeLogo=true" 
+                    width="100%" 
+                    height="800" 
+                    allow="fullscreen" 
+                    style={{ aspectRatio: '1 / 1', border: 0, minHeight: '480px' }}
+                    title="Add Recurring Income Guide"
+                  />
+                </CardContent>
+              </Card>
+
               {/* Step by step guide */}
               <Card>
                 <CardHeader>
