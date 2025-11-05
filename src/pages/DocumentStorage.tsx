@@ -939,7 +939,7 @@ export default function DocumentStorage() {
                 </p>
               </div>
             ) : (
-              <Table className="w-full">
+              <Table className="w-full table-fixed">
                 <colgroup>
                   <col style={{ width: '25%' }} />
                   <col style={{ width: '10%' }} />
