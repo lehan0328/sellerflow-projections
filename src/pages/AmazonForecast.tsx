@@ -176,9 +176,9 @@ export default function AmazonForecast() {
 
   // Calculate key metrics
   const metrics = useMemo(() => {
-    // Filter to only confirmed payouts and exclude sample data
+    // Filter to only confirmed payouts (include all marketplaces)
     const confirmedPayouts = amazonPayouts.filter(p => {
-      return p.status === 'confirmed' && p.marketplace_name !== 'Amazon.com';
+      return p.status === 'confirmed';
     });
     
     const totalPayouts = confirmedPayouts.reduce((sum, p) => sum + Number(p.total_amount || 0), 0);
