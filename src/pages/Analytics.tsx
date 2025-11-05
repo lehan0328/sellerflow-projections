@@ -46,6 +46,7 @@ import {
 } from "recharts";
 import { useMemo, useState, useEffect } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 
@@ -135,6 +136,7 @@ export default function Analytics() {
   const defaultEndDate = new Date(now.getFullYear(), now.getMonth() + 3, 0);
   
   const [vendorDateRange, setVendorDateRange] = useState<string>("this-month");
+  const [vendorViewType, setVendorViewType] = useState<"chart" | "numbers">("chart");
   const [incomeDateRange, setIncomeDateRange] = useState<string>("this-month");
   const [customStartDate, setCustomStartDate] = useState<Date>(defaultStartDate);
   const [customEndDate, setCustomEndDate] = useState<Date>(defaultEndDate);
@@ -856,31 +858,71 @@ export default function Analytics() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle>Top 10 Vendors by Spending</CardTitle>
-                <Select value={vendorDateRange} onValueChange={setVendorDateRange}>
-                  <SelectTrigger className="w-40">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="this-month">This Month</SelectItem>
-                    <SelectItem value="last-month">Last Month</SelectItem>
-                    <SelectItem value="last-2-months">Last 2 Months</SelectItem>
-                    <SelectItem value="last-3-months">Last 3 Months</SelectItem>
-                    <SelectItem value="last-6-months">Last 6 Months</SelectItem>
-                    <SelectItem value="ytd">Year to Date</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="flex items-center gap-2">
+                  <ToggleGroup type="single" value={vendorViewType} onValueChange={(value) => value && setVendorViewType(value as "chart" | "numbers")}>
+                    <ToggleGroupItem value="chart" aria-label="Bar chart view">
+                      <BarChart3 className="h-4 w-4" />
+                    </ToggleGroupItem>
+                    <ToggleGroupItem value="numbers" aria-label="Numbers view">
+                      <Activity className="h-4 w-4" />
+                    </ToggleGroupItem>
+                  </ToggleGroup>
+                  <Select value={vendorDateRange} onValueChange={setVendorDateRange}>
+                    <SelectTrigger className="w-40">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="this-month">This Month</SelectItem>
+                      <SelectItem value="last-month">Last Month</SelectItem>
+                      <SelectItem value="last-2-months">Last 2 Months</SelectItem>
+                      <SelectItem value="last-3-months">Last 3 Months</SelectItem>
+                      <SelectItem value="last-6-months">Last 6 Months</SelectItem>
+                      <SelectItem value="ytd">Year to Date</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={400}>
-                <BarChart data={topVendors} layout="vertical">
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis type="number" />
-                  <YAxis dataKey="name" type="category" width={150} />
-                  <Tooltip formatter={(value) => `$${Number(value).toLocaleString()}`} />
-                  <Bar dataKey="amount" fill="#8b5cf6" />
-                </BarChart>
-              </ResponsiveContainer>
+              {vendorViewType === "chart" ? (
+                <ResponsiveContainer width="100%" height={400}>
+                  <BarChart data={topVendors} layout="vertical">
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis type="number" />
+                    <YAxis dataKey="name" type="category" width={150} />
+                    <Tooltip formatter={(value) => `$${Number(value).toLocaleString()}`} />
+                    <Bar dataKey="amount" fill="#8b5cf6" />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="space-y-2">
+                  {topVendors.map((vendor, index) => (
+                    <div
+                      key={vendor.name}
+                      className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={cn(
+                          "flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm",
+                          index === 0 && "bg-amber-500/20 text-amber-700 dark:text-amber-400",
+                          index === 1 && "bg-slate-500/20 text-slate-700 dark:text-slate-400",
+                          index === 2 && "bg-orange-500/20 text-orange-700 dark:text-orange-400",
+                          index > 2 && "bg-muted text-muted-foreground"
+                        )}>
+                          #{index + 1}
+                        </div>
+                        <span className="font-medium">{vendor.name}</span>
+                      </div>
+                      <span className="text-lg font-bold">${vendor.amount.toLocaleString()}</span>
+                    </div>
+                  ))}
+                  {topVendors.length === 0 && (
+                    <div className="text-center text-muted-foreground py-8">
+                      No vendor spending data for this period
+                    </div>
+                  )}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
