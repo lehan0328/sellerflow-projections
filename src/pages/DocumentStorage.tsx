@@ -887,13 +887,11 @@ export default function DocumentStorage() {
                                 Missing File
                               </Badge>
                             )}
-                            {doc.line_items && doc.line_items.length > 0 && (
-                              <CollapsibleTrigger asChild>
-                                <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                                  <ChevronDown className="h-4 w-4" />
-                                </Button>
-                              </CollapsibleTrigger>
-                            )}
+                            <CollapsibleTrigger asChild>
+                              <Button variant="ghost" size="sm" className="h-6 w-6 p-0" aria-label="Toggle document details">
+                                <ChevronDown className="h-4 w-4" />
+                              </Button>
+                            </CollapsibleTrigger>
                           </div>
                         </TableCell>
                         <TableCell className="text-sm">
@@ -975,43 +973,65 @@ export default function DocumentStorage() {
                           </div>
                         </TableCell>
                       </TableRow>
-                      {doc.line_items && doc.line_items.length > 0 && (
                         <TableRow>
                           <TableCell colSpan={8} className="p-0 border-0">
                             <CollapsibleContent>
                               <div className="px-4 py-3 bg-muted/30">
-                                <div className="text-sm font-medium mb-2">Line Items</div>
-                                <Table>
-                                  <TableHeader>
-                                    <TableRow>
-                                      <TableHead>Description</TableHead>
-                                      <TableHead className="text-right">Qty</TableHead>
-                                      <TableHead className="text-right">Amount per Unit</TableHead>
-                                      <TableHead className="text-right">Total Amount</TableHead>
-                                    </TableRow>
-                                  </TableHeader>
-                                  <TableBody>
-                                    {doc.line_items.map((item, idx) => (
-                                      <TableRow key={idx}>
-                                        <TableCell className="text-sm">
-                                          {item.description || item.product_name || '-'}
-                                        </TableCell>
-                                        <TableCell className="text-right text-sm">{item.quantity || '-'}</TableCell>
-                                        <TableCell className="text-right text-sm">
-                                          {item.unit_price ? `$${Number(item.unit_price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-'}
-                                        </TableCell>
-                                        <TableCell className="text-right text-sm font-medium">
-                                          {item.total_price ? `$${Number(item.total_price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-'}
-                                        </TableCell>
+                                <div className="text-sm font-medium mb-2">Details</div>
+                                {doc.line_items && doc.line_items.length > 0 ? (
+                                  <Table>
+                                    <TableHeader>
+                                      <TableRow>
+                                        <TableHead>Description</TableHead>
+                                        <TableHead className="text-right">Qty</TableHead>
+                                        <TableHead className="text-right">Amount per Unit</TableHead>
+                                        <TableHead className="text-right">Total Amount</TableHead>
                                       </TableRow>
-                                    ))}
-                                  </TableBody>
-                                </Table>
+                                    </TableHeader>
+                                    <TableBody>
+                                      {doc.line_items.map((item, idx) => (
+                                        <TableRow key={idx}>
+                                          <TableCell className="text-sm">
+                                            {item.description || item.product_name || '-'}
+                                          </TableCell>
+                                          <TableCell className="text-right text-sm">{item.quantity || '-'}</TableCell>
+                                          <TableCell className="text-right text-sm">
+                                            {item.unit_price ? `$${Number(item.unit_price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-'}
+                                          </TableCell>
+                                          <TableCell className="text-right text-sm font-medium">
+                                            {item.total_price ? `$${Number(item.total_price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-'}
+                                          </TableCell>
+                                        </TableRow>
+                                      ))}
+                                    </TableBody>
+                                  </Table>
+                                ) : (
+                                  <div className="space-y-3">
+                                    <div className="text-sm text-muted-foreground">No line items found for this document.</div>
+                                    <div className="grid md:grid-cols-3 gap-4 text-sm">
+                                      <div>
+                                        <div className="font-medium">Description</div>
+                                        <div>{doc.description || '-'}</div>
+                                      </div>
+                                      <div>
+                                        <div className="font-medium">Qty</div>
+                                        <div>-</div>
+                                      </div>
+                                      <div>
+                                        <div className="font-medium">Amount</div>
+                                        <div>{doc.amount ? `$${Number(doc.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-'}</div>
+                                      </div>
+                                      <div className="md:col-span-3">
+                                        <div className="font-medium">Notes</div>
+                                        <div>{doc.notes || '-'}</div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
                               </div>
                             </CollapsibleContent>
                           </TableCell>
                         </TableRow>
-                      )}
                     </Collapsible>
                   ))}
                 </TableBody>
