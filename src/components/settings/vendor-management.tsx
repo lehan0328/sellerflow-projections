@@ -386,7 +386,6 @@ export function VendorManagement() {
                        </div>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <Badge variant="secondary">Active</Badge>
                       <Button
                         variant="ghost"
                         size="sm"
