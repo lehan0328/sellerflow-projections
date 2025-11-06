@@ -51,6 +51,7 @@ import { CategoryManagement } from "@/components/settings/category-management";
 import { BillingInvoices } from "@/components/settings/billing-invoices";
 import { ForecastSettings } from "@/components/settings/forecast-settings";
 import { FeatureRequest } from "@/components/settings/feature-request";
+import { GuidesContent } from "@/components/GuidesContent";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useUserSettings } from "@/hooks/useUserSettings";
 import { useReserveAmount } from "@/hooks/useReserveAmount";
@@ -2946,6 +2947,9 @@ const Dashboard = () => {
       
       case "customers":
         return <CustomerManagement />;
+      
+      case "guides":
+        return <GuidesContent />;
       
       default:
         return null;
