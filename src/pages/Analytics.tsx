@@ -758,13 +758,8 @@ export default function Analytics() {
         </Card>
       </div>
 
-      <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-1">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="overview" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-3 mb-4">
+      <div className="space-y-4">
+        <div className="grid gap-4 md:grid-cols-3 mb-4">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Monthly Amazon Projected Income</CardTitle>
@@ -1163,56 +1158,7 @@ export default function Analytics() {
               </ResponsiveContainer>
             </CardContent>
           </Card>
-        </TabsContent>
-
-        <TabsContent value="revenue" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Pending Income</CardTitle>
-                <CalendarIcon className="h-4 w-4 text-amber-600" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">${metrics.pendingIncome.toLocaleString()}</div>
-                <p className="text-xs text-muted-foreground">
-                  {incomeItems.filter(i => i.status === 'pending').length} pending payments
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Amazon Gross Revenue</CardTitle>
-                <PieChartIcon className="h-4 w-4 text-orange-600" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">${amazonRevenue.toLocaleString()}</div>
-                <p className="text-xs text-muted-foreground">
-                  Last 30 days (before fees)
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Monthly Revenue Trend</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={400}>
-                <LineChart data={revenueData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
-                  <YAxis />
-                  <Tooltip formatter={(value) => `$${Number(value).toLocaleString()}`} />
-                  <Legend />
-                  <Line type="monotone" dataKey="revenue" stroke="#10b981" strokeWidth={2} />
-                </LineChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+      </div>
     </div>
   );
 }
