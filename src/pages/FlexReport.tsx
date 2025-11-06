@@ -14,7 +14,7 @@ import { useReserveAmount } from "@/hooks/useReserveAmount";
 import { useAmazonPayouts } from "@/hooks/useAmazonPayouts";
 import { useAmazonRevenue } from "@/hooks/useAmazonRevenue";
 import { addDays, isWithinInterval, startOfDay } from "date-fns";
-import aurenLogo from "@/assets/auren-full-logo.png";
+import aurenLogo from "@/assets/auren-logo.png";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
@@ -397,8 +397,8 @@ const FlexReport = () => {
           
           {/* Auren Watermark */}
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none overflow-hidden">
-            <img src={aurenLogo} alt="" className="w-[600px] opacity-[0.20] select-none rotate-[-15deg] scale-110" />
-            <p className="text-6xl font-black text-slate-800/20 tracking-widest -mt-16">AUREN</p>
+            <img src={aurenLogo} alt="" className="w-[600px] opacity-[0.25] select-none rotate-[-15deg] scale-110" />
+            <p className="text-7xl font-black text-slate-700/30 tracking-widest -mt-16 select-none">AUREN</p>
           </div>
           
           <div className="relative z-10 p-2 md:p-4">
