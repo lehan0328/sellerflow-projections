@@ -52,14 +52,14 @@ export const GuidesContent = () => {
       ]
     },
     {
-      title: "Vendor Management",
-      description: "Managing your suppliers and vendors",
-      icon: <Users className="h-6 w-6" />,
-      path: "/guides/vendors",
+      title: "Modifying Transactions",
+      description: "Understanding your cash flow forecasts",
+      icon: <FileText className="h-6 w-6" />,
+      path: "/guides/cash-flow",
       guides: [
-        "Adding New Vendors",
-        "Setting Payment Terms",
-        "Vendor Communication"
+        "Reading the Dashboard",
+        "Safe Spending Calculator",
+        "90-Day Forecast"
       ]
     },
     {
@@ -85,14 +85,14 @@ export const GuidesContent = () => {
       ]
     },
     {
-      title: "Modifying Transactions",
-      description: "Understanding your cash flow forecasts",
-      icon: <FileText className="h-6 w-6" />,
-      path: "/guides/cash-flow",
+      title: "Vendor Management",
+      description: "Managing your suppliers and vendors",
+      icon: <Users className="h-6 w-6" />,
+      path: "/guides/vendors",
       guides: [
-        "Reading the Dashboard",
-        "Safe Spending Calculator",
-        "90-Day Forecast"
+        "Adding New Vendors",
+        "Setting Payment Terms",
+        "Vendor Communication"
       ]
     }
   ];
