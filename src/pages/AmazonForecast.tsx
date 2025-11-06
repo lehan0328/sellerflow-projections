@@ -301,10 +301,23 @@ export default function AmazonForecast() {
         
         let daysToUse;
         if (isCurrentMonth) {
-          // For current month: use days elapsed so far (month-to-date)
-          daysToUse = now.getDate(); // Current day of month (1-31)
-          avgPayoutLabel = avgPayoutLabel + ' (MTD)'; // Add MTD indicator
-          console.log('[AmazonForecast] Current month - using days elapsed:', daysToUse);
+          // For current month: calculate from last payout's close date
+          const lastClosedPayout = confirmedPayouts
+            .filter(p => p.status === 'confirmed')
+            .sort((a, b) => new Date(b.payout_date).getTime() - new Date(a.payout_date).getTime())[0];
+          
+          if (lastClosedPayout?.raw_settlement_data?.FinancialEventGroupEnd) {
+            const closeDate = new Date(lastClosedPayout.raw_settlement_data.FinancialEventGroupEnd);
+            const daysSinceClose = Math.ceil((now.getTime() - closeDate.getTime()) / (1000 * 60 * 60 * 24));
+            daysToUse = Math.max(1, daysSinceClose); // At least 1 day
+            avgPayoutLabel = avgPayoutLabel + ' (MTD)'; // Add MTD indicator
+            console.log('[AmazonForecast] Current month - using days since last close:', daysToUse, 'Close date:', closeDate);
+          } else {
+            // Fallback to regular MTD if no close date available
+            daysToUse = now.getDate();
+            avgPayoutLabel = avgPayoutLabel + ' (MTD)';
+            console.log('[AmazonForecast] Current month - fallback to days elapsed:', daysToUse);
+          }
         } else {
           // For past months: use total days in that month
           daysToUse = new Date(year, month, 0).getDate();
