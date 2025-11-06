@@ -261,18 +261,16 @@ export default function Analytics() {
       })
       .reduce((sum, tx) => sum + tx.amount, 0);
 
-    // Recurring expenses for this month (only active expenses) - MTD
+    // Recurring expenses that already occurred MTD
     const recurringExpensesMonth = recurringExpenses
-      .filter(e => {
-        if (!e.is_active || e.type !== 'expense') return false;
-        const startDate = new Date(e.start_date);
-        const endDate = e.end_date ? new Date(e.end_date) : null;
-        // Check if the recurring expense is active during this month
-        return startDate <= now && (!endDate || endDate >= startOfMonth);
-      })
+      .filter(e => e.is_active && e.type === 'expense')
       .reduce((sum, e) => {
-        // For simplicity, assume one occurrence per month
-        return sum + e.amount;
+        const occurrences = generateRecurringDates(
+          e as any,
+          startOfMonth,
+          now
+        );
+        return sum + (e.amount * occurrences.length);
       }, 0);
 
     const totalOutflow = bankOutflow + transactionOutflow + recurringExpensesMonth;
