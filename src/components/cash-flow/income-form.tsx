@@ -543,7 +543,7 @@ export const IncomeForm = ({
                             : "text-muted-foreground hover:text-foreground"
                         )}
                       >
-                        Bank Transfer
+                        Cash
                       </button>
                       <button
                         type="button"
