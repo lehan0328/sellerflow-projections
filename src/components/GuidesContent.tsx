@@ -44,19 +44,19 @@ export const GuidesContent = () => {
         {
           title: "Add Recurring Expense",
           path: "/guides/add-recurring-expense"
-        },
-        {
-          title: "Editing transactions",
-          path: "/guides/editing-transactions"
         }
       ]
     },
     {
-      title: "Modifying Transactions",
+      title: "Modifying Existing Transactions",
       description: "Understanding your cash flow forecasts",
       icon: <FileText className="h-6 w-6" />,
       path: "/guides/cash-flow",
       guides: [
+        {
+          title: "Editing transactions",
+          path: "/guides/editing-transactions"
+        },
         "Reading the Dashboard",
         "Safe Spending Calculator",
         "90-Day Forecast"
