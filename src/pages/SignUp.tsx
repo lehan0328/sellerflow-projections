@@ -1,16 +1,18 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useCallback } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, Eye, EyeOff } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ArrowLeft, Eye, EyeOff, Check, X, Loader2 } from "lucide-react";
 import aurenIcon from "@/assets/auren-icon-blue.png";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 export const SignUp = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [signUpData, setSignUpData] = useState({
@@ -21,7 +23,18 @@ export const SignUp = () => {
     lastName: '',
     company: '',
     monthlyAmazonRevenue: '',
+    referralCode: '',
   });
+  const [referralCodeStatus, setReferralCodeStatus] = useState<'idle' | 'validating' | 'valid' | 'invalid'>('idle');
+
+  // Check for referral code in URL parameters
+  useEffect(() => {
+    const refCode = searchParams.get('ref') || searchParams.get('referral');
+    if (refCode) {
+      const upperCode = refCode.toUpperCase().trim();
+      setSignUpData(prev => ({ ...prev, referralCode: upperCode }));
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     // Check if user is already authenticated
@@ -43,6 +56,42 @@ export const SignUp = () => {
 
     return () => subscription.unsubscribe();
   }, [navigate]);
+
+  // Referral code validation function
+  const validateReferralCode = useCallback(async (code: string) => {
+    if (!code || code.length < 3) {
+      setReferralCodeStatus('idle');
+      return;
+    }
+
+    setReferralCodeStatus('validating');
+
+    try {
+      const { data, error } = await supabase
+        .from('referral_codes')
+        .select('code')
+        .eq('code', code.toUpperCase())
+        .single();
+
+      setReferralCodeStatus(data && !error ? 'valid' : 'invalid');
+    } catch (err) {
+      setReferralCodeStatus('invalid');
+    }
+  }, []);
+
+  // Debounce the validation
+  useEffect(() => {
+    if (!signUpData.referralCode) {
+      setReferralCodeStatus('idle');
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      validateReferralCode(signUpData.referralCode);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [signUpData.referralCode, validateReferralCode]);
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,19 +115,26 @@ export const SignUp = () => {
     try {
       const redirectUrl = `${window.location.origin}/auth`;
       
-      const { data, error } = await supabase.auth.signUp({
-        email: signUpData.email,
-        password: signUpData.password,
-        options: {
-          emailRedirectTo: redirectUrl,
-          data: {
-            first_name: signUpData.firstName,
-            last_name: signUpData.lastName,
-            company: signUpData.company,
-            monthly_amazon_revenue: signUpData.monthlyAmazonRevenue,
-          }
-        }
-      });
+    const metadata: Record<string, any> = {
+      first_name: signUpData.firstName,
+      last_name: signUpData.lastName,
+      company: signUpData.company,
+      monthly_amazon_revenue: signUpData.monthlyAmazonRevenue,
+    };
+
+    // Only include referral code if it's valid
+    if (signUpData.referralCode && referralCodeStatus === 'valid') {
+      metadata.referral_code = signUpData.referralCode.toUpperCase();
+    }
+
+    const { data, error } = await supabase.auth.signUp({
+      email: signUpData.email,
+      password: signUpData.password,
+      options: {
+        emailRedirectTo: redirectUrl,
+        data: metadata
+      }
+    });
 
       if (error) throw error;
 
@@ -208,6 +264,49 @@ export const SignUp = () => {
                     disabled={loading}
                     required
                   />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="referralCode" className="text-base">
+                    Referral Code <span className="text-muted-foreground text-sm font-normal">(Optional)</span>
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      id="referralCode"
+                      type="text"
+                      placeholder="Enter referral code"
+                      value={signUpData.referralCode}
+                      onChange={(e) => {
+                        const value = e.target.value.toUpperCase().trim();
+                        setSignUpData({ ...signUpData, referralCode: value });
+                      }}
+                      className="h-12 pr-12 border-primary/20 bg-background/50 backdrop-blur-sm focus:border-primary focus:ring-primary/20 transition-all"
+                      maxLength={20}
+                      disabled={loading}
+                    />
+                    {referralCodeStatus === 'validating' && (
+                      <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 animate-spin text-muted-foreground" />
+                    )}
+                    {referralCodeStatus === 'valid' && (
+                      <Check className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-green-500" />
+                    )}
+                    {referralCodeStatus === 'invalid' && (
+                      <X className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-destructive" />
+                    )}
+                  </div>
+                  {referralCodeStatus === 'valid' && (
+                    <Alert className="bg-green-500/10 border-green-500/20">
+                      <Check className="h-4 w-4 text-green-500" />
+                      <AlertDescription className="text-green-600 dark:text-green-400 text-sm">
+                        Valid code! You'll get 10% off for 6 months after your trial ends.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                  {referralCodeStatus === 'invalid' && (
+                    <p className="text-xs text-destructive">
+                      Invalid referral code. You can still sign up without it.
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
