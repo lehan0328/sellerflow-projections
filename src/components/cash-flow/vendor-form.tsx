@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { useCategories } from "@/hooks/useCategories";
 import { AddCategoryDialog } from "./add-category-dialog";
 import { Plus } from "lucide-react";
+import { capitalizeName } from "@/lib/utils";
 
 interface VendorFormProps {
   open: boolean;
@@ -65,13 +66,15 @@ export const VendorForm = ({ open, onOpenChange, onAddVendor, existingVendors = 
       return;
     }
     
+    const capitalizedName = capitalizeName(formData.name);
+    
     // Check for duplicate vendor name
     const duplicateVendor = existingVendors.find(
-      vendor => vendor.name.toLowerCase() === formData.name.toLowerCase()
+      vendor => vendor.name.toLowerCase() === capitalizedName.toLowerCase()
     );
     
     if (duplicateVendor) {
-      toast.error(`Vendor "${formData.name}" already exists. Please use a different name.`);
+      toast.error(`Vendor "${capitalizedName}" already exists. Please use a different name.`);
       return;
     }
     
@@ -94,7 +97,7 @@ export const VendorForm = ({ open, onOpenChange, onAddVendor, existingVendors = 
     
     const vendor = {
       id: Date.now().toString(),
-      name: formData.name,
+      name: capitalizedName,
       category: formData.category,
       paymentMethod: formData.paymentMethod, // Include payment method in vendor data
       paymentType: formData.paymentType,

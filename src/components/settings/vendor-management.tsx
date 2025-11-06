@@ -11,6 +11,7 @@ import { useVendors, type Vendor } from "@/hooks/useVendors";
 import { Building2, Plus, Trash2, Pencil, Search } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { capitalizeName } from "@/lib/utils";
 
 interface VendorFormData {
   name: string;
@@ -86,7 +87,7 @@ export function VendorManagement() {
       }
 
       await addVendor({
-        name: formData.name,
+        name: capitalizeName(formData.name),
         totalOwed: 0,
         nextPaymentDate: dueDate,
         nextPaymentAmount: 0,
@@ -132,7 +133,7 @@ export function VendorManagement() {
 
     try {
       await updateVendor(editingVendor.id, {
-        name: formData.name,
+        name: capitalizeName(formData.name),
         category: formData.category,
         paymentType: formData.paymentType as any,
         paymentMethod: formData.paymentMethod as any,

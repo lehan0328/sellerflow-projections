@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useCustomers } from "@/hooks/useCustomers";
 import { Users, Plus, Trash2, User, Pencil, Search } from "lucide-react";
 import { toast } from "sonner";
+import { capitalizeName } from "@/lib/utils";
 
 interface CustomerFormData {
   name: string;
@@ -52,7 +53,7 @@ export function CustomerManagement() {
 
     try {
       await addCustomer({ 
-        name: formData.name,
+        name: capitalizeName(formData.name),
         paymentTerms: 'immediate',
         netTermsDays: undefined,
         category: formData.category
@@ -79,7 +80,7 @@ export function CustomerManagement() {
 
     try {
       await updateCustomer(editingCustomer.id, { 
-        name: formData.name,
+        name: capitalizeName(formData.name),
         paymentTerms: 'immediate',
         netTermsDays: undefined,
         category: formData.category
