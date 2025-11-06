@@ -945,8 +945,8 @@ export function AmazonPayouts() {
           });
         })()}
         {amazonPayouts.length > 0 && <div className="pt-2">
-            <Button variant="outline" className="w-full" onClick={() => navigate('/dashboard?view=settings&section=amazon')}>
-              View Amazon Settings & Full Schedule
+            <Button variant="outline" className="w-full" onClick={() => setShowSettledPayouts(true)}>
+              View Settlement History
             </Button>
           </div>}
       </CardContent>
