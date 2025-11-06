@@ -248,7 +248,21 @@ export default function Analytics() {
       })
       .reduce((sum, tx) => sum + tx.amount, 0);
 
-    const totalOutflow = bankOutflow + transactionOutflow;
+    // Recurring expenses for this month (only active expenses) - MTD
+    const recurringExpensesMonth = recurringExpenses
+      .filter(e => {
+        if (!e.is_active || e.type !== 'expense') return false;
+        const startDate = new Date(e.start_date);
+        const endDate = e.end_date ? new Date(e.end_date) : null;
+        // Check if the recurring expense is active during this month
+        return startDate <= now && (!endDate || endDate >= startOfMonth);
+      })
+      .reduce((sum, e) => {
+        // For simplicity, assume one occurrence per month
+        return sum + e.amount;
+      }, 0);
+
+    const totalOutflow = bankOutflow + transactionOutflow + recurringExpensesMonth;
 
     // Current bank balance
     const currentBalance = accounts.reduce((sum, acc) => sum + (acc.balance || 0), 0);
@@ -301,21 +315,6 @@ export default function Analytics() {
       .reduce((sum, i) => sum + i.amount, 0);
 
     const totalForecastedIncome = amazonRevenueFiltered + forecastedAmazonPayouts + additionalIncome + recurringIncome;
-
-    // Recurring expenses for this month (only active expenses)
-    const recurringExpensesMonth = recurringExpenses
-      .filter(e => {
-        if (!e.is_active || e.type !== 'expense') return false;
-        const startDate = new Date(e.start_date);
-        const endDate = e.end_date ? new Date(e.end_date) : null;
-        // Check if the recurring expense is active during this month
-        return startDate <= endOfMonth && (!endDate || endDate >= startOfMonth);
-      })
-      .reduce((sum, e) => {
-        // For simplicity, assume one occurrence per month
-        // In a real scenario, you'd calculate based on frequency
-        return sum + e.amount;
-      }, 0);
 
     // Purchase orders (pending) this month
     const purchaseOrdersMonth = dbTransactions
