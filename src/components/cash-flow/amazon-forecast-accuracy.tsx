@@ -248,6 +248,36 @@ export const AmazonForecastAccuracy = () => {
           </Alert>
         )}
 
+        {/* Overall Accuracy Badge */}
+        <div className="grid gap-4 md:grid-cols-3">
+          <div className="flex flex-col items-center justify-center p-4 bg-muted/50 rounded-lg">
+            <span className="text-xs text-muted-foreground mb-1">Overall Accuracy</span>
+            <Badge variant={avgAccuracy >= 90 ? "default" : avgAccuracy >= 75 ? "secondary" : "destructive"} className="text-xl">
+              {avgAccuracy.toFixed(1)}%
+            </Badge>
+            <Progress value={avgAccuracy} className="w-full mt-2" />
+          </div>
+
+          <div className="flex flex-col items-center justify-center p-4 bg-muted/50 rounded-lg">
+            <span className="text-xs text-muted-foreground mb-1">Avg Error (MAPE)</span>
+            <span className="text-2xl font-bold">{calculatedMAPE.toFixed(1)}%</span>
+            <span className="text-xs text-muted-foreground mt-1">
+              {calculatedMAPE < 10 ? '🎯 Excellent' : calculatedMAPE < 20 ? '✓ Good' : '⚠️ High'}
+            </span>
+          </div>
+
+          <div className="flex flex-col items-center justify-center p-4 bg-muted/50 rounded-lg">
+            <span className="text-xs text-muted-foreground mb-1">Bias</span>
+            <span className={`text-2xl font-bold ${calculatedBias > 0 ? 'text-orange-600' : calculatedBias < 0 ? 'text-blue-600' : 'text-green-600'}`}>
+              {calculatedBias > 0 ? '+' : ''}{calculatedBias.toFixed(1)}%
+            </span>
+            <span className="text-xs text-muted-foreground mt-1">
+              {Math.abs(calculatedBias) < 5 ? '✓ Balanced' : calculatedBias > 0 ? '📉 Over-forecast' : '📈 Under-forecast'}
+            </span>
+          </div>
+        </div>
+
+
 
         {/* Individual Comparisons */}
         <div className="space-y-3">
