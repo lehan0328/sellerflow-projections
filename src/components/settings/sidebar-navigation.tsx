@@ -9,7 +9,6 @@ import {
   ShoppingCart,
   Users,
   Database,
-  Repeat,
   Tags,
   MessageSquare
 } from "lucide-react";
@@ -34,21 +33,6 @@ const navigationItems = [
     id: 'credit-cards',
     label: 'Credit Cards',
     icon: CreditCard,
-  },
-  {
-    id: 'vendors',
-    label: 'Vendor Management',
-    icon: Building2,
-  },
-  {
-    id: 'customers',
-    label: 'Customer Management',
-    icon: Users,
-  },
-  {
-    id: 'recurring-expenses',
-    label: 'Recurring Transactions',
-    icon: Repeat,
   },
   {
     id: 'categories',
@@ -93,9 +77,6 @@ const adminOnlySections = [
   'team',
   'bank-accounts',
   'credit-cards',
-  'vendors',
-  'customers',
-  'recurring-expenses',
   'categories',
   'amazon',
   'export',
