@@ -974,6 +974,40 @@ export default function Analytics() {
               </ResponsiveContainer>
             </CardContent>
           </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Payment Status Overview</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center p-3 bg-red-50 dark:bg-red-950/20 rounded-lg">
+                  <span className="font-medium">Overdue</span>
+                  <span className="text-red-600 font-bold">
+                    {vendors.filter(v => v.status === 'overdue').length} vendors
+                  </span>
+                </div>
+                <div className="flex justify-between items-center p-3 bg-amber-50 dark:bg-amber-950/20 rounded-lg">
+                  <span className="font-medium">Current</span>
+                  <span className="text-amber-600 font-bold">
+                    {vendors.filter(v => v.status === 'current').length} vendors
+                  </span>
+                </div>
+                <div className="flex justify-between items-center p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
+                  <span className="font-medium">Upcoming</span>
+                  <span className="text-blue-600 font-bold">
+                    {vendors.filter(v => v.status === 'upcoming').length} vendors
+                  </span>
+                </div>
+                <div className="flex justify-between items-center p-3 bg-green-50 dark:bg-green-950/20 rounded-lg">
+                  <span className="font-medium">Paid</span>
+                  <span className="text-green-600 font-bold">
+                    {vendors.filter(v => v.status === 'paid').length} vendors
+                  </span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="revenue" className="space-y-4">
@@ -1072,43 +1106,6 @@ export default function Analytics() {
                 {recurringExpenseCategoryData.length === 0 && (
                   <p className="text-sm text-muted-foreground text-center py-4">No recurring expenses in this period</p>
                 )}
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2">
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Payment Status Overview</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center p-3 bg-red-50 dark:bg-red-950/20 rounded-lg">
-                    <span className="font-medium">Overdue</span>
-                    <span className="text-red-600 font-bold">
-                      {vendors.filter(v => v.status === 'overdue').length} vendors
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center p-3 bg-amber-50 dark:bg-amber-950/20 rounded-lg">
-                    <span className="font-medium">Current</span>
-                    <span className="text-amber-600 font-bold">
-                      {vendors.filter(v => v.status === 'current').length} vendors
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
-                    <span className="font-medium">Upcoming</span>
-                    <span className="text-blue-600 font-bold">
-                      {vendors.filter(v => v.status === 'upcoming').length} vendors
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center p-3 bg-green-50 dark:bg-green-950/20 rounded-lg">
-                    <span className="font-medium">Paid</span>
-                    <span className="text-green-600 font-bold">
-                      {vendors.filter(v => v.status === 'paid').length} vendors
-                    </span>
-                  </div>
-                </div>
               </CardContent>
             </Card>
           </div>
