@@ -124,9 +124,9 @@ export const AmazonSettledPayouts = ({ open, onOpenChange }: AmazonSettledPayout
                             )}
                           </div>
                           
-                          <p className="text-sm font-medium">
-                            Settlement ID: {payout.settlement_id}
-                          </p>
+                <p className="text-sm font-medium truncate">
+                  Settlement ID: {payout.settlement_id}
+                </p>
                           
                           {payout.amazon_accounts && (
                             <p className="text-xs text-muted-foreground mt-1">
