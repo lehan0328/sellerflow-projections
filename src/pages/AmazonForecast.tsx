@@ -841,17 +841,19 @@ export default function AmazonForecast() {
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Last 60 Days Total:</span>
+                      <span className="text-muted-foreground">Previous 30 Days Total:</span>
                       <span className="font-mono">
                         ${(() => {
                           const now = new Date();
                           now.setHours(0, 0, 0, 0);
                           const sixtyDaysAgo = new Date(now);
                           sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+                          const thirtyOneDaysAgo = new Date(now);
+                          thirtyOneDaysAgo.setDate(thirtyOneDaysAgo.getDate() - 31);
                           const total = confirmedPayouts
                             .filter(p => {
                               const date = new Date(p.payout_date);
-                              return date >= sixtyDaysAgo && date <= now;
+                              return date >= sixtyDaysAgo && date < thirtyOneDaysAgo;
                             })
                             .reduce((sum, p) => sum + p.total_amount, 0);
                           return total.toLocaleString();
