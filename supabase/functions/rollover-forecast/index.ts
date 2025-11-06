@@ -17,7 +17,7 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     const { amazonAccountId, userId } = await req.json();
-    
+
     if (!amazonAccountId || !userId) {
       throw new Error('amazonAccountId and userId are required');
     }
@@ -28,15 +28,15 @@ serve(async (req) => {
     const now = new Date();
     const estOffset = -5 * 60; // EST is UTC-5
     const estNow = new Date(now.getTime() + estOffset * 60 * 1000);
-    
+
     // Get yesterday's date in EST
     const yesterday = new Date(estNow);
     yesterday.setDate(yesterday.getDate() - 1);
     const yesterdayStr = yesterday.toISOString().split('T')[0];
-    
+
     // Get today's date in EST
     const todayStr = estNow.toISOString().split('T')[0];
-    
+
     console.log('[ROLLOVER] Checking dates - Yesterday:', yesterdayStr, 'Today:', todayStr);
 
     // Fetch recent confirmed settlements (last 3 days to account for delays)
@@ -96,19 +96,19 @@ serve(async (req) => {
       }
     }
 
-    if (settlementClosedYesterday) {
-      console.log('[ROLLOVER] Settlement closed yesterday, no rollover needed');
-      return new Response(
-        JSON.stringify({
-          success: true,
-          rolloverOccurred: false,
-          message: 'Settlement found for yesterday, no rollover needed'
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+//     if (settlementClosedYesterday) {
+//       console.log('[ROLLOVER] Settlement closed yesterday, no rollover needed');
+//       return new Response(
+//         JSON.stringify({
+//           success: true,
+//           rolloverOccurred: false,
+//           message: 'Settlement found for yesterday, no rollover needed'
+//         }),
+//         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+//       );
+//     }
 
-    console.log('[ROLLOVER] No Succeeded settlement found for yesterday, checking forecasts...');
+//     console.log('[ROLLOVER] No Succeeded settlement found for yesterday, checking forecasts...');
 
     // Fetch yesterday's forecast
     const { data: yesterdayForecast, error: yesterdayError } = await supabase
@@ -219,9 +219,9 @@ serve(async (req) => {
     console.error('[ROLLOVER] Error:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
-      { 
+      {
         status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     );
   }
