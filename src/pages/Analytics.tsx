@@ -536,16 +536,12 @@ export default function Analytics() {
     recurringExpenses.forEach(expense => {
       if (!expense.is_active) return;
       
-      const expenseStart = new Date(expense.start_date);
-      const expenseEnd = expense.end_date ? new Date(expense.end_date) : null;
+      // Calculate actual occurrences within the date range
+      const occurrences = generateRecurringDates(expense, start, end);
       
-      // Check if the recurring expense is active during the selected date range
-      const isActive = expenseStart <= end && (!expenseEnd || expenseEnd >= start);
-      
-      if (isActive && expense.category && expense.category.trim()) {
-        // Calculate the total for the date range based on frequency
-        // For simplicity, we'll just add the monthly amount
-        categoryTotals[expense.category] = (categoryTotals[expense.category] || 0) + (expense.amount || 0);
+      if (occurrences.length > 0 && expense.category && expense.category.trim()) {
+        const totalAmount = occurrences.length * (expense.amount || 0);
+        categoryTotals[expense.category] = (categoryTotals[expense.category] || 0) + totalAmount;
       }
     });
 
