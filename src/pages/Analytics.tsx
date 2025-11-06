@@ -626,12 +626,10 @@ export default function Analytics() {
 
     // Aggregate income from received income items
     incomeItems.forEach(item => {
-      if (item.status === 'received') {
-        const date = new Date(item.paymentDate);
-        const key = date.toLocaleDateString('en-US', { month: 'short' });
-        if (monthlyData[key]) {
-          monthlyData[key].income += item.amount;
-        }
+      const date = new Date(item.paymentDate);
+      const key = date.toLocaleDateString('en-US', { month: 'short' });
+      if (monthlyData[key]) {
+        monthlyData[key].income += item.amount;
       }
     });
 
@@ -642,6 +640,17 @@ export default function Analytics() {
         const key = date.toLocaleDateString('en-US', { month: 'short' });
         if (monthlyData[key]) {
           monthlyData[key].income += tx.amount;
+        }
+      }
+    });
+
+    // Add Amazon payouts (confirmed only - actual payouts received)
+    amazonPayouts.forEach(payout => {
+      if (payout.status === 'confirmed') {
+        const date = new Date(payout.payout_date);
+        const key = date.toLocaleDateString('en-US', { month: 'short' });
+        if (monthlyData[key]) {
+          monthlyData[key].income += (payout.total_amount || 0);
         }
       }
     });
@@ -674,7 +683,7 @@ export default function Analytics() {
       expenses: data.expenses,
       net: data.income - data.expenses
     }));
-  }, [incomeItems, bankTransactions, dbTransactions]);
+  }, [incomeItems, bankTransactions, dbTransactions, amazonPayouts]);
 
   const COLORS = ['#8b5cf6', '#06b6d4', '#f59e0b', '#10b981', '#ef4444', '#ec4899'];
 
@@ -1116,6 +1125,46 @@ export default function Analytics() {
               </div>
             </CardContent>
           </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Income vs Expenses (Last 6 Months)</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={400}>
+                <AreaChart data={cashFlowData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" />
+                  <YAxis />
+                  <Tooltip formatter={(value) => `$${Number(value).toLocaleString()}`} />
+                  <Legend />
+                  <Area type="monotone" dataKey="income" stackId="1" stroke="#10b981" fill="#10b981" fillOpacity={0.6} />
+                  <Area type="monotone" dataKey="expenses" stackId="2" stroke="#ef4444" fill="#ef4444" fillOpacity={0.6} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Net Cash Flow Trend</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={cashFlowData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" />
+                  <YAxis />
+                  <Tooltip formatter={(value) => `$${Number(value).toLocaleString()}`} />
+                  <Bar dataKey="net" fill="#8b5cf6">
+                    {cashFlowData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.net >= 0 ? '#10b981' : '#ef4444'} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="revenue" className="space-y-4">
@@ -1237,45 +1286,6 @@ export default function Analytics() {
         </TabsContent>
 
         <TabsContent value="cashflow" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Income vs Expenses (Last 6 Months)</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={400}>
-                <AreaChart data={cashFlowData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
-                  <YAxis />
-                  <Tooltip formatter={(value) => `$${Number(value).toLocaleString()}`} />
-                  <Legend />
-                  <Area type="monotone" dataKey="income" stackId="1" stroke="#10b981" fill="#10b981" fillOpacity={0.6} />
-                  <Area type="monotone" dataKey="expenses" stackId="2" stroke="#ef4444" fill="#ef4444" fillOpacity={0.6} />
-                </AreaChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Net Cash Flow Trend</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={cashFlowData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
-                  <YAxis />
-                  <Tooltip formatter={(value) => `$${Number(value).toLocaleString()}`} />
-                  <Bar dataKey="net" fill="#8b5cf6">
-                    {cashFlowData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.net >= 0 ? '#10b981' : '#ef4444'} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
         </TabsContent>
 
         <TabsContent value="expenses" className="space-y-4">
