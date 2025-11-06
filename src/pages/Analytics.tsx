@@ -300,7 +300,7 @@ export default function Analytics() {
       })
       .reduce((sum, i) => sum + i.amount, 0);
 
-    const totalForecastedIncome = forecastedAmazonPayouts + additionalIncome + recurringIncome;
+    const totalForecastedIncome = amazonRevenueFiltered + forecastedAmazonPayouts + additionalIncome + recurringIncome;
 
     // Recurring expenses for this month (only active expenses)
     const recurringExpensesMonth = recurringExpenses
