@@ -227,9 +227,9 @@ export const AmazonForecastAccuracy = () => {
         
         {/* Frontend Outliers Notice */}
         {totalExcluded > 0 && (
-          <Alert className="border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/20">
-            <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-            <AlertDescription className="text-amber-800 dark:text-amber-200">
+          <Alert className="border-amber-200/40 bg-amber-50/30 dark:border-amber-800/30 dark:bg-amber-950/10 py-2">
+            <AlertCircle className="h-3 w-3 text-amber-500/60 dark:text-amber-400/50" />
+            <AlertDescription className="text-xs text-amber-700/70 dark:text-amber-300/60">
               {totalExcluded} extreme outlier{totalExcluded > 1 ? 's' : ''} excluded from calculations:
               {thresholdExcluded > 0 && ` ${thresholdExcluded} with errors over 200%`}
               {thresholdExcluded > 0 && iqrExcluded > 0 && ', '}
