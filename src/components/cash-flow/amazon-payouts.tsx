@@ -401,15 +401,6 @@ export function AmazonPayouts() {
               <CardTitle>Amazon Payouts</CardTitle>
             </div>
             
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => setShowSettledPayouts(true)}
-            >
-              <FileText className="h-4 w-4 mr-2" />
-              View Settlements ({settledPayoutsCount})
-            </Button>
-            
             <Button variant="outline" size="sm" onClick={() => navigate('/dashboard?view=settings&section=amazon')}>
               <Settings className="h-4 w-4 mr-2" />
               Manage
