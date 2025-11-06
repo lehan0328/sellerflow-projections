@@ -298,11 +298,11 @@ export default function Analytics() {
       })
       .reduce((sum, p) => sum + (p.total_amount || 0), 0);
 
-    // Forecasted Amazon payouts (estimated payouts this month)
+    // Forecasted Amazon payouts (forecasted payouts this month)
     const forecastedAmazonPayouts = amazonPayouts
       .filter(p => {
         const payoutDate = new Date(p.payout_date);
-        return p.status === 'estimated' && 
+        return p.status === 'forecasted' && 
                payoutDate >= startOfMonth && 
                payoutDate <= endOfMonth;
       })
