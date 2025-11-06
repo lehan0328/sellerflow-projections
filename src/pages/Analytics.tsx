@@ -534,7 +534,7 @@ export default function Analytics() {
     
     // Add amounts from recurring expenses within the date range
     recurringExpenses.forEach(expense => {
-      if (!expense.is_active) return;
+      if (!expense.is_active || expense.type !== 'expense') return;
       
       // Calculate actual occurrences within the date range
       const occurrences = generateRecurringDates(expense, start, end);
