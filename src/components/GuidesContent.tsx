@@ -20,7 +20,7 @@ export const GuidesContent = () => {
   
   const guideSections = [
     {
-      title: "Income & Expenses",
+      title: "Creating Transactions",
       description: "Managing your business income and expenses",
       icon: <TrendingUp className="h-6 w-6" />,
       path: "/guides/income-expenses",
@@ -85,7 +85,7 @@ export const GuidesContent = () => {
       ]
     },
     {
-      title: "Cash Flow Analysis",
+      title: "Modifying Transactions",
       description: "Understanding your cash flow forecasts",
       icon: <FileText className="h-6 w-6" />,
       path: "/guides/cash-flow",
