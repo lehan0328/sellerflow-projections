@@ -98,7 +98,6 @@ export const CashFlowCalendar = ({
   // ALL STATE HOOKS MUST BE AT THE TOP - DO NOT ADD ANY BETWEEN DATA PROCESSING
   const [currentDate, setCurrentDate] = useState(new Date());
   const [chartTimeRange, setChartTimeRange] = useState<'1' | '3' | '6' | '12'>('3');
-  const [chartType, setChartType] = useState<'bar' | 'line'>('line');
   const [selectedTransaction, setSelectedTransaction] = useState<CashFlowEvent | null>(null);
   const [showTransactionModal, setShowTransactionModal] = useState(false);
   const [showLowestBalanceLine, setShowLowestBalanceLine] = useState(true);
@@ -922,16 +921,6 @@ export const CashFlowCalendar = ({
                     <SelectItem value="12">1 Year</SelectItem>
                   </SelectContent>
                 </Select>
-                
-                <Select value={chartType} onValueChange={(value: 'bar' | 'line') => setChartType(value)}>
-                  <SelectTrigger className="w-[130px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="bar">Bar Chart</SelectItem>
-                    <SelectItem value="line">Line Chart</SelectItem>
-                  </SelectContent>
-                </Select>
               </div>
             </div>
           </div>
@@ -963,232 +952,9 @@ export const CashFlowCalendar = ({
                    </Button>
                  )}
                </div>
-               <ChartContainer config={chartConfig} className="h-full w-full">
-                 <ResponsiveContainer width="100%" height="100%">
-                   {chartType === 'bar' ? (
-                       <BarChart 
-                        data={displayData} 
-                        onClick={handleChartClick}
-                        onMouseDown={handleMouseDown}
-                        onMouseMove={handleMouseMove}
-                        onMouseUp={handleMouseUp}
-                        onMouseLeave={() => setActiveTooltipIndex(null)}
-                        margin={chartMargin}
-                        syncMethod="index"
-                      >
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis 
-                        dataKey="date" 
-                        tick={{ fontSize: 12 }}
-                        interval="preserveStartEnd"
-                      />
-                       <YAxis 
-                        tick={{ fontSize: 12 }}
-                        tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
-                        domain={yDomain}
-                        allowDataOverflow
-                      />
-                       <ChartTooltip 
-                        isAnimationActive={false}
-                        allowEscapeViewBox={{ x: true, y: true }}
-                        cursor={{ strokeDasharray: '3 3' }}
-                        position={{ x: 12, y: 12 }}
-                        wrapperStyle={{ pointerEvents: 'none' }}
-                        active={activeTooltipIndex !== null}
-                        payload={tooltipPayload}
-                        label={activeTooltipIndex !== null ? displayData[activeTooltipIndex]?.date : undefined}
-                        content={
-                          <ChartTooltipContent 
-                            formatter={(value: number, name: string) => {
-                              const labels: Record<string, string> = {
-                                totalResources: "Total Resources:",
-                                cashBalance: "Cash Flow:",
-                                creditCardBalance: "Available Credit:",
-                                reserveAmount: "Reserve Amount:",
-                                forecastPayout: "Forecast Payout:",
-                                projectedBalance: "Projected Balance:",
-                                cashFlow: "Cash Flow:",
-                                availableCredit: "Total Resources:",
-                                creditCardCredit: "Available Credit:",
-                                reserve: "Reserve Amount:",
-                              };
-                              return [labels[name] || name, `$${formatCurrency(value)}`];
-                            }}
-                            itemSorter={(item) => {
-                              const order = [
-                                "totalResources",
-                                "cashBalance",
-                                "creditCardBalance",
-                                "reserveAmount",
-                                "forecastPayout",
-                                "projectedBalance",
-                                "cashFlow",
-                                "availableCredit",
-                                "creditCardCredit",
-                                "reserve",
-                              ];
-                              return order.indexOf(item.dataKey as string);
-                            }}
-                          />
-                        }
-                        labelFormatter={(label, payload) => {
-                          if (payload && payload[0]) {
-                            const data = payload[0].payload;
-                            const hasTransactions = data.transactions && data.transactions.length > 0;
-                            return (
-                              <div className="space-y-2 min-w-[280px]">
-                                <p className="font-semibold text-base border-b pb-2">{label}</p>
-                                
-                                {/* Balance Section */}
-                                <div className="space-y-1">
-                                  <p className="font-bold text-base">
-                                    Projected Balance: <span className="text-primary">${formatCurrency(data.cashFlow)}</span>
-                                  </p>
-                                  {data.dailyChange !== 0 && (
-                                    <p className={`font-medium ${data.dailyChange > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                      Daily Net: {data.dailyChange > 0 ? '+' : ''}${formatCurrency(Math.abs(data.dailyChange))}
-                                    </p>
-                                  )}
-                                </div>
-
-                                {/* Daily Transactions */}
-                                {hasTransactions && (
-                                  <div className="space-y-1.5 border-t pt-2">
-                                    <p className="font-semibold text-xs uppercase text-muted-foreground">Daily Activity</p>
-                                     {data.inflow > 0 && (
-                                       <div>
-                                         <p className="text-green-600 font-medium">↑ Inflows: +${data.inflow.toLocaleString()}</p>
-                                         {data.inflowEvents?.map((evt: CashFlowEvent, idx: number) => (
-                                           <p key={idx} className="text-xs text-muted-foreground ml-3">• {evt.description}: ${evt.amount.toLocaleString()}</p>
-                                         ))}
-                                       </div>
-                                     )}
-                                     {data.outflow > 0 && (
-                                       <div>
-                                         <p className="text-red-600 font-medium">↓ Outflows: -${data.outflow.toLocaleString()}</p>
-                                         {data.purchaseOrderEvents?.map((evt: CashFlowEvent, idx: number) => (
-                                           <p key={idx} className="text-xs text-muted-foreground ml-3">• {evt.description}: ${evt.amount.toLocaleString()}</p>
-                                         ))}
-                                         {data.creditPaymentEvents?.map((evt: CashFlowEvent, idx: number) => (
-                                           <p key={idx} className="text-xs text-muted-foreground ml-3">• {evt.description}: ${evt.amount.toLocaleString()}</p>
-                                         ))}
-                                         {data.outflowEvents?.map((evt: CashFlowEvent, idx: number) => (
-                                           <p key={idx} className="text-xs text-muted-foreground ml-3">• {evt.description}: ${evt.amount.toLocaleString()}</p>
-                                         ))}
-                                       </div>
-                                     )}
-                                  </div>
-                                )}
-
-                                {/* Cumulative Totals */}
-                                {(data.cumulativeInflow > 0 || data.cumulativeOutflow > 0) && (
-                                  <div className="space-y-1 border-t pt-2">
-                                    <p className="font-semibold text-xs uppercase text-muted-foreground">Period Totals</p>
-                                    <div className="grid grid-cols-2 gap-2 text-xs">
-                                      <div>
-                                        <p className="text-muted-foreground">Total Inflows:</p>
-                                        <p className="font-semibold text-green-600">${data.cumulativeInflow.toLocaleString()}</p>
-                                      </div>
-                                      <div>
-                                        <p className="text-muted-foreground">Total Outflows:</p>
-                                        <p className="font-semibold text-red-600">${data.cumulativeOutflow.toLocaleString()}</p>
-                                      </div>
-                                    </div>
-                                    <p className="text-xs font-medium pt-1">
-                                      Net: <span className={data.cumulativeInflow - data.cumulativeOutflow > 0 ? 'text-green-600' : 'text-red-600'}>
-                                        {data.cumulativeInflow - data.cumulativeOutflow > 0 ? '+' : ''}${(data.cumulativeInflow - data.cumulativeOutflow).toLocaleString()}
-                                      </span>
-                                    </p>
-                                  </div>
-                                )}
-
-                                {hasTransactions && (
-                                  <p className="text-primary text-xs font-medium pt-1 border-t">
-                                    💡 Click to view full transaction details
-                                  </p>
-                                )}
-                              </div>
-                            );
-                          }
-                          return label;
-                        }}
-                      />
-                      <Bar 
-                        dataKey="cashFlow" 
-                        fill={cashFlowColor}
-                        radius={[4, 4, 0, 0]}
-                        cursor="pointer"
-                      />
-                       {showTotalResourcesLine && (
-                        <Line
-                          type="monotone"
-                          dataKey="availableCredit"
-                          stroke={totalResourcesColor}
-                          strokeWidth={2}
-                          dot={false}
-                          activeDot={{ r: 8, cursor: 'pointer', strokeWidth: 0 }}
-                        />
-                      )}
-                       {showCreditCardLine && (
-                        <Line
-                          type="monotone"
-                          dataKey="creditCardCredit"
-                          stroke={creditCardColor}
-                          strokeWidth={2}
-                          dot={(props: any) => {
-                            const { cx, cy, payload, index } = props;
-                            if (payload.hasCreditCardTransaction) {
-                              return (
-                                <g key={`credit-dot-${index}`}>
-                                  <circle cx={cx} cy={cy} r={16} fill="transparent" cursor="pointer" />
-                                  <circle 
-                                    cx={cx} 
-                                    cy={cy} 
-                                    r={4} 
-                                    fill={creditCardColor}
-                                    stroke="white"
-                                    strokeWidth={2}
-                                  />
-                                </g>
-                              );
-                            }
-                            return <circle key={`credit-empty-${index}`} cx={cx} cy={cy} r={16} fill="transparent" cursor="pointer" />;
-                          }}
-                          activeDot={{ r: 8, cursor: 'pointer', strokeWidth: 0 }}
-                        />
-                      )}
-                       {showReserveLine && (
-                        <Line
-                          type="monotone"
-                          dataKey="reserve"
-                          stroke={reserveColor}
-                          strokeWidth={2}
-                          strokeDasharray="5 5"
-                          dot={false}
-                          activeDot={{ r: 8, cursor: 'pointer', strokeWidth: 0 }}
-                        />
-                       )}
-                       {showLowestBalanceLine && (
-                         <ReferenceLine
-                           y={lowestProjectedBalance}
-                           stroke={lowestBalanceColor}
-                           strokeWidth={2}
-                           strokeDasharray="3 3"
-                           label={{ value: 'Available to Spend', position: 'insideTopRight', fill: lowestBalanceColor, fontSize: 12 }}
-                         />
-                       )}
-                       {refAreaLeft && refAreaRight && (
-                         <ReferenceArea
-                           x1={refAreaLeft}
-                           x2={refAreaRight}
-                           strokeOpacity={0.3}
-                           fill="hsl(var(--primary))"
-                           fillOpacity={0.3}
-                         />
-                       )}
-                     </BarChart>
-                   ) : (
-                      <LineChart 
+                <ChartContainer config={chartConfig} className="h-full w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                       <LineChart
                         data={displayData} 
                         onClick={handleChartClick}
                          onMouseDown={handleMouseDown}
@@ -1456,9 +1222,8 @@ export const CashFlowCalendar = ({
                            fillOpacity={0.3}
                          />
                        )}
-                     </LineChart>
-                   )}
-                 </ResponsiveContainer>
+                      </LineChart>
+                  </ResponsiveContainer>
             </ChartContainer>
           </div>
         
