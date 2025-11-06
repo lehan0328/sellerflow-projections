@@ -229,7 +229,19 @@ export default function Analytics() {
       })
       .reduce((sum, p) => sum + (p.total_amount || 0), 0);
 
-    const totalInflow = bankInflow + transactionInflow + incomeInflow + amazonRevenueFiltered;
+    // Recurring income that already occurred MTD
+    const recurringInflowMTD = recurringExpenses
+      .filter(e => e.is_active && e.type === 'income')
+      .reduce((sum, e) => {
+        const occurrences = generateRecurringDates(
+          e as any,
+          startOfMonth,
+          now
+        );
+        return sum + (e.amount * occurrences.length);
+      }, 0);
+
+    const totalInflow = bankInflow + transactionInflow + incomeInflow + amazonRevenueFiltered + recurringInflowMTD;
 
     // Total cash outflow from bank transactions (debits) - MTD
     const bankOutflow = bankTransactions
