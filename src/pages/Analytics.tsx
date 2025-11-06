@@ -288,12 +288,22 @@ export default function Analytics() {
     const netCashFlow = totalInflow - totalOutflow;
 
     // Forecasted Income vs Expenses for this month
-    // Forecasted Amazon payouts (future payouts this month)
+    // All confirmed payouts this month
+    const confirmedPayoutsThisMonth = amazonPayouts
+      .filter(p => {
+        const payoutDate = new Date(p.payout_date);
+        return p.status === 'confirmed' && 
+               payoutDate >= startOfMonth && 
+               payoutDate <= endOfMonth;
+      })
+      .reduce((sum, p) => sum + (p.total_amount || 0), 0);
+
+    // Forecasted Amazon payouts (estimated payouts this month)
     const forecastedAmazonPayouts = amazonPayouts
       .filter(p => {
         const payoutDate = new Date(p.payout_date);
-        return (p.status === 'estimated' || p.status === 'confirmed') && 
-               payoutDate >= now && 
+        return p.status === 'estimated' && 
+               payoutDate >= startOfMonth && 
                payoutDate <= endOfMonth;
       })
       .reduce((sum, p) => sum + (p.total_amount || 0), 0);
@@ -314,19 +324,28 @@ export default function Analytics() {
       })
       .reduce((sum, i) => sum + i.amount, 0);
 
-    const totalForecastedIncome = amazonRevenueFiltered + forecastedAmazonPayouts + additionalIncome + recurringIncome;
+    const totalForecastedIncome = confirmedPayoutsThisMonth + forecastedAmazonPayouts + additionalIncome + recurringIncome;
 
-    // Purchase orders (pending) this month
+    // All purchase orders this month
     const purchaseOrdersMonth = dbTransactions
       .filter(tx => {
         const txDate = new Date(tx.transactionDate);
         return tx.type === 'purchase_order' && 
-               tx.status === 'pending' &&
                txDate >= startOfMonth && txDate <= endOfMonth;
       })
       .reduce((sum, tx) => sum + tx.amount, 0);
 
-    const totalForecastedExpenses = recurringExpensesMonth + purchaseOrdersMonth;
+    // All recurring expenses for this month
+    const recurringExpensesThisMonth = recurringExpenses
+      .filter(e => {
+        if (!e.is_active || e.type !== 'expense') return false;
+        const startDate = new Date(e.start_date);
+        const endDate = e.end_date ? new Date(e.end_date) : null;
+        return startDate <= endOfMonth && (!endDate || endDate >= startOfMonth);
+      })
+      .reduce((sum, e) => sum + e.amount, 0);
+
+    const totalForecastedExpenses = purchaseOrdersMonth + recurringExpensesThisMonth;
 
     return {
       totalInflow,
