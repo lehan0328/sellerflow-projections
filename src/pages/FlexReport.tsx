@@ -396,9 +396,8 @@ const FlexReport = () => {
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-to-br from-emerald-400/10 to-blue-400/10 rounded-full blur-3xl -z-0" />
           
           {/* Auren Watermark */}
-          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none overflow-hidden">
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden">
             <img src={aurenLogo} alt="" className="w-[600px] opacity-[0.25] select-none rotate-[-15deg] scale-110" />
-            <p className="text-7xl font-black text-slate-700/30 tracking-widest -mt-16 select-none">AUREN</p>
           </div>
           
           <div className="relative z-10 p-2 md:p-4">
