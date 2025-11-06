@@ -437,7 +437,7 @@ const FlexReport = () => {
             </div>
 
             {/* Primary Metric - Available to Spend */}
-            <div className="mb-6 text-center bg-gradient-to-br from-emerald-50/15 to-green-50/15 backdrop-blur-sm rounded-2xl p-5 border border-emerald-200/50 shadow-lg relative">
+            <div className="mb-6 text-center bg-gradient-to-br from-emerald-50 to-green-50 backdrop-blur-sm rounded-2xl p-5 border border-emerald-200/50 shadow-lg relative">
               <div className="absolute top-3 right-3 flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 border-2 border-emerald-600 rounded-full">
                 <div className="w-1.5 h-1.5 bg-emerald-600 rounded-full"></div>
                 <span className="text-[10px] font-black text-emerald-700 uppercase tracking-wider">Live Verified</span>
@@ -479,7 +479,7 @@ const FlexReport = () => {
             {/* Metrics Grid */}
             <div className="grid grid-cols-2 gap-3 mb-5">
               {/* Max 90 Day Spending Power */}
-              <div className="group bg-gradient-to-br from-blue-50/15 via-blue-100/15 to-blue-50/15 rounded-2xl p-4 border-2 border-blue-200/60 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm relative">
+              <div className="group bg-gradient-to-br from-blue-50 via-blue-100 to-blue-50 rounded-2xl p-4 border-2 border-blue-200/60 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm relative">
                 <div className="absolute top-3 right-3 flex items-center gap-1 px-2.5 py-1 bg-blue-50 border-2 border-blue-600 rounded-full">
                   <div className="w-1 h-1 bg-blue-600 rounded-full"></div>
                   <span className="text-[10px] font-black text-blue-700 uppercase tracking-wider">Verified</span>
@@ -510,7 +510,7 @@ const FlexReport = () => {
               </div>
 
               {/* Available Credit */}
-              <div className="group bg-gradient-to-br from-purple-50/15 via-purple-100/15 to-purple-50/15 rounded-2xl p-4 border-2 border-purple-200/60 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm relative">
+              <div className="group bg-gradient-to-br from-purple-50 via-purple-100 to-purple-50 rounded-2xl p-4 border-2 border-purple-200/60 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm relative">
                 <div className="absolute top-3 right-3 flex items-center gap-1 px-2.5 py-1 bg-purple-50 border-2 border-purple-600 rounded-full">
                   <div className="w-1 h-1 bg-purple-600 rounded-full"></div>
                   <span className="text-[10px] font-black text-purple-700 uppercase tracking-wider">Verified</span>
@@ -541,7 +541,7 @@ const FlexReport = () => {
               </div>
 
               {/* Upcoming Income */}
-              <div className="group bg-gradient-to-br from-emerald-50/15 via-emerald-100/15 to-emerald-50/15 rounded-2xl p-4 border-2 border-emerald-200/60 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm relative">
+              <div className="group bg-gradient-to-br from-emerald-50 via-emerald-100 to-emerald-50 rounded-2xl p-4 border-2 border-emerald-200/60 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm relative">
                 <div className="absolute top-3 right-3 flex items-center gap-1 px-2.5 py-1 bg-emerald-50 border-2 border-emerald-600 rounded-full">
                   <div className="w-1 h-1 bg-emerald-600 rounded-full"></div>
                   <span className="text-[10px] font-black text-emerald-700 uppercase tracking-wider">Verified</span>
@@ -572,7 +572,7 @@ const FlexReport = () => {
               </div>
 
               {/* Purchase Orders */}
-              <div className="group bg-gradient-to-br from-orange-50/15 via-orange-100/15 to-orange-50/15 rounded-2xl p-4 border-2 border-orange-200/60 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm relative">
+              <div className="group bg-gradient-to-br from-orange-50 via-orange-100 to-orange-50 rounded-2xl p-4 border-2 border-orange-200/60 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm relative">
                 <div className="absolute top-3 right-3 flex items-center gap-1 px-2.5 py-1 bg-orange-50 border-2 border-orange-600 rounded-full">
                   <div className="w-1 h-1 bg-orange-600 rounded-full"></div>
                   <span className="text-[10px] font-black text-orange-700 uppercase tracking-wider">Verified</span>
@@ -603,7 +603,7 @@ const FlexReport = () => {
               </div>
 
               {/* Active Vendors */}
-              <div className="group bg-gradient-to-br from-indigo-50/15 via-indigo-100/15 to-indigo-50/15 rounded-2xl p-4 border-2 border-indigo-200/60 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm relative">
+              <div className="group bg-gradient-to-br from-indigo-50 via-indigo-100 to-indigo-50 rounded-2xl p-4 border-2 border-indigo-200/60 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm relative">
                 <div className="absolute top-3 right-3 flex items-center gap-1 px-2.5 py-1 bg-indigo-50 border-2 border-indigo-600 rounded-full">
                   <div className="w-1 h-1 bg-indigo-600 rounded-full"></div>
                   <span className="text-[10px] font-black text-indigo-700 uppercase tracking-wider">Verified</span>
@@ -634,7 +634,7 @@ const FlexReport = () => {
               </div>
 
               {/* Amazon Revenue (30d) */}
-              <div className="group bg-gradient-to-br from-violet-50/15 via-purple-100/15 to-violet-50/15 rounded-2xl p-4 border-2 border-purple-300/60 shadow-lg hover:shadow-2xl transition-all duration-300 backdrop-blur-sm relative ring-2 ring-purple-200/30">
+              <div className="group bg-gradient-to-br from-violet-50 via-purple-100 to-violet-50 rounded-2xl p-4 border-2 border-purple-300/60 shadow-lg hover:shadow-2xl transition-all duration-300 backdrop-blur-sm relative ring-2 ring-purple-200/30">
                 <div className="absolute top-3 right-3 flex items-center gap-1 px-2.5 py-1 bg-purple-50 border-2 border-purple-600 rounded-full">
                   <div className="w-1 h-1 bg-purple-600 rounded-full animate-pulse"></div>
                   <span className="text-[10px] font-black text-purple-700 uppercase tracking-wider">Verified</span>
@@ -671,7 +671,7 @@ const FlexReport = () => {
               </div>
 
               {/* Total Amazon Payouts */}
-              <div className="group bg-gradient-to-br from-orange-50/15 via-orange-100/15 to-orange-50/15 rounded-2xl p-4 border-2 border-orange-200/60 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm relative">
+              <div className="group bg-gradient-to-br from-orange-50 via-orange-100 to-orange-50 rounded-2xl p-4 border-2 border-orange-200/60 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm relative">
                 <div className="absolute top-3 right-3 flex items-center gap-1 px-2.5 py-1 bg-orange-50 border-2 border-orange-600 rounded-full">
                   <div className="w-1 h-1 bg-orange-600 rounded-full"></div>
                   <span className="text-[10px] font-black text-orange-700 uppercase tracking-wider">Verified</span>
@@ -705,7 +705,7 @@ const FlexReport = () => {
               </div>
 
               {/* Payout Growth Rate */}
-              <div className="group bg-gradient-to-br from-green-50/15 via-green-100/15 to-green-50/15 rounded-2xl p-4 border-2 border-green-200/60 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm relative">
+              <div className="group bg-gradient-to-br from-green-50 via-green-100 to-green-50 rounded-2xl p-4 border-2 border-green-200/60 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm relative">
                 <div className="absolute top-3 right-3 flex items-center gap-1 px-2.5 py-1 bg-green-50 border-2 border-green-600 rounded-full">
                   <div className="w-1 h-1 bg-green-600 rounded-full"></div>
                   <span className="text-[10px] font-black text-green-700 uppercase tracking-wider">Verified</span>
