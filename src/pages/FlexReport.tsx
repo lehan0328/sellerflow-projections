@@ -112,6 +112,15 @@ const FlexReport = () => {
   const next30Days = addDays(today, 30);
   const next90Days = addDays(today, 90);
 
+  // Calculate forecasted 90-day Amazon payout (total forecasted payouts)
+  const forecasted90DayPayout = amazonPayouts
+    .filter(payout => {
+      const payoutDate = new Date(payout.payout_date);
+      return (payout.status === 'forecasted' || payout.status === 'estimated') && 
+             isWithinInterval(payoutDate, { start: today, end: next90Days });
+    })
+    .reduce((sum, payout) => sum + Number(payout.total_amount || 0), 0);
+
   // Total pending purchase orders (all)
   const upcomingPurchaseOrders = transactions.filter(tx => tx.type === 'purchase_order' && tx.status === 'pending').reduce((sum, tx) => sum + Number(tx.amount), 0);
 
@@ -634,9 +643,9 @@ const FlexReport = () => {
                   <div className="p-2 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl shadow-md group-hover:scale-110 transition-transform duration-300">
                     <ShoppingCart className="w-4 h-4 text-white" />
                   </div>
-                  <p className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Amazon Payout This Month</p>
+                  <p className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Forecasted 90 Day Payout</p>
                 </div>
-                <p className={`text-2xl font-black text-amber-700 drop-shadow-sm transition-all duration-300 ${!visibility.amazonRevenue ? 'blur-lg' : ''}`}>{formatCurrency(amazonRevenueThisMonth)}</p>
+                <p className={`text-2xl font-black text-amber-700 drop-shadow-sm transition-all duration-300 ${!visibility.amazonRevenue ? 'blur-lg' : ''}`}>{formatCurrency(forecasted90DayPayout)}</p>
                 {showPercentageChange && (
                   <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg mt-1 ${percentageChanges.amazonRevenue >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                     <TrendingUp className={`w-2.5 h-2.5 ${percentageChanges.amazonRevenue >= 0 ? '' : 'rotate-180'}`} />
