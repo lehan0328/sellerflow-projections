@@ -19,6 +19,7 @@ import { useVendors, type Vendor } from "@/hooks/useVendors";
 import { VendorOrderDetailModal } from "./vendor-order-detail-modal";
 import { TransactionEditModal } from "./transaction-edit-modal";
 import { PartialPaymentModal } from "./partial-payment-modal";
+import { PartialPaymentDeleteDialog } from "./partial-payment-delete-dialog";
 import { useTransactionMatching } from "@/hooks/useTransactionMatching";
 import { BankTransaction } from "./bank-transaction-log";
 import { toast } from "sonner";
@@ -69,6 +70,8 @@ export const VendorsOverview = ({
   const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
   const [lineItemsByTransaction, setLineItemsByTransaction] = useState<Record<string, any[]>>({});
   const [matchingPOsByTransaction, setMatchingPOsByTransaction] = useState<Record<string, any[]>>({});
+  const [deleteDialogTx, setDeleteDialogTx] = useState<VendorTransaction | null>(null);
+  const [deleteDialogAmounts, setDeleteDialogAmounts] = useState<{ paidAmount: number; totalAmount: number }>({ paidAmount: 0, totalAmount: 0 });
 
   const toggleRow = (transactionId: string) => {
     setExpandedRows(prev => ({ ...prev, [transactionId]: !prev[transactionId] }));
@@ -300,15 +303,68 @@ export const VendorsOverview = ({
     }
   };
 
-  const handleDeleteTransaction = async (transactionId: string) => {
+  const handleDeleteTransaction = async (transaction: VendorTransaction) => {
+    // Check if this is a partial payment remaining balance
+    if (transaction.description.endsWith('.2')) {
+      // Fetch the amounts before showing the dialog
+      const amounts = await getPartialPaymentAmounts(transaction);
+      setDeleteDialogAmounts(amounts);
+      setDeleteDialogTx(transaction);
+    } else {
+      // Regular transaction - delete directly
+      try {
+        await deleteTransaction(transaction.id, false);
+        toast.success("Transaction deleted successfully");
+        onVendorUpdate?.();
+      } catch (error) {
+        console.error('Error deleting transaction:', error);
+        toast.error("Failed to delete transaction");
+      }
+    }
+  };
+
+  const handleDeleteRemainingOnly = async () => {
+    if (!deleteDialogTx) return;
     try {
-      await deleteTransaction(transactionId);
-      toast.success("Transaction deleted successfully");
+      await deleteTransaction(deleteDialogTx.id, false);
+      toast.success("Remaining balance deleted successfully");
+      setDeleteDialogTx(null);
       onVendorUpdate?.();
     } catch (error) {
-      console.error('Error deleting transaction:', error);
-      toast.error("Failed to delete transaction");
+      console.error('Error deleting remaining balance:', error);
+      toast.error("Failed to delete remaining balance");
     }
+  };
+
+  const handleReverseEntirePayment = async () => {
+    if (!deleteDialogTx) return;
+    try {
+      await deleteTransaction(deleteDialogTx.id, true);
+      toast.success("Partial payment reversed successfully");
+      setDeleteDialogTx(null);
+      onVendorUpdate?.();
+    } catch (error) {
+      console.error('Error reversing payment:', error);
+      toast.error("Failed to reverse payment");
+    }
+  };
+
+  const getPartialPaymentAmounts = async (transaction: VendorTransaction) => {
+    if (!transaction.description.endsWith('.2')) {
+      return { paidAmount: 0, totalAmount: transaction.amount };
+    }
+
+    const baseDescription = transaction.description.replace('.2', '');
+    const { data: paidTx } = await supabase
+      .from('transactions')
+      .select('amount')
+      .eq('description', `${baseDescription}.1`)
+      .single();
+
+    const paidAmount = paidTx?.amount || 0;
+    const totalAmount = paidAmount + transaction.amount;
+
+    return { paidAmount, totalAmount };
   };
 
   const handlePayToday = async (transactionId: string) => {
@@ -696,7 +752,7 @@ export const VendorsOverview = ({
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
                                   <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                  <AlertDialogAction onClick={() => handleDeleteTransaction(tx.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                  <AlertDialogAction onClick={() => handleDeleteTransaction(tx)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
                                     Delete
                                   </AlertDialogAction>
                                 </AlertDialogFooter>
@@ -728,5 +784,20 @@ export const VendorsOverview = ({
       <PartialPaymentModal open={!!partialPaymentTx} onOpenChange={open => {
       if (!open) setPartialPaymentTx(null);
     }} transactionId={partialPaymentTx?.id || ''} totalAmount={partialPaymentTx?.amount || 0} vendorName={partialPaymentTx?.vendorName || ''} poNumber={partialPaymentTx?.description || ''} onConfirm={handlePartialPayment} />
+
+      {deleteDialogTx && (
+        <PartialPaymentDeleteDialog
+          open={!!deleteDialogTx}
+          onOpenChange={(open) => {
+            if (!open) setDeleteDialogTx(null);
+          }}
+          transactionDescription={deleteDialogTx.description}
+          remainingAmount={deleteDialogTx.amount}
+          paidAmount={deleteDialogAmounts.paidAmount}
+          totalAmount={deleteDialogAmounts.totalAmount}
+          onDeleteRemaining={handleDeleteRemainingOnly}
+          onReverseAll={handleReverseEntirePayment}
+        />
+      )}
     </Card>;
 };

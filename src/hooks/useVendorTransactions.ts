@@ -168,7 +168,7 @@ export const useVendorTransactions = () => {
     }
   };
 
-  const deleteTransaction = async (transactionId: string) => {
+  const deleteTransaction = async (transactionId: string, reverseEntirePayment: boolean = false) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
@@ -177,42 +177,18 @@ export const useVendorTransactions = () => {
       const transactionToDelete = transactions.find(tx => tx.id === transactionId);
       if (!transactionToDelete) throw new Error('Transaction not found');
 
-      // If it's a credit card transaction, revert the credit card balance
-      if (transactionToDelete.creditCardId) {
-        const { data: creditCard, error: fetchError } = await supabase
-          .from('credit_cards')
-          .select('balance, available_credit')
-          .eq('id', transactionToDelete.creditCardId)
-          .single();
+      const isPartialPaymentRemaining = transactionToDelete.description.endsWith('.2');
 
-        if (fetchError) {
-          console.error('Error fetching credit card:', fetchError);
-        } else if (creditCard) {
-          // Reduce the balance and increase available credit
-          const newBalance = Number(creditCard.balance) - transactionToDelete.amount;
-          const newAvailableCredit = Number(creditCard.available_credit) + transactionToDelete.amount;
-
-          const { error: updateError } = await supabase
-            .from('credit_cards')
-            .update({
-              balance: newBalance,
-              available_credit: newAvailableCredit,
-            })
-            .eq('id', transactionToDelete.creditCardId);
-
-          if (updateError) {
-            console.error('Error updating credit card:', updateError);
-          }
-        }
+      if (isPartialPaymentRemaining && reverseEntirePayment) {
+        // Option 2: Reverse entire partial payment
+        await reversePartialPayment(transactionToDelete);
+      } else if (isPartialPaymentRemaining && !reverseEntirePayment) {
+        // Option 1: Delete only remaining balance
+        await deleteRemainingBalance(transactionToDelete);
+      } else {
+        // Regular transaction deletion
+        await deleteRegularTransaction(transactionId, transactionToDelete);
       }
-
-      // Delete the transaction
-      const { error } = await supabase
-        .from('transactions')
-        .delete()
-        .eq('id', transactionId);
-
-      if (error) throw error;
 
       setTransactions(prev => prev.filter(tx => tx.id !== transactionId));
 
@@ -227,7 +203,193 @@ export const useVendorTransactions = () => {
         description: "Failed to delete transaction",
         variant: "destructive",
       });
+      throw error;
     }
+  };
+
+  const deleteRegularTransaction = async (transactionId: string, transactionToDelete: VendorTransaction) => {
+    // If it's a credit card transaction, revert the credit card balance
+    if (transactionToDelete.creditCardId) {
+      const { data: creditCard, error: fetchError } = await supabase
+        .from('credit_cards')
+        .select('balance, available_credit')
+        .eq('id', transactionToDelete.creditCardId)
+        .single();
+
+      if (fetchError) {
+        console.error('Error fetching credit card:', fetchError);
+      } else if (creditCard) {
+        // Reduce the balance and increase available credit
+        const newBalance = Number(creditCard.balance) - transactionToDelete.amount;
+        const newAvailableCredit = Number(creditCard.available_credit) + transactionToDelete.amount;
+
+        const { error: updateError } = await supabase
+          .from('credit_cards')
+          .update({
+            balance: newBalance,
+            available_credit: newAvailableCredit,
+          })
+          .eq('id', transactionToDelete.creditCardId);
+
+        if (updateError) {
+          console.error('Error updating credit card:', updateError);
+        }
+      }
+    }
+
+    // Delete the transaction
+    const { error } = await supabase
+      .from('transactions')
+      .delete()
+      .eq('id', transactionId);
+
+    if (error) throw error;
+  };
+
+  const deleteRemainingBalance = async (remainingTx: VendorTransaction) => {
+    const baseDescription = remainingTx.description.replace('.2', '');
+
+    // Revert credit card balance for remaining amount only
+    if (remainingTx.creditCardId) {
+      const { data: creditCard, error: fetchError } = await supabase
+        .from('credit_cards')
+        .select('balance, available_credit')
+        .eq('id', remainingTx.creditCardId)
+        .single();
+
+      if (fetchError) {
+        console.error('Error fetching credit card:', fetchError);
+      } else if (creditCard) {
+        const newBalance = Number(creditCard.balance) - remainingTx.amount;
+        const newAvailableCredit = Number(creditCard.available_credit) + remainingTx.amount;
+
+        const { error: updateError } = await supabase
+          .from('credit_cards')
+          .update({
+            balance: newBalance,
+            available_credit: newAvailableCredit,
+          })
+          .eq('id', remainingTx.creditCardId);
+
+        if (updateError) {
+          console.error('Error updating credit card:', updateError);
+        }
+      }
+    }
+
+    // Find and update the original transaction
+    const { data: originalTx, error: findError } = await supabase
+      .from('transactions')
+      .select('*')
+      .ilike('description', baseDescription)
+      .eq('status', 'partially_paid')
+      .single();
+
+    if (!findError && originalTx) {
+      const timestamp = new Date().toLocaleString();
+      const { error: updateError } = await supabase
+        .from('transactions')
+        .update({
+          remarks: `Fully resolved - partial payment kept (${timestamp})`
+        } as any)
+        .eq('id', originalTx.id);
+
+      if (updateError) {
+        console.error('Error updating original transaction:', updateError);
+      }
+    }
+
+    // Delete the remaining balance transaction
+    const { error } = await supabase
+      .from('transactions')
+      .delete()
+      .eq('id', remainingTx.id);
+
+    if (error) throw error;
+  };
+
+  const reversePartialPayment = async (remainingTx: VendorTransaction) => {
+    const baseDescription = remainingTx.description.replace('.2', '');
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
+
+    // Find all related transactions
+    const { data: relatedTxs, error: findError } = await supabase
+      .from('transactions')
+      .select('*')
+      .or(`description.eq.${baseDescription},description.eq.${baseDescription}.1,description.eq.${baseDescription}.2`)
+      .eq('user_id', user.id);
+
+    if (findError) throw findError;
+
+    const originalTx = relatedTxs?.find(tx => tx.description === baseDescription);
+    const paidTx = relatedTxs?.find(tx => tx.description === `${baseDescription}.1`);
+
+    if (!originalTx) throw new Error('Original transaction not found');
+
+    // Calculate total amount to revert
+    const totalAmount = (paidTx?.amount || 0) + remainingTx.amount;
+
+    // Revert full credit card balance
+    if (remainingTx.creditCardId) {
+      const { data: creditCard, error: fetchError } = await supabase
+        .from('credit_cards')
+        .select('balance, available_credit')
+        .eq('id', remainingTx.creditCardId)
+        .single();
+
+      if (fetchError) {
+        console.error('Error fetching credit card:', fetchError);
+      } else if (creditCard) {
+        const newBalance = Number(creditCard.balance) - totalAmount;
+        const newAvailableCredit = Number(creditCard.available_credit) + totalAmount;
+
+        const { error: updateError } = await supabase
+          .from('credit_cards')
+          .update({
+            balance: newBalance,
+            available_credit: newAvailableCredit,
+          })
+          .eq('id', remainingTx.creditCardId);
+
+        if (updateError) {
+          console.error('Error updating credit card:', updateError);
+        }
+      }
+    }
+
+    // Unarchive and restore original transaction
+    const timestamp = new Date().toLocaleString();
+    const { error: restoreError } = await supabase
+      .from('transactions')
+      .update({
+        status: 'pending',
+        archived: false,
+        remarks: `Partial payment reversed (${timestamp})`
+      } as any)
+      .eq('id', originalTx.id);
+
+    if (restoreError) throw restoreError;
+
+    // Delete both .1 and .2 transactions
+    if (paidTx) {
+      const { error: deletePaidError } = await supabase
+        .from('transactions')
+        .delete()
+        .eq('id', paidTx.id);
+
+      if (deletePaidError) throw deletePaidError;
+    }
+
+    const { error: deleteRemainingError } = await supabase
+      .from('transactions')
+      .delete()
+      .eq('id', remainingTx.id);
+
+    if (deleteRemainingError) throw deleteRemainingError;
+
+    // Refresh to show the restored original transaction
+    await fetchVendorTransactions();
   };
 
   useEffect(() => {
