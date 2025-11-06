@@ -834,10 +834,6 @@ export const ForecastSettings = () => {
                   <Sparkles className="h-4 w-4 text-purple-600" />
                   Mathematical Payout Forecasting
                 </p>
-                <p className="text-xs text-blue-700 dark:text-blue-300 mb-3">
-                  Using delivery-based reserve modeling (DD+7) with per-order net cash calculations, 
-                  Amazon fee structures, return rates, and chargeback modeling.
-                </p>
                 
                 <div className="space-y-3">
                   {userSelectedPayoutModel && <div className="p-2 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg">
@@ -865,29 +861,6 @@ export const ForecastSettings = () => {
                       Frequency is auto-detected from your settlement history
                     </p>
                   </div>
-
-                  <div className="p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg">
-                    <div className="flex items-start gap-2">
-                      <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
-                      <div>
-                        <p className="text-xs font-medium text-amber-900 dark:text-amber-100 mb-1">
-                          DD+7 Reserve Policy
-                        </p>
-                        <p className="text-[10px] text-amber-700 dark:text-amber-300">
-                          Forecasts assume Amazon's standard 7-day reserve policy after delivery. 
-                          <span className="font-medium"> Note: Forecasts may be less accurate if your account is under review or flagged as high-risk</span>, 
-                          as Amazon may hold funds longer (DD+14 or DD+21).
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-3 p-2 bg-white/50 dark:bg-slate-900/50 rounded text-[10px] text-slate-600 dark:text-slate-400">
-                  <p className="font-medium mb-1">Calculation Method:</p>
-                  <p>
-                    {payoutModel === 'bi-weekly' ? 'Payout = [Eligible in Period + Prior Balance + Adjustments] - Reserve(DD+7)' : 'Daily Available = Eligible Cash - Account Reserve(DD+7) - Min Floor'}
-                  </p>
                 </div>
               </div>
             </div>
