@@ -112,11 +112,8 @@ const FlexReport = () => {
   const next30Days = addDays(today, 30);
   const next90Days = addDays(today, 90);
 
-  // Total upcoming purchase orders (pending transactions)
-  const upcomingPurchaseOrders = transactions.filter(tx => tx.type === 'purchase_order' && tx.status === 'pending' && tx.dueDate && isWithinInterval(new Date(tx.dueDate), {
-    start: today,
-    end: next30Days
-  })).reduce((sum, tx) => sum + Number(tx.amount), 0);
+  // Total pending purchase orders (all)
+  const upcomingPurchaseOrders = transactions.filter(tx => tx.type === 'purchase_order' && tx.status === 'pending').reduce((sum, tx) => sum + Number(tx.amount), 0);
 
   // Total vendor payments scheduled
   const upcomingVendorPayments = vendors.filter(v => v.status !== 'paid' && Number(v.totalOwed || 0) > 0).reduce((sum, v) => sum + Number(v.totalOwed || 0), 0);
