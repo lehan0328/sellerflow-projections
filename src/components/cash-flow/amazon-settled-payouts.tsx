@@ -85,16 +85,6 @@ export const AmazonSettledPayouts = ({ open, onOpenChange }: AmazonSettledPayout
               )}
             </div>
 
-            {hasDailyAccount && estimatedPayouts.length === 0 && (
-              <Alert className="mb-4 border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/20">
-                <AlertCircle className="h-4 w-4 text-blue-600" />
-                <AlertDescription className="text-xs">
-                  Open settlements are hidden for daily accounts to prevent double-counting with daily forecasts.
-                  Your daily forecast tracker shows all pending cash flows.
-                </AlertDescription>
-              </Alert>
-            )}
-
             {/* Payout List */}
             <ScrollArea className="h-[400px] pr-4">
               <div className="space-y-2">
