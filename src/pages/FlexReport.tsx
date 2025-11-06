@@ -14,14 +14,11 @@ import { useReserveAmount } from "@/hooks/useReserveAmount";
 import { useAmazonPayouts } from "@/hooks/useAmazonPayouts";
 import { useAmazonRevenue } from "@/hooks/useAmazonRevenue";
 import { addDays, isWithinInterval, startOfDay } from "date-fns";
-
+import aurenLogo from "@/assets/auren-icon-blue.png";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-
-// Get Supabase storage URL for watermark
-const watermarkLogoUrl = supabase.storage.from('assets').getPublicUrl('full-logo.png').data.publicUrl;
 
 const FlexReport = () => {
   const navigate = useNavigate();
@@ -399,8 +396,9 @@ const FlexReport = () => {
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-to-br from-emerald-400/10 to-blue-400/10 rounded-full blur-3xl -z-0" />
           
           {/* Auren Watermark */}
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden">
-            <img src={watermarkLogoUrl} alt="" className="w-[700px] opacity-[0.12] select-none" />
+          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none overflow-hidden">
+            <img src={aurenLogo} alt="" className="w-[600px] opacity-[0.25] select-none rotate-[-15deg] scale-110" />
+            <p className="text-7xl font-black text-slate-700/30 tracking-widest -mt-16 select-none">AUREN</p>
           </div>
           
           <div className="relative z-10 p-2 md:p-4">
@@ -416,7 +414,7 @@ const FlexReport = () => {
                 </p>
               </div>
               <div className="text-center flex flex-col items-center">
-                <img src={watermarkLogoUrl} alt="Auren" className="h-12 md:h-14 drop-shadow-lg mb-1" />
+                <img src={aurenLogo} alt="Auren" className="h-12 md:h-14 drop-shadow-lg mb-1" />
                 <p className="text-lg font-black text-blue-800 mb-1">Auren</p>
                 <p className="text-xs font-semibold text-blue-800">www.aurenapp.com</p>
               </div>
