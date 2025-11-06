@@ -11,6 +11,7 @@ import { useAmazonPayouts } from "@/hooks/useAmazonPayouts";
 import { useBankAccounts } from "@/hooks/useBankAccounts";
 import { useRecurringExpenses } from "@/hooks/useRecurringExpenses";
 import { useAmazonRevenue } from "@/hooks/useAmazonRevenue";
+import { generateRecurringDates } from "@/lib/recurringDates";
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -317,12 +318,16 @@ export default function Analytics() {
       .reduce((sum, i) => sum + i.amount, 0);
 
     // Recurring income for this month
-    const recurringIncome = incomeItems
-      .filter(i => {
-        const paymentDate = new Date(i.paymentDate);
-        return i.isRecurring && paymentDate >= startOfMonth && paymentDate <= endOfMonth;
-      })
-      .reduce((sum, i) => sum + i.amount, 0);
+    const recurringIncome = recurringExpenses
+      .filter(e => e.is_active && e.type === 'income')
+      .reduce((sum, e) => {
+        const occurrences = generateRecurringDates(
+          e as any,
+          startOfMonth,
+          endOfMonth
+        );
+        return sum + (e.amount * occurrences.length);
+      }, 0);
 
     const totalForecastedIncome = confirmedPayoutsThisMonth + forecastedAmazonPayouts + additionalIncome + recurringIncome;
 
@@ -337,13 +342,15 @@ export default function Analytics() {
 
     // All recurring expenses for this month
     const recurringExpensesThisMonth = recurringExpenses
-      .filter(e => {
-        if (!e.is_active || e.type !== 'expense') return false;
-        const startDate = new Date(e.start_date);
-        const endDate = e.end_date ? new Date(e.end_date) : null;
-        return startDate <= endOfMonth && (!endDate || endDate >= startOfMonth);
-      })
-      .reduce((sum, e) => sum + e.amount, 0);
+      .filter(e => e.is_active && e.type === 'expense')
+      .reduce((sum, e) => {
+        const occurrences = generateRecurringDates(
+          e as any,
+          startOfMonth,
+          endOfMonth
+        );
+        return sum + (e.amount * occurrences.length);
+      }, 0);
 
     const totalForecastedExpenses = purchaseOrdersMonth + recurringExpensesThisMonth;
 
