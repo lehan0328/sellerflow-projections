@@ -438,21 +438,6 @@ export function AmazonPayouts() {
                 minute: '2-digit'
               }) : 'Never'}
                 </div>
-                <Button
-                  variant="outline" 
-                  size="sm" 
-                  onClick={handleSyncAllAccounts} 
-                  disabled={
-                    isSyncing !== null || 
-                    amazonAccounts.some(acc => 
-                      acc.sync_status === 'syncing' || 
-                      acc.sync_message?.includes('Rate limited')
-                    )
-                  }
-                >
-                  <RefreshCw className={`h-4 w-4 mr-2 ${isSyncing || amazonAccounts.some(acc => acc.sync_status === 'syncing') ? 'animate-spin' : ''}`} />
-                  {amazonAccounts.some(acc => acc.sync_message?.includes('Rate limited')) ? 'Rate Limited' : 'Sync'}
-                </Button>
               </>}
           </div>
         </div>
