@@ -1232,8 +1232,18 @@ export default function Analytics() {
                     <span className="text-xs text-muted-foreground">Income:</span>
                     <span className="text-sm font-semibold text-green-600">
                       +${recurringExpenses
-                        .filter(r => r.type === 'income' && r.is_active && r.frequency === 'monthly')
-                        .reduce((sum, r) => sum + r.amount, 0)
+                        .filter(r => r.type === 'income' && r.is_active)
+                        .reduce((sum, r) => {
+                          const monthlyAmount = r.frequency === 'daily' ? r.amount * 30 :
+                            r.frequency === 'weekdays' ? r.amount * 21.67 :
+                            r.frequency === 'weekly' ? r.amount * 4.33 :
+                            r.frequency === 'bi-weekly' ? r.amount * 2.17 :
+                            r.frequency === 'monthly' ? r.amount :
+                            r.frequency === '2-months' ? r.amount / 2 :
+                            r.frequency === '3-months' ? r.amount / 3 :
+                            r.amount;
+                          return sum + monthlyAmount;
+                        }, 0)
                         .toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </span>
                   </div>
@@ -1241,8 +1251,18 @@ export default function Analytics() {
                     <span className="text-xs text-muted-foreground">Expenses:</span>
                     <span className="text-sm font-semibold text-red-600">
                       -${recurringExpenses
-                        .filter(r => r.type === 'expense' && r.is_active && r.frequency === 'monthly')
-                        .reduce((sum, r) => sum + r.amount, 0)
+                        .filter(r => r.type === 'expense' && r.is_active)
+                        .reduce((sum, r) => {
+                          const monthlyAmount = r.frequency === 'daily' ? r.amount * 30 :
+                            r.frequency === 'weekdays' ? r.amount * 21.67 :
+                            r.frequency === 'weekly' ? r.amount * 4.33 :
+                            r.frequency === 'bi-weekly' ? r.amount * 2.17 :
+                            r.frequency === 'monthly' ? r.amount :
+                            r.frequency === '2-months' ? r.amount / 2 :
+                            r.frequency === '3-months' ? r.amount / 3 :
+                            r.amount;
+                          return sum + monthlyAmount;
+                        }, 0)
                         .toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </span>
                   </div>
