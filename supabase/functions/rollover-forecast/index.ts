@@ -39,58 +39,76 @@ serve(async (req) => {
 
     console.log('[ROLLOVER] Checking dates - Yesterday:', yesterdayStr, 'Today:', todayStr);
 
-    // Check if there's a Succeeded settlement for yesterday (US marketplace only)
-    const { data: yesterdaySettlement, error: settlementError } = await supabase
+    // Fetch recent confirmed settlements (last 3 days to account for delays)
+    const threeDaysAgo = new Date(yesterday);
+    threeDaysAgo.setDate(threeDaysAgo.getDate() - 2);
+
+    const { data: recentSettlements, error: settlementError } = await supabase
       .from('amazon_payouts')
       .select('*')
       .eq('amazon_account_id', amazonAccountId)
       .eq('status', 'confirmed')
       .eq('marketplace_name', 'United States')
-      .eq('payout_date', yesterdayStr)
-      .maybeSingle();
+      .gte('payout_date', threeDaysAgo.toISOString().split('T')[0])
+      .order('payout_date', { ascending: false });
 
     if (settlementError) {
       console.error('[ROLLOVER] Error checking settlement:', settlementError);
       throw settlementError;
     }
 
-    // Check if the settlement is actually a Succeeded one and a daily settlement (not invoiced)
-    let isSucceededDailySettlement = false;
-    if (yesterdaySettlement?.raw_settlement_data?.FundTransferStatus === 'Succeeded') {
-      // Check settlement duration - exclude invoiced settlements (14-day periods)
-      const settlementStart = yesterdaySettlement.raw_settlement_data?.FinancialEventGroupStart
-        ? new Date(yesterdaySettlement.raw_settlement_data.FinancialEventGroupStart)
-        : null;
-      const settlementEnd = yesterdaySettlement.raw_settlement_data?.FinancialEventGroupEnd
-        ? new Date(yesterdaySettlement.raw_settlement_data.FinancialEventGroupEnd)
-        : null;
+    // Check if any settlement CLOSED on yesterday (EST)
+    let settlementClosedYesterday = null;
 
-      if (settlementStart && settlementEnd) {
-        const settlementDays = Math.ceil((settlementEnd.getTime() - settlementStart.getTime()) / (1000 * 60 * 60 * 24));
-        isSucceededDailySettlement = settlementDays <= 3; // Only 1-3 day settlements (daily), not 14-day (invoiced)
-
-        if (settlementDays > 3) {
-          console.log(`[ROLLOVER] Found settlement but it's an invoiced/B2B settlement (${settlementDays} days), treating as no settlement`);
+    if (recentSettlements && recentSettlements.length > 0) {
+      for (const settlement of recentSettlements) {
+        if (settlement.raw_settlement_data?.FundTransferStatus === 'Succeeded') {
+          const settlementEnd = settlement.raw_settlement_data?.FinancialEventGroupEnd;
+          
+          if (settlementEnd) {
+            // Convert UTC timestamp to EST date
+            const endDateUTC = new Date(settlementEnd);
+            const estOffset = -5 * 60; // EST is UTC-5
+            const endDateEST = new Date(endDateUTC.getTime() + estOffset * 60 * 1000);
+            const endDateStr = endDateEST.toISOString().split('T')[0]; // Now in EST
+            
+            // Check settlement duration (exclude 14-day invoiced settlements)
+            const settlementStart = settlement.raw_settlement_data?.FinancialEventGroupStart;
+            let isDailySettlement = true;
+            
+            if (settlementStart) {
+              const startDateUTC = new Date(settlementStart);
+              const startDateEST = new Date(startDateUTC.getTime() + estOffset * 60 * 1000);
+              const durationDays = Math.ceil((endDateEST.getTime() - startDateEST.getTime()) / (1000 * 60 * 60 * 24));
+              isDailySettlement = durationDays <= 3;
+              
+              console.log(`[ROLLOVER] Settlement ${settlement.id}: closed=${endDateStr} EST, duration=${durationDays}d, payout=${settlement.payout_date}`);
+            }
+            
+            // Found a daily settlement that closed yesterday (EST)
+            if (endDateStr === yesterdayStr && isDailySettlement) {
+              settlementClosedYesterday = settlement;
+              console.log(`[ROLLOVER] ✅ Found settlement closed yesterday (EST): ${settlement.id}`);
+              break;
+            }
+          }
         }
-      } else {
-        // If no settlement duration data, assume it's valid
-        isSucceededDailySettlement = true;
       }
     }
 
-    if (yesterdaySettlement && isSucceededDailySettlement) {
-      console.log('[ROLLOVER] Succeeded settlement found for yesterday, no rollover needed');
-      return new Response(
-        JSON.stringify({
-          success: true,
-          rolloverOccurred: false,
-          message: 'Settlement found for yesterday, no rollover needed'
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+//     if (settlementClosedYesterday) {
+//       console.log('[ROLLOVER] Settlement closed yesterday, no rollover needed');
+//       return new Response(
+//         JSON.stringify({
+//           success: true,
+//           rolloverOccurred: false,
+//           message: 'Settlement found for yesterday, no rollover needed'
+//         }),
+//         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+//       );
+//     }
 
-    console.log('[ROLLOVER] No Succeeded settlement found for yesterday, checking forecasts...');
+//     console.log('[ROLLOVER] No Succeeded settlement found for yesterday, checking forecasts...');
 
     // Fetch yesterday's forecast
     const { data: yesterdayForecast, error: yesterdayError } = await supabase
@@ -106,17 +124,17 @@ serve(async (req) => {
       throw yesterdayError;
     }
 
-    // if (!yesterdayForecast) {
-    //   console.log('[ROLLOVER] No forecast found for yesterday, nothing to roll over');
-    //   return new Response(
-    //     JSON.stringify({
-    //       success: true,
-    //       rolloverOccurred: false,
-    //       message: 'No forecast found for yesterday'
-    //     }),
-    //     { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    //   );
-    // }
+    if (!yesterdayForecast) {
+      console.log('[ROLLOVER] No forecast found for yesterday, nothing to roll over');
+      return new Response(
+        JSON.stringify({
+          success: true,
+          rolloverOccurred: false,
+          message: 'No forecast found for yesterday'
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     // Fetch today's forecast
     const { data: todayForecast, error: todayError } = await supabase

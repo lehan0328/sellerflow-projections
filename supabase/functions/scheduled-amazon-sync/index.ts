@@ -193,11 +193,14 @@ Deno.serve(async (req) => {
 
     console.log(`Sync complete: ${successCount} succeeded, ${skippedCount} skipped, ${failedCount} failed`)
 
+    // Workflow now handles rollover + forecast regeneration decision per account
+    console.log('✅ Sync orchestration complete. Forecast workflow runs during individual sync.')
+
     return new Response(
       JSON.stringify({
         success: true,
         message: `Sync complete: ${successCount} succeeded, ${skippedCount} skipped, ${failedCount} failed`,
-        results: syncResults
+        syncResults: syncResults
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )

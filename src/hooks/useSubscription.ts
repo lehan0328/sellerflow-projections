@@ -194,7 +194,7 @@ export interface SubscriptionState {
 
 // Cache configuration
 const CACHE_KEY = 'auren_subscription_cache';
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+const CACHE_DURATION = 60 * 1000; // 60 seconds (reduce staleness)
 
 interface CachedSubscription extends SubscriptionState {
   cachedAt: number;
@@ -696,7 +696,7 @@ export const useSubscription = () => {
     const initializeSubscription = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        checkSubscription();
+        checkSubscription(true); // Force fresh read on mount to respect plan overrides
       }
     };
     

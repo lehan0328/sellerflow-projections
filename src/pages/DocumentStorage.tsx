@@ -1,6 +1,6 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Upload, FileText, Download, Trash2, Search, Calendar as CalendarIcon, Plus, Loader2, RefreshCw, Edit, HardDrive } from "lucide-react";
+import { ArrowLeft, Upload, FileText, Download, Trash2, Search, Calendar as CalendarIcon, Plus, Loader2, RefreshCw, Edit, HardDrive, ChevronDown } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
@@ -13,11 +13,13 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useVendors } from "@/hooks/useVendors";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   Table,
   TableBody,
@@ -50,6 +52,14 @@ interface StoredDocument {
   amount?: number;
   description?: string;
   document_type?: string;
+  line_items?: Array<{
+    description?: string;
+    product_name?: string;
+    quantity?: number;
+    unit_price?: number;
+    total_price?: number;
+  }>;
+  untracked?: boolean; // from storage without metadata
 }
 
 export default function DocumentStorage() {
@@ -65,6 +75,7 @@ export default function DocumentStorage() {
   const [showNewCustomerDialog, setShowNewCustomerDialog] = useState(false);
   const [newCustomerName, setNewCustomerName] = useState("");
   const [replacingDocument, setReplacingDocument] = useState<string | null>(null);
+  const [includeUntracked, setIncludeUntracked] = useState(false);
 
   // Storage limit: 2GB
   const STORAGE_LIMIT_BYTES = 2 * 1024 * 1024 * 1024; // 2GB in bytes
@@ -90,7 +101,7 @@ export default function DocumentStorage() {
 
   // Fetch documents with metadata
   const { data: documents, isLoading, refetch } = useQuery({
-    queryKey: ['documents', profile?.account_id],
+    queryKey: ['documents', profile?.account_id, includeUntracked],
     queryFn: async () => {
       if (!profile?.account_id) return [];
       
@@ -99,23 +110,39 @@ export default function DocumentStorage() {
         .from('documents_metadata')
         .select(`
           *,
-          vendor:vendors(name)
+          vendor:vendors(name),
+          purchase_order_line_items(
+            description,
+            product_name,
+            quantity,
+            unit_price,
+            total_price
+          )
         `)
         .eq('account_id', profile.account_id);
 
       if (metadataError) throw metadataError;
 
-      // Try to fetch files from storage
+      // Always fetch storage files to verify existence
       let files: any[] = [];
       try {
-        const { data: storageFiles, error: filesError } = await supabase.storage
-          .from('purchase-orders')
-          .list(profile.account_id, {
-            sortBy: { column: 'created_at', order: 'desc' }
-          });
+        const pageSize = 1000;
+        let offset = 0;
+        while (true) {
+          const { data: storageFiles, error: filesError } = await supabase.storage
+            .from('purchase-orders')
+            .list(profile.account_id, {
+              limit: pageSize,
+              offset,
+              sortBy: { column: 'created_at', order: 'desc' }
+            });
 
-        if (!filesError && storageFiles) {
-          files = storageFiles;
+          if (filesError) break;
+          if (!storageFiles || storageFiles.length === 0) break;
+
+          files = files.concat(storageFiles);
+          if (storageFiles.length < pageSize) break;
+          offset += pageSize;
         }
       } catch (error) {
         console.warn('Could not fetch storage files:', error);
@@ -124,8 +151,8 @@ export default function DocumentStorage() {
       // Create a map of storage files for quick lookup
       const storageFilesMap = new Map(files.map(f => [f.name, f]));
 
-      // Return all metadata documents, marking which ones have storage files
-      return (metadata || []).map(meta => {
+      // Build documents from metadata and include any storage files missing metadata
+      const docsFromMeta = (metadata || []).map(meta => {
         const storageFile = storageFilesMap.get(meta.file_name);
         return {
           id: meta.id,
@@ -143,13 +170,81 @@ export default function DocumentStorage() {
           file_path: meta.file_path,
           storage_exists: !!storageFile,
           storage_file: storageFile,
-          file_size: storageFile?.metadata?.size || 0
+          file_size: storageFile?.metadata?.size || 0,
+          line_items: (meta as any).purchase_order_line_items || []
         } as StoredDocument & { storage_exists: boolean; storage_file?: any; file_size: number };
-      }).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      });
+
+      const metaNames = new Set(docsFromMeta.map(d => d.name));
+
+      // Add storage-only files that don't have metadata rows yet (optional)
+      const untrackedFromStorage = includeUntracked ? (
+        files
+          .filter(f => !metaNames.has(f.name))
+          .map(f => ({
+            id: `storage-${f.name}`,
+            name: f.name,
+            created_at: (f as any).created_at || new Date().toISOString(),
+            metadata: f.metadata || {},
+            vendor_id: undefined,
+            vendor_name: undefined,
+            notes: undefined,
+            document_date: undefined,
+            display_name: f.name,
+            amount: undefined,
+            description: undefined,
+            document_type: undefined,
+            file_path: `${profile.account_id}/${f.name}`,
+            storage_exists: true,
+            storage_file: f,
+            file_size: f.metadata?.size || 0,
+            line_items: [],
+            untracked: true
+          }))
+      ) : [] as any[];
+
+      const allDocs = includeUntracked ? [...docsFromMeta, ...untrackedFromStorage] : docsFromMeta;
+
+      return allDocs
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     },
     enabled: !!profile?.account_id,
     staleTime: 0, // Always refetch when query is invalidated
+    refetchInterval: 30000, // Periodic refresh for eventual consistency
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
   });
+
+  // Realtime updates: refresh when metadata or storage objects change
+  useEffect(() => {
+    if (!profile?.account_id) return;
+    const channel = supabase
+      .channel('document-storage-realtime')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'documents_metadata',
+        filter: `account_id=eq.${profile.account_id}`
+      }, () => {
+        queryClient.invalidateQueries({ queryKey: ['documents', profile.account_id] });
+      })
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'storage',
+        table: 'objects',
+        filter: 'bucket_id=eq.purchase-orders'
+      }, (payload) => {
+        const objectName = (payload.new as any)?.name || (payload.old as any)?.name || '';
+        if (typeof objectName === 'string' && objectName.startsWith(`${profile.account_id}/`)) {
+          queryClient.invalidateQueries({ queryKey: ['documents', profile.account_id] });
+        }
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [profile?.account_id, queryClient]);
 
   // Calculate total storage used
   const totalStorageUsed = useMemo(() => {
@@ -820,6 +915,11 @@ export default function DocumentStorage() {
                     className="w-full pl-9"
                   />
                 </div>
+
+                <div className="flex items-center gap-2 pl-1">
+                  <Switch id="toggle-untracked" checked={includeUntracked} onCheckedChange={setIncludeUntracked} />
+                  <Label htmlFor="toggle-untracked" className="text-sm text-muted-foreground">Include untracked files</Label>
+                </div>
               </div>
             </div>
           </CardHeader>
@@ -839,118 +939,194 @@ export default function DocumentStorage() {
                 </p>
               </div>
             ) : (
-              <Table>
+              <Table className="w-full table-fixed">
+                <colgroup>
+                  <col style={{ width: '25%' }} />
+                  <col style={{ width: '10%' }} />
+                  <col style={{ width: '12%' }} />
+                  <col style={{ width: '10%' }} />
+                  <col style={{ width: '11%' }} />
+                  <col style={{ width: '8%' }} />
+                  <col style={{ width: '12%' }} />
+                  <col style={{ width: '12%' }} />
+                </colgroup>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Vendor</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Document Date</TableHead>
-                    <TableHead>Size</TableHead>
-                    <TableHead>Uploaded</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                  <TableRow className="bg-background border-b hover:bg-background">
+                    <TableHead className="bg-background font-semibold px-4 py-3">Name</TableHead>
+                    <TableHead className="bg-background font-semibold px-4 py-3 text-left">Type</TableHead>
+                    <TableHead className="bg-background font-semibold px-4 py-3">Vendor</TableHead>
+                    <TableHead className="bg-background font-semibold px-4 py-3">Amount</TableHead>
+                    <TableHead className="bg-background font-semibold px-4 py-3">Document Date</TableHead>
+                    <TableHead className="bg-background font-semibold px-4 py-3">Size</TableHead>
+                    <TableHead className="bg-background font-semibold px-4 py-3">Uploaded</TableHead>
+                    <TableHead className="bg-background font-semibold px-4 py-3 text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredDocuments.map((doc) => (
-                    <TableRow key={doc.id}>
-                      <TableCell className="font-medium">
-                        <div className="flex items-center space-x-2">
-                          <FileText className="h-4 w-4 text-muted-foreground" />
-                          <span 
-                            className="cursor-pointer hover:text-primary transition-colors"
-                            onClick={() => setEditingDoc(doc)}
-                            title="Click to edit document name"
-                          >
-                            {doc.display_name || doc.name}
-                          </span>
-                          {!(doc as any).storage_exists && (
-                            <Badge variant="destructive" className="text-xs ml-2">
-                              Missing File
-                            </Badge>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-sm">
-                        {doc.document_type ? (
-                          <span className="capitalize">{doc.document_type.replace('_', ' ')}</span>
-                        ) : (
-                          <span className="text-muted-foreground">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-sm">
-                        {doc.vendor_name || <span className="text-muted-foreground">-</span>}
-                      </TableCell>
-                      <TableCell className="text-sm font-medium">
-                        {doc.amount ? `$${doc.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : <span className="text-muted-foreground">-</span>}
-                      </TableCell>
-                      <TableCell className="text-sm">
-                        {doc.document_date ? format(new Date(doc.document_date), "MMM dd, yyyy") : <span className="text-muted-foreground">-</span>}
-                      </TableCell>
-                      <TableCell>{formatFileSize((doc as any).file_size || 0)}</TableCell>
-                      <TableCell>{formatDate(doc.created_at)}</TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end space-x-2">
-                          {doc.document_type === 'purchase_order' && (
-                            <>
-                              <input
-                                type="file"
-                                id={`replace-${doc.id}`}
-                                className="hidden"
-                                accept="image/*,.pdf"
-                                onChange={(e) => {
-                                  const file = e.target.files?.[0];
-                                  if (file) {
-                                    handleReplaceDocument(doc, file);
-                                    e.target.value = ''; // Reset input
-                                  }
-                                }}
-                              />
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => document.getElementById(`replace-${doc.id}`)?.click()}
-                                disabled={replacingDocument === doc.id}
-                                title="Replace document file"
-                              >
-                                {replacingDocument === doc.id ? (
-                                  <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : (
-                                  <Upload className="h-4 w-4" />
-                                )}
+                    <Collapsible key={doc.id}>
+                      <TableRow className="align-top">
+                        <TableCell className="font-medium px-4 py-3">
+                          <div className="flex items-center space-x-2">
+                            <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                            <span 
+                              className="cursor-pointer hover:text-primary transition-colors truncate"
+                              onClick={() => setEditingDoc(doc)}
+                              title="Click to edit document name"
+                            >
+                              {doc.display_name || doc.name}
+                            </span>
+                            {!(doc as any).storage_exists && (
+                              <Badge variant="destructive" className="text-xs ml-2 flex-shrink-0">
+                                Missing File
+                              </Badge>
+                            )}
+                            {(doc as any).untracked && (
+                              <Badge variant="secondary" className="text-xs ml-2 flex-shrink-0">
+                                Untracked
+                              </Badge>
+                            )}
+                            <CollapsibleTrigger asChild>
+                              <Button variant="ghost" size="sm" className="h-6 w-6 p-0 flex-shrink-0 group" aria-label="Toggle document details">
+                                <ChevronDown className="h-4 w-4 transition-transform group-data-[state=open]:rotate-180" />
                               </Button>
-                            </>
+                            </CollapsibleTrigger>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-sm px-4 py-3 text-left">
+                          {doc.document_type ? (
+                            <span className="capitalize">{doc.document_type.replace('_', ' ')}</span>
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
                           )}
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setEditingDoc(doc)}
-                            title="Edit document details"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDownload(doc.name, doc)}
-                            title="Download document"
-                            disabled={!(doc as any).storage_exists}
-                          >
-                            <Download className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setDeleteTarget(doc.name)}
-                            className="text-destructive hover:text-destructive"
-                            title="Delete document"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
+                        </TableCell>
+                        <TableCell className="text-sm px-4 py-3">
+                          {doc.vendor_name || <span className="text-muted-foreground">-</span>}
+                        </TableCell>
+                        <TableCell className="text-sm font-medium px-4 py-3">
+                          {doc.amount ? `$${doc.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : <span className="text-muted-foreground">-</span>}
+                        </TableCell>
+                        <TableCell className="text-sm px-4 py-3">
+                          {doc.document_date ? format(new Date(doc.document_date), "MMM dd, yyyy") : <span className="text-muted-foreground">-</span>}
+                        </TableCell>
+                        <TableCell className="px-4 py-3">{formatFileSize((doc as any).file_size || 0)}</TableCell>
+                        <TableCell className="px-4 py-3">{formatDate(doc.created_at)}</TableCell>
+                        <TableCell className="text-right px-4 py-3">
+                          <div className="flex justify-end space-x-2">
+                            {doc.document_type === 'purchase_order' && (
+                              <>
+                                <input
+                                  type="file"
+                                  id={`replace-${doc.id}`}
+                                  className="hidden"
+                                  accept="image/*,.pdf"
+                                  onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) {
+                                      handleReplaceDocument(doc, file);
+                                      e.target.value = ''; // Reset input
+                                    }
+                                  }}
+                                />
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => document.getElementById(`replace-${doc.id}`)?.click()}
+                                  disabled={replacingDocument === doc.id}
+                                  title="Replace document file"
+                                >
+                                  {replacingDocument === doc.id ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <Upload className="h-4 w-4" />
+                                  )}
+                                </Button>
+                              </>
+                            )}
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setEditingDoc(doc)}
+                              title="Edit document details"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDownload(doc.name, doc)}
+                              title="Download document"
+                              disabled={!(doc as any).storage_exists}
+                            >
+                              <Download className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setDeleteTarget(doc.name)}
+                              className="text-destructive hover:text-destructive"
+                              title="Delete document"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell colSpan={8} className="p-0 border-0">
+                          <CollapsibleContent>
+                            <div className="w-full py-4 bg-muted/30">
+                              {doc.line_items && doc.line_items.length > 0 ? (
+                                <div className="space-y-2 px-4">
+                                  <div className="text-sm font-semibold mb-3">Line Items ({doc.line_items.length})</div>
+                                  <div className="space-y-1.5">
+                                    {doc.line_items.map((item, idx) => (
+                                      <div key={idx} className="flex items-start justify-between text-sm py-1">
+                                        <div className="flex-1 pr-4">
+                                          {item.description || item.product_name || '-'}
+                                        </div>
+                                        <div className="text-right whitespace-nowrap">
+                                          <span className="text-muted-foreground">Qty: </span>
+                                          <span>{item.quantity || '-'}</span>
+                                          <span className="mx-1.5 text-muted-foreground">@</span>
+                                          <span>{item.unit_price ? Number(item.unit_price).toFixed(2) : '-'}</span>
+                                          <span className="ml-3 font-medium">
+                                            {item.total_price ? Number(item.total_price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}
+                                          </span>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="space-y-3 px-4">
+                                  <div className="text-sm font-semibold mb-2">Details</div>
+                                  <div className="text-sm text-muted-foreground">No line items found for this document.</div>
+                                  <div className="grid md:grid-cols-3 gap-4 text-sm">
+                                    <div>
+                                      <div className="font-medium">Description</div>
+                                      <div>{doc.description || '-'}</div>
+                                    </div>
+                                    <div>
+                                      <div className="font-medium">Qty</div>
+                                      <div>-</div>
+                                    </div>
+                                    <div>
+                                      <div className="font-medium">Amount</div>
+                                      <div>{doc.amount ? `$${Number(doc.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-'}</div>
+                                    </div>
+                                    <div className="md:col-span-3">
+                                      <div className="font-medium">Notes</div>
+                                      <div>{doc.notes || '-'}</div>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </CollapsibleContent>
+                        </TableCell>
+                      </TableRow>
+                    </Collapsible>
                   ))}
                 </TableBody>
               </Table>

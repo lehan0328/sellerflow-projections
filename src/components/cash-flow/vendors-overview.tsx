@@ -25,7 +25,7 @@ import { toast } from "sonner";
 import * as React from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { calculateSimilarity } from "@/lib/similarityUtils";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+
 
 interface VendorsOverviewProps {
   bankTransactions?: BankTransaction[];
@@ -563,13 +563,6 @@ export const VendorsOverview = ({
                     }
                     toggleRow(tx.id);
                   }}>
-                    <TableCell className="w-[30px]" onClick={() => toggleRow(tx.id)}>
-                      {expandedRows[tx.id] ? (
-                        <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                      ) : (
-                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                      )}
-                    </TableCell>
                     <TableCell className="font-medium">{tx.vendorName}</TableCell>
                     <TableCell>{tx.description || 'N/A'}</TableCell>
                     <TableCell>
@@ -715,142 +708,6 @@ export const VendorsOverview = ({
                     </TableCell>
                   </TableRow>
                   
-                  {expandedRows[tx.id] && (
-                    <TableRow className="bg-muted/30">
-                      <TableCell colSpan={8}>
-                        <div className="border rounded-md p-4 bg-card space-y-4">
-                          {/* Line Items Section */}
-                          {lineItemsByTransaction[tx.id] && lineItemsByTransaction[tx.id].length > 0 ? (
-                            <div>
-                              <div className="text-sm text-muted-foreground mb-3">
-                                Items with discrepancies in shipment {tx.description}
-                              </div>
-                              <div className="overflow-x-auto">
-                                <table className="w-full text-sm">
-                                  <thead>
-                                    <tr className="border-b">
-                                      <th className="text-left py-2 px-2 font-medium">SKU</th>
-                                      <th className="text-left py-2 px-2 font-medium">Product Name</th>
-                                      <th className="text-right py-2 px-2 font-medium">Qty Expected</th>
-                                    </tr>
-                                  </thead>
-                                  <tbody>
-                                    {lineItemsByTransaction[tx.id].map((item: any) => (
-                                      <tr key={item.id} className="border-b last:border-0">
-                                        <td className="py-2 px-2 font-mono text-xs">{item.sku || 'N/A'}</td>
-                                        <td className="py-2 px-2 text-muted-foreground">{item.product_name}</td>
-                                        <td className="py-2 px-2 text-right">{item.quantity}</td>
-                                      </tr>
-                                    ))}
-                                  </tbody>
-                                </table>
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="py-2">
-                              {tx.description ? (
-                                <div>
-                                  <div className="text-sm text-muted-foreground mb-2">
-                                    No saved line items yet. Showing description as fallback:
-                                  </div>
-                                  <div className="overflow-x-auto">
-                                    <table className="w-full text-sm">
-                                      <thead>
-                                        <tr className="border-b">
-                                          <th className="text-left py-2 px-2 font-medium">Product Name</th>
-                                          <th className="text-right py-2 px-2 font-medium">Qty</th>
-                                        </tr>
-                                      </thead>
-                                      <tbody>
-                                        <tr className="border-b last:border-0">
-                                          <td className="py-2 px-2 text-muted-foreground">{tx.description}</td>
-                                          <td className="py-2 px-2 text-right">1</td>
-                                        </tr>
-                                      </tbody>
-                                    </table>
-                                  </div>
-                                </div>
-                              ) : (
-                                <div className="text-sm text-muted-foreground text-center py-4">
-                                  No line items added for this purchase order
-                                </div>
-                              )}
-                            </div>
-                          )}
-
-                          {/* Matching Purchase Orders Section */}
-                          {matchingPOsByTransaction[tx.id] && matchingPOsByTransaction[tx.id].length > 0 && (
-                            <div className="pt-4 border-t">
-                              <div className="text-sm font-medium mb-3">
-                                Similar Purchase Orders
-                              </div>
-                              <div className="space-y-2">
-                                {matchingPOsByTransaction[tx.id].map((matchingPO) => (
-                                  <Collapsible key={matchingPO.id}>
-                                    <div className="flex items-start justify-between p-3 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors">
-                                      <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-2 mb-1">
-                                          <span className="font-medium text-sm truncate">
-                                            {matchingPO.vendor_name}
-                                          </span>
-                                          <Badge variant="outline" className="text-xs">
-                                            {matchingPO.po_number}
-                                          </Badge>
-                                        </div>
-                                        <div className="flex items-center gap-3 text-xs text-muted-foreground mb-2">
-                                          <span>${matchingPO.amount.toLocaleString()}</span>
-                                          <span>•</span>
-                                          <span>{new Date(matchingPO.due_date).toLocaleDateString()}</span>
-                                        </div>
-                                        <CollapsibleTrigger asChild>
-                                          <Button variant="ghost" size="sm" className="h-6 text-xs px-2">
-                                            <ChevronRight className="h-3 w-3 mr-1" />
-                                            View {matchingPO.matching_items.length} matching item{matchingPO.matching_items.length !== 1 ? 's' : ''}
-                                          </Button>
-                                        </CollapsibleTrigger>
-                                      </div>
-                                    </div>
-                                    <CollapsibleContent className="mt-2 ml-3">
-                                      <div className="flex flex-col gap-1 pl-3 border-l-2 border-muted">
-                                        {matchingPO.matching_items.slice(0, 5).map((item, idx) => (
-                                          <div key={idx} className="text-xs flex items-center gap-2 py-1">
-                                            <Badge variant="secondary" className="text-xs">
-                                              {item.similarity}%
-                                            </Badge>
-                                            <span className="text-muted-foreground">
-                                              {item.description}
-                                            </span>
-                                          </div>
-                                        ))}
-                                        {matchingPO.matching_items.length > 5 && (
-                                          <span className="text-xs text-muted-foreground pl-1">
-                                            +{matchingPO.matching_items.length - 5} more
-                                          </span>
-                                        )}
-                                      </div>
-                                    </CollapsibleContent>
-                                  </Collapsible>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-
-                          {tx.amountPaid && tx.remainingBalance && (
-                            <div className="grid grid-cols-2 gap-4 text-sm pt-4 border-t">
-                              <div>
-                                <div className="text-xs text-muted-foreground font-medium mb-1">Amount Paid</div>
-                                <div className="font-medium text-green-600">${tx.amountPaid.toLocaleString()}</div>
-                              </div>
-                              <div>
-                                <div className="text-xs text-muted-foreground font-medium mb-1">Remaining Balance</div>
-                                <div className="font-medium text-orange-600">${tx.remainingBalance.toLocaleString()}</div>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  )}
                 </React.Fragment>)}
             </TableBody>
           </Table>

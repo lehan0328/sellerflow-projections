@@ -10,7 +10,7 @@ export interface AmazonPayout {
   payout_date: string;
   total_amount: number;
   currency_code: string;
-  status: "confirmed" | "estimated" | "processing" | "forecasted";
+  status: "confirmed" | "estimated" | "processing" | "forecasted" | "rolled_over";
   payout_type: "bi-weekly" | "reserve-release" | "adjustment" | "daily";
   marketplace_name: string;
   transaction_count: number;
@@ -178,6 +178,18 @@ export const useAmazonPayouts = () => {
           return true;
         }
         
+        // Include rolled-over forecasts (these are past forecasts that were combined with future dates)
+        // They should display on the chart to show rollover history
+        if (payout.status === 'rolled_over') {
+          console.log('[fetchAmazonPayouts] Including rolled_over forecast:', {
+            id: payout.id,
+            date: payout.payout_date,
+            amount: payout.total_amount,
+            note: 'This forecast was rolled into a future date'
+          });
+          return true;
+        }
+        
         return true;
       });
 
@@ -191,7 +203,7 @@ export const useAmazonPayouts = () => {
         
         return {
           ...payout,
-          status: payout.status as "confirmed" | "estimated" | "processing" | "forecasted",
+          status: payout.status as "confirmed" | "estimated" | "processing" | "forecasted" | "rolled_over",
           payout_type: payout.payout_type as "bi-weekly" | "reserve-release" | "adjustment" | "daily",
           amazon_accounts: payout.amazon_accounts ? {
             ...payout.amazon_accounts,

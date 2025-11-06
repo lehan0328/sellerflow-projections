@@ -60,8 +60,9 @@ export default function AmazonForecast() {
   const [showAllForecasts, setShowAllForecasts] = useState(false);
   const [chartType, setChartType] = useState<'bar' | 'line'>('bar');
   const [isDeletingSampleData, setIsDeletingSampleData] = useState(false);
+  const [isCheckingRollover, setIsCheckingRollover] = useState(false);
   const [growthTimeframe, setGrowthTimeframe] = useState<'30d' | '60d' | '90d' | '6m' | '1y'>('1y');
-  const [avgPayoutPeriod, setAvgPayoutPeriod] = useState<string>(format(new Date(), 'yyyy-MM'));
+  const [avgPayoutPeriod, setAvgPayoutPeriod] = useState<string>(format(new Date(), 'yyyy-MM')); // Current month
 
   // Check if user has 3+ confirmed payouts
   const confirmedPayouts = amazonPayouts.filter(p => p.status === 'confirmed');
@@ -174,11 +175,84 @@ export default function AmazonForecast() {
     }
   };
 
+  const checkRollover = async () => {
+    setIsCheckingRollover(true);
+    toast.loading("Checking for forecast rollovers...");
+    
+    try {
+      if (!user) throw new Error("Not authenticated");
+      
+      // Get active Amazon accounts
+      const activeAccounts = amazonAccounts.filter(acc => acc.is_active);
+      
+      if (activeAccounts.length === 0) {
+        toast.dismiss();
+        toast.info("No active Amazon accounts found");
+        return;
+      }
+
+      let totalRollovers = 0;
+      const results = [];
+
+      for (const account of activeAccounts) {
+        const { data, error } = await supabase.functions.invoke("handle-forecast-workflow", {
+          body: {
+            amazonAccountId: account.id,
+            userId: user.id
+          }
+        });
+
+        if (error) {
+          console.error(`Workflow error for ${account.account_name}:`, error);
+          results.push({ account: account.account_name, error: error.message });
+        } else if (data?.scenario === 'no_settlement' && data?.rolloverResult?.rolloverOccurred) {
+          // Rollover happened (Scenario 2)
+          totalRollovers++;
+          results.push({ 
+            account: account.account_name, 
+            rolled: true, 
+            message: 'Forecast rolled over (no settlement detected)' 
+          });
+        } else if (data?.scenario === 'settlement_detected') {
+          // Settlement detected, forecasts regenerated (Scenario 1)
+          results.push({ 
+            account: account.account_name, 
+            rolled: false, 
+            message: 'Settlement detected - forecasts regenerated' 
+          });
+        } else {
+          results.push({ 
+            account: account.account_name, 
+            rolled: false, 
+            message: data?.message || 'No action needed'
+          });
+        }
+      }
+
+      toast.dismiss();
+      
+      if (totalRollovers > 0) {
+        toast.success(`✅ Rolled over ${totalRollovers} forecast(s)! Refreshing...`);
+        setTimeout(() => window.location.reload(), 1500);
+      } else {
+        toast.info("No forecasts needed rollover");
+      }
+      
+      console.log('Rollover results:', results);
+    } catch (error: any) {
+      console.error("Rollover error:", error);
+      toast.dismiss();
+      toast.error(error.message || "Failed to check rollovers");
+    } finally {
+      setIsCheckingRollover(false);
+    }
+  };
+
   // Calculate key metrics
   const metrics = useMemo(() => {
-    // Filter to only confirmed payouts and exclude sample data
+    // Filter to only confirmed payouts (include all marketplaces)
     const confirmedPayouts = amazonPayouts.filter(p => {
-      return p.status === 'confirmed' && p.marketplace_name !== 'Amazon.com';
+      return p.status === 'confirmed';
     });
     
     const totalPayouts = confirmedPayouts.reduce((sum, p) => sum + Number(p.total_amount || 0), 0);
@@ -186,6 +260,11 @@ export default function AmazonForecast() {
     // Calculate average daily payout based on selected period
     let avgPayout = 0;
     let avgPayoutLabel = '';
+    
+    console.log('[AmazonForecast] Calculating avg payout - Total confirmed payouts:', confirmedPayouts.length);
+    confirmedPayouts.forEach(p => {
+      console.log('  - Payout:', p.payout_date, '$' + p.total_amount, p.marketplace_name);
+    });
     
     if (confirmedPayouts.length > 0) {
       let filteredPayouts = confirmedPayouts;
@@ -197,8 +276,12 @@ export default function AmazonForecast() {
         filteredPayouts = confirmedPayouts.filter(p => new Date(p.payout_date) >= twelveMonthsAgo);
         avgPayoutLabel = 'Last 12 months';
         
+        console.log('[AmazonForecast] 12-month filter - Payouts in range:', filteredPayouts.length);
+        
         const periodTotal = filteredPayouts.reduce((sum, p) => sum + Number(p.total_amount || 0), 0);
         avgPayout = periodTotal / 365; // Average per day over 365 days
+        
+        console.log('[AmazonForecast] Period total: $' + periodTotal, 'Avg per day: $' + avgPayout.toFixed(2));
       } else {
         // Specific month (YYYY-MM format)
         const [year, month] = avgPayoutPeriod.split('-').map(Number);
@@ -210,10 +293,28 @@ export default function AmazonForecast() {
         const monthDate = new Date(year, month - 1, 1);
         avgPayoutLabel = format(monthDate, 'MMMM yyyy');
         
-        // Calculate days in selected month
-        const daysInMonth = new Date(year, month, 0).getDate();
+        console.log('[AmazonForecast] Month filter (' + avgPayoutLabel + ') - Payouts in range:', filteredPayouts.length);
+        
+        // Calculate days to divide by
+        const now = new Date();
+        const isCurrentMonth = now.getFullYear() === year && now.getMonth() === month - 1;
+        
+        let daysToUse;
+        if (isCurrentMonth) {
+          // For current month: use days elapsed so far (month-to-date)
+          daysToUse = now.getDate(); // Current day of month (1-31)
+          avgPayoutLabel = avgPayoutLabel + ' (MTD)'; // Add MTD indicator
+          console.log('[AmazonForecast] Current month - using days elapsed:', daysToUse);
+        } else {
+          // For past months: use total days in that month
+          daysToUse = new Date(year, month, 0).getDate();
+          console.log('[AmazonForecast] Past month - using total days:', daysToUse);
+        }
+        
         const periodTotal = filteredPayouts.reduce((sum, p) => sum + Number(p.total_amount || 0), 0);
-        avgPayout = daysInMonth > 0 ? periodTotal / daysInMonth : 0;
+        avgPayout = daysToUse > 0 ? periodTotal / daysToUse : 0;
+        
+        console.log('[AmazonForecast] Period total: $' + periodTotal, 'Days:', daysToUse, 'Avg per day: $' + avgPayout.toFixed(2));
       }
     }
     
@@ -422,17 +523,28 @@ export default function AmazonForecast() {
             <CardTitle>Overview Metrics</CardTitle>
             <CardDescription>Key performance indicators for your Amazon payouts</CardDescription>
           </div>
-          {amazonPayouts.some(p => p.marketplace_name === 'Amazon.com') && (
+          <div className="flex gap-2">
             <Button 
-              onClick={deleteSampleData} 
-              disabled={isDeletingSampleData}
+              onClick={checkRollover} 
+              disabled={isCheckingRollover}
               variant="outline"
               size="sm"
-              className="border-red-300 text-red-700 hover:bg-red-50"
+              className="border-blue-300 text-blue-700 hover:bg-blue-50"
             >
-              {isDeletingSampleData ? 'Deleting...' : 'Delete Sample Data'}
+              {isCheckingRollover ? 'Checking...' : 'Check Rollovers'}
             </Button>
-          )}
+            {amazonPayouts.some(p => p.marketplace_name === 'Amazon.com') && (
+              <Button 
+                onClick={deleteSampleData} 
+                disabled={isDeletingSampleData}
+                variant="outline"
+                size="sm"
+                className="border-red-300 text-red-700 hover:bg-red-50"
+              >
+                {isDeletingSampleData ? 'Deleting...' : 'Delete Sample Data'}
+              </Button>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-4">
@@ -491,7 +603,20 @@ export default function AmazonForecast() {
             <div className="bg-background rounded-lg border p-4">
               <div className="flex items-center justify-between space-y-0 pb-2">
                 <div className="flex items-center gap-2">
-                  <p className="text-sm font-medium">Avg Daily Payout</p>
+                  <p className="text-sm font-medium">Avg Daily Revenue</p>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-xs">
+                        <p className="text-sm">
+                          Total payouts ÷ days elapsed. For current month: month-to-date average. 
+                          Example: $11,218 in first 5 days of Nov = $2,244/day.
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                   <Select value={avgPayoutPeriod} onValueChange={setAvgPayoutPeriod}>
                     <SelectTrigger className="h-7 w-[120px] text-xs">
                       <SelectValue />
