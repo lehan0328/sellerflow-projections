@@ -757,6 +757,114 @@ export default function Analytics() {
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-3 mb-4">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Monthly Amazon Projected Income</CardTitle>
+                <TrendingUp className="h-4 w-4 text-green-600" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-green-600">
+                  ${(() => {
+                    // Calculate total PROJECTED Amazon payouts for the NEXT 30 days
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    const next30Days = new Date(today);
+                    next30Days.setDate(next30Days.getDate() + 30);
+                    
+                    console.log('[Analytics] Calculating projected Amazon income:', {
+                      today: today.toISOString(),
+                      next30Days: next30Days.toISOString(),
+                      totalPayouts: amazonPayouts.length
+                    });
+                    
+                    const projectedPayouts = amazonPayouts.filter(p => {
+                      // Only include forecasted payouts (future projections)
+                      if (p.status !== 'forecasted') {
+                        return false;
+                      }
+                      
+                      const payoutDate = new Date(p.payout_date);
+                      payoutDate.setHours(0, 0, 0, 0);
+                      
+                      return payoutDate >= today && payoutDate < next30Days;
+                    });
+                    
+                    const totalProjected = projectedPayouts.reduce((sum, p) => sum + (p.total_amount || 0), 0);
+                    
+                    console.log('[Analytics] Projected payouts for next 30 days:', {
+                      count: projectedPayouts.length,
+                      total: totalProjected,
+                      payouts: projectedPayouts.map(p => ({
+                        date: p.payout_date,
+                        amount: p.total_amount,
+                        status: p.status
+                      }))
+                    });
+                    
+                    return totalProjected.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                  })()}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Next 30 days projected payouts
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Recurring (Monthly)</CardTitle>
+                <Calculator className="h-4 w-4 text-blue-600" />
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">Income:</span>
+                    <span className="text-sm font-semibold text-green-600">
+                      +${recurringExpenses
+                        .filter(r => r.type === 'income' && r.is_active)
+                        .reduce((sum, r) => {
+                          const occurrences = generateRecurringDates(r, new Date(new Date().getFullYear(), new Date().getMonth(), 1), new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0));
+                          return sum + (occurrences.length * r.amount);
+                        }, 0)
+                        .toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">Expenses:</span>
+                    <span className="text-sm font-semibold text-red-600">
+                      -${recurringExpenses
+                        .filter(r => r.type === 'expense' && r.is_active)
+                        .reduce((sum, r) => {
+                          const occurrences = generateRecurringDates(r, new Date(new Date().getFullYear(), new Date().getMonth(), 1), new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0));
+                          return sum + (occurrences.length * r.amount);
+                        }, 0)
+                        .toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Purchase Orders</CardTitle>
+                <ShoppingCart className="h-4 w-4 text-amber-600" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-amber-600">
+                  ${dbTransactions
+                    .filter(tx => tx.type === 'purchase_order' && tx.status === 'pending')
+                    .reduce((sum, tx) => sum + tx.amount, 0)
+                    .toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {dbTransactions.filter(tx => tx.type === 'purchase_order' && tx.status === 'pending').length} pending orders
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
           <div className="grid gap-4 md:grid-cols-2">
             <Card>
               <CardHeader>
@@ -1129,114 +1237,6 @@ export default function Analytics() {
         </TabsContent>
 
         <TabsContent value="cashflow" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-3 mb-4">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Monthly Amazon Projected Income</CardTitle>
-                <TrendingUp className="h-4 w-4 text-green-600" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-green-600">
-                  ${(() => {
-                    // Calculate total PROJECTED Amazon payouts for the NEXT 30 days
-                    const today = new Date();
-                    today.setHours(0, 0, 0, 0);
-                    const next30Days = new Date(today);
-                    next30Days.setDate(next30Days.getDate() + 30);
-                    
-                    console.log('[Analytics] Calculating projected Amazon income:', {
-                      today: today.toISOString(),
-                      next30Days: next30Days.toISOString(),
-                      totalPayouts: amazonPayouts.length
-                    });
-                    
-                    const projectedPayouts = amazonPayouts.filter(p => {
-                      // Only include forecasted payouts (future projections)
-                      if (p.status !== 'forecasted') {
-                        return false;
-                      }
-                      
-                      const payoutDate = new Date(p.payout_date);
-                      payoutDate.setHours(0, 0, 0, 0);
-                      
-                      return payoutDate >= today && payoutDate < next30Days;
-                    });
-                    
-                    const totalProjected = projectedPayouts.reduce((sum, p) => sum + (p.total_amount || 0), 0);
-                    
-                    console.log('[Analytics] Projected payouts for next 30 days:', {
-                      count: projectedPayouts.length,
-                      total: totalProjected,
-                      payouts: projectedPayouts.map(p => ({
-                        date: p.payout_date,
-                        amount: p.total_amount,
-                        status: p.status
-                      }))
-                    });
-                    
-                    return totalProjected.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                  })()}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Next 30 days projected payouts
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Recurring (Monthly)</CardTitle>
-                <Calculator className="h-4 w-4 text-blue-600" />
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-muted-foreground">Income:</span>
-                    <span className="text-sm font-semibold text-green-600">
-                      +${recurringExpenses
-                        .filter(r => r.type === 'income' && r.is_active)
-                        .reduce((sum, r) => {
-                          const occurrences = generateRecurringDates(r, new Date(new Date().getFullYear(), new Date().getMonth(), 1), new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0));
-                          return sum + (occurrences.length * r.amount);
-                        }, 0)
-                        .toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-muted-foreground">Expenses:</span>
-                    <span className="text-sm font-semibold text-red-600">
-                      -${recurringExpenses
-                        .filter(r => r.type === 'expense' && r.is_active)
-                        .reduce((sum, r) => {
-                          const occurrences = generateRecurringDates(r, new Date(new Date().getFullYear(), new Date().getMonth(), 1), new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0));
-                          return sum + (occurrences.length * r.amount);
-                        }, 0)
-                        .toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Purchase Orders</CardTitle>
-                <ShoppingCart className="h-4 w-4 text-amber-600" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-amber-600">
-                  ${dbTransactions
-                    .filter(tx => tx.type === 'purchase_order' && tx.status === 'pending')
-                    .reduce((sum, tx) => sum + tx.amount, 0)
-                    .toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {dbTransactions.filter(tx => tx.type === 'purchase_order' && tx.status === 'pending').length} pending orders
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-
           <Card>
             <CardHeader>
               <CardTitle>Income vs Expenses (Last 6 Months)</CardTitle>
