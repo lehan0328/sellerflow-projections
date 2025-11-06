@@ -527,25 +527,38 @@ export const IncomeForm = ({
               {/* Credit Card Payment Method - only for recurring expenses */}
               {(formData.isRecurring || isRecurring) && formData.type === "expense" && (
                 <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
-                  <div className="space-y-2">
-                    <Label htmlFor="paymentMethod">Payment Method *</Label>
-                    <Select 
-                      value={formData.paymentMethod}
-                      onValueChange={(value: "bank-transfer" | "credit-card") => {
-                        handleInputChange("paymentMethod", value);
-                        if (value === "bank-transfer") {
+                  <div className="space-y-3">
+                    <Label className="text-sm font-medium">Payment Method *</Label>
+                    <div className="flex gap-1.5 p-0.5 bg-muted rounded-lg">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          handleInputChange("paymentMethod", "bank-transfer");
                           handleInputChange("creditCardId", "");
-                        }
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="bank-transfer">Bank Transfer</SelectItem>
-                        <SelectItem value="credit-card">Credit Card</SelectItem>
-                      </SelectContent>
-                    </Select>
+                        }}
+                        className={cn(
+                          "flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-md text-sm font-medium transition-all",
+                          formData.paymentMethod === "bank-transfer"
+                            ? "bg-background shadow-sm text-foreground border"
+                            : "text-muted-foreground hover:text-foreground"
+                        )}
+                      >
+                        Bank Transfer
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleInputChange("paymentMethod", "credit-card")}
+                        className={cn(
+                          "flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-md text-sm font-medium transition-all",
+                          formData.paymentMethod === "credit-card"
+                            ? "bg-background shadow-sm text-foreground border"
+                            : "text-muted-foreground hover:text-foreground"
+                        )}
+                      >
+                        <CreditCard className="h-3.5 w-3.5" />
+                        Credit Card
+                      </button>
+                    </div>
                   </div>
 
                   {formData.paymentMethod === "credit-card" && (
