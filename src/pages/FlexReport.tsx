@@ -634,24 +634,24 @@ const FlexReport = () => {
               </div>
 
               {/* Amazon Revenue (30d) */}
-              <div className="group bg-gradient-to-br from-amber-50 via-amber-100/80 to-amber-50 rounded-2xl p-4 border-2 border-amber-200/60 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm relative">
-                <div className="absolute top-3 right-3 flex items-center gap-1 px-2.5 py-1 bg-amber-50 border-2 border-amber-600 rounded-full">
-                  <div className="w-1 h-1 bg-amber-600 rounded-full"></div>
-                  <span className="text-[10px] font-black text-amber-700 uppercase tracking-wider">Verified</span>
+              <div className="group bg-gradient-to-br from-violet-50 via-purple-100/80 to-violet-50 rounded-2xl p-4 border-2 border-purple-300/60 shadow-lg hover:shadow-2xl transition-all duration-300 backdrop-blur-sm relative ring-2 ring-purple-200/30">
+                <div className="absolute top-3 right-3 flex items-center gap-1 px-2.5 py-1 bg-purple-50 border-2 border-purple-600 rounded-full">
+                  <div className="w-1 h-1 bg-purple-600 rounded-full animate-pulse"></div>
+                  <span className="text-[10px] font-black text-purple-700 uppercase tracking-wider">Verified</span>
                 </div>
                 <div className="flex items-center gap-2 mb-2">
                   <div className="relative">
-                    <div className="p-2 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl shadow-md group-hover:scale-110 transition-transform duration-300">
+                    <div className="p-2 bg-gradient-to-br from-purple-500 to-violet-600 rounded-xl shadow-md group-hover:scale-110 transition-transform duration-300">
                       <Zap className="w-4 h-4 text-white" />
                     </div>
-                    <Sparkles className="absolute -top-1 -right-1 w-3 h-3 text-amber-500 animate-pulse" />
+                    <Sparkles className="absolute -top-1 -right-1 w-3 h-3 text-purple-500 animate-pulse" />
                   </div>
                   <div className="flex flex-col">
                     <p className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Forecasted 90 Day Payout</p>
-                    <span className="text-[9px] font-bold text-amber-600 uppercase tracking-wider">Core Feature</span>
+                    <span className="text-[9px] font-bold text-purple-600 uppercase tracking-wider">Core Feature</span>
                   </div>
                 </div>
-                <p className={`text-2xl font-black text-amber-700 drop-shadow-sm transition-all duration-300 ${!visibility.amazonRevenue ? 'blur-lg' : ''}`}>{formatCurrency(forecasted90DayPayout)}</p>
+                <p className={`text-2xl font-black text-purple-700 drop-shadow-sm transition-all duration-300 ${!visibility.amazonRevenue ? 'blur-lg' : ''}`}>{formatCurrency(forecasted90DayPayout)}</p>
                 {showPercentageChange && (
                   <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg mt-1 ${percentageChanges.amazonRevenue >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                     <TrendingUp className={`w-2.5 h-2.5 ${percentageChanges.amazonRevenue >= 0 ? '' : 'rotate-180'}`} />
@@ -660,7 +660,7 @@ const FlexReport = () => {
                 )}
                 <button
                   onClick={() => toggleVisibility('amazonRevenue')}
-                  className="absolute bottom-4 right-4 p-2 rounded-lg hover:bg-amber-100/50 transition-colors z-10"
+                  className="absolute bottom-4 right-4 p-2 rounded-lg hover:bg-purple-100/50 transition-colors z-10"
                 >
                   {visibility.amazonRevenue ? (
                     <Eye className="w-4 h-4 text-blue-600" />
