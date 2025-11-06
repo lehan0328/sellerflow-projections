@@ -1234,15 +1234,8 @@ export default function Analytics() {
                       +${recurringExpenses
                         .filter(r => r.type === 'income' && r.is_active)
                         .reduce((sum, r) => {
-                          const monthlyAmount = r.frequency === 'daily' ? r.amount * 30 :
-                            r.frequency === 'weekdays' ? r.amount * 21.67 :
-                            r.frequency === 'weekly' ? r.amount * 4.33 :
-                            r.frequency === 'bi-weekly' ? r.amount * 2.17 :
-                            r.frequency === 'monthly' ? r.amount :
-                            r.frequency === '2-months' ? r.amount / 2 :
-                            r.frequency === '3-months' ? r.amount / 3 :
-                            r.amount;
-                          return sum + monthlyAmount;
+                          const occurrences = generateRecurringDates(r, new Date(new Date().getFullYear(), new Date().getMonth(), 1), new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0));
+                          return sum + (occurrences.length * r.amount);
                         }, 0)
                         .toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </span>
@@ -1253,15 +1246,8 @@ export default function Analytics() {
                       -${recurringExpenses
                         .filter(r => r.type === 'expense' && r.is_active)
                         .reduce((sum, r) => {
-                          const monthlyAmount = r.frequency === 'daily' ? r.amount * 30 :
-                            r.frequency === 'weekdays' ? r.amount * 21.67 :
-                            r.frequency === 'weekly' ? r.amount * 4.33 :
-                            r.frequency === 'bi-weekly' ? r.amount * 2.17 :
-                            r.frequency === 'monthly' ? r.amount :
-                            r.frequency === '2-months' ? r.amount / 2 :
-                            r.frequency === '3-months' ? r.amount / 3 :
-                            r.amount;
-                          return sum + monthlyAmount;
+                          const occurrences = generateRecurringDates(r, new Date(new Date().getFullYear(), new Date().getMonth(), 1), new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0));
+                          return sum + (occurrences.length * r.amount);
                         }, 0)
                         .toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </span>

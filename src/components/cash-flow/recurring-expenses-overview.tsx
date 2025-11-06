@@ -13,7 +13,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { format, addMonths } from "date-fns";
+import { format, addMonths, startOfMonth, endOfMonth } from "date-fns";
+import { generateRecurringDates } from "@/lib/recurringDates";
 import { useNavigate } from "react-router-dom";
 
 export const RecurringExpensesOverview = () => {
@@ -101,25 +102,20 @@ export const RecurringExpensesOverview = () => {
   const activeIncome = activeTransactions.filter(item => item.type === 'income');
   const activeExpenses = activeTransactions.filter(item => item.type === 'expense');
   
-  // Convert all frequencies to monthly equivalent
-  const getMonthlyAmount = (amount: number, frequency: string) => {
-    switch (frequency) {
-      case 'daily': return amount * 30;
-      case 'weekdays': return amount * 21.67; // ~21.67 average weekdays per month
-      case 'weekly': return amount * 4.33; // 52 weeks / 12 months
-      case 'bi-weekly': return amount * 2.17; // 26 bi-weekly periods / 12 months
-      case 'monthly': return amount;
-      case '2-months': return amount / 2;
-      case '3-months': return amount / 3;
-      default: return amount;
-    }
-  };
+  // Calculate exact monthly amount based on actual calendar occurrences
+  const currentMonth = new Date();
   
   const totalMonthlyIncome = activeIncome
-    .reduce((sum, item) => sum + getMonthlyAmount(Number(item.amount), item.frequency), 0);
+    .reduce((sum, item) => {
+      const occurrences = generateRecurringDates(item, startOfMonth(currentMonth), endOfMonth(currentMonth));
+      return sum + (occurrences.length * Number(item.amount));
+    }, 0);
     
   const totalMonthlyExpense = activeExpenses
-    .reduce((sum, item) => sum + getMonthlyAmount(Number(item.amount), item.frequency), 0);
+    .reduce((sum, item) => {
+      const occurrences = generateRecurringDates(item, startOfMonth(currentMonth), endOfMonth(currentMonth));
+      return sum + (occurrences.length * Number(item.amount));
+    }, 0);
 
   const maxEndDate = format(addMonths(new Date(), 3), 'yyyy-MM-dd');
 
