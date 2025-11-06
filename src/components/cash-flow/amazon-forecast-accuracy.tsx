@@ -307,7 +307,17 @@ export const AmazonForecastAccuracy = () => {
                 const mean = errors.reduce((sum, err) => sum + err, 0) / errors.length;
                 const variance = errors.reduce((sum, err) => sum + Math.pow(err - mean, 2), 0) / errors.length;
                 const stdDev = Math.sqrt(variance);
-                const confidence = Math.max(0, Math.min(100, 100 - stdDev));
+                
+                // Calculate accuracy-based confidence
+                const recentAccuracy = recentLogs.reduce((sum, log) => sum + (100 - Math.abs(log.difference_percentage)), 0) / recentLogs.length;
+                
+                // Calculate consistency factor (0 to 1, where 1 is perfectly consistent)
+                const maxStdDev = 50; // Normalize standard deviation to a 0-1 scale
+                const consistencyFactor = Math.max(0, 1 - (stdDev / maxStdDev));
+                
+                // Confidence = Accuracy × Consistency (weighted 70% accuracy, 30% consistency)
+                const confidence = Math.max(0, Math.min(100, (recentAccuracy * 0.7) + (consistencyFactor * 100 * 0.3)));
+                
                 return confidence >= 80 ? 'text-green-600' : confidence >= 60 ? 'text-yellow-600' : 'text-red-600';
               })()
             }`}>
@@ -318,7 +328,12 @@ export const AmazonForecastAccuracy = () => {
                 const mean = errors.reduce((sum, err) => sum + err, 0) / errors.length;
                 const variance = errors.reduce((sum, err) => sum + Math.pow(err - mean, 2), 0) / errors.length;
                 const stdDev = Math.sqrt(variance);
-                const confidence = Math.max(0, Math.min(100, 100 - stdDev));
+                
+                const recentAccuracy = recentLogs.reduce((sum, log) => sum + (100 - Math.abs(log.difference_percentage)), 0) / recentLogs.length;
+                const maxStdDev = 50;
+                const consistencyFactor = Math.max(0, 1 - (stdDev / maxStdDev));
+                const confidence = Math.max(0, Math.min(100, (recentAccuracy * 0.7) + (consistencyFactor * 100 * 0.3)));
+                
                 return confidence.toFixed(0);
               })()}
             </span>
@@ -330,7 +345,12 @@ export const AmazonForecastAccuracy = () => {
                 const mean = errors.reduce((sum, err) => sum + err, 0) / errors.length;
                 const variance = errors.reduce((sum, err) => sum + Math.pow(err - mean, 2), 0) / errors.length;
                 const stdDev = Math.sqrt(variance);
-                const confidence = Math.max(0, Math.min(100, 100 - stdDev));
+                
+                const recentAccuracy = recentLogs.reduce((sum, log) => sum + (100 - Math.abs(log.difference_percentage)), 0) / recentLogs.length;
+                const maxStdDev = 50;
+                const consistencyFactor = Math.max(0, 1 - (stdDev / maxStdDev));
+                const confidence = Math.max(0, Math.min(100, (recentAccuracy * 0.7) + (consistencyFactor * 100 * 0.3)));
+                
                 return confidence >= 80 ? '🎯 High' : confidence >= 60 ? '✓ Moderate' : '⚠️ Low';
               })()}
             </span>
