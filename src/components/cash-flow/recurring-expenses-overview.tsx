@@ -104,13 +104,13 @@ export const RecurringExpensesOverview = () => {
   // Convert all frequencies to monthly equivalent
   const getMonthlyAmount = (amount: number, frequency: string) => {
     switch (frequency) {
-      case 'daily': return amount * 30; // Average days per month
-      case 'weekly': return amount * 4; // 4 weeks per month (flat)
-      case 'bi-weekly': return amount * 2; // 2 bi-weekly periods per month (flat)
-      case 'weekdays': return amount * 22; // Average weekdays per month
+      case 'daily': return amount * 30;
+      case 'weekdays': return amount * 21.67; // ~21.67 average weekdays per month
+      case 'weekly': return amount * 4.33; // 52 weeks / 12 months
+      case 'bi-weekly': return amount * 2.17; // 26 bi-weekly periods / 12 months
       case 'monthly': return amount;
-      case '2-months': return amount / 2; // Every 2 months
-      case '3-months': return amount / 3; // Every 3 months
+      case '2-months': return amount / 2;
+      case '3-months': return amount / 3;
       default: return amount;
     }
   };
