@@ -14,7 +14,7 @@ import { useReserveAmount } from "@/hooks/useReserveAmount";
 import { useAmazonPayouts } from "@/hooks/useAmazonPayouts";
 import { useAmazonRevenue } from "@/hooks/useAmazonRevenue";
 import { addDays, isWithinInterval, startOfDay } from "date-fns";
-import aurenLogo from "@/assets/auren-logo.png";
+import aurenLogo from "@/assets/auren-icon-blue.png";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
