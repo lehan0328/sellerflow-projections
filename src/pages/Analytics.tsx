@@ -1012,55 +1012,6 @@ export default function Analytics() {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="flex items-center gap-2">
-                    <Package className="h-4 w-4 text-primary" />
-                    Purchase Orders by Category
-                  </CardTitle>
-                  <Select value={vendorDateRange} onValueChange={setVendorDateRange}>
-                    <SelectTrigger className="w-40">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="this-month">This Month</SelectItem>
-                      <SelectItem value="last-month">Last Month</SelectItem>
-                      <SelectItem value="last-2-months">Last 2 Months</SelectItem>
-                      <SelectItem value="last-3-months">Last 3 Months</SelectItem>
-                      <SelectItem value="last-6-months">Last 6 Months</SelectItem>
-                      <SelectItem value="ytd">Year to Date</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <p className="text-sm text-muted-foreground mt-2">Inventory & goods purchases</p>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <PieChart>
-                    <Pie
-                      data={purchaseOrderCategoryData}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={({ name, value }) => `${name}: $${value.toLocaleString()}`}
-                      outerRadius={80}
-                      fill="#8884d8"
-                      dataKey="value"
-                    >
-                      {purchaseOrderCategoryData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip formatter={(value) => `$${Number(value).toLocaleString()}`} />
-                  </PieChart>
-                </ResponsiveContainer>
-                {purchaseOrderCategoryData.length === 0 && (
-                  <p className="text-sm text-muted-foreground text-center py-4">No purchase orders in this period</p>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="flex items-center gap-2">
                     <Calculator className="h-4 w-4 text-purple-600" />
                     Recurring Expenses by Category
                   </CardTitle>
