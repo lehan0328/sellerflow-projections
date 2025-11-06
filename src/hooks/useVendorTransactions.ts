@@ -272,16 +272,46 @@ export const useVendorTransactions = () => {
       const originalTx = transactions.find(tx => tx.id === transactionId);
       if (!originalTx) throw new Error('Transaction not found');
 
-      // Update the parent transaction to mark as partially paid (keep original amount)
+      // Update the parent transaction to mark as partially paid and archive it
       const { error: updateError } = await supabase
         .from('transactions')
         .update({
           status: 'partially_paid',
           remarks: 'Partially Paid',
+          archived: true,
         } as any)
         .eq('id', transactionId);
 
       if (updateError) throw updateError;
+
+      // If this was a credit card transaction, update the credit card balance
+      if (originalTx.creditCardId) {
+        const { data: creditCard, error: fetchError } = await supabase
+          .from('credit_cards')
+          .select('balance, available_credit, credit_limit')
+          .eq('id', originalTx.creditCardId)
+          .single();
+
+        if (fetchError) {
+          console.error('Error fetching credit card:', fetchError);
+        } else if (creditCard) {
+          const newBalance = Number(creditCard.balance) - amountPaid;
+          const newAvailableCredit = Number(creditCard.available_credit) + amountPaid;
+
+          const { error: updateCreditCardError } = await supabase
+            .from('credit_cards')
+            .update({
+              balance: newBalance,
+              available_credit: newAvailableCredit,
+            })
+            .eq('id', originalTx.creditCardId);
+
+          if (updateCreditCardError) {
+            console.error('Error updating credit card:', updateCreditCardError);
+            throw updateCreditCardError;
+          }
+        }
+      }
 
       // Create PO#.1 transaction for the paid amount (archived, not shown anywhere)
       const { error: paidError } = await supabase
@@ -289,6 +319,7 @@ export const useVendorTransactions = () => {
         .insert({
           user_id: user.id,
           vendor_id: originalTx.vendorId,
+          credit_card_id: originalTx.creditCardId,
           type: 'purchase_order',
           amount: amountPaid,
           due_date: formatDateForDB(new Date()), // Already paid
@@ -307,6 +338,7 @@ export const useVendorTransactions = () => {
         .insert({
           user_id: user.id,
           vendor_id: originalTx.vendorId,
+          credit_card_id: originalTx.creditCardId,
           type: 'purchase_order',
           amount: remainingBalance,
           due_date: formatDateForDB(newDueDate),
