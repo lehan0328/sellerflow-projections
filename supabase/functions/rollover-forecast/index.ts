@@ -17,7 +17,7 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     const { amazonAccountId, userId } = await req.json();
-    
+
     if (!amazonAccountId || !userId) {
       throw new Error('amazonAccountId and userId are required');
     }
@@ -28,15 +28,15 @@ serve(async (req) => {
     const now = new Date();
     const estOffset = -5 * 60; // EST is UTC-5
     const estNow = new Date(now.getTime() + estOffset * 60 * 1000);
-    
+
     // Get yesterday's date in EST
     const yesterday = new Date(estNow);
     yesterday.setDate(yesterday.getDate() - 1);
     const yesterdayStr = yesterday.toISOString().split('T')[0];
-    
+
     // Get today's date in EST
     const todayStr = estNow.toISOString().split('T')[0];
-    
+
     console.log('[ROLLOVER] Checking dates - Yesterday:', yesterdayStr, 'Today:', todayStr);
 
     // Check if there's a Succeeded settlement for yesterday (US marketplace only)
@@ -58,17 +58,17 @@ serve(async (req) => {
     let isSucceededDailySettlement = false;
     if (yesterdaySettlement?.raw_settlement_data?.FundTransferStatus === 'Succeeded') {
       // Check settlement duration - exclude invoiced settlements (14-day periods)
-      const settlementStart = yesterdaySettlement.raw_settlement_data?.FinancialEventGroupStart 
+      const settlementStart = yesterdaySettlement.raw_settlement_data?.FinancialEventGroupStart
         ? new Date(yesterdaySettlement.raw_settlement_data.FinancialEventGroupStart)
         : null;
       const settlementEnd = yesterdaySettlement.raw_settlement_data?.FinancialEventGroupEnd
         ? new Date(yesterdaySettlement.raw_settlement_data.FinancialEventGroupEnd)
         : null;
-      
+
       if (settlementStart && settlementEnd) {
         const settlementDays = Math.ceil((settlementEnd.getTime() - settlementStart.getTime()) / (1000 * 60 * 60 * 24));
         isSucceededDailySettlement = settlementDays <= 3; // Only 1-3 day settlements (daily), not 14-day (invoiced)
-        
+
         if (settlementDays > 3) {
           console.log(`[ROLLOVER] Found settlement but it's an invoiced/B2B settlement (${settlementDays} days), treating as no settlement`);
         }
@@ -106,17 +106,17 @@ serve(async (req) => {
       throw yesterdayError;
     }
 
-    if (!yesterdayForecast) {
-      console.log('[ROLLOVER] No forecast found for yesterday, nothing to roll over');
-      return new Response(
-        JSON.stringify({
-          success: true,
-          rolloverOccurred: false,
-          message: 'No forecast found for yesterday'
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    // if (!yesterdayForecast) {
+    //   console.log('[ROLLOVER] No forecast found for yesterday, nothing to roll over');
+    //   return new Response(
+    //     JSON.stringify({
+    //       success: true,
+    //       rolloverOccurred: false,
+    //       message: 'No forecast found for yesterday'
+    //     }),
+    //     { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    //   );
+    // }
 
     // Fetch today's forecast
     const { data: todayForecast, error: todayError } = await supabase
@@ -201,9 +201,9 @@ serve(async (req) => {
     console.error('[ROLLOVER] Error:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
-      { 
+      {
         status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     );
   }
