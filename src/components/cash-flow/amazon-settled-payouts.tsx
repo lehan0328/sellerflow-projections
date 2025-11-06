@@ -122,14 +122,6 @@ export const AmazonSettledPayouts = ({ open, onOpenChange }: AmazonSettledPayout
                             </p>
                           )}
                           
-                          <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
-                            <span>Orders: ${payout.orders_total?.toLocaleString() || 0}</span>
-                            <span>Fees: ${payout.fees_total?.toLocaleString() || 0}</span>
-                            {payout.refunds_total > 0 && (
-                              <span>Refunds: ${payout.refunds_total?.toLocaleString() || 0}</span>
-                            )}
-                          </div>
-                          
                           <p className="text-xs text-muted-foreground mt-2">
                             {format(date, 'MMMM dd, yyyy')}
                           </p>
