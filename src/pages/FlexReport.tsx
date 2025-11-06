@@ -400,7 +400,7 @@ const FlexReport = () => {
             <img src={aurenLogo} alt="" className="w-[600px] opacity-[0.25] select-none rotate-[-15deg] scale-110" />
           </div>
           
-          <div className="relative z-10 p-2 md:p-4 opacity-50">
+          <div className="relative z-10 p-2 md:p-4">
             {/* Header with Branding */}
             <div className="flex items-center justify-between mb-6 pb-4 border-b-2 border-gradient-to-r from-blue-200 via-purple-200 to-blue-200">
               <div>
