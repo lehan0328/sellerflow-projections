@@ -1108,6 +1108,7 @@ const Dashboard = () => {
         type: 'income',
         category: null,
         notes: incomeData.description || incomeData.notes || null,
+        credit_card_id: null
       });
 
       toast({
@@ -1186,6 +1187,7 @@ const Dashboard = () => {
         type: 'expense',
         category: null,
         notes: expenseData.description || expenseData.notes || null,
+        credit_card_id: expenseData.creditCardId || null
       });
 
       toast({

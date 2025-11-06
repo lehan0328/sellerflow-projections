@@ -1852,6 +1852,7 @@ export type Database = {
           amount: number
           category: string | null
           created_at: string
+          credit_card_id: string | null
           end_date: string | null
           frequency: string
           id: string
@@ -1869,6 +1870,7 @@ export type Database = {
           amount?: number
           category?: string | null
           created_at?: string
+          credit_card_id?: string | null
           end_date?: string | null
           frequency?: string
           id?: string
@@ -1886,6 +1888,7 @@ export type Database = {
           amount?: number
           category?: string | null
           created_at?: string
+          credit_card_id?: string | null
           end_date?: string | null
           frequency?: string
           id?: string
@@ -1898,7 +1901,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "recurring_expenses_credit_card_id_fkey"
+            columns: ["credit_card_id"]
+            isOneToOne: false
+            referencedRelation: "credit_cards"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       referral_codes: {
         Row: {
