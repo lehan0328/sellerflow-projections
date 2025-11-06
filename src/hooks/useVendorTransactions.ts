@@ -208,36 +208,7 @@ export const useVendorTransactions = () => {
   };
 
   const deleteRegularTransaction = async (transactionId: string, transactionToDelete: VendorTransaction) => {
-    // If it's a credit card transaction, revert the credit card balance
-    if (transactionToDelete.creditCardId) {
-      const { data: creditCard, error: fetchError } = await supabase
-        .from('credit_cards')
-        .select('balance, available_credit')
-        .eq('id', transactionToDelete.creditCardId)
-        .single();
-
-      if (fetchError) {
-        console.error('Error fetching credit card:', fetchError);
-      } else if (creditCard) {
-        // Reduce the balance and increase available credit
-        const newBalance = Number(creditCard.balance) - transactionToDelete.amount;
-        const newAvailableCredit = Number(creditCard.available_credit) + transactionToDelete.amount;
-
-        const { error: updateError } = await supabase
-          .from('credit_cards')
-          .update({
-            balance: newBalance,
-            available_credit: newAvailableCredit,
-          })
-          .eq('id', transactionToDelete.creditCardId);
-
-        if (updateError) {
-          console.error('Error updating credit card:', updateError);
-        }
-      }
-    }
-
-    // Delete the transaction
+    // Delete the transaction (Plaid credit card data remains unchanged)
     const { error } = await supabase
       .from('transactions')
       .delete()
@@ -248,34 +219,6 @@ export const useVendorTransactions = () => {
 
   const deleteRemainingBalance = async (remainingTx: VendorTransaction) => {
     const baseDescription = remainingTx.description.replace('.2', '');
-
-    // Revert credit card balance for remaining amount only
-    if (remainingTx.creditCardId) {
-      const { data: creditCard, error: fetchError } = await supabase
-        .from('credit_cards')
-        .select('balance, available_credit')
-        .eq('id', remainingTx.creditCardId)
-        .single();
-
-      if (fetchError) {
-        console.error('Error fetching credit card:', fetchError);
-      } else if (creditCard) {
-        const newBalance = Number(creditCard.balance) - remainingTx.amount;
-        const newAvailableCredit = Number(creditCard.available_credit) + remainingTx.amount;
-
-        const { error: updateError } = await supabase
-          .from('credit_cards')
-          .update({
-            balance: newBalance,
-            available_credit: newAvailableCredit,
-          })
-          .eq('id', remainingTx.creditCardId);
-
-        if (updateError) {
-          console.error('Error updating credit card:', updateError);
-        }
-      }
-    }
 
     // Find and update the original transaction
     const { data: originalTx, error: findError } = await supabase
@@ -326,37 +269,6 @@ export const useVendorTransactions = () => {
     const paidTx = relatedTxs?.find(tx => tx.description === `${baseDescription}.1`);
 
     if (!originalTx) throw new Error('Original transaction not found');
-
-    // Calculate total amount to revert
-    const totalAmount = (paidTx?.amount || 0) + remainingTx.amount;
-
-    // Revert full credit card balance
-    if (remainingTx.creditCardId) {
-      const { data: creditCard, error: fetchError } = await supabase
-        .from('credit_cards')
-        .select('balance, available_credit')
-        .eq('id', remainingTx.creditCardId)
-        .single();
-
-      if (fetchError) {
-        console.error('Error fetching credit card:', fetchError);
-      } else if (creditCard) {
-        const newBalance = Number(creditCard.balance) - totalAmount;
-        const newAvailableCredit = Number(creditCard.available_credit) + totalAmount;
-
-        const { error: updateError } = await supabase
-          .from('credit_cards')
-          .update({
-            balance: newBalance,
-            available_credit: newAvailableCredit,
-          })
-          .eq('id', remainingTx.creditCardId);
-
-        if (updateError) {
-          console.error('Error updating credit card:', updateError);
-        }
-      }
-    }
 
     // Unarchive and restore original transaction
     const timestamp = new Date().toLocaleString();
@@ -445,35 +357,6 @@ export const useVendorTransactions = () => {
         .eq('id', transactionId);
 
       if (updateError) throw updateError;
-
-      // If this was a credit card transaction, update the credit card balance
-      if (originalTx.creditCardId) {
-        const { data: creditCard, error: fetchError } = await supabase
-          .from('credit_cards')
-          .select('balance, available_credit, credit_limit')
-          .eq('id', originalTx.creditCardId)
-          .single();
-
-        if (fetchError) {
-          console.error('Error fetching credit card:', fetchError);
-        } else if (creditCard) {
-          const newBalance = Number(creditCard.balance) - amountPaid;
-          const newAvailableCredit = Number(creditCard.available_credit) + amountPaid;
-
-          const { error: updateCreditCardError } = await supabase
-            .from('credit_cards')
-            .update({
-              balance: newBalance,
-              available_credit: newAvailableCredit,
-            })
-            .eq('id', originalTx.creditCardId);
-
-          if (updateCreditCardError) {
-            console.error('Error updating credit card:', updateCreditCardError);
-            throw updateCreditCardError;
-          }
-        }
-      }
 
       // Create PO#.1 transaction for the paid amount (archived, not shown anywhere)
       const { error: paidError } = await supabase
