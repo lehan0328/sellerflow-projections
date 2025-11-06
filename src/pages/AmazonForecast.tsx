@@ -1040,9 +1040,6 @@ export default function AmazonForecast() {
                               <span className="text-sm font-medium">
                                 {format(new Date(payout.payout_date), 'MMM dd, yyyy')}
                               </span>
-                              <span className="text-xs text-muted-foreground">
-                                Settlement ID: {payout.settlement_id}
-                              </span>
                             </div>
                           </div>
                           <div className="flex items-center gap-6">
