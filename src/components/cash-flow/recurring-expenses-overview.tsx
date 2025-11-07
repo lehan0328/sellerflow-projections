@@ -330,23 +330,16 @@ export const RecurringExpensesOverview = () => {
                     )}
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="text-right">
-                      <p className={`font-semibold ${
-                        item.type === 'income'
-                          ? 'text-green-600 dark:text-green-400'
-                          : 'text-red-600 dark:text-red-400'
-                      }`}>
-                        ${Number(item.amount).toLocaleString()}
-                      </p>
+                    <div className="text-right flex items-center gap-2">
                       {item.type === 'expense' && (() => {
                         const paymentMethod = getPaymentMethodDisplay(item);
                         return (
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <div className="flex items-center gap-1.5 text-sm text-muted-foreground mt-1">
+                                <div className="flex items-center gap-1 text-muted-foreground">
                                   <paymentMethod.icon className="h-4 w-4" />
-                                  {paymentMethod.details && <span>{paymentMethod.details}</span>}
+                                  {paymentMethod.details && <span className="text-xs">{paymentMethod.details}</span>}
                                 </div>
                               </TooltipTrigger>
                               <TooltipContent>
@@ -356,6 +349,13 @@ export const RecurringExpensesOverview = () => {
                           </TooltipProvider>
                         );
                       })()}
+                      <p className={`font-semibold ${
+                        item.type === 'income'
+                          ? 'text-green-600 dark:text-green-400'
+                          : 'text-red-600 dark:text-red-400'
+                      }`}>
+                        ${Number(item.amount).toLocaleString()}
+                      </p>
                     </div>
                     <Button
                       variant="ghost"
