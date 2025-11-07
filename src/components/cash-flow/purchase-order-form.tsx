@@ -476,7 +476,7 @@ export const PurchaseOrderForm = ({
         console.log('Document saved to storage:', safeFileName);
         
         // Invalidate documents cache to refresh Document Storage page
-        queryClient.invalidateQueries({ queryKey: ['documents'] });
+        await queryClient.invalidateQueries({ queryKey: ['documents'], refetchType: 'all' });
       } catch (error) {
         console.error('Error saving document:', error);
         toast.error('Failed to save document to storage');
