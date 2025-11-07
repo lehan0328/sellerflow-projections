@@ -647,9 +647,7 @@ const Landing = () => {
               
               <p className="text-base text-muted-foreground/90 max-w-xl animate-fade-in leading-relaxed" style={{
               animationDelay: '500ms'
-            }}>How it works -
-Search by budget (“I want to spend $X”) and Auren tells you the exact date you can spend it.
-Search by date (“I need to buy inventory on this day”) and Auren shows how much you can safely spend.</p>
+            }}>Highlight features - Search by budget (“I want to spend $X”) and Auren tells you the exact date you can spend it, or search by date (“I need to buy inventory on this day”) and Auren shows how much you can safely spend aligned with all of your expenses and additional i</p>
               
               <div className="flex flex-col sm:flex-row items-start gap-4 animate-fade-in" style={{
               animationDelay: '600ms'
