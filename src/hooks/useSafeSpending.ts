@@ -273,7 +273,8 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
               // Skip sales categories that are counted from transactions to avoid duplication
               if (income.category === 'Sales' || 
                   income.category === 'Sales Orders' || 
-                  income.category === 'Customer Payments') {
+                  income.category === 'Customer Payments' ||
+                  income.category === 'Service') {
                 return; // These are counted from dbTransactions
               }
               

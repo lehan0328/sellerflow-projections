@@ -1151,6 +1151,7 @@ const Dashboard = () => {
       amount: amount,
       description: incomeData.description || 'Income',
       transactionDate: paymentDate,
+      category: incomeData.category,
       status: paymentDateStartOfDay <= today ? 'completed' : 'pending'
     });
 

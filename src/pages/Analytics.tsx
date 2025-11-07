@@ -381,8 +381,6 @@ export default function Analytics() {
       end
     } = getDateRange(incomeDateRange);
     const sourceData: Record<string, number> = {
-      'Customer Payments': 0,
-      'Sales Orders': 0,
       'Recurring Income': 0,
       'Amazon Payouts': 0,
       'Other Income': 0
@@ -396,9 +394,7 @@ export default function Analytics() {
           sourceData['Recurring Income'] += item.amount;
         } else if (item.source === 'Amazon') {
           sourceData['Amazon Payouts'] += item.amount;
-        } else if (item.category === 'Sales' || item.category === 'Sales Orders') {
-          // Skip - these will be counted from dbTransactions to avoid duplication
-        } else if (item.category === 'Customer Payments') {
+        } else if (item.category === 'Sales' || item.category === 'Sales Orders' || item.category === 'Customer Payments') {
           // Skip - these will be counted from dbTransactions to avoid duplication
         } else if (item.category) {
           sourceData[item.category] = (sourceData[item.category] || 0) + item.amount;
@@ -417,13 +413,13 @@ export default function Analytics() {
     });
 
     // Completed sales orders and customer payments filtered by transaction date
+    // Use actual category from transaction to track by real category (Sales, Service, etc.)
     dbTransactions.forEach(tx => {
       const txDate = new Date(tx.transactionDate);
       if (txDate >= start && txDate <= end) {
-        if (tx.type === 'customer_payment' && tx.status === 'completed') {
-          sourceData['Customer Payments'] += tx.amount;
-        } else if (tx.type === 'sales_order' && tx.status === 'completed') {
-          sourceData['Sales Orders'] += tx.amount;
+        if ((tx.type === 'customer_payment' || tx.type === 'sales_order') && tx.status === 'completed') {
+          const category = tx.category || 'Uncategorized Sales';
+          sourceData[category] = (sourceData[category] || 0) + tx.amount;
         }
       }
     });

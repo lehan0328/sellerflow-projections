@@ -2185,6 +2185,7 @@ export type Database = {
           account_id: string | null
           amount: number
           archived: boolean
+          category: string | null
           created_at: string
           credit_card_id: string | null
           customer_id: string | null
@@ -2203,6 +2204,7 @@ export type Database = {
           account_id?: string | null
           amount: number
           archived?: boolean
+          category?: string | null
           created_at?: string
           credit_card_id?: string | null
           customer_id?: string | null
@@ -2221,6 +2223,7 @@ export type Database = {
           account_id?: string | null
           amount?: number
           archived?: boolean
+          category?: string | null
           created_at?: string
           credit_card_id?: string | null
           customer_id?: string | null

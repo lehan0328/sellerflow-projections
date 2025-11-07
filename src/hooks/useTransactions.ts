@@ -13,6 +13,7 @@ export interface Transaction {
   transactionDate: Date;
   dueDate?: Date;
   status: 'pending' | 'completed' | 'cancelled';
+  category?: string;
 }
 
 export const useTransactions = () => {
@@ -61,7 +62,8 @@ export const useTransactions = () => {
         creditCardId: transaction.credit_card_id,
         transactionDate: parseDateFromDB(transaction.transaction_date),
         dueDate: transaction.due_date ? parseDateFromDB(transaction.due_date) : undefined,
-        status: transaction.status as Transaction['status']
+        status: transaction.status as Transaction['status'],
+        category: transaction.category
       })) || [];
 
       setTransactions(formattedTransactions);
@@ -94,7 +96,8 @@ export const useTransactions = () => {
           credit_card_id: transactionData.creditCardId,
           transaction_date: formatDateForDB(transactionData.transactionDate),
           due_date: transactionData.dueDate ? formatDateForDB(transactionData.dueDate) : null,
-          status: transactionData.status
+          status: transactionData.status,
+          category: transactionData.category
         })
         .select()
         .single();
@@ -111,7 +114,8 @@ export const useTransactions = () => {
         creditCardId: data.credit_card_id,
         transactionDate: parseDateFromDB(data.transaction_date),
         dueDate: data.due_date ? parseDateFromDB(data.due_date) : undefined,
-        status: data.status as Transaction['status']
+        status: data.status as Transaction['status'],
+        category: data.category
       };
 
       setTransactions(prev => [newTransaction, ...prev]);
