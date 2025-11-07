@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -39,6 +39,7 @@ interface PurchaseOrderFormProps {
   onSubmitOrder: (orderData: any) => void;
   onDeleteAllVendors?: () => void;
   onAddVendor: (vendorData: any) => void;
+  allBuyingOpportunities?: Array<{ date: string; balance: number; available_date?: string }>;
 }
 interface PaymentSchedule {
   id: string;
@@ -60,7 +61,8 @@ export const PurchaseOrderForm = ({
   vendors,
   onSubmitOrder,
   onDeleteAllVendors,
-  onAddVendor
+  onAddVendor,
+  allBuyingOpportunities
 }: PurchaseOrderFormProps) => {
   const navigate = useNavigate();
   const { categories, addCategory, refetch: refetchCategories } = useCategories('expense', false);
@@ -141,6 +143,26 @@ export const PurchaseOrderForm = ({
 
   // Filter unique vendors based on search term
   const filteredVendors = uniqueVendors.filter(vendor => vendor.name.toLowerCase().includes(vendorSearchTerm.toLowerCase()));
+
+  // Calculate total from line items
+  const lineItemsTotal = React.useMemo(() => {
+    return lineItems.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
+  }, [lineItems]);
+
+  // Auto-suggest earliest affordable date based on amount or line items total
+  const suggestedDate = React.useMemo(() => {
+    if (!allBuyingOpportunities || allBuyingOpportunities.length === 0) return null;
+    
+    // Use line items total if available, otherwise use manual amount
+    const targetAmount = lineItems.length > 0 ? lineItemsTotal : parseFloat(formData.amount || "0");
+    
+    if (targetAmount <= 0) return null;
+    
+    // Find the earliest opportunity where balance is sufficient
+    const opportunity = allBuyingOpportunities.find(opp => opp.balance >= targetAmount);
+    
+    return opportunity;
+  }, [allBuyingOpportunities, formData.amount, lineItemsTotal, lineItems.length]);
 
   // Reset form when dialog opens/closes
   useEffect(() => {
@@ -846,6 +868,44 @@ export const PurchaseOrderForm = ({
                 ...prev,
                 amount: e.target.value
               }))} required className="h-10" />
+                
+                {/* Suggested Affordable Date */}
+                {suggestedDate && (
+                  <div className="animate-fade-in">
+                    {suggestedDate.balance >= (lineItems.length > 0 ? lineItemsTotal : parseFloat(formData.amount || "0")) ? (
+                      <div className="flex items-center justify-between gap-2 p-2 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900/30 rounded-md">
+                        <div className="flex items-center gap-2">
+                          <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+                          <span className="text-xs font-medium text-green-800 dark:text-green-300">
+                            Can afford on {format(new Date(suggestedDate.date), "MMM d, yyyy")}
+                          </span>
+                        </div>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          className="h-6 px-2 text-xs hover:bg-green-100 dark:hover:bg-green-900/30"
+                          onClick={() => {
+                            setFormData(prev => ({
+                              ...prev,
+                              poDate: new Date(suggestedDate.date)
+                            }));
+                            toast.success("Date updated to suggested date");
+                          }}
+                        >
+                          Use This Date
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 p-2 bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-900/30 rounded-md">
+                        <div className="h-2 w-2 rounded-full bg-yellow-500" />
+                        <span className="text-xs font-medium text-yellow-800 dark:text-yellow-300">
+                          Amount exceeds 90-day buying opportunities
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 

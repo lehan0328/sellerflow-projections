@@ -3010,6 +3010,7 @@ const Dashboard = () => {
               onSubmitOrder={handlePurchaseOrderSubmit}
               onDeleteAllVendors={deleteAllVendors}
               onAddVendor={addVendor}
+              allBuyingOpportunities={safeSpendingData?.calculation?.all_buying_opportunities}
             />
           )}
 
