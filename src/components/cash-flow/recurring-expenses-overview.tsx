@@ -344,8 +344,8 @@ export const RecurringExpensesOverview = () => {
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
-                                  <paymentMethod.icon className="h-3 w-3" />
+                                <div className="flex items-center gap-1.5 text-sm text-muted-foreground mt-1">
+                                  <paymentMethod.icon className="h-4 w-4" />
                                   {paymentMethod.details && <span>{paymentMethod.details}</span>}
                                 </div>
                               </TooltipTrigger>
