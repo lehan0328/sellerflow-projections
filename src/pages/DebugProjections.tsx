@@ -79,20 +79,19 @@ const DebugProjections = () => {
 
     // Add recurring expenses
     recurringExpenses.forEach(expense => {
+      const rangeEnd = addDays(today, 90);
       const recurringDates = generateRecurringDates(
-        new Date(expense.start_date),
-        expense.end_date ? new Date(expense.end_date) : null,
-        expense.frequency
+        expense,
+        today,
+        rangeEnd
       );
-      // Only take first 90 days worth
-      recurringDates.slice(0, 90).forEach((item: any, index) => {
-        const itemDate = item?.date ? new Date(item.date) : (item instanceof Date ? item : new Date(item));
+      recurringDates.forEach((date, index) => {
         events.push({
           id: `recurring-${expense.id}-${index}`,
           type: 'outflow',
           amount: Number(expense.amount),
           description: expense.name || 'Recurring Expense',
-          date: itemDate,
+          date: date,
         });
       });
     });
