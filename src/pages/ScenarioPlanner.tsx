@@ -21,6 +21,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { generateRecurringDates } from "@/lib/recurringDates";
 import { addDays, startOfDay, format } from "date-fns";
+import { parseISODate } from "@/lib/utils";
 import { ArrowLeft, Plus, Save, Trash2, TrendingUp, TrendingDown, Calculator, Edit } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -1796,7 +1797,7 @@ export default function ScenarioPlanner() {
                         <div key={payout.id} className="pl-4 space-y-1">
                           <div className="flex items-center justify-between gap-2">
                             <div className="text-xs text-muted-foreground flex-1">
-                              {payout.marketplace_name} - {format(new Date(payout.payout_date), 'MMM d')} - ${payout.total_amount.toLocaleString()}
+                              {payout.marketplace_name} - {format(parseISODate(payout.payout_date), 'MMM d')} - ${payout.total_amount.toLocaleString()}
                             </div>
                             <Switch
                               checked={dataSourceAdjustments[`amazon_${payout.id}`]?.enabled ?? false}

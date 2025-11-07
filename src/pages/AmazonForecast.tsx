@@ -25,7 +25,7 @@ import {
 } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
+import { cn, parseISODate } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 import {
   LineChart as RechartsLineChart,
@@ -1040,7 +1040,7 @@ export default function AmazonForecast() {
                           <div className="flex items-center gap-4">
                             <div className="flex flex-col">
                               <span className="text-sm font-medium">
-                                {format(new Date(payout.payout_date), 'MMM dd, yyyy')}
+                                {format(parseISODate(payout.payout_date), 'MMM dd, yyyy')}
                               </span>
                             </div>
                           </div>

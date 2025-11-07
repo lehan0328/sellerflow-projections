@@ -4,6 +4,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAmazonPayouts } from "@/hooks/useAmazonPayouts";
 import { Loader2, CheckCircle2, Clock, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
+import { parseISODate } from "@/lib/utils";
 
 interface AmazonSettledPayoutsProps {
   open: boolean;
@@ -88,7 +89,7 @@ export const AmazonSettledPayouts = ({ open, onOpenChange }: AmazonSettledPayout
               <div className="space-y-2">
                 {settledPayouts.map((payout) => {
                   const isConfirmed = payout.status === 'confirmed';
-                  const date = new Date(payout.payout_date);
+                  const date = parseISODate(payout.payout_date);
                   
                   return (
                     <div 
