@@ -174,21 +174,21 @@ export const SignUp = () => {
       <div className="flex-1 flex items-center justify-center p-4 pt-8">
         <div className="w-full max-w-md space-y-6 relative z-10">
           {/* Header */}
-          <div className="text-center space-y-6">
+          <div className="text-center space-y-4">
             <div className="flex items-center justify-center animate-fade-in">
               <div className="relative">
                 <div className="absolute inset-0 bg-gradient-primary rounded-2xl blur-2xl opacity-30 animate-pulse" />
                 <div className="relative">
-                  <img src={aurenIcon} alt="Auren" className="h-20 w-auto" />
+                  <img src={aurenIcon} alt="Auren" className="h-14 w-auto" />
                 </div>
               </div>
             </div>
             
-            <div className="space-y-3">
-              <h1 className="text-4xl font-bold tracking-tight">
+            <div className="space-y-2">
+              <h1 className="text-3xl font-bold tracking-tight">
                 Create Your Account
               </h1>
-              <p className="text-muted-foreground text-lg">
+              <p className="text-muted-foreground text-base">
                 Start managing your Amazon business cash flow today
               </p>
             </div>
