@@ -286,7 +286,7 @@ export default function AmazonForecast() {
         // Specific month (YYYY-MM format)
         const [year, month] = avgPayoutPeriod.split('-').map(Number);
         filteredPayouts = confirmedPayouts.filter(p => {
-          const payoutDate = new Date(p.payout_date);
+          const payoutDate = parseISODate(p.payout_date);
           return payoutDate.getFullYear() === year && payoutDate.getMonth() === month - 1;
         });
         
@@ -308,10 +308,9 @@ export default function AmazonForecast() {
           
           if (lastClosedPayout?.raw_settlement_data?.FinancialEventGroupEnd) {
             const closeDate = new Date(lastClosedPayout.raw_settlement_data.FinancialEventGroupEnd);
-            const daysSinceClose = Math.ceil((now.getTime() - closeDate.getTime()) / (1000 * 60 * 60 * 24));
-            daysToUse = Math.max(1, daysSinceClose); // At least 1 day
-            avgPayoutLabel = avgPayoutLabel + ' (MTD)'; // Add MTD indicator
-            console.log('[AmazonForecast] Current month - using days since last close:', daysToUse, 'Close date:', closeDate);
+            daysToUse = closeDate.getDate(); // Get day-of-month (1-31)
+            avgPayoutLabel = avgPayoutLabel + ' (MTD)';
+            console.log('[AmazonForecast] Current month - using day-of-month from last close:', daysToUse, 'Close date:', closeDate);
           } else {
             // Fallback to regular MTD if no close date available
             daysToUse = now.getDate();
