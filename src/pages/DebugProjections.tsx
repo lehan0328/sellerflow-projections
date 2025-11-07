@@ -255,7 +255,10 @@ const DebugProjections = () => {
     );
   }
 
-  const dailyBalances = data.calculation?.daily_balances || [];
+  const today = format(new Date(), 'yyyy-MM-dd');
+  const allDailyBalances = data.calculation?.daily_balances || [];
+  // Filter to start from today (Nov 7)
+  const dailyBalances = allDailyBalances.filter(day => day.date >= today);
   const buyingOpportunities = data.calculation?.all_buying_opportunities || [];
   const filteredBalances = showNegativeOnly 
     ? dailyBalances.filter(day => day.balance < 0)
