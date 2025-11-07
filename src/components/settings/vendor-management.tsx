@@ -404,7 +404,11 @@ export function VendorManagement() {
                     <div className="flex items-center space-x-2">
                       {(() => {
                         const PaymentIcon = getPaymentMethodIcon(vendor.paymentMethod);
-                        return <PaymentIcon className="h-4 w-4 text-muted-foreground" />;
+                        return (
+                          <div className="p-2 bg-muted rounded-full">
+                            <PaymentIcon className="h-4 w-4" />
+                          </div>
+                        );
                       })()}
                       <Button
                         variant="ghost"
