@@ -54,7 +54,10 @@ export const GuidesContent = () => {
           title: "Editing transactions",
           path: "/guides/editing-transactions"
         },
-        "Reading the Dashboard",
+        {
+          title: "Partial Payment",
+          path: "/guides/partial-payment"
+        },
         "Safe Spending Calculator",
         "90-Day Forecast"
       ]
