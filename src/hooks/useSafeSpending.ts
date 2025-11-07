@@ -4,6 +4,15 @@ import { generateRecurringDates } from "@/lib/recurringDates";
 import { format } from "date-fns";
 import { useAmazonPayouts } from "./useAmazonPayouts";
 
+interface Transaction {
+  type: string;
+  description?: string;
+  amount: number;
+  status?: string;
+  settlementId?: string;
+  name?: string;
+}
+
 interface SafeSpendingData {
   safe_spending_limit: number;
   reserve_amount: number;
@@ -22,13 +31,29 @@ interface SafeSpendingData {
       balance: number;
       available_date?: string;
     }>;
-    daily_balances?: Array<{ date: string; balance: number }>;
+    daily_balances?: Array<{ 
+      date: string; 
+      balance: number;
+      starting_balance?: number;
+      net_change?: number;
+      transactions?: Transaction[];
+    }>;
   };
 }
 
 interface DailyBalance {
   date: string;
   balance: number;
+  starting_balance?: number;
+  net_change?: number;
+  transactions?: Array<{
+    type: string;
+    description?: string;
+    amount: number;
+    status?: string;
+    settlementId?: string;
+    name?: string;
+  }>;
 }
 
 export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTransactions: boolean = false, useAvailableBalance: boolean = true) => {
@@ -535,8 +560,24 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
           }
         });
 
+        const startingBalance = runningBalance;
         runningBalance += dayChange;
-        dailyBalances.push({ date: targetDateStr, balance: runningBalance });
+        
+        // Store transaction details for each day
+        dailyBalances.push({ 
+          date: targetDateStr, 
+          balance: runningBalance,
+          starting_balance: startingBalance,
+          net_change: dayChange,
+          transactions: transactionLog.map(t => ({
+            type: t.type,
+            description: t.vendor || t.card || t.name || t.settlementId || '',
+            amount: t.amount,
+            status: t.status,
+            settlementId: t.settlementId,
+            name: t.name
+          }))
+        });
         
         // Log transactions for target date range
         if (isTargetDateRange && (dayChange !== 0 || targetDateStr === '2024-10-31' || targetDateStr === '2025-12-12')) {
