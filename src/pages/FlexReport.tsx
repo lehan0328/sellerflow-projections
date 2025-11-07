@@ -363,10 +363,10 @@ const FlexReport = () => {
       handleDownload();
     }
   };
-  return <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 p-4 md:p-8">
-      <div className="max-w-4xl mx-auto">
+  return <div className="h-screen overflow-auto bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 p-2 md:p-4">
+      <div className="max-w-4xl mx-auto scale-[0.85] origin-top">
         {/* Action Buttons */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-4">
           <Button variant="outline" onClick={() => navigate('/dashboard')} className="gap-2">
             <ArrowLeft className="w-4 h-4" />
             Back to Dashboard
@@ -400,9 +400,9 @@ const FlexReport = () => {
             <img src={aurenLogo} alt="" className="w-[600px] opacity-[0.25] select-none rotate-[-15deg] scale-110" />
           </div>
           
-          <div className="relative z-10 p-2 md:p-4">
+          <div className="relative z-10 p-3 md:p-4">
             {/* Header with Branding */}
-            <div className="flex items-center justify-between mb-6 pb-4 border-b-2 border-gradient-to-r from-blue-200 via-purple-200 to-blue-200">
+            <div className="flex items-center justify-between mb-4 pb-4 border-b-2 border-gradient-to-r from-blue-200 via-purple-200 to-blue-200">
               <div>
                 <h1 className="text-2xl md:text-3xl font-bold text-blue-800 mb-2 tracking-tight">
                   Financial Power Report
@@ -437,7 +437,7 @@ const FlexReport = () => {
             </div>
 
             {/* Primary Metric - Available to Spend */}
-            <div className="mb-6 text-center bg-gradient-to-br from-emerald-50 to-green-50 backdrop-blur-sm rounded-2xl p-5 border border-emerald-200/50 shadow-lg relative">
+            <div className="mb-4 text-center bg-gradient-to-br from-emerald-50 to-green-50 backdrop-blur-sm rounded-2xl p-5 border border-emerald-200/50 shadow-lg relative">
               <div className="absolute top-3 right-3 flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 border-2 border-emerald-600 rounded-full">
                 <div className="w-1.5 h-1.5 bg-emerald-600 rounded-full"></div>
                 <span className="text-[10px] font-black text-emerald-700 uppercase tracking-wider">Live Verified</span>
