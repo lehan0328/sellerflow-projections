@@ -46,6 +46,14 @@ interface PaymentSchedule {
   dueDate: Date | undefined;
   description: string;
 }
+
+interface LineItem {
+  id: string;
+  sku: string;
+  productName: string;
+  quantity: number;
+  unitPrice: number;
+}
 export const PurchaseOrderForm = ({
   open,
   onOpenChange,
@@ -81,9 +89,10 @@ export const PurchaseOrderForm = ({
     paymentMethod: "bank-transfer" as "bank-transfer" | "credit-card",
     selectedCreditCard: "",
     splitPayment: false,
-    documentType: "purchase_order" as "sales_order" | "invoice" | "proforma_invoice" | "purchase_order",
-    extractedLineItems: [] as Array<{ sku?: string; productName: string; quantity?: number }>
+    documentType: "purchase_order" as "sales_order" | "invoice" | "proforma_invoice" | "purchase_order"
   });
+  
+  const [lineItems, setLineItems] = useState<LineItem[]>([]);
   const [cardSplits, setCardSplits] = useState<Array<{
     cardId: string;
     amount: string;
@@ -156,9 +165,9 @@ export const PurchaseOrderForm = ({
         paymentMethod: "bank-transfer",
         selectedCreditCard: "",
         splitPayment: false,
-        documentType: "purchase_order",
-        extractedLineItems: []
+        documentType: "purchase_order"
       });
+      setLineItems([]);
       setCardSplits([{
         cardId: "",
         amount: ""
@@ -294,6 +303,28 @@ export const PurchaseOrderForm = ({
     
     setPaymentSchedule(updatedSchedule);
   };
+  
+  const addLineItem = () => {
+    const newItem: LineItem = {
+      id: Date.now().toString(),
+      sku: "",
+      productName: "",
+      quantity: 1,
+      unitPrice: 0
+    };
+    setLineItems([...lineItems, newItem]);
+  };
+  
+  const removeLineItem = (id: string) => {
+    setLineItems(lineItems.filter(item => item.id !== id));
+  };
+  
+  const updateLineItem = (id: string, field: keyof LineItem, value: any) => {
+    setLineItems(lineItems.map(item => 
+      item.id === id ? { ...item, [field]: value } : item
+    ));
+  };
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.poName || !formData.vendor || !formData.amount) {
@@ -336,7 +367,7 @@ export const PurchaseOrderForm = ({
       dueDate: calculatedDueDate,
       paymentSchedule: formData.paymentType === "preorder" ? paymentSchedule : undefined,
       lineItemDescription: formData.description, // Pass description separately for line item creation
-      extractedLineItems: formData.extractedLineItems // Pass extracted line items
+      lineItems: lineItems // Pass line items array
     };
     console.log("Submitting purchase order:", orderData);
     onSubmitOrder(orderData);
@@ -584,9 +615,20 @@ export const PurchaseOrderForm = ({
           netTermsDays: extracted.netTermsDays || prev.netTermsDays,
           dueDate: extracted.dueDate ? parse(extracted.dueDate, 'yyyy-MM-dd', new Date()) : prev.dueDate,
           deliveryDate: extracted.deliveryDate ? parse(extracted.deliveryDate, 'yyyy-MM-dd', new Date()) : prev.deliveryDate,
-          documentType: extracted.documentType || prev.documentType,
-          extractedLineItems: extracted.lineItems || [] // Store line items for later
+          documentType: extracted.documentType || prev.documentType
         }));
+        
+        // Convert extracted line items to editable format
+        if (extracted.lineItems && extracted.lineItems.length > 0) {
+          const convertedItems: LineItem[] = extracted.lineItems.map((item: any, index: number) => ({
+            id: `extracted-${Date.now()}-${index}`,
+            sku: item.sku || "",
+            productName: item.productName || "",
+            quantity: item.quantity || 1,
+            unitPrice: item.unitPrice || 0
+          }));
+          setLineItems(convertedItems);
+        }
 
         // Try to match vendor name
         if (extracted.vendorName) {
@@ -1204,18 +1246,112 @@ export const PurchaseOrderForm = ({
                 </div>}
             </div>
 
-            {/* Description */}
+            {/* Line Items Section */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-medium">Line Items</Label>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  size="sm"
+                  onClick={addLineItem}
+                  className="h-8"
+                >
+                  <Plus className="h-3 w-3 mr-1" />
+                  Add Item
+                </Button>
+              </div>
+              
+              {lineItems.length === 0 ? (
+                <div className="text-center py-8 border-2 border-dashed rounded-lg bg-muted/30">
+                  <p className="text-sm text-muted-foreground">No line items added yet.</p>
+                  <p className="text-xs text-muted-foreground mt-1">Upload a document or click "Add Item" to create line items</p>
+                </div>
+              ) : (
+                <div className="border rounded-lg overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead className="bg-muted/50 border-b">
+                        <tr>
+                          <th className="text-left p-2 font-medium">SKU</th>
+                          <th className="text-left p-2 font-medium">Product Name</th>
+                          <th className="text-left p-2 font-medium w-24">Qty</th>
+                          <th className="text-left p-2 font-medium w-32">Unit Price</th>
+                          <th className="w-10"></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {lineItems.map((item) => (
+                          <tr key={item.id} className="border-b last:border-b-0">
+                            <td className="p-2">
+                              <Input
+                                value={item.sku}
+                                onChange={(e) => updateLineItem(item.id, 'sku', e.target.value)}
+                                placeholder="SKU"
+                                className="h-8 text-sm"
+                              />
+                            </td>
+                            <td className="p-2">
+                              <Input
+                                value={item.productName}
+                                onChange={(e) => updateLineItem(item.id, 'productName', e.target.value)}
+                                placeholder="Product name"
+                                className="h-8 text-sm"
+                              />
+                            </td>
+                            <td className="p-2">
+                              <Input
+                                type="number"
+                                value={item.quantity}
+                                onChange={(e) => updateLineItem(item.id, 'quantity', parseInt(e.target.value) || 0)}
+                                placeholder="1"
+                                min="1"
+                                className="h-8 text-sm"
+                              />
+                            </td>
+                            <td className="p-2">
+                              <Input
+                                type="number"
+                                value={item.unitPrice}
+                                onChange={(e) => updateLineItem(item.id, 'unitPrice', parseFloat(e.target.value) || 0)}
+                                placeholder="0.00"
+                                step="0.01"
+                                min="0"
+                                className="h-8 text-sm"
+                              />
+                            </td>
+                            <td className="p-2">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => removeLineItem(item.id)}
+                                className="h-8 w-8 p-0 hover:bg-destructive/10 hover:text-destructive"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Description - now for general notes about line items */}
             <div className="space-y-2">
-              <Label htmlFor="description" className="text-sm font-medium">Description</Label>
+              <Label htmlFor="description" className="text-sm font-medium">Description (optional)</Label>
               <Textarea 
                 id="description" 
-                placeholder="Brief description of the purchase order..." 
+                placeholder="Additional details about the line items..." 
                 value={formData.description} 
                 onChange={e => setFormData(prev => ({
                   ...prev,
                   description: e.target.value
                 }))} 
-                className="min-h-[80px] resize-none"
+                className="min-h-[60px] resize-none"
               />
             </div>
 
