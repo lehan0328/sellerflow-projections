@@ -169,26 +169,53 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
           .eq('is_active', true)
       ]);
 
-      // Use Amazon payouts from useAmazonPayouts hook (ensures same data as Dashboard)
+      // Filter Amazon payouts with proper T+1 handling for confirmed payouts
       const filteredAmazonPayouts = amazonPayouts.filter(payout => {
         const payoutDate = parseLocalDate(payout.payout_date);
+        
+        // ALWAYS include open settlements (estimated status) - they represent real accumulating funds
+        if (payout.status === 'estimated') {
+          return true;
+        }
+        
+        // For confirmed payouts, check if funds are available (T+1) within our projection window
+        if (payout.status === 'confirmed') {
+          // Calculate funds available date (T+1 from settlement end)
+          const rawData = (payout as any).raw_settlement_data;
+          const settlementEndStr = rawData?.FinancialEventGroupEnd || rawData?.settlement_end_date;
+          
+          let fundsAvailableDate: Date;
+          if (settlementEndStr) {
+            const dateStr = new Date(settlementEndStr).toISOString().split('T')[0];
+            const settlementEndDate = parseLocalDate(dateStr);
+            fundsAvailableDate = new Date(settlementEndDate);
+            fundsAvailableDate.setDate(fundsAvailableDate.getDate() + 1);
+          } else {
+            // Fallback to payout_date + T+1
+            fundsAvailableDate = new Date(payoutDate);
+            fundsAvailableDate.setDate(fundsAvailableDate.getDate() + 1);
+          }
+          
+          // Include if funds are available between today and futureDate
+          return fundsAvailableDate >= today && fundsAvailableDate <= futureDate;
+        }
+        
+        // For forecasted payouts, use standard date range check
         return payoutDate >= today && payoutDate <= futureDate;
       });
       
-      console.log('🔍 [useSafeSpending] Using Amazon payouts from useAmazonPayouts hook:', {
+      console.log('🔍 [useSafeSpending] Filtered Amazon payouts:', {
         total: filteredAmazonPayouts.length,
         confirmed: filteredAmazonPayouts.filter(p => p.status === 'confirmed').length,
         estimated: filteredAmazonPayouts.filter(p => p.status === 'estimated').length,
         forecasted: filteredAmazonPayouts.filter(p => p.status === 'forecasted').length,
-        forecastsEnabled,
-        dec12Payouts: filteredAmazonPayouts.filter(p => {
-          const d = new Date(p.payout_date);
-          return d.getFullYear() === 2025 && d.getMonth() === 11 && d.getDate() === 12;
-        }).map(p => ({
-          date: p.payout_date,
-          amount: p.total_amount,
-          status: p.status
-        }))
+        confirmedPayouts: filteredAmazonPayouts
+          .filter(p => p.status === 'confirmed')
+          .map(p => ({
+            settlement_id: p.settlement_id,
+            payout_date: p.payout_date,
+            amount: p.total_amount
+          }))
       });
 
       // Check if we have any forecast data
