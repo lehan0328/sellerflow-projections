@@ -363,10 +363,10 @@ const FlexReport = () => {
       handleDownload();
     }
   };
-  return <div className="h-screen overflow-auto bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 p-2">
-      <div className="max-w-5xl mx-auto scale-90 origin-top">
+  return <div className="h-screen overflow-auto bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 p-2 md:p-4">
+      <div className="max-w-4xl mx-auto scale-[0.85] origin-top">
         {/* Action Buttons */}
-        <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center justify-between mb-4">
           <Button variant="outline" onClick={() => navigate('/dashboard')} className="gap-2">
             <ArrowLeft className="w-4 h-4" />
             Back to Dashboard
@@ -400,84 +400,84 @@ const FlexReport = () => {
             <img src={aurenLogo} alt="" className="w-[600px] opacity-[0.25] select-none rotate-[-15deg] scale-110" />
           </div>
           
-          <div className="relative z-10 p-3">
+          <div className="relative z-10 p-3 md:p-4">
             {/* Header with Branding */}
-            <div className="flex items-center justify-between mb-3 pb-3 border-b-2 border-gradient-to-r from-blue-200 via-purple-200 to-blue-200">
+            <div className="flex items-center justify-between mb-4 pb-4 border-b-2 border-gradient-to-r from-blue-200 via-purple-200 to-blue-200">
               <div>
-                <h1 className="text-xl md:text-2xl font-bold text-blue-800 mb-1 tracking-tight">
+                <h1 className="text-2xl md:text-3xl font-bold text-blue-800 mb-2 tracking-tight">
                   Financial Power Report
                 </h1>
-                <p className="text-slate-600 text-xs mb-0.5">Your business at a glance</p>
-                <p className="text-xs font-bold text-blue-800">
+                <p className="text-slate-600 text-sm mb-1">Your business at a glance</p>
+                <p className="text-sm font-bold text-blue-800">
                   Cash Flow Management Software For Amazon Sellers
                 </p>
               </div>
               <div className="text-center flex flex-col items-center">
-                <img src={aurenLogo} alt="Auren" className="h-10 drop-shadow-lg mb-0.5" />
-                <p className="text-base font-black text-blue-800 mb-0.5">Auren</p>
-                <p className="text-[10px] font-semibold text-blue-800">www.aurenapp.com</p>
+                <img src={aurenLogo} alt="Auren" className="h-12 md:h-14 drop-shadow-lg mb-1" />
+                <p className="text-lg font-black text-blue-800 mb-1">Auren</p>
+                <p className="text-xs font-semibold text-blue-800">www.aurenapp.com</p>
               </div>
             </div>
 
             {/* Verified Timestamp */}
-            <div className="mb-3 flex items-center justify-center gap-2 text-slate-700 bg-white/50 backdrop-blur-sm rounded-xl p-2 border border-slate-200/60 shadow-sm">
-              <div className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-100/50 rounded-lg border border-emerald-200/50">
-                <Calendar className="w-3 h-3 text-emerald-700" />
-                <span className="text-[10px] font-bold text-emerald-900">
+            <div className="mb-4 flex items-center justify-center gap-2 text-slate-700 bg-white/50 backdrop-blur-sm rounded-xl p-3 border border-slate-200/60 shadow-sm">
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-100/50 rounded-lg border border-emerald-200/50">
+                <Calendar className="w-4 h-4 text-emerald-700" />
+                <span className="text-xs font-bold text-emerald-900">
                   {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                 </span>
-                <span className="font-mono text-[10px] font-bold text-emerald-900">
+                <span className="font-mono text-xs font-bold text-emerald-900">
                   {new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                 </span>
               </div>
-              <div className="flex items-center gap-1 px-2 py-1 bg-blue-100/50 rounded-lg border border-blue-200/50">
-                <Lock className="w-2.5 h-2.5 text-blue-700" />
-                <span className="text-[10px] font-bold text-blue-900">Locked</span>
+              <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-blue-100/50 rounded-lg border border-blue-200/50">
+                <Lock className="w-3 h-3 text-blue-700" />
+                <span className="text-xs font-bold text-blue-900">Locked</span>
               </div>
             </div>
 
             {/* Primary Metric - Available to Spend */}
-            <div className="mb-3 text-center bg-gradient-to-br from-emerald-50 to-green-50 backdrop-blur-sm rounded-2xl p-3 border border-emerald-200/50 shadow-lg relative">
-              <div className="absolute top-2 right-2 flex items-center gap-1 px-2.5 py-1 bg-emerald-50 border-2 border-emerald-600 rounded-full">
+            <div className="mb-4 text-center bg-gradient-to-br from-emerald-50 to-green-50 backdrop-blur-sm rounded-2xl p-5 border border-emerald-200/50 shadow-lg relative">
+              <div className="absolute top-3 right-3 flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 border-2 border-emerald-600 rounded-full">
                 <div className="w-1.5 h-1.5 bg-emerald-600 rounded-full"></div>
-                <span className="text-[9px] font-black text-emerald-700 uppercase tracking-wider">Live Verified</span>
+                <span className="text-[10px] font-black text-emerald-700 uppercase tracking-wider">Live Verified</span>
               </div>
-              <p className="text-[10px] text-slate-600 mb-1 uppercase tracking-widest font-semibold">Available to Spend</p>
-              <div className={`text-3xl font-black bg-gradient-to-r from-emerald-600 via-green-600 to-emerald-600 bg-clip-text text-transparent mb-2 drop-shadow-sm transition-all duration-300 leading-tight ${!visibility.safeSpending ? 'blur-lg' : ''}`}>
+              <p className="text-xs text-slate-600 mb-2 uppercase tracking-widest font-semibold">Available to Spend</p>
+              <div className={`text-4xl md:text-5xl font-black bg-gradient-to-r from-emerald-600 via-green-600 to-emerald-600 bg-clip-text text-transparent mb-3 drop-shadow-sm transition-all duration-300 leading-tight ${!visibility.safeSpending ? 'blur-lg' : ''}`}>
                 {formatCurrency(safeSpendingData?.safe_spending_limit || 0)}
               </div>
-              <p className="text-slate-600 text-[10px] font-medium mb-1">Safe spending power for your business</p>
+              <p className="text-slate-600 text-xs font-medium mb-2">Safe spending power for your business</p>
               
               {/* Reserve Amount Display */}
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 border border-blue-200 rounded-lg mb-2">
-                <DollarSign className="w-2.5 h-2.5 text-blue-700" />
-                <span className="text-[10px] font-semibold text-blue-800">Reserve: {formatCurrency(reserveAmount)}</span>
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-50 border border-blue-200 rounded-lg mb-3">
+                <DollarSign className="w-3 h-3 text-blue-700" />
+                <span className="text-xs font-semibold text-blue-800">Reserve: {formatCurrency(reserveAmount)}</span>
               </div>
               
               {showPercentageChange && (
-                <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg mb-1 ${percentageChanges.safeSpending >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                  <TrendingUp className={`w-2.5 h-2.5 ${percentageChanges.safeSpending >= 0 ? '' : 'rotate-180'}`} />
-                  <span className="text-[10px] font-bold">{Math.abs(percentageChanges.safeSpending)}% vs last month</span>
+                <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg mb-2 ${percentageChanges.safeSpending >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                  <TrendingUp className={`w-3 h-3 ${percentageChanges.safeSpending >= 0 ? '' : 'rotate-180'}`} />
+                  <span className="text-xs font-bold">{Math.abs(percentageChanges.safeSpending)}% vs last month</span>
                 </div>
               )}
-              <div className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-100/50 border border-emerald-300 rounded-lg">
-                <BadgeCheck className="w-2.5 h-2.5 text-emerald-700" />
-                <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wide">Verified by Live Bank Account</span>
+              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-100/50 border border-emerald-300 rounded-lg">
+                <BadgeCheck className="w-3 h-3 text-emerald-700" />
+                <span className="text-xs font-bold text-emerald-800 uppercase tracking-wide">Verified by Live Bank Account</span>
               </div>
               <button
                 onClick={() => toggleVisibility('safeSpending')}
-                className="absolute bottom-2 right-2 p-1.5 rounded-lg hover:bg-emerald-100/50 transition-colors z-10"
+                className="absolute bottom-4 right-4 p-2 rounded-lg hover:bg-emerald-100/50 transition-colors z-10"
               >
                 {visibility.safeSpending ? (
-                  <Eye className="w-4 h-4 text-blue-600" />
+                  <Eye className="w-5 h-5 text-blue-600" />
                 ) : (
-                  <EyeOff className="w-4 h-4 text-slate-400" />
+                  <EyeOff className="w-5 h-5 text-slate-400" />
                 )}
               </button>
             </div>
 
-            {/* Metrics Grid - 3 columns */}
-            <div className="grid grid-cols-3 gap-2 mb-3">
+            {/* Metrics Grid */}
+            <div className="grid grid-cols-2 gap-3 mb-5">
               {/* Max 90 Day Spending Power */}
               <div className="group bg-gradient-to-br from-blue-50 via-blue-100 to-blue-50 rounded-2xl p-4 border-2 border-blue-200/60 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm relative">
                 <div className="absolute top-3 right-3 flex items-center gap-1 px-2.5 py-1 bg-blue-50 border-2 border-blue-600 rounded-full">
@@ -738,14 +738,14 @@ const FlexReport = () => {
             </div>
 
             {/* Footer */}
-            <div className="pt-2 border-t-2 border-gradient-to-r from-slate-200 via-slate-300 to-slate-200">
-              <div className="flex items-center justify-center text-xs mb-2">
+            <div className="pt-4 border-t-2 border-gradient-to-r from-slate-200 via-slate-300 to-slate-200">
+              <div className="flex items-center justify-center text-xs mb-3">
                 <div className="text-center">
-                  <p className="text-slate-700 font-semibold text-xs mb-0.5">
-                    Powered by <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 bg-clip-text text-transparent font-black text-sm">Auren</span>
+                  <p className="text-slate-700 font-semibold text-sm mb-1">
+                    Powered by <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 bg-clip-text text-transparent font-black text-base">Auren</span>
                   </p>
-                  <p className="text-[10px] font-bold text-slate-700">Cash Flow Management Software For Amazon Sellers</p>
-                  <p className="text-[10px] font-semibold text-blue-600 mt-0.5">www.aurenapp.com</p>
+                  <p className="text-xs font-bold text-slate-700">Cash Flow Management Software For Amazon Sellers</p>
+                  <p className="text-xs font-semibold text-blue-600 mt-1">www.aurenapp.com</p>
                 </div>
               </div>
             </div>
@@ -753,8 +753,8 @@ const FlexReport = () => {
         </Card>
 
         {/* Info Text */}
-        <div className="text-center mt-4">
-          <p className="text-xs text-slate-600">
+        <div className="text-center mt-6">
+          <p className="text-sm text-slate-600">
             Share your success with the world! Download or share this report to showcase your business growth.
           </p>
         </div>
