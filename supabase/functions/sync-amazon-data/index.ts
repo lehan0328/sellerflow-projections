@@ -199,8 +199,8 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string)
       startDate.setDate(startDate.getDate() - 365) // Initial: last year
       console.log('[SYNC] INITIAL sync - fetching 365 days of history')
     } else {
-      startDate.setDate(startDate.getDate() - 2) // Ongoing: last 2 days for safety
-      console.log('[SYNC] INCREMENTAL sync - fetching last 2 days')
+      startDate.setDate(startDate.getDate() - 4) // Ongoing: last 4 days to catch API delays
+      console.log('[SYNC] INCREMENTAL sync - fetching last 4 days (accounts for API delays)')
     }
     
     console.log(`[SYNC] Fetching settlements: ${startDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]}`)
@@ -357,7 +357,16 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string)
         return null;
       }
       
-      console.log(`[SYNC] Processing daily settlement: ${group.FinancialEventGroupId} (${settlementDays} days, Amount: $${parseFloat(group.ConvertedTotal?.CurrencyAmount || group.OriginalTotal?.CurrencyAmount || '0').toFixed(2)})`);
+      const totalAmount = parseFloat(group.ConvertedTotal?.CurrencyAmount || group.OriginalTotal?.CurrencyAmount || '0');
+      
+      // Calculate how long ago this settlement closed
+      const hoursSinceClose = (Date.now() - settlementEndDate.getTime()) / (1000 * 60 * 60);
+      
+      if (hoursSinceClose > 24) {
+        console.log(`⚠️ [SYNC] Settlement delayed in API: ${group.FinancialEventGroupId} (closed ${hoursSinceClose.toFixed(1)}h ago)`);
+      }
+      
+      console.log(`[SYNC] Processing daily settlement: ${group.FinancialEventGroupId} (${settlementDays} days, Amount: $${totalAmount.toFixed(2)}, Age: ${hoursSinceClose.toFixed(1)}h)`);
       
       // Closed settlement - payout is received the same day the settlement closes
       // (Settlement closes at night e.g. Nov 1 8pm = Nov 2 00:01 UTC, payout received Nov 2)

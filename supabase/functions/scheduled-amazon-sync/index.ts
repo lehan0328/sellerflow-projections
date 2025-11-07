@@ -112,7 +112,8 @@ Deno.serve(async (req) => {
           }
           console.log(`📥 Continuing backfill for ${account.account_name} (${account.sync_progress || 0}% complete)`)
         }
-        // For completed accounts, sync once daily
+        // For completed accounts, sync once daily BUT check 4 days back
+        // to catch settlements delayed by Amazon's API (up to 24h delay)
         else {
           const minHoursBetweenSync = 23 // Once per day with 1hr buffer
           
@@ -129,6 +130,8 @@ Deno.serve(async (req) => {
             })
             continue
           }
+          
+          console.log(`📅 Daily sync for ${account.account_name} (will check last 4 days for delayed settlements)`)
         }
       }
 
