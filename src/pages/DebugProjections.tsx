@@ -10,6 +10,7 @@ import { useCreditCards } from '@/hooks/useCreditCards';
 import { useAmazonPayouts } from '@/hooks/useAmazonPayouts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Download, Bug } from 'lucide-react';
 import { format, addDays, startOfDay, isBefore } from 'date-fns';
 import DailyBalanceTable from '@/components/debug/DailyBalanceTable';
@@ -18,10 +19,17 @@ import { calculateChartBalances } from '@/lib/chartDataProcessor';
 import { generateRecurringDates } from '@/lib/recurringDates';
 
 const DebugProjections = () => {
-  const { reserveAmount } = useReserveAmount();
-  const { data, isLoading, error } = useSafeSpending(reserveAmount || 1000, false, false);
-  const { accounts } = useBankAccounts();
   const [showNegativeOnly, setShowNegativeOnly] = useState(false);
+  
+  // Balance type preference (matches Dashboard)
+  const [useAvailableBalance, setUseAvailableBalance] = useState(() => {
+    const saved = localStorage.getItem('useAvailableBalance');
+    return saved !== null ? saved === 'true' : true; // Default to true (available balance)
+  });
+  
+  const { reserveAmount } = useReserveAmount();
+  const { accounts } = useBankAccounts();
+  const { data, isLoading, error } = useSafeSpending(reserveAmount || 1000, false, useAvailableBalance);
 
   // Fetch all data sources for chart calculation (mimics Dashboard)
   const { transactions: vendorTransactions } = useVendorTransactions();
@@ -30,7 +38,15 @@ const DebugProjections = () => {
   const { creditCards } = useCreditCards();
   const { amazonPayouts } = useAmazonPayouts();
 
-  const currentBalance = accounts.reduce((sum, acc) => sum + Number(acc.balance || 0), 0);
+  // Calculate current balance from accounts (matches Dashboard logic)
+  const totalAvailableBalance = accounts.reduce((sum, account) => {
+    return sum + (account.available_balance ?? account.balance);
+  }, 0);
+  
+  const bankAccountBalance = accounts.reduce((sum, acc) => sum + Number(acc.balance || 0), 0);
+  
+  // Use selected balance type (matches Dashboard)
+  const currentBalance = useAvailableBalance ? totalAvailableBalance : bankAccountBalance;
 
   // Build calendar events (same logic as Dashboard)
   const allCalendarEvents = useMemo(() => {
@@ -189,6 +205,12 @@ const DebugProjections = () => {
           <p className="text-muted-foreground mt-1">
             Detailed breakdown of 90-day balance calculations and buying opportunities
           </p>
+          <div className="flex items-center gap-2 mt-2">
+            <span className="text-sm text-muted-foreground">Balance Mode:</span>
+            <Badge variant="outline">
+              {useAvailableBalance ? 'Available Balance' : 'Current Balance'}
+            </Badge>
+          </div>
         </div>
         <Button onClick={exportToCSV} variant="outline">
           <Download className="h-4 w-4 mr-2" />
