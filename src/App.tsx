@@ -75,6 +75,7 @@ import Reimbursements from "./pages/Reimbursements";
 import AdvancedAnalytics from "./pages/AdvancedAnalytics";
 import Accounting from "./pages/Accounting";
 import Platforms from "./pages/Platforms";
+import DebugProjections from "./pages/DebugProjections";
 
 const queryClient = new QueryClient();
 
@@ -272,6 +273,11 @@ const App = () => (
                 <FlexReport />
               </ProtectedRoute>
             } />
+          <Route path="/debug-projections" element={
+            <ProtectedRoute>
+              <DebugProjections />
+            </ProtectedRoute>
+          } />
           <Route path="/amazon-oauth-callback" element={<AmazonOAuthCallback />} />
           <Route path="/oauth-redirect" element={<OAuthRedirect />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
