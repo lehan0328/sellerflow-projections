@@ -546,6 +546,30 @@ export function AmazonPayouts() {
                           Starting...
                         </Badge>
                       )}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={account.sync_status === 'syncing' || isSyncing === account.id}
+                        onClick={async () => {
+                          try {
+                            setIsSyncing(account.id);
+                            await syncAmazonAccount(account.id);
+                            toast.success('Sync initiated successfully');
+                          } catch (error: any) {
+                            console.error('Sync error:', error);
+                            toast.error(error.message || 'Failed to sync account');
+                          } finally {
+                            setIsSyncing(null);
+                          }
+                        }}
+                        className="h-7 px-2"
+                      >
+                        {isSyncing === account.id ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <RefreshCw className="h-3 w-3" />
+                        )}
+                      </Button>
                     </div>
                   </div>
                 );
