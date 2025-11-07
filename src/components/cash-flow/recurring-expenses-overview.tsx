@@ -330,16 +330,21 @@ export const RecurringExpensesOverview = () => {
                     )}
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="text-right flex items-center gap-2">
+                    <div className="text-right flex items-center gap-3">
                       {item.type === 'expense' && (() => {
                         const paymentMethod = getPaymentMethodDisplay(item);
+                        const PaymentIcon = paymentMethod.icon;
                         return (
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <div className="flex items-center gap-1 text-muted-foreground">
-                                  <paymentMethod.icon className="h-4 w-4" />
-                                  {paymentMethod.details && <span className="text-xs">{paymentMethod.details}</span>}
+                                <div className="flex items-center gap-2">
+                                  <div className="p-2 bg-muted rounded-full">
+                                    <PaymentIcon className="h-4 w-4" />
+                                  </div>
+                                  {paymentMethod.details && (
+                                    <span className="text-xs text-muted-foreground">{paymentMethod.details}</span>
+                                  )}
                                 </div>
                               </TooltipTrigger>
                               <TooltipContent>
