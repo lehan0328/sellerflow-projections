@@ -14,9 +14,9 @@ import { Badge } from '@/components/ui/badge';
 
 interface ChartBalance {
   date: string;
-  projected_balance: number;
-  net_change: number;
-  starting_balance: number;
+  balance: number;
+  net_change?: number;
+  starting_balance?: number;
 }
 
 interface Transaction {
@@ -111,7 +111,7 @@ const DailyBalanceTable = ({ dailyBalances, chartBalances, chartEvents, reserveA
             
             // Find matching chart balance
             const chartBalance = chartBalances.find(cb => cb.date === day.date);
-            const chartProjected = chartBalance?.projected_balance || 0;
+            const chartProjected = chartBalance?.balance || 0;
             const dailyNet = chartBalance?.net_change || 0;
             const difference = chartProjected - day.balance;
             
