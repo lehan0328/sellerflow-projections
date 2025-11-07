@@ -979,12 +979,12 @@ const Landing = () => {
                       </div>
                       <div className="flex justify-between items-center text-muted-foreground">
                         <span>- Reserve Buffer (10%)</span>
-                        <span className="font-bold">$5,120</span>
+                        <span className="font-bold">$4,500</span>
                       </div>
                       <Separator />
                       <div className="flex justify-between items-center">
                         <span className="text-lg font-bold text-emerald-700">Safe to Spend</span>
-                        <span className="text-3xl font-bold text-emerald-600">$46,080</span>
+                        <span className="text-3xl font-bold text-emerald-600">$46,700</span>
                       </div>
                     </div>
                     <div className="flex items-center justify-center p-4 rounded-xl bg-emerald-500/10 border-2 border-emerald-500/30">
