@@ -626,11 +626,14 @@ export const VendorsOverview = ({
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <div className="p-2 bg-muted rounded-full">
+                              <div className={cn(
+                                "p-2 rounded-full",
+                                tx.creditCardId ? "bg-blue-100 dark:bg-blue-950" : "bg-green-100 dark:bg-green-950"
+                              )}>
                                 {tx.creditCardId ? (
-                                  <CreditCard className="h-4 w-4" />
+                                  <CreditCard className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                                 ) : (
-                                  <Landmark className="h-4 w-4" />
+                                  <Landmark className="h-4 w-4 text-green-600 dark:text-green-400" />
                                 )}
                               </div>
                             </TooltipTrigger>

@@ -11,7 +11,7 @@ import { useVendors, type Vendor } from "@/hooks/useVendors";
 import { Building2, Plus, Trash2, Pencil, Search, CreditCard, Banknote, DollarSign, FileText, Landmark } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { capitalizeName } from "@/lib/utils";
+import { capitalizeName, cn } from "@/lib/utils";
 
 interface VendorFormData {
   name: string;
@@ -404,9 +404,16 @@ export function VendorManagement() {
                     <div className="flex items-center space-x-2">
                       {(() => {
                         const PaymentIcon = getPaymentMethodIcon(vendor.paymentMethod);
+                        const isCard = vendor.paymentMethod === 'credit-card';
                         return (
-                          <div className="p-2 bg-muted rounded-full">
-                            <PaymentIcon className="h-4 w-4" />
+                          <div className={cn(
+                            "p-2 rounded-full",
+                            isCard ? "bg-blue-100 dark:bg-blue-950" : "bg-green-100 dark:bg-green-950"
+                          )}>
+                            <PaymentIcon className={cn(
+                              "h-4 w-4",
+                              isCard ? "text-blue-600 dark:text-blue-400" : "text-green-600 dark:text-green-400"
+                            )} />
                           </div>
                         );
                       })()}

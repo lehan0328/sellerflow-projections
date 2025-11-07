@@ -18,6 +18,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { format, addMonths, startOfMonth, endOfMonth } from "date-fns";
 import { generateRecurringDates } from "@/lib/recurringDates";
 import { useNavigate } from "react-router-dom";
+import { cn } from "@/lib/utils";
 
 export const RecurringExpensesOverview = () => {
   const navigate = useNavigate();
@@ -334,13 +335,20 @@ export const RecurringExpensesOverview = () => {
                       {item.type === 'expense' && (() => {
                         const paymentMethod = getPaymentMethodDisplay(item);
                         const PaymentIcon = paymentMethod.icon;
+                        const isCard = item.credit_card_id !== null;
                         return (
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <div className="flex items-center gap-2">
-                                  <div className="p-2 bg-muted rounded-full">
-                                    <PaymentIcon className="h-4 w-4" />
+                                  <div className={cn(
+                                    "p-2 rounded-full",
+                                    isCard ? "bg-blue-100 dark:bg-blue-950" : "bg-green-100 dark:bg-green-950"
+                                  )}>
+                                    <PaymentIcon className={cn(
+                                      "h-4 w-4",
+                                      isCard ? "text-blue-600 dark:text-blue-400" : "text-green-600 dark:text-green-400"
+                                    )} />
                                   </div>
                                   {paymentMethod.details && (
                                     <span className="text-xs text-muted-foreground">{paymentMethod.details}</span>
