@@ -270,6 +270,13 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
           
           if (income.status !== 'received') {
             if (incomeDate.getTime() === targetDate.getTime()) {
+              // Skip sales categories that are counted from transactions to avoid duplication
+              if (income.category === 'Sales' || 
+                  income.category === 'Sales Orders' || 
+                  income.category === 'Customer Payments') {
+                return; // These are counted from dbTransactions
+              }
+              
               const amt = Number(income.amount);
               dayChange += amt;
               if (isTargetDateRange) {
