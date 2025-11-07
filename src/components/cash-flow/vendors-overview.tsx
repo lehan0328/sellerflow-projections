@@ -619,6 +619,13 @@ export const VendorsOverview = ({
                     }
                     toggleRow(tx.id);
                   }}>
+                    <TableCell className="w-[30px]">
+                      {expandedRows[tx.id] ? (
+                        <ChevronDown className="h-4 w-4" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4" />
+                      )}
+                    </TableCell>
                     <TableCell className="font-medium">{tx.vendorName}</TableCell>
                     <TableCell>{tx.description || 'N/A'}</TableCell>
                     <TableCell>
