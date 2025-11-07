@@ -183,6 +183,22 @@ const DebugProjections = () => {
 
   // Calculate chart balances using the same logic as the Dashboard chart
   const chartBalances = useMemo(() => {
+    console.log('📊 [DebugProjections] Calculating chart balances:', {
+      totalEvents: allCalendarEvents.length,
+      currentBalance,
+      excludeToday,
+      sampleEvents: allCalendarEvents.filter(e => {
+        const dateStr = format(e.balanceImpactDate || e.date, 'yyyy-MM-dd');
+        return dateStr >= '2026-01-30' && dateStr <= '2026-01-31';
+      }).map(e => ({
+        date: format(e.date, 'yyyy-MM-dd'),
+        impactDate: e.balanceImpactDate ? format(e.balanceImpactDate, 'yyyy-MM-dd') : 'same',
+        type: e.type,
+        amount: e.amount,
+        desc: e.description
+      }))
+    });
+    
     return calculateChartBalances(allCalendarEvents, currentBalance, 91, excludeToday);
   }, [allCalendarEvents, currentBalance, excludeToday]);
 
