@@ -36,14 +36,24 @@ interface DailyBalance {
   transactions?: Transaction[];
 }
 
+interface ChartEvent {
+  id: string;
+  type: 'inflow' | 'outflow' | 'credit-payment' | 'purchase-order';
+  amount: number;
+  description: string;
+  date: Date;
+  balanceImpactDate?: Date;
+}
+
 interface DailyBalanceTableProps {
   dailyBalances: DailyBalance[];
   chartBalances: ChartBalance[];
+  chartEvents: ChartEvent[];
   reserveAmount: number;
   currentBalance: number;
 }
 
-const DailyBalanceTable = ({ dailyBalances, chartBalances, reserveAmount, currentBalance }: DailyBalanceTableProps) => {
+const DailyBalanceTable = ({ dailyBalances, chartBalances, chartEvents, reserveAmount, currentBalance }: DailyBalanceTableProps) => {
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
 
   const toggleRow = (date: string) => {
@@ -91,6 +101,14 @@ const DailyBalanceTable = ({ dailyBalances, chartBalances, reserveAmount, curren
             const isExpanded = expandedRows.has(day.date);
             const hasTransactions = day.transactions && day.transactions.length > 0;
             
+            // Check for chart events on this day
+            const dayChartEvents = chartEvents.filter(event => {
+              const eventDate = event.balanceImpactDate || event.date;
+              return format(eventDate, 'yyyy-MM-dd') === day.date;
+            });
+            const hasChartEvents = dayChartEvents.length > 0;
+            const hasAnyEvents = hasTransactions || hasChartEvents;
+            
             // Find matching chart balance
             const chartBalance = chartBalances.find(cb => cb.date === day.date);
             const chartProjected = chartBalance?.projected_balance || 0;
@@ -103,7 +121,7 @@ const DailyBalanceTable = ({ dailyBalances, chartBalances, reserveAmount, curren
               <>
                 <TableRow key={day.date} className="hover:bg-muted/50">
                   <TableCell>
-                    {hasTransactions && (
+                    {hasAnyEvents && (
                       <Button
                         variant="ghost"
                         size="sm"
@@ -137,9 +155,9 @@ const DailyBalanceTable = ({ dailyBalances, chartBalances, reserveAmount, curren
                     {difference >= 0 ? '+' : ''}${difference.toFixed(2)}
                   </TableCell>
                   <TableCell className="text-center">
-                    {hasTransactions && (
+                    {hasAnyEvents && (
                       <Badge variant="secondary">
-                        {day.transactions.length}
+                        {dayChartEvents.length + (hasTransactions ? day.transactions.length : 0)}
                       </Badge>
                     )}
                   </TableCell>
@@ -154,36 +172,79 @@ const DailyBalanceTable = ({ dailyBalances, chartBalances, reserveAmount, curren
                   </TableCell>
                 </TableRow>
                 
-                {isExpanded && hasTransactions && (
+                {isExpanded && (
                   <TableRow>
                     <TableCell colSpan={8} className="bg-muted/30 p-0">
-                      <div className="px-8 py-4 space-y-2">
-                        <p className="text-sm font-semibold text-muted-foreground mb-3">
-                          Transactions on {format(new Date(day.date), 'MMMM dd, yyyy')} ({day.transactions.length} total):
-                        </p>
-                        {day.transactions?.map((transaction, idx) => (
-                          <div 
-                            key={idx} 
-                            className="flex items-center justify-between py-2 px-4 bg-background rounded border"
-                          >
-                            <div className="flex-1">
-                              <p className={`font-medium ${getTransactionTypeColor(transaction.type)}`}>
-                                {transaction.type}
+                      <div className="px-8 py-4 space-y-6">
+                        {/* Chart Events Section */}
+                        {(() => {
+                          const dayChartEvents = chartEvents.filter(event => {
+                            const eventDate = event.balanceImpactDate || event.date;
+                            return format(eventDate, 'yyyy-MM-dd') === day.date;
+                          });
+                          
+                          return dayChartEvents.length > 0 && (
+                            <div>
+                              <p className="text-sm font-semibold text-blue-600 mb-3">
+                                Chart Events ({dayChartEvents.length} total):
                               </p>
-                              <p className="text-sm text-muted-foreground">
-                                {transaction.description || transaction.name || transaction.settlementId || 'No description'}
-                              </p>
-                              {transaction.status && (
-                                <span className="inline-block mt-1 text-xs px-2 py-0.5 rounded-full bg-muted">
-                                  {transaction.status}
-                                </span>
-                              )}
+                              <div className="space-y-2">
+                                {dayChartEvents.map((event, idx) => (
+                                  <div 
+                                    key={idx} 
+                                    className="flex items-center justify-between py-2 px-4 bg-blue-50 dark:bg-blue-950 rounded border border-blue-200 dark:border-blue-800"
+                                  >
+                                    <div className="flex-1">
+                                      <p className={`font-medium ${getTransactionTypeColor(event.type)}`}>
+                                        {event.type}
+                                      </p>
+                                      <p className="text-sm text-muted-foreground">
+                                        {event.description}
+                                      </p>
+                                    </div>
+                                    <div className={`font-semibold tabular-nums text-lg ${event.type === 'inflow' ? 'text-green-600' : 'text-red-600'}`}>
+                                      {event.type === 'inflow' ? '+' : '-'}${event.amount.toFixed(2)}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
                             </div>
-                            <div className={`font-semibold tabular-nums text-lg ${transaction.amount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                              {transaction.amount >= 0 ? '+' : ''}${Math.abs(transaction.amount).toFixed(2)}
+                          );
+                        })()}
+                        
+                        {/* Buying Opportunity Transactions Section */}
+                        {hasTransactions && (
+                          <div>
+                            <p className="text-sm font-semibold text-purple-600 mb-3">
+                              Buy Opp Transactions ({day.transactions.length} total):
+                            </p>
+                            <div className="space-y-2">
+                              {day.transactions?.map((transaction, idx) => (
+                                <div 
+                                  key={idx} 
+                                  className="flex items-center justify-between py-2 px-4 bg-purple-50 dark:bg-purple-950 rounded border border-purple-200 dark:border-purple-800"
+                                >
+                                  <div className="flex-1">
+                                    <p className={`font-medium ${getTransactionTypeColor(transaction.type)}`}>
+                                      {transaction.type}
+                                    </p>
+                                    <p className="text-sm text-muted-foreground">
+                                      {transaction.description || transaction.name || transaction.settlementId || 'No description'}
+                                    </p>
+                                    {transaction.status && (
+                                      <span className="inline-block mt-1 text-xs px-2 py-0.5 rounded-full bg-muted">
+                                        {transaction.status}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className={`font-semibold tabular-nums text-lg ${transaction.amount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                    {transaction.amount >= 0 ? '+' : ''}${Math.abs(transaction.amount).toFixed(2)}
+                                  </div>
+                                </div>
+                              ))}
                             </div>
                           </div>
-                        ))}
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>

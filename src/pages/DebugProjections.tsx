@@ -354,6 +354,7 @@ const DebugProjections = () => {
           <DailyBalanceTable 
             dailyBalances={filteredBalances}
             chartBalances={chartBalances}
+            chartEvents={allCalendarEvents}
             reserveAmount={reserveAmount || 0}
             currentBalance={currentBalance}
           />
