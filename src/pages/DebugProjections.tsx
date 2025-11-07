@@ -191,26 +191,44 @@ const DebugProjections = () => {
     return events;
   }, [vendorTransactions, incomeItems, recurringExpenses, creditCards, amazonPayouts]);
 
-  // Calculate chart balances using the same logic as the Dashboard chart
+  // Calculate chart balances using Dashboard Calendar logic (simple cumulative addition)
   const chartBalances = useMemo(() => {
     console.log('📊 [DebugProjections] Calculating chart balances:', {
       totalEvents: allCalendarEvents.length,
-      currentBalance,
-      excludeToday,
-      sampleEvents: allCalendarEvents.filter(e => {
-        const dateStr = format(e.balanceImpactDate || e.date, 'yyyy-MM-dd');
-        return dateStr >= '2026-01-30' && dateStr <= '2026-01-31';
-      }).map(e => ({
-        date: format(e.date, 'yyyy-MM-dd'),
-        impactDate: e.balanceImpactDate ? format(e.balanceImpactDate, 'yyyy-MM-dd') : 'same',
-        type: e.type,
-        amount: e.amount,
-        desc: e.description
-      }))
+      currentBalance
     });
     
-    return calculateChartBalances(allCalendarEvents, currentBalance, 91, excludeToday);
-  }, [allCalendarEvents, currentBalance, excludeToday]);
+    const today = startOfDay(new Date());
+    const dailyBalances = [];
+    let runningBalance = currentBalance;
+    
+    for (let i = 0; i < 91; i++) {
+      const currentDate = addDays(today, i);
+      const dateStr = format(currentDate, 'yyyy-MM-dd');
+      
+      // Get all events that impact balance on this day
+      const dayEvents = allCalendarEvents.filter(event => {
+        const impactDate = event.balanceImpactDate || event.date;
+        return format(impactDate, 'yyyy-MM-dd') === dateStr;
+      });
+      
+      // Calculate net change for the day
+      const dailyInflow = dayEvents.filter(e => e.type === 'inflow').reduce((sum, e) => sum + e.amount, 0);
+      const dailyOutflow = dayEvents.filter(e => e.type !== 'inflow').reduce((sum, e) => sum + e.amount, 0);
+      const dailyChange = dailyInflow - dailyOutflow;
+      
+      runningBalance += dailyChange;
+      
+      dailyBalances.push({
+        date: dateStr,
+        projected_balance: runningBalance,
+        net_change: dailyChange,
+        starting_balance: i === 0 ? currentBalance : dailyBalances[i - 1].projected_balance
+      });
+    }
+    
+    return dailyBalances;
+  }, [allCalendarEvents, currentBalance]);
 
   // Shift all dates forward by 1 day
   const dailyBalances = useMemo(() => {
