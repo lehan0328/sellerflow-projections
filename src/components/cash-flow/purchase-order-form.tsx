@@ -631,14 +631,12 @@ export const PurchaseOrderForm = ({
         const extracted = data.data;
         console.log("Extracted data from document:", extracted);
 
-        // Auto-fill form fields with extracted data
+        // Auto-fill form fields with extracted data (description removed since line items capture that)
         setFormData(prev => ({
           ...prev,
-          poName: extracted.poNumber || extracted.orderNumber || prev.poName, // Use PO number or Order number
+          poName: extracted.poNumber || extracted.orderNumber || prev.poName,
           amount: extracted.amount || prev.amount,
-          description: extracted.description || prev.description,
           category: extracted.category || prev.category,
-          notes: extracted.notes || prev.notes,
           netTermsDays: extracted.netTermsDays || prev.netTermsDays,
           dueDate: extracted.dueDate ? parse(extracted.dueDate, 'yyyy-MM-dd', new Date()) : prev.dueDate,
           deliveryDate: extracted.deliveryDate ? parse(extracted.deliveryDate, 'yyyy-MM-dd', new Date()) : prev.deliveryDate,
@@ -1304,63 +1302,89 @@ export const PurchaseOrderForm = ({
                           <th className="text-left p-2 font-medium">Product Name</th>
                           <th className="text-left p-2 font-medium w-24">Qty</th>
                           <th className="text-left p-2 font-medium w-32">Unit Price</th>
+                          <th className="text-left p-2 font-medium w-32">Total</th>
                           <th className="w-10"></th>
                         </tr>
                       </thead>
                       <tbody>
-                        {lineItems.map((item) => (
-                          <tr key={item.id} className="border-b last:border-b-0">
-                            <td className="p-2">
-                              <Input
-                                value={item.sku}
-                                onChange={(e) => updateLineItem(item.id, 'sku', e.target.value)}
-                                placeholder="SKU"
-                                className="h-8 text-sm"
-                              />
-                            </td>
-                            <td className="p-2">
-                              <Input
-                                value={item.productName}
-                                onChange={(e) => updateLineItem(item.id, 'productName', e.target.value)}
-                                placeholder="Product name"
-                                className="h-8 text-sm"
-                              />
-                            </td>
-                            <td className="p-2">
-                              <Input
-                                type="number"
-                                value={item.quantity}
-                                onChange={(e) => updateLineItem(item.id, 'quantity', parseInt(e.target.value) || 0)}
-                                placeholder="1"
-                                min="1"
-                                className="h-8 text-sm"
-                              />
-                            </td>
-                            <td className="p-2">
-                              <Input
-                                type="number"
-                                value={item.unitPrice}
-                                onChange={(e) => updateLineItem(item.id, 'unitPrice', parseFloat(e.target.value) || 0)}
-                                placeholder="0.00"
-                                step="0.01"
-                                min="0"
-                                className="h-8 text-sm"
-                              />
-                            </td>
-                            <td className="p-2">
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => removeLineItem(item.id)}
-                                className="h-8 w-8 p-0 hover:bg-destructive/10 hover:text-destructive"
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </Button>
-                            </td>
-                          </tr>
-                        ))}
+                        {lineItems.map((item) => {
+                          const itemTotal = (item.quantity || 0) * (item.unitPrice || 0);
+                          return (
+                            <tr key={item.id} className="border-b last:border-b-0">
+                              <td className="p-2">
+                                <Input
+                                  value={item.sku}
+                                  onChange={(e) => updateLineItem(item.id, 'sku', e.target.value)}
+                                  placeholder="SKU"
+                                  className="h-8 text-sm"
+                                />
+                              </td>
+                              <td className="p-2">
+                                <Input
+                                  value={item.productName}
+                                  onChange={(e) => updateLineItem(item.id, 'productName', e.target.value)}
+                                  placeholder="Product name"
+                                  className="h-8 text-sm"
+                                />
+                              </td>
+                              <td className="p-2">
+                                <Input
+                                  type="number"
+                                  value={item.quantity}
+                                  onChange={(e) => updateLineItem(item.id, 'quantity', parseInt(e.target.value) || 0)}
+                                  placeholder="1"
+                                  min="0"
+                                  className="h-8 text-sm"
+                                />
+                              </td>
+                              <td className="p-2">
+                                <Input
+                                  type="number"
+                                  value={item.unitPrice}
+                                  onChange={(e) => updateLineItem(item.id, 'unitPrice', parseFloat(e.target.value) || 0)}
+                                  placeholder="0.00"
+                                  step="0.01"
+                                  min="0"
+                                  className="h-8 text-sm"
+                                />
+                              </td>
+                              <td className="p-2">
+                                <div className="h-8 flex items-center px-3 bg-muted/30 rounded-md text-sm font-medium">
+                                  ${itemTotal.toFixed(2)}
+                                </div>
+                              </td>
+                              <td className="p-2">
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => removeLineItem(item.id)}
+                                  className="h-8 w-8 p-0 hover:bg-destructive/10 hover:text-destructive"
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              </td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
+                      <tfoot className="bg-muted/30 border-t-2">
+                        <tr className="font-semibold">
+                          <td className="p-2" colSpan={2}>Totals</td>
+                          <td className="p-2">
+                            <div className="h-8 flex items-center px-3 bg-primary/10 rounded-md">
+                              {lineItems.reduce((sum, item) => sum + (item.quantity || 0), 0)}
+                            </div>
+                          </td>
+                          <td className="p-2"></td>
+                          <td className="p-2">
+                            <div className="h-8 flex items-center px-3 bg-primary/10 rounded-md">
+                              ${lineItems.reduce((sum, item) => sum + ((item.quantity || 0) * (item.unitPrice || 0)), 0).toFixed(2)}
+                            </div>
+                          </td>
+                          <td className="p-2"></td>
+                        </tr>
+                      </tfoot>
                     </table>
                   </div>
                 </div>

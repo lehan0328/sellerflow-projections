@@ -105,7 +105,7 @@ serve(async (req) => {
     const messageContent = [
       {
         type: "text",
-        text: "Extract vendor, totals, document numbers, and COMPLETE line items from this document (PDF or stitched image with multiple pages).\n\nKey requirements:\n1) Numbers:\n- orderNumber: value labeled 'Sales Order', 'SO', 'Order #', 'Order Number' (do NOT map these to PO).\n- poNumber: value labeled 'PO#', 'Customer PO', 'Purchase Order', 'Purchase Order Number'.\n- Never set poNumber/orderNumber from descriptions or addresses.\n\n2) Document type (priority): 'sales_order' if 'Sales Order/SO' present; 'invoice' only if explicitly labeled INVOICE; 'proforma_invoice' if Pro‑forma/Proforma; else 'purchase_order'.\n\n3) Total amount:\n- Return the FINAL payable amount: labels 'Total', 'Grand Total', 'Amount Due', 'Balance Due', 'Total Payable'.\n- Ignore Subtotal/Discount/Tax/Shipping/Deposit/Adjustment/Credit. Use the LAST valid final amount. Return as plain number string (e.g., 13992.00).\n\n4) Line items (critical):\n- Find tables with headers like Qty/Quantity, Item/Description/Product, Item ID/SKU/UPC, 'Unit P.'/'Unit Price', 'Ext. Price'.\n- For EACH visible row across all pages return: \n  • sku: from Item ID/SKU/UPC/Product Code.\n  • productName: FULL description from Item/Description (merge wrapped lines with punctuation kept).\n  • quantity: numeric (strip commas; default 1 if missing).\n  • unitPrice: numeric price per unit when visible (from 'Unit P.'/'Unit Price'/'Price'); omit if not shown.\n- Do not drop rows. Merge rows from multiple tables/pages.\n\n5) Description (top‑level):\n- Always set a concise summary from the first 1–3 productName values joined by '; '.\n\nReGo Trading specifics:\n- If ReGo logo/text present, vendorName='ReGo Trading'. Item ID often like '2204‑…'; description like 'Air Wick …'.\n\nOutput via function 'extract_purchase_order'. Ensure lineItems[].productName is populated."
+        text: "Extract vendor, totals, document numbers, and COMPLETE line items from this document (PDF or stitched image with multiple pages).\n\nKey requirements:\n1) Numbers:\n- orderNumber: value labeled 'Sales Order', 'SO', 'Order #', 'Order Number' (do NOT map these to PO).\n- poNumber: value labeled 'PO#', 'Customer PO', 'Purchase Order', 'Purchase Order Number'.\n- Never set poNumber/orderNumber from descriptions or addresses.\n\n2) Document type (priority): 'sales_order' if 'Sales Order/SO' present; 'invoice' only if explicitly labeled INVOICE; 'proforma_invoice' if Pro‑forma/Proforma; else 'purchase_order'.\n\n3) Total amount:\n- Return the FINAL payable amount: labels 'Total', 'Grand Total', 'Amount Due', 'Balance Due', 'Total Payable'.\n- Ignore Subtotal/Discount/Tax/Shipping/Deposit/Adjustment/Credit. Use the LAST valid final amount. Return as plain number string (e.g., 13992.00).\n\n4) Line items (critical):\n- Find tables with headers like Qty/Quantity, Item/Description/Product, Item ID/SKU/UPC, 'Unit P.'/'Unit Price', 'Ext. Price'.\n- For EACH visible row across all pages return: \n  • sku: from Item ID/SKU/UPC/Product Code.\n  • productName: FULL description from Item/Description (merge wrapped lines with punctuation kept).\n  • quantity: numeric (strip commas; default 1 if missing).\n  • unitPrice: numeric price per unit when visible (from 'Unit P.'/'Unit Price'/'Price'); omit if not shown.\n- Do not drop rows. Merge rows from multiple tables/pages.\n\n5) Do NOT extract description field - line items capture all product information.\n\nReGo Trading specifics:\n- If ReGo logo/text present, vendorName='ReGo Trading'. Item ID often like '2204‑…'; description like 'Air Wick …'.\n\nOutput via function 'extract_purchase_order'. Ensure lineItems[].productName is populated."
       },
       {
         type: "image_url",
@@ -165,10 +165,6 @@ serve(async (req) => {
                   amount: {
                     type: "string",
                     description: "Total amount as a number string (e.g., '1500.50')"
-                  },
-                  description: {
-                    type: "string",
-                    description: "Description of goods or services"
                   },
                   lineItems: {
                     type: "array",
@@ -291,10 +287,6 @@ serve(async (req) => {
                         amount: {
                           type: "string",
                           description: "Total amount as a number string (e.g., '1500.50')"
-                        },
-                        description: {
-                          type: "string",
-                          description: "Description of goods or services"
                         },
                         lineItems: {
                           type: "array",
