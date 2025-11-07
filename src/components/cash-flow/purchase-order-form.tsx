@@ -10,6 +10,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 import { CalendarIcon, Plus, Trash2, Search, Upload, Loader2, FileText } from "lucide-react";
 import { format, addDays, parse } from "date-fns";
 import { Card, CardContent } from "@/components/ui/card";
@@ -790,7 +791,12 @@ export const PurchaseOrderForm = ({
                       </div>
                     </div>
                   <div>
-                    <h4 className="font-semibold text-sm mb-1">Upload Purchase Order Document</h4>
+                    <div className="flex items-center justify-center gap-2 mb-1">
+                      <h4 className="font-semibold text-sm">Upload Purchase Order Document</h4>
+                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 bg-primary/10 text-primary border-primary/20">
+                        Growing+
+                      </Badge>
+                    </div>
                     <p className="text-xs text-muted-foreground mb-0.5">
                       Let AI automatically fill the form from your document
                     </p>
