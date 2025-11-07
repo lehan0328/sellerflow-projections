@@ -396,6 +396,10 @@ export default function Analytics() {
           sourceData['Recurring Income'] += item.amount;
         } else if (item.source === 'Amazon') {
           sourceData['Amazon Payouts'] += item.amount;
+        } else if (item.category === 'Sales' || item.category === 'Sales Orders') {
+          // Skip - these will be counted from dbTransactions to avoid duplication
+        } else if (item.category === 'Customer Payments') {
+          // Skip - these will be counted from dbTransactions to avoid duplication
         } else if (item.category) {
           sourceData[item.category] = (sourceData[item.category] || 0) + item.amount;
         } else {
