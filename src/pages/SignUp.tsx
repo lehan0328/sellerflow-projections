@@ -172,7 +172,7 @@ export const SignUp = () => {
       <div className="absolute inset-0 bg-[linear-gradient(to_right,hsl(var(--primary)/0.03)_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--primary)/0.03)_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_50%,#000_70%,transparent_110%)]" />
       
       <div className="flex-1 flex items-center justify-center p-4 pt-8">
-        <div className="w-full max-w-md space-y-6 relative z-10">
+        <div className="w-full max-w-2xl space-y-6 relative z-10">
           {/* Header */}
           <div className="text-center space-y-4">
             <div className="flex items-center justify-center animate-fade-in">
@@ -289,62 +289,65 @@ export const SignUp = () => {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="monthlyAmazonRevenue" className="text-base">Monthly Amazon Revenue</Label>
-                  <Input
-                    id="monthlyAmazonRevenue"
-                    type="text"
-                    placeholder="e.g., $50,000 or $500k"
-                    value={signUpData.monthlyAmazonRevenue}
-                    onChange={(e) => setSignUpData({ ...signUpData, monthlyAmazonRevenue: e.target.value })}
-                    className="h-12 border-primary/20 bg-background/50 backdrop-blur-sm focus:border-primary focus:ring-primary/20 transition-all"
-                    disabled={loading}
-                    required
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="monthlyAmazonRevenue" className="text-base">Monthly Amazon Revenue</Label>
+                    <Input
+                      id="monthlyAmazonRevenue"
+                      type="text"
+                      placeholder="e.g., $50,000 or $500k"
+                      value={signUpData.monthlyAmazonRevenue}
+                      onChange={(e) => setSignUpData({ ...signUpData, monthlyAmazonRevenue: e.target.value })}
+                      className="h-12 border-primary/20 bg-background/50 backdrop-blur-sm focus:border-primary focus:ring-primary/20 transition-all"
+                      disabled={loading}
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="referralCode" className="text-base">
+                      Referral Code <span className="text-muted-foreground text-sm font-normal">(Optional)</span>
+                    </Label>
+                    <div className="relative">
+                      <Input
+                        id="referralCode"
+                        type="text"
+                        placeholder="Enter referral code"
+                        value={signUpData.referralCode}
+                        onChange={(e) => {
+                          const value = e.target.value.toUpperCase().trim();
+                          setSignUpData({ ...signUpData, referralCode: value });
+                        }}
+                        className="h-12 pr-12 border-primary/20 bg-background/50 backdrop-blur-sm focus:border-primary focus:ring-primary/20 transition-all"
+                        maxLength={20}
+                        disabled={loading}
+                      />
+                      {referralCodeStatus === 'validating' && (
+                        <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 animate-spin text-muted-foreground" />
+                      )}
+                      {referralCodeStatus === 'valid' && (
+                        <Check className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-green-500" />
+                      )}
+                      {referralCodeStatus === 'invalid' && (
+                        <X className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-destructive" />
+                      )}
+                    </div>
+                  </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="referralCode" className="text-base">
-                    Referral Code <span className="text-muted-foreground text-sm font-normal">(Optional)</span>
-                  </Label>
-                  <div className="relative">
-                    <Input
-                      id="referralCode"
-                      type="text"
-                      placeholder="Enter referral code"
-                      value={signUpData.referralCode}
-                      onChange={(e) => {
-                        const value = e.target.value.toUpperCase().trim();
-                        setSignUpData({ ...signUpData, referralCode: value });
-                      }}
-                      className="h-12 pr-12 border-primary/20 bg-background/50 backdrop-blur-sm focus:border-primary focus:ring-primary/20 transition-all"
-                      maxLength={20}
-                      disabled={loading}
-                    />
-                    {referralCodeStatus === 'validating' && (
-                      <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 animate-spin text-muted-foreground" />
-                    )}
-                    {referralCodeStatus === 'valid' && (
-                      <Check className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-green-500" />
-                    )}
-                    {referralCodeStatus === 'invalid' && (
-                      <X className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-destructive" />
-                    )}
-                  </div>
-                  {referralCodeStatus === 'valid' && (
-                    <Alert className="bg-green-500/10 border-green-500/20">
-                      <Check className="h-4 w-4 text-green-500" />
-                      <AlertDescription className="text-green-600 dark:text-green-400 text-sm">
-                        Valid code! You'll get 10% off for 6 months after your trial ends.
-                      </AlertDescription>
-                    </Alert>
-                  )}
-                  {referralCodeStatus === 'invalid' && (
-                    <p className="text-xs text-destructive">
-                      Invalid referral code. You can still sign up without it.
-                    </p>
-                  )}
-                </div>
+                {referralCodeStatus === 'valid' && (
+                  <Alert className="bg-green-500/10 border-green-500/20">
+                    <Check className="h-4 w-4 text-green-500" />
+                    <AlertDescription className="text-green-600 dark:text-green-400 text-sm">
+                      Valid code! You'll get 10% off for 6 months after your trial ends.
+                    </AlertDescription>
+                  </Alert>
+                )}
+                {referralCodeStatus === 'invalid' && (
+                  <p className="text-xs text-destructive">
+                    Invalid referral code. You can still sign up without it.
+                  </p>
+                )}
 
                 <Button
                   type="submit"
