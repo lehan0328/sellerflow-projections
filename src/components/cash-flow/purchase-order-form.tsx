@@ -1355,15 +1355,6 @@ export const PurchaseOrderForm = ({
               />
             </div>
 
-            {/* Notes */}
-            <div className="space-y-2">
-              <Label htmlFor="notes">Notes (optional)</Label>
-              <Textarea id="notes" placeholder="Additional notes or comments" value={formData.notes} onChange={e => setFormData(prev => ({
-              ...prev,
-              notes: e.target.value
-            }))} rows={2} />
-            </div>
-
             {/* Submit Button */}
             <div className="flex justify-end space-x-3 pt-6 border-t">
               <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
