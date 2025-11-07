@@ -1391,6 +1391,13 @@ export const PurchaseOrderForm = ({
               )}
             </div>
 
+            {/* Disclaimer */}
+            {lineItems.length > 0 && (
+              <p className="text-xs text-muted-foreground italic">
+                Note: If the total here and total amount extracted from AI does not match, check for credits applied
+              </p>
+            )}
+
             {/* Description - now for general notes about line items */}
             <div className="space-y-2">
               <Label htmlFor="description" className="text-sm font-medium">Description (optional)</Label>
