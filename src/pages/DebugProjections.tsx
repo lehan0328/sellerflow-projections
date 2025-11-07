@@ -218,7 +218,7 @@ const DebugProjections = () => {
   const filteredChartBalances = useMemo(() => {
     return chartBalances.map(cb => ({
       ...cb,
-      date: format(addDays(parseISO(cb.date), 1), 'yyyy-MM-dd')
+      date: cb.date
     }));
   }, [chartBalances]);
 
