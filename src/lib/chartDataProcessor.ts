@@ -30,8 +30,7 @@ export const calculateChartBalances = (
   for (let i = 0; i < daysToProject; i++) {
     const currentDate = addDays(today, i);
     const dateStr = format(currentDate, 'yyyy-MM-dd');
-    
-    const startBalance = runningBalance;
+    const isToday = i === 0;
     
     // Get all events that impact balance on this day
     const dayEvents = events.filter(event => {
@@ -51,24 +50,21 @@ export const calculateChartBalances = (
     
     const netChange = dailyInflow - dailyOutflow;
     
-    // Special handling for today (day 0) to match CashFlowCalendar logic
-    if (i === 0 && excludeToday) {
-      // If excluding today, don't add today's net change to running balance
-      dailyBalances.push({
-        date: dateStr,
-        starting_balance: startBalance,
-        net_change: netChange,
-        projected_balance: startBalance, // Keep starting balance for today
-      });
+    // Match CashFlowCalendar logic exactly:
+    // For today: runningBalance = startingBalance + (excludeToday ? 0 : netChange)
+    // For future days: runningBalance += netChange
+    if (isToday) {
+      runningBalance = startingBalance + (excludeToday ? 0 : netChange);
     } else {
       runningBalance += netChange;
-      dailyBalances.push({
-        date: dateStr,
-        starting_balance: startBalance,
-        net_change: netChange,
-        projected_balance: runningBalance,
-      });
     }
+    
+    dailyBalances.push({
+      date: dateStr,
+      starting_balance: isToday ? startingBalance : dailyBalances[i - 1]?.projected_balance || startingBalance,
+      net_change: netChange,
+      projected_balance: runningBalance,
+    });
   }
 
   return dailyBalances;
