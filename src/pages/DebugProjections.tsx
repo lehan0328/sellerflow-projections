@@ -29,6 +29,14 @@ const DebugProjections = () => {
     return saved !== null ? saved === 'true' : true; // Default to true (available balance)
   });
   
+  // Parse date strings to local Date to avoid timezone issues (matches useSafeSpending)
+  const parseLocalDate = (dateStr: string): Date => {
+    const [y, m, d] = (dateStr.includes('T') ? dateStr.split('T')[0] : dateStr).split('-').map(Number);
+    const dt = new Date(y, (m || 1) - 1, d || 1);
+    dt.setHours(0, 0, 0, 0);
+    return dt;
+  };
+  
   const { reserveAmount } = useReserveAmount();
   const { accounts } = useBankAccounts();
   const { data, isLoading, error } = useSafeSpending(reserveAmount || 1000, false, useAvailableBalance);
@@ -129,10 +137,12 @@ const DebugProjections = () => {
         const settlementEndStr = rawData?.FinancialEventGroupEnd || rawData?.settlement_end_date;
         
         if (settlementEndStr) {
-          displayDate = new Date(settlementEndStr);
+          const dateStr = new Date(settlementEndStr).toISOString().split('T')[0];
+          displayDate = parseLocalDate(dateStr);
           displayDate.setDate(displayDate.getDate() + 1);
         } else {
-          displayDate = new Date(payout.payout_date);
+          displayDate = parseLocalDate(payout.payout_date);
+          displayDate.setDate(displayDate.getDate() + 1);
         }
         balanceImpactDate = displayDate;
         
@@ -142,25 +152,25 @@ const DebugProjections = () => {
         const settlementEndStr = rawData?.FinancialEventGroupEnd || rawData?.settlement_end_date;
         const settlementStartStr = rawData?.settlement_start_date || rawData?.FinancialEventGroupStart;
         
+        let payoutDate: Date;
         if (settlementEndStr) {
-          displayDate = new Date(settlementEndStr);
+          payoutDate = parseLocalDate(settlementEndStr);
         } else if (settlementStartStr) {
           const settlementStartDate = new Date(settlementStartStr);
           const settlementCloseDate = new Date(settlementStartDate);
-          settlementCloseDate.setDate(settlementCloseDate.getDate() + 14);
-          displayDate = settlementCloseDate;
+          settlementCloseDate.setDate(settlementCloseDate.getDate() + 15);
+          payoutDate = parseLocalDate(settlementCloseDate.toISOString().split('T')[0]);
         } else {
-          displayDate = new Date(payout.payout_date);
+          payoutDate = parseLocalDate(payout.payout_date);
         }
         
-        // Add +1 day for bank transfer for estimated payouts
-        displayDate = new Date(displayDate);
+        displayDate = new Date(payoutDate);
         displayDate.setDate(displayDate.getDate() + 1);
         balanceImpactDate = displayDate;
         
       } else {
-        // For forecasted: payout_date as-is, +1 for balance impact
-        displayDate = new Date(payout.payout_date);
+        // For forecasted: payout_date + 1 for balance impact (matches useSafeSpending)
+        displayDate = parseLocalDate(payout.payout_date);
         balanceImpactDate = new Date(displayDate);
         balanceImpactDate.setDate(balanceImpactDate.getDate() + 1);
       }
