@@ -4,12 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, Star, TrendingUp, Shield, Zap, Users, ArrowRight, ShoppingCart, CreditCard, Calendar, Sparkles, Check, X, Plus, Minus, Moon, Sun, ExternalLink, Lock, AlertCircle, BookOpen, Calculator, BadgeCheck, Lightbulb, Wallet, ChevronDown } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import aurenIcon from "@/assets/auren-icon-blue.png";
 import aurenFullLogo from "@/assets/auren-full-logo.png";
 import amazonPartnerBadge from "@/assets/amazon-partner-badge.png";
@@ -18,7 +13,6 @@ import avatar2 from "@/assets/avatar-2.jpg";
 import avatar3 from "@/assets/avatar-3.jpg";
 import avatar4 from "@/assets/avatar-4.jpg";
 import { useNavigate, Link } from "react-router-dom";
-
 import { FloatingChatWidget } from "@/components/floating-chat-widget";
 import { LineChart, Line, ResponsiveContainer } from 'recharts';
 import { useAuth } from "@/hooks/useAuth";
@@ -39,8 +33,12 @@ const Landing = () => {
     theme,
     setTheme
   } = useTheme();
-  const { amazonPayouts } = useAmazonPayouts();
-  const { forecastsEnabled } = useUserSettings();
+  const {
+    amazonPayouts
+  } = useAmazonPayouts();
+  const {
+    forecastsEnabled
+  } = useUserSettings();
   const [isYearly, setIsYearly] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [showEnterpriseCustomizer, setShowEnterpriseCustomizer] = useState(false);
@@ -50,18 +48,13 @@ const Landing = () => {
   // Calculate forecast stats
   const forecastStats = (() => {
     if (!user || !forecastsEnabled) return null;
-    
     const forecasted = amazonPayouts.filter(p => p.status === 'forecasted');
     if (forecasted.length === 0) return null;
-    
     const totalForecasted = forecasted.reduce((sum, p) => sum + p.total_amount, 0);
     const next7Days = new Date();
     next7Days.setDate(next7Days.getDate() + 7);
     const next7DaysStr = next7Days.toISOString().split('T')[0];
-    const next7DaysTotal = forecasted
-      .filter(p => p.payout_date <= next7DaysStr)
-      .reduce((sum, p) => sum + p.total_amount, 0);
-
+    const next7DaysTotal = forecasted.filter(p => p.payout_date <= next7DaysStr).reduce((sum, p) => sum + p.total_amount, 0);
     return {
       totalForecasted,
       next7DaysTotal,
@@ -522,14 +515,13 @@ const Landing = () => {
               <Link to="/pricing" className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link font-medium">
                 Pricing
               </Link>
-              <a 
-                href="#testimonials" 
-                onClick={(e) => {
-                  e.preventDefault();
-                  document.getElementById('testimonials')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }}
-                className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link font-medium"
-              >
+              <a href="#testimonials" onClick={e => {
+              e.preventDefault();
+              document.getElementById('testimonials')?.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+              });
+            }} className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link font-medium">
                 Reviews
               </a>
               <a href="/blog" className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link font-medium">
@@ -627,7 +619,9 @@ const Landing = () => {
                     <div className="flex items-center justify-between pb-2">
                       <span className="text-foreground">Smarter</span>
                       <div className="flex flex-col gap-2">
-                        <Badge className="inline-flex items-center gap-2 bg-primary/10 text-primary border border-primary/20 px-4 py-2 text-sm font-semibold backdrop-blur-sm hover-scale whitespace-nowrap" style={{ wordSpacing: '0.3em' }}>
+                        <Badge className="inline-flex items-center gap-2 bg-primary/10 text-primary border border-primary/20 px-4 py-2 text-sm font-semibold backdrop-blur-sm hover-scale whitespace-nowrap" style={{
+                        wordSpacing: '0.3em'
+                      }}>
                           <Sparkles className="h-4 w-4 animate-pulse" />
                           <span className="font-display">Mathematical Rule-Based</span>
                           <span className="ml-2 px-2.5 py-0.5 bg-primary/20 rounded-full text-xs">Accurate</span>
@@ -649,9 +643,7 @@ const Landing = () => {
               
               <p className="text-xl text-muted-foreground max-w-xl animate-fade-in leading-relaxed" style={{
               animationDelay: '400ms'
-            }}>
-                Gain total visibility into your Amazon payouts, upcoming expenses, and expected deposits. Auren's forecasting engine helps sellers plan ahead, avoid cash gaps, and make data-driven growth decisions.
-              </p>
+            }}>Auren forecasts 90-day precise Amazon payout forecast based on your amazon data, tracks every purchase order, recurring expense, credit card payment, and additional income to provide you your cashflow for the next 3 months.</p>
               
               <p className="text-base text-muted-foreground/90 max-w-xl animate-fade-in leading-relaxed" style={{
               animationDelay: '500ms'
@@ -715,8 +707,7 @@ const Landing = () => {
               </div>
 
               {/* Live Forecast Stats - Only show when logged in with forecasts enabled */}
-              {forecastStats && (
-                <div className="mt-6 p-4 rounded-xl bg-primary/5 border border-primary/20 animate-fade-in">
+              {forecastStats && <div className="mt-6 p-4 rounded-xl bg-primary/5 border border-primary/20 animate-fade-in">
                   <div className="text-sm font-semibold text-primary mb-3 flex items-center gap-2">
                     <TrendingUp className="h-4 w-4" />
                     <span>Your Active Forecasts</span>
@@ -735,8 +726,7 @@ const Landing = () => {
                       <div className="text-xs text-muted-foreground mt-1">Forecasts</div>
                     </div>
                   </div>
-                </div>
-              )}
+                </div>}
             </div>
 
             {/* Right Video Preview */}
@@ -750,17 +740,8 @@ const Landing = () => {
                 </div>
                 
                 {/* Amazon Partner Badge - Bottom Right Corner */}
-                <a 
-                  href="https://sellercentral.amazon.com/selling-partner-appstore/dp/amzn1.sp.solution.da3e84d1-5ad4-4667-941b-e2727cdfd92c"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="absolute bottom-3 right-3 transition-all duration-300 hover:scale-105 hover:shadow-lg z-10"
-                >
-                  <img 
-                    src={amazonPartnerBadge} 
-                    alt="Amazon Selling Partner Software Partner" 
-                    className="h-24 w-auto opacity-80 hover:opacity-100 transition-opacity"
-                  />
+                <a href="https://sellercentral.amazon.com/selling-partner-appstore/dp/amzn1.sp.solution.da3e84d1-5ad4-4667-941b-e2727cdfd92c" target="_blank" rel="noopener noreferrer" className="absolute bottom-3 right-3 transition-all duration-300 hover:scale-105 hover:shadow-lg z-10">
+                  <img src={amazonPartnerBadge} alt="Amazon Selling Partner Software Partner" className="h-24 w-auto opacity-80 hover:opacity-100 transition-opacity" />
                 </a>
                 
                 <div className="grid grid-cols-1 gap-3">
@@ -810,31 +791,20 @@ const Landing = () => {
                 
                 {/* Video card */}
                 <div className="relative rounded-2xl border-2 border-primary/20 bg-card/80 backdrop-blur-xl shadow-2xl overflow-hidden group">
-                  <video 
-                    id="demo-video"
-                    src="/Budget_Planning_and_Spending_Projections.mp4" 
-                    className="w-full h-auto"
-                    title="Dashboard Demo Video"
-                    controls
-                    muted
-                    loop
-                    onLoadedMetadata={(e) => { e.currentTarget.playbackRate = 1.5; }}
-                    onPlay={(e) => {
-                      const playBtn = e.currentTarget.parentElement?.querySelector('.play-overlay');
-                      if (playBtn) playBtn.classList.add('hidden');
-                    }}
-                  />
+                  <video id="demo-video" src="/Budget_Planning_and_Spending_Projections.mp4" className="w-full h-auto" title="Dashboard Demo Video" controls muted loop onLoadedMetadata={e => {
+                  e.currentTarget.playbackRate = 1.5;
+                }} onPlay={e => {
+                  const playBtn = e.currentTarget.parentElement?.querySelector('.play-overlay');
+                  if (playBtn) playBtn.classList.add('hidden');
+                }} />
                   
                   {/* Large Play Button Overlay */}
-                  <div 
-                    className="play-overlay absolute inset-0 flex items-center justify-center bg-black/30 backdrop-blur-sm cursor-pointer transition-opacity hover:bg-black/40"
-                    onClick={() => {
-                      const video = document.getElementById('demo-video') as HTMLVideoElement;
-                      if (video) {
-                        video.play();
-                      }
-                    }}
-                  >
+                  <div className="play-overlay absolute inset-0 flex items-center justify-center bg-black/30 backdrop-blur-sm cursor-pointer transition-opacity hover:bg-black/40" onClick={() => {
+                  const video = document.getElementById('demo-video') as HTMLVideoElement;
+                  if (video) {
+                    video.play();
+                  }
+                }}>
                     <div className="w-24 h-24 rounded-full bg-primary/90 flex items-center justify-center shadow-2xl hover:scale-110 transition-transform">
                       <div className="w-0 h-0 border-t-[16px] border-t-transparent border-l-[28px] border-l-white border-b-[16px] border-b-transparent ml-2" />
                     </div>
@@ -1472,12 +1442,7 @@ const Landing = () => {
 
           {/* Bottom CTA */}
           <div className="text-center mt-12">
-            <Button 
-              size="lg" 
-              className="bg-gradient-primary text-white px-8 py-6 text-lg font-semibold hover:shadow-xl transition-all"
-              onClick={() => handleStartTrial(pricingPlans[1].priceId)}
-              disabled={isLoading}
-            >
+            <Button size="lg" className="bg-gradient-primary text-white px-8 py-6 text-lg font-semibold hover:shadow-xl transition-all" onClick={() => handleStartTrial(pricingPlans[1].priceId)} disabled={isLoading}>
               Start Using These Features Today - Free Trial
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
@@ -1611,11 +1576,9 @@ const Landing = () => {
                             <span className="text-3xl font-bold">{isYearly ? plan.yearlyPrice : plan.price}</span>
                             <span className="text-muted-foreground text-xs">/month</span>
                           </div>
-                          {isYearly && plan.savings && (
-                            <p className="text-xs text-muted-foreground">
+                          {isYearly && plan.savings && <p className="text-xs text-muted-foreground">
                               Billed annually at {plan.yearlyPrice === "$24" ? "$290" : plan.yearlyPrice === "$49" ? "$590" : plan.yearlyPrice === "$74" ? "$890" : ""}/yr
-                            </p>
-                          )}
+                            </p>}
                           {isYearly && plan.savings && <Badge variant="secondary" className="text-xs py-0.5 px-2">
                               Save {plan.savings}/year
                             </Badge>}
