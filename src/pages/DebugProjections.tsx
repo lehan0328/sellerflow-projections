@@ -212,27 +212,30 @@ const DebugProjections = () => {
     return calculateChartBalances(allCalendarEvents, currentBalance, 91, excludeToday);
   }, [allCalendarEvents, currentBalance, excludeToday]);
 
-  // Create a definitive today date
-  const todayDate = useMemo(() => {
-    const now = new Date();
-    now.setHours(0, 0, 0, 0);
-    return format(now, 'yyyy-MM-dd');
-  }, []);
-
-  // Filter all data sources to start from today
+  // Shift all dates forward by 1 day
   const dailyBalances = useMemo(() => {
     const all = data?.calculation?.daily_balances || [];
-    return all.filter(day => day.date >= todayDate);
-  }, [data, todayDate]);
+    return all.map(day => ({
+      ...day,
+      date: format(addDays(new Date(day.date), 1), 'yyyy-MM-dd')
+    }));
+  }, [data]);
 
   const filteredChartBalances = useMemo(() => {
-    return chartBalances.filter(cb => cb.date >= todayDate);
-  }, [chartBalances, todayDate]);
+    return chartBalances.map(cb => ({
+      ...cb,
+      date: format(addDays(new Date(cb.date), 1), 'yyyy-MM-dd')
+    }));
+  }, [chartBalances]);
 
   const buyingOpportunities = useMemo(() => {
     const all = data?.calculation?.all_buying_opportunities || [];
-    return all.filter(opp => opp.date >= todayDate);
-  }, [data, todayDate]);
+    return all.map(opp => ({
+      ...opp,
+      date: format(addDays(new Date(opp.date), 1), 'yyyy-MM-dd'),
+      available_date: opp.available_date ? format(addDays(new Date(opp.available_date), 1), 'yyyy-MM-dd') : undefined
+    }));
+  }, [data]);
 
   const exportToCSV = () => {
     if (!data?.calculation?.daily_balances) return;
