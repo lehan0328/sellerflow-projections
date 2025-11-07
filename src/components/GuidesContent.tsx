@@ -58,7 +58,10 @@ export const GuidesContent = () => {
           title: "Marking partial payments",
           path: "/guides/partial-payment"
         },
-        "Safe Spending Calculator",
+        {
+          title: "early payment received",
+          path: "/guides/early-payment-received"
+        },
         "90-Day Forecast"
       ]
     },

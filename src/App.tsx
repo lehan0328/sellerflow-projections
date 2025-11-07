@@ -32,6 +32,7 @@ import GuidesAddRecurringIncome from "./pages/GuidesAddRecurringIncome";
 import GuidesAddRecurringExpense from "./pages/GuidesAddRecurringExpense";
 import GuidesEditingTransactions from "./pages/GuidesEditingTransactions";
 import GuidesPartialPayment from "./pages/GuidesPartialPayment";
+import GuidesEarlyPaymentReceived from "./pages/GuidesEarlyPaymentReceived";
 import GuidesSearchByAmount from "./pages/GuidesSearchByAmount";
 import GuidesSearchByDate from "./pages/GuidesSearchByDate";
 import GuidesPayoutForecasting from "./pages/GuidesPayoutForecasting";
@@ -132,6 +133,11 @@ const App = () => (
           <Route path="/guides/partial-payment" element={
             <ProtectedRoute>
               <GuidesPartialPayment />
+            </ProtectedRoute>
+          } />
+          <Route path="/guides/early-payment-received" element={
+            <ProtectedRoute>
+              <GuidesEarlyPaymentReceived />
             </ProtectedRoute>
           } />
             <Route path="/guides/payout-forecasting" element={
