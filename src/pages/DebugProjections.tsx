@@ -255,13 +255,27 @@ const DebugProjections = () => {
     );
   }
 
-  const today = format(new Date(), 'yyyy-MM-dd');
-  const allDailyBalances = data.calculation?.daily_balances || [];
-  // Filter to start from today (Nov 7)
-  const dailyBalances = allDailyBalances.filter(day => day.date >= today);
-  const buyingOpportunities = data.calculation?.all_buying_opportunities || [];
-  // Filter chart balances to start from today as well
-  const filteredChartBalances = chartBalances.filter(cb => cb.date >= today);
+  // Create a definitive today date
+  const todayDate = useMemo(() => {
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    return format(now, 'yyyy-MM-dd');
+  }, []);
+
+  // Filter all data sources to start from today
+  const dailyBalances = useMemo(() => {
+    const all = data.calculation?.daily_balances || [];
+    return all.filter(day => day.date >= todayDate);
+  }, [data, todayDate]);
+
+  const filteredChartBalances = useMemo(() => {
+    return chartBalances.filter(cb => cb.date >= todayDate);
+  }, [chartBalances, todayDate]);
+
+  const buyingOpportunities = useMemo(() => {
+    const all = data.calculation?.all_buying_opportunities || [];
+    return all.filter(opp => opp.date >= todayDate);
+  }, [data, todayDate]);
   const filteredBalances = showNegativeOnly 
     ? dailyBalances.filter(day => day.balance < 0)
     : dailyBalances;
