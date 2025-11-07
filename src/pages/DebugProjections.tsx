@@ -103,7 +103,7 @@ const DebugProjections = () => {
       }
     });
 
-    // Add recurring expenses
+    // Add recurring expenses and income
     recurringExpenses.forEach(expense => {
       const rangeEnd = addDays(today, 90);
       const recurringDates = generateRecurringDates(
@@ -114,9 +114,9 @@ const DebugProjections = () => {
       recurringDates.forEach((date, index) => {
         events.push({
           id: `recurring-${expense.id}-${index}`,
-          type: 'outflow',
+          type: (expense as any).type === 'income' ? 'inflow' : 'outflow',
           amount: Number(expense.amount),
-          description: expense.name || 'Recurring Expense',
+          description: expense.name || (expense as any).type === 'income' ? 'Recurring Income' : 'Recurring Expense',
           date: date,
         });
       });
