@@ -17,9 +17,11 @@ import DailyBalanceTable from '@/components/debug/DailyBalanceTable';
 import BuyingOpportunitiesTable from '@/components/debug/BuyingOpportunitiesTable';
 import { calculateChartBalances } from '@/lib/chartDataProcessor';
 import { generateRecurringDates } from '@/lib/recurringDates';
+import { useExcludeToday } from '@/contexts/ExcludeTodayContext';
 
 const DebugProjections = () => {
   const [showNegativeOnly, setShowNegativeOnly] = useState(false);
+  const { excludeToday } = useExcludeToday();
   
   // Balance type preference (matches Dashboard)
   const [useAvailableBalance, setUseAvailableBalance] = useState(() => {
@@ -181,8 +183,8 @@ const DebugProjections = () => {
 
   // Calculate chart balances using the same logic as the Dashboard chart
   const chartBalances = useMemo(() => {
-    return calculateChartBalances(allCalendarEvents, currentBalance, 91);
-  }, [allCalendarEvents, currentBalance]);
+    return calculateChartBalances(allCalendarEvents, currentBalance, 91, excludeToday);
+  }, [allCalendarEvents, currentBalance, excludeToday]);
 
   const exportToCSV = () => {
     if (!data?.calculation?.daily_balances) return;

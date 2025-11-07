@@ -20,7 +20,8 @@ export interface ChartDailyBalance {
 export const calculateChartBalances = (
   events: CashFlowEvent[],
   startingBalance: number,
-  daysToProject: number = 91
+  daysToProject: number = 91,
+  excludeToday: boolean = false
 ): ChartDailyBalance[] => {
   const dailyBalances: ChartDailyBalance[] = [];
   const today = startOfDay(new Date());
@@ -49,14 +50,25 @@ export const calculateChartBalances = (
       .reduce((sum, e) => sum + e.amount, 0);
     
     const netChange = dailyInflow - dailyOutflow;
-    runningBalance += netChange;
     
-    dailyBalances.push({
-      date: dateStr,
-      starting_balance: startBalance,
-      net_change: netChange,
-      projected_balance: runningBalance,
-    });
+    // Special handling for today (day 0) to match CashFlowCalendar logic
+    if (i === 0 && excludeToday) {
+      // If excluding today, don't add today's net change to running balance
+      dailyBalances.push({
+        date: dateStr,
+        starting_balance: startBalance,
+        net_change: netChange,
+        projected_balance: startBalance, // Keep starting balance for today
+      });
+    } else {
+      runningBalance += netChange;
+      dailyBalances.push({
+        date: dateStr,
+        starting_balance: startBalance,
+        net_change: netChange,
+        projected_balance: runningBalance,
+      });
+    }
   }
 
   return dailyBalances;
