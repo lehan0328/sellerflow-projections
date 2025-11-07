@@ -1154,7 +1154,7 @@ const Landing = () => {
               </div>
               <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-blue-500/10 border border-blue-500/20">
                 <Sparkles className="h-4 w-4 text-blue-600" />
-                <span className="text-sm font-medium text-blue-700">AI-powered forecasting</span>
+                <span className="text-sm font-medium text-blue-700">Mathematical forecasting</span>
               </div>
               <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20">
                 <Shield className="h-4 w-4 text-primary" />
