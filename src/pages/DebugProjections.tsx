@@ -15,6 +15,7 @@ import { Download, Bug } from 'lucide-react';
 import { format, addDays, startOfDay, isBefore } from 'date-fns';
 import DailyBalanceTable from '@/components/debug/DailyBalanceTable';
 import BuyingOpportunitiesTable from '@/components/debug/BuyingOpportunitiesTable';
+import { calculateChartBalances } from '@/lib/chartDataProcessor';
 import { generateRecurringDates } from '@/lib/recurringDates';
 
 const DebugProjections = () => {
@@ -177,6 +178,11 @@ const DebugProjections = () => {
 
     return events;
   }, [vendorTransactions, incomeItems, recurringExpenses, creditCards, amazonPayouts]);
+
+  // Calculate chart balances using the same logic as the Dashboard chart
+  const chartBalances = useMemo(() => {
+    return calculateChartBalances(allCalendarEvents, currentBalance, 91);
+  }, [allCalendarEvents, currentBalance]);
 
   const exportToCSV = () => {
     if (!data?.calculation?.daily_balances) return;
@@ -347,7 +353,7 @@ const DebugProjections = () => {
         <CardContent>
           <DailyBalanceTable 
             dailyBalances={filteredBalances}
-            chartBalances={data.calculation.daily_balances}
+            chartBalances={chartBalances}
             chartEvents={allCalendarEvents}
             reserveAmount={reserveAmount || 0}
             currentBalance={currentBalance}
