@@ -540,36 +540,6 @@ const FlexReport = () => {
                 </button>
               </div>
 
-              {/* Upcoming Income */}
-              <div className="group bg-gradient-to-br from-emerald-50 via-emerald-100 to-emerald-50 rounded-2xl p-4 border-2 border-emerald-200/60 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm relative">
-                <div className="absolute top-3 right-3 flex items-center gap-1 px-2.5 py-1 bg-emerald-50 border-2 border-emerald-600 rounded-full">
-                  <div className="w-1 h-1 bg-emerald-600 rounded-full"></div>
-                  <span className="text-[10px] font-black text-emerald-700 uppercase tracking-wider">Verified</span>
-                </div>
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="p-2 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl shadow-md group-hover:scale-110 transition-transform duration-300">
-                    <TrendingUp className="w-4 h-4 text-white" />
-                  </div>
-              <p className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Received Income (30d)</p>
-            </div>
-            <p className={`text-2xl font-black text-emerald-700 drop-shadow-sm transition-all duration-300 ${!visibility.upcomingIncome ? 'blur-lg' : ''}`}>{formatCurrency(receivedIncome)}</p>
-                {showPercentageChange && (
-                  <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg mt-1 ${percentageChanges.upcomingIncome >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                    <TrendingUp className={`w-2.5 h-2.5 ${percentageChanges.upcomingIncome >= 0 ? '' : 'rotate-180'}`} />
-                    <span className="text-[10px] font-bold">{Math.abs(percentageChanges.upcomingIncome)}%</span>
-                  </div>
-                )}
-                <button
-                  onClick={() => toggleVisibility('upcomingIncome')}
-                  className="absolute bottom-4 right-4 p-2 rounded-lg hover:bg-emerald-100/50 transition-colors z-10"
-                >
-                  {visibility.upcomingIncome ? (
-                    <Eye className="w-4 h-4 text-blue-600" />
-                  ) : (
-                    <EyeOff className="w-4 h-4 text-slate-400" />
-                  )}
-                </button>
-              </div>
 
               {/* Purchase Orders */}
               <div className="group bg-gradient-to-br from-orange-50 via-orange-100 to-orange-50 rounded-2xl p-4 border-2 border-orange-200/60 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm relative">
@@ -602,36 +572,6 @@ const FlexReport = () => {
                 </button>
               </div>
 
-              {/* Active Vendors */}
-              <div className="group bg-gradient-to-br from-indigo-50 via-indigo-100 to-indigo-50 rounded-2xl p-4 border-2 border-indigo-200/60 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm relative">
-                <div className="absolute top-3 right-3 flex items-center gap-1 px-2.5 py-1 bg-indigo-50 border-2 border-indigo-600 rounded-full">
-                  <div className="w-1 h-1 bg-indigo-600 rounded-full"></div>
-                  <span className="text-[10px] font-black text-indigo-700 uppercase tracking-wider">Verified</span>
-                </div>
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="p-2 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl shadow-md group-hover:scale-110 transition-transform duration-300">
-                    <Users className="w-4 h-4 text-white" />
-                  </div>
-                  <p className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Total Vendors</p>
-                </div>
-                <p className={`text-2xl font-black text-indigo-700 drop-shadow-sm transition-all duration-300 ${!visibility.vendorCount ? 'blur-lg' : ''}`}>{totalVendorCount}</p>
-                {showPercentageChange && (
-                  <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg mt-1 ${percentageChanges.vendorCount >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                    <TrendingUp className={`w-2.5 h-2.5 ${percentageChanges.vendorCount >= 0 ? '' : 'rotate-180'}`} />
-                    <span className="text-[10px] font-bold">{Math.abs(percentageChanges.vendorCount)}%</span>
-                  </div>
-                )}
-                <button
-                  onClick={() => toggleVisibility('vendorCount')}
-                  className="absolute bottom-4 right-4 p-2 rounded-lg hover:bg-indigo-100/50 transition-colors z-10"
-                >
-                  {visibility.vendorCount ? (
-                    <Eye className="w-4 h-4 text-blue-600" />
-                  ) : (
-                    <EyeOff className="w-4 h-4 text-slate-400" />
-                  )}
-                </button>
-              </div>
 
               {/* Amazon Revenue (30d) */}
               <div className="group bg-gradient-to-br from-violet-50 via-purple-100 to-violet-50 rounded-2xl p-4 border-2 border-purple-300/60 shadow-lg hover:shadow-2xl transition-all duration-300 backdrop-blur-sm relative ring-2 ring-purple-200/30">
