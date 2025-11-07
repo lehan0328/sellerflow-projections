@@ -314,20 +314,20 @@ export const RecurringExpensesOverview = () => {
                       <Badge variant={item.type === 'income' ? 'default' : 'destructive'} className="text-xs">
                         {item.type}
                       </Badge>
+                      <Badge variant="outline" className="text-xs">
+                        {item.frequency}
+                      </Badge>
                     </div>
                     {item.transaction_name && (
                       <p className="text-xs text-muted-foreground mt-0.5">{item.transaction_name}</p>
                     )}
-                    <div className="flex items-center gap-2 mt-1">
-                      <Badge variant="outline" className="text-xs">
-                        {item.frequency}
-                      </Badge>
-                      {item.category && (
+                    {item.category && (
+                      <div className="flex items-center gap-2 mt-1">
                         <span className="text-xs text-muted-foreground">
                           {item.category}
                         </span>
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="text-right">
