@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Download, Bug } from 'lucide-react';
-import { format, addDays, startOfDay, isBefore } from 'date-fns';
+import { format, addDays, startOfDay, isBefore, parseISO } from 'date-fns';
 import DailyBalanceTable from '@/components/debug/DailyBalanceTable';
 import BuyingOpportunitiesTable from '@/components/debug/BuyingOpportunitiesTable';
 import { calculateChartBalances } from '@/lib/chartDataProcessor';
@@ -217,14 +217,14 @@ const DebugProjections = () => {
     const all = data?.calculation?.daily_balances || [];
     return all.map(day => ({
       ...day,
-      date: format(addDays(new Date(day.date), 1), 'yyyy-MM-dd')
+      date: format(addDays(parseISO(day.date), 1), 'yyyy-MM-dd')
     }));
   }, [data]);
 
   const filteredChartBalances = useMemo(() => {
     return chartBalances.map(cb => ({
       ...cb,
-      date: format(addDays(new Date(cb.date), 1), 'yyyy-MM-dd')
+      date: format(addDays(parseISO(cb.date), 1), 'yyyy-MM-dd')
     }));
   }, [chartBalances]);
 
@@ -232,8 +232,8 @@ const DebugProjections = () => {
     const all = data?.calculation?.all_buying_opportunities || [];
     return all.map(opp => ({
       ...opp,
-      date: format(addDays(new Date(opp.date), 1), 'yyyy-MM-dd'),
-      available_date: opp.available_date ? format(addDays(new Date(opp.available_date), 1), 'yyyy-MM-dd') : undefined
+      date: format(addDays(parseISO(opp.date), 1), 'yyyy-MM-dd'),
+      available_date: opp.available_date ? format(addDays(parseISO(opp.available_date), 1), 'yyyy-MM-dd') : undefined
     }));
   }, [data]);
 
