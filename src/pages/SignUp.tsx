@@ -351,7 +351,7 @@ export const SignUp = () => {
                   className="w-full h-12 text-base font-medium bg-gradient-primary shadow-lg hover:shadow-xl transition-all"
                   disabled={loading}
                 >
-                  {loading ? 'Creating Account...' : 'Create Account'}
+                  {loading ? 'Starting Trial...' : 'Start 7 Day Trial - No Card Required'}
                 </Button>
               </form>
 
