@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Building2, Calendar, DollarSign, AlertTriangle, Edit, CreditCard, Search, ArrowUpDown, Filter, Trash2, Link2, ExternalLink, Banknote, ChevronRight, ChevronDown } from "lucide-react";
+import { Building2, Calendar, DollarSign, AlertTriangle, Edit, CreditCard, Search, ArrowUpDown, Filter, Trash2, Link2, ExternalLink, Banknote, ChevronRight, ChevronDown, Landmark } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
@@ -622,15 +622,17 @@ export const VendorsOverview = ({
                     <TableCell className="font-medium">{tx.vendorName}</TableCell>
                     <TableCell>{tx.description || 'N/A'}</TableCell>
                     <TableCell>
-                      <div className="flex flex-col items-start space-y-1">
+                      <div className="flex items-center gap-2">
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              {tx.creditCardId ? <Badge variant="outline" className="text-xs px-1.5 py-0.5 border-primary bg-primary/10">
-                                  <CreditCard className="h-3 w-3 text-primary" />
-                                </Badge> : <Badge variant="outline" className="text-xs px-1.5 py-0.5 border-green-600 bg-green-600/10">
-                                  <Banknote className="h-3 w-3 text-green-600" />
-                                </Badge>}
+                              <div className="p-2 bg-muted rounded-full">
+                                {tx.creditCardId ? (
+                                  <CreditCard className="h-4 w-4" />
+                                ) : (
+                                  <Landmark className="h-4 w-4" />
+                                )}
+                              </div>
                             </TooltipTrigger>
                             <TooltipContent>
                               <p>{tx.creditCardId ? 'Credit card purchase' : 'Cash purchase'}</p>
