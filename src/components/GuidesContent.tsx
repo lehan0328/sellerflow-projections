@@ -1,9 +1,7 @@
-import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { 
-  Search, 
+  Search,
   FileText,
   ShoppingCart,
   Users,
@@ -14,7 +12,6 @@ import {
 import { Link } from "react-router-dom";
 
 export const GuidesContent = () => {
-  const [searchTerm, setSearchTerm] = useState("");
 
   type Guide = string | { title: string; path: string };
   
@@ -97,30 +94,9 @@ export const GuidesContent = () => {
     }
   ];
 
-  const filteredSections = guideSections.filter(section =>
-    section.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    section.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    section.guides.some(guide => {
-      const guideTitle = typeof guide === 'string' ? guide : guide.title;
-      return guideTitle.toLowerCase().includes(searchTerm.toLowerCase());
-    })
-  );
 
   return (
     <div className="space-y-8">
-      {/* Search Bar */}
-      <div className="mb-8">
-        <div className="relative max-w-md">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search guides..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-      </div>
-
       {/* Hero Section */}
       <div className="space-y-4">
         <h2 className="text-3xl font-bold">
@@ -257,7 +233,7 @@ export const GuidesContent = () => {
         <h3 className="text-2xl font-bold">Browse by Category</h3>
         
         <div className="grid gap-6 md:grid-cols-2">
-          {filteredSections.map((section, index) => (
+          {guideSections.map((section, index) => (
             <Card 
               key={index} 
               className="shadow-card hover:shadow-elevated transition-all duration-300 hover-scale animate-fade-in" 
@@ -299,16 +275,6 @@ export const GuidesContent = () => {
           ))}
         </div>
       </div>
-
-      {searchTerm && filteredSections.length === 0 && (
-        <div className="text-center py-12">
-          <Search className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-          <h3 className="text-lg font-medium mb-2">No results found</h3>
-          <p className="text-muted-foreground mb-4">
-            Try searching with different keywords or browse our categories above.
-          </p>
-        </div>
-      )}
     </div>
   );
 };
