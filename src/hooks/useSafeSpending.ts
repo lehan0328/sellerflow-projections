@@ -626,7 +626,7 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
             }
             
             allBuyingOpportunities.push({
-              date: currentDay.date,
+              date: nextDay.date, // Use nextDay when money actually arrives, not the valley bottom
               balance: opportunityAmount, // This is what can safely be spent (low point balance - reserve)
               available_date: earliestAvailableDate
             });
