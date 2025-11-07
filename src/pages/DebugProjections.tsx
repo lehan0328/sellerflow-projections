@@ -112,20 +112,35 @@ const DebugProjections = () => {
       });
     });
 
-    // Add Amazon payouts
+    // Add Amazon payouts (matches Dashboard logic)
     amazonPayouts.forEach(payout => {
-      const payoutDate = new Date(payout.payout_date);
-      if (!isBefore(payoutDate, today)) {
-        // Use payout_date as display date
-        const displayDate = payoutDate;
-        // Add +1 day for balance impact (bank transfer time)
-        const balanceImpactDate = addDays(payoutDate, 1);
+      let displayDate: Date;
+      let balanceImpactDate: Date;
+
+      // Different logic based on payout status
+      if (payout.status === 'confirmed' || payout.status === 'estimated') {
+        // For confirmed/estimated: use settlement_end_date + 1 day
+        const rawData = payout.raw_settlement_data as any;
+        const settlementEndDate = rawData?.SettlementEndDate 
+          ? new Date(rawData.SettlementEndDate.replace(' UTC', 'Z'))
+          : new Date(payout.payout_date);
         
+        // Settlement end date + 1 day is both display and balance impact
+        displayDate = addDays(settlementEndDate, 1);
+        balanceImpactDate = displayDate; // No additional day
+      } else {
+        // For forecasted: use payout_date as display, +1 for balance impact
+        displayDate = new Date(payout.payout_date);
+        balanceImpactDate = addDays(displayDate, 1);
+      }
+
+      // Only include future payouts
+      if (!isBefore(displayDate, today)) {
         events.push({
           id: `amazon-${payout.id}`,
           type: 'inflow',
           amount: Number(payout.total_amount),
-          description: `Amazon Payout - ${payout.marketplace_name || 'Amazon'}`,
+          description: `Amazon Payout - ${payout.marketplace_name || 'Amazon'} (${payout.status})`,
           date: displayDate,
           balanceImpactDate: balanceImpactDate,
         });
