@@ -406,6 +406,7 @@ export const PurchaseOrderForm = ({
 
         // Save metadata
         const {
+          data: docMetadata,
           error: metadataError
         } = await supabase.from('documents_metadata').insert({
           user_id: user.id,
@@ -419,8 +420,34 @@ export const PurchaseOrderForm = ({
           amount: parseFloat(formData.amount),
           document_date: formData.poDate.toISOString().split('T')[0],
           document_type: formData.documentType || 'purchase_order'
-        });
+        }).select().single();
+        
         if (metadataError) throw metadataError;
+
+        // Save line items if any exist
+        if (docMetadata && lineItems.length > 0) {
+          const lineItemsToInsert = lineItems.map(item => ({
+            user_id: user.id,
+            account_id: profile.account_id,
+            document_id: docMetadata.id,
+            vendor_id: formData.vendorId || null,
+            sku: item.sku || null,
+            product_name: item.productName,
+            quantity: item.quantity,
+            unit_price: item.unitPrice
+          }));
+
+          const { error: lineItemsError } = await supabase
+            .from('purchase_order_line_items')
+            .insert(lineItemsToInsert);
+          
+          if (lineItemsError) {
+            console.error('Error saving line items:', lineItemsError);
+            toast.error('Document saved but failed to save line items');
+          } else {
+            console.log(`Saved ${lineItems.length} line items for document:`, safeFileName);
+          }
+        }
         console.log('Document saved to storage:', safeFileName);
       } catch (error) {
         console.error('Error saving document:', error);

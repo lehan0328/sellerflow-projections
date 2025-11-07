@@ -87,7 +87,7 @@ export const VendorsOverview = ({
       const { data, error } = await supabase
         .from('purchase_order_line_items')
         .select('*')
-        .eq('transaction_id', transactionId)
+        .eq('vendor_id', transactionId) // Using vendor_id to match transaction's vendor
         .order('created_at', { ascending: true });
 
       if (error) throw error;
@@ -114,6 +114,7 @@ export const VendorsOverview = ({
         .from('transactions')
         .select(`
           id,
+          vendor_id,
           description,
           amount,
           due_date,
@@ -144,7 +145,7 @@ export const VendorsOverview = ({
         const { data: otherLineItems } = await supabase
           .from('purchase_order_line_items')
           .select('*')
-          .eq('transaction_id', transaction.id);
+          .eq('vendor_id', transaction.vendor_id); // Match by vendor instead
 
         if (!otherLineItems || otherLineItems.length === 0) continue;
 
