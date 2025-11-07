@@ -260,6 +260,8 @@ const DebugProjections = () => {
   // Filter to start from today (Nov 7)
   const dailyBalances = allDailyBalances.filter(day => day.date >= today);
   const buyingOpportunities = data.calculation?.all_buying_opportunities || [];
+  // Filter chart balances to start from today as well
+  const filteredChartBalances = chartBalances.filter(cb => cb.date >= today);
   const filteredBalances = showNegativeOnly 
     ? dailyBalances.filter(day => day.balance < 0)
     : dailyBalances;
@@ -384,7 +386,7 @@ const DebugProjections = () => {
         <CardContent>
           <DailyBalanceTable 
             dailyBalances={filteredBalances}
-            chartBalances={chartBalances}
+            chartBalances={filteredChartBalances}
             chartEvents={allCalendarEvents}
             reserveAmount={reserveAmount || 0}
             currentBalance={currentBalance}
