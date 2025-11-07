@@ -55,7 +55,7 @@ export const GuidesContent = () => {
           path: "/guides/editing-transactions"
         },
         {
-          title: "Partial Payment",
+          title: "Marking partial payments",
           path: "/guides/partial-payment"
         },
         "Safe Spending Calculator",
