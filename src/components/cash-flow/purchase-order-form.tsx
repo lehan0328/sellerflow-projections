@@ -25,6 +25,7 @@ import { AddCategoryDialog } from "./add-category-dialog";
 import { hasPlanAccess } from "@/lib/planUtils";
 import { UpgradeModal } from "@/components/upgrade-modal";
 import { useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 interface Vendor {
   id: string;
   name: string;
@@ -66,6 +67,7 @@ export const PurchaseOrderForm = ({
   allBuyingOpportunities
 }: PurchaseOrderFormProps) => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { categories, addCategory, refetch: refetchCategories } = useCategories('expense', false);
   const {
     creditCards
@@ -472,6 +474,9 @@ export const PurchaseOrderForm = ({
           }
         }
         console.log('Document saved to storage:', safeFileName);
+        
+        // Invalidate documents cache to refresh Document Storage page
+        queryClient.invalidateQueries({ queryKey: ['documents'] });
       } catch (error) {
         console.error('Error saving document:', error);
         toast.error('Failed to save document to storage');

@@ -103,7 +103,12 @@ export default function DocumentStorage() {
   const { data: documents, isLoading, refetch } = useQuery({
     queryKey: ['documents', profile?.account_id, includeUntracked],
     queryFn: async () => {
-      if (!profile?.account_id) return [];
+      if (!profile?.account_id) {
+        console.log('[DocumentStorage] No account_id found in profile');
+        return [];
+      }
+      
+      console.log('[DocumentStorage] Fetching documents for account:', profile.account_id);
       
       // Fetch all metadata first
       const { data: metadata, error: metadataError } = await supabase
@@ -121,7 +126,12 @@ export default function DocumentStorage() {
         `)
         .eq('account_id', profile.account_id);
 
-      if (metadataError) throw metadataError;
+      if (metadataError) {
+        console.error('[DocumentStorage] Error fetching metadata:', metadataError);
+        throw metadataError;
+      }
+      
+      console.log('[DocumentStorage] Fetched metadata:', metadata?.length || 0, 'documents');
 
       // Always fetch storage files to verify existence
       let files: any[] = [];
