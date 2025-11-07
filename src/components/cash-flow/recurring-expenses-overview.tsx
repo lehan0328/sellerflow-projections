@@ -1,8 +1,9 @@
 import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Repeat, Pencil, Filter, Trash2, Search, ArrowUpDown } from "lucide-react";
+import { Plus, Repeat, Pencil, Filter, Trash2, Search, ArrowUpDown, CreditCard, Banknote, Landmark } from "lucide-react";
 import { useRecurringExpenses, RecurringExpense } from "@/hooks/useRecurringExpenses";
+import { useCreditCards } from "@/hooks/useCreditCards";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -13,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { format, addMonths, startOfMonth, endOfMonth } from "date-fns";
 import { generateRecurringDates } from "@/lib/recurringDates";
 import { useNavigate } from "react-router-dom";
@@ -20,6 +22,7 @@ import { useNavigate } from "react-router-dom";
 export const RecurringExpensesOverview = () => {
   const navigate = useNavigate();
   const { recurringExpenses, isLoading, updateRecurringExpense, deleteRecurringExpense } = useRecurringExpenses();
+  const { creditCards } = useCreditCards();
   const [filterType, setFilterType] = useState<'all' | 'income' | 'expense'>('all');
   const [showInactive, setShowInactive] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -147,6 +150,24 @@ export const RecurringExpensesOverview = () => {
       setIsDeleteDialogOpen(false);
       setDeletingExpense(null);
     }
+  };
+
+  const getPaymentMethodDisplay = (expense: RecurringExpense) => {
+    if (!expense.credit_card_id) {
+      return { icon: Banknote, label: 'Cash/Bank', details: null };
+    }
+    
+    const card = creditCards.find(c => c.id === expense.credit_card_id);
+    if (card) {
+      const last4 = card.masked_account_number?.slice(-4) || '****';
+      return { 
+        icon: CreditCard, 
+        label: card.account_name || 'Credit Card',
+        details: `••${last4}`
+      };
+    }
+    
+    return { icon: CreditCard, label: 'Credit Card', details: null };
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -317,6 +338,24 @@ export const RecurringExpensesOverview = () => {
                       }`}>
                         ${Number(item.amount).toLocaleString()}
                       </p>
+                      {item.type === 'expense' && (() => {
+                        const paymentMethod = getPaymentMethodDisplay(item);
+                        return (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
+                                  <paymentMethod.icon className="h-3 w-3" />
+                                  {paymentMethod.details && <span>{paymentMethod.details}</span>}
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>{paymentMethod.label}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        );
+                      })()}
                     </div>
                     <Button
                       variant="ghost"
