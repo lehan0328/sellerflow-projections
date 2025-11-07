@@ -16,6 +16,7 @@ import { format, addDays, startOfDay, isBefore, parseISO } from 'date-fns';
 import DailyBalanceTable from '@/components/debug/DailyBalanceTable';
 import BuyingOpportunitiesTable from '@/components/debug/BuyingOpportunitiesTable';
 import { calculateChartBalances } from '@/lib/chartDataProcessor';
+import { calculateCalendarBalances } from '@/lib/calendarBalances';
 import { generateRecurringDates } from '@/lib/recurringDates';
 import { useExcludeToday } from '@/contexts/ExcludeTodayContext';
 
@@ -191,51 +192,26 @@ const DebugProjections = () => {
     return events;
   }, [vendorTransactions, incomeItems, recurringExpenses, creditCards, amazonPayouts]);
 
-  // Calculate chart balances using Dashboard Calendar logic (simple cumulative addition)
+  // Use the exact same calendar calculation as Dashboard
   const chartBalances = useMemo(() => {
-    console.log('📊 [DebugProjections] Calculating chart balances:', {
-      totalEvents: allCalendarEvents.length,
-      currentBalance
-    });
+    const { dailyBalances } = calculateCalendarBalances(currentBalance, allCalendarEvents, 90);
     
-    const today = startOfDay(new Date());
-    const dailyBalances = [];
-    let runningBalance = currentBalance;
-    
-    for (let i = 0; i < 91; i++) {
-      const currentDate = addDays(today, i);
-      const dateStr = format(currentDate, 'yyyy-MM-dd');
-      
-      // Get all events that impact balance on this day
-      const dayEvents = allCalendarEvents.filter(event => {
-        const impactDate = event.balanceImpactDate || event.date;
-        return format(impactDate, 'yyyy-MM-dd') === dateStr;
-      });
-      
-      // Calculate net change for the day
-      const dailyInflow = dayEvents.filter(e => e.type === 'inflow').reduce((sum, e) => sum + e.amount, 0);
-      const dailyOutflow = dayEvents.filter(e => e.type !== 'inflow').reduce((sum, e) => sum + e.amount, 0);
-      const dailyChange = dailyInflow - dailyOutflow;
-      
-      runningBalance += dailyChange;
-      
-      dailyBalances.push({
-        date: dateStr,
-        projected_balance: runningBalance,
-        net_change: dailyChange,
-        starting_balance: i === 0 ? currentBalance : dailyBalances[i - 1].projected_balance
-      });
-    }
-    
-    return dailyBalances;
+    return dailyBalances.map(day => ({
+      date: day.date,
+      projected_balance: day.runningBalance,
+      net_change: day.dailyChange,
+      starting_balance: day.runningBalance - day.dailyChange
+    }));
   }, [allCalendarEvents, currentBalance]);
 
-  // Shift all dates forward by 1 day
+  // Shift all dates forward by 1 day and ensure all required properties
   const dailyBalances = useMemo(() => {
     const all = data?.calculation?.daily_balances || [];
     return all.map(day => ({
-      ...day,
-      date: format(addDays(parseISO(day.date), 1), 'yyyy-MM-dd')
+      date: format(addDays(parseISO(day.date), 1), 'yyyy-MM-dd'),
+      balance: day.balance,
+      net_change: day.net_change || 0,
+      starting_balance: day.starting_balance || day.balance
     }));
   }, [data]);
 
@@ -423,9 +399,7 @@ const DebugProjections = () => {
           <DailyBalanceTable 
             dailyBalances={filteredBalances}
             chartBalances={filteredChartBalances}
-            chartEvents={allCalendarEvents}
             reserveAmount={reserveAmount || 0}
-            currentBalance={currentBalance}
           />
         </CardContent>
       </Card>
