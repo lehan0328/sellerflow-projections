@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Repeat, Pencil, Filter, Trash2, Search, ArrowUpDown, CreditCard, Building2, Landmark } from "lucide-react";
+import { Plus, Repeat, Pencil, Filter, Trash2, Search, ArrowUpDown, CreditCard, Landmark } from "lucide-react";
 import { useRecurringExpenses, RecurringExpense } from "@/hooks/useRecurringExpenses";
 import { useCreditCards } from "@/hooks/useCreditCards";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -154,7 +154,7 @@ export const RecurringExpensesOverview = () => {
 
   const getPaymentMethodDisplay = (expense: RecurringExpense) => {
     if (!expense.credit_card_id) {
-      return { icon: Building2, label: 'Cash/Bank', details: null };
+      return { icon: Landmark, label: 'Cash/Bank', details: null };
     }
     
     const card = creditCards.find(c => c.id === expense.credit_card_id);
