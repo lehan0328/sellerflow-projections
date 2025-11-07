@@ -80,6 +80,7 @@ const DailyBalanceTable = ({ dailyBalances, chartBalances, reserveAmount, curren
           <TableHead>Date</TableHead>
           <TableHead className="text-right">Chart Balance</TableHead>
           <TableHead className="text-right">Buy Opp Balance</TableHead>
+          <TableHead className="text-right">Daily Net</TableHead>
           <TableHead className="text-right">Difference</TableHead>
           <TableHead className="text-center">Transactions</TableHead>
           <TableHead className="text-center">Status</TableHead>
@@ -93,6 +94,7 @@ const DailyBalanceTable = ({ dailyBalances, chartBalances, reserveAmount, curren
             // Find matching chart balance
             const chartBalance = chartBalances.find(cb => cb.date === day.date);
             const chartProjected = chartBalance?.projected_balance || 0;
+            const dailyNet = chartBalance?.net_change || 0;
             const difference = chartProjected - day.balance;
             
             const balanceColor = getBalanceColor(day.balance);
@@ -128,6 +130,9 @@ const DailyBalanceTable = ({ dailyBalances, chartBalances, reserveAmount, curren
                   <TableCell className={`text-right font-mono font-bold ${balanceColor}`}>
                     ${day.balance.toFixed(2)}
                   </TableCell>
+                  <TableCell className={`text-right font-mono font-bold ${dailyNet >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {dailyNet >= 0 ? '+' : ''}${dailyNet.toFixed(2)}
+                  </TableCell>
                   <TableCell className={`text-right font-mono font-bold ${Math.abs(difference) > 10 ? 'text-yellow-600' : 'text-muted-foreground'}`}>
                     {difference >= 0 ? '+' : ''}${difference.toFixed(2)}
                   </TableCell>
@@ -151,7 +156,7 @@ const DailyBalanceTable = ({ dailyBalances, chartBalances, reserveAmount, curren
                 
                 {isExpanded && hasTransactions && (
                   <TableRow>
-                    <TableCell colSpan={7} className="bg-muted/30 p-0">
+                    <TableCell colSpan={8} className="bg-muted/30 p-0">
                       <div className="px-8 py-4 space-y-2">
                         <p className="text-sm font-semibold text-muted-foreground mb-3">
                           Transactions on {format(new Date(day.date), 'MMMM dd, yyyy')} ({day.transactions.length} total):
