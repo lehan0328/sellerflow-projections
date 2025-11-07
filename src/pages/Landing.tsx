@@ -1344,6 +1344,150 @@ const Landing = () => {
         </div>
       </section>
 
+      {/* Key Features Showcase Section */}
+      <section className="relative py-16 bg-gradient-to-b from-background via-primary/5 to-background overflow-hidden">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12 space-y-4">
+            <Badge className="inline-flex items-center gap-2 bg-primary/10 text-primary border border-primary/20 px-4 py-2 text-sm font-semibold">
+              <Sparkles className="h-4 w-4" />
+              Powerful Planning Tools
+            </Badge>
+            <h2 className="text-3xl lg:text-4xl font-bold">
+              Make Smarter Financial Decisions
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Auren's intelligent features help you plan purchases, avoid cash shortfalls, and seize growth opportunities at the perfect time.
+            </p>
+          </div>
+
+          <div className="grid lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            {/* Feature 1: Project Purchase Orders */}
+            <Card className="relative group hover:shadow-2xl transition-all duration-300 border-primary/20 bg-card/50 backdrop-blur-sm overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              <CardHeader className="relative">
+                <div className="w-12 h-12 rounded-xl bg-gradient-primary flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                  <ShoppingCart className="h-6 w-6 text-white" />
+                </div>
+                <CardTitle className="text-xl font-bold">Project Purchase Orders</CardTitle>
+              </CardHeader>
+              <CardContent className="relative space-y-4">
+                <p className="text-muted-foreground">
+                  Simulate future purchase orders and instantly see their impact on your cash flow. Plan inventory investments with confidence.
+                </p>
+                <div className="space-y-2 pt-2">
+                  <div className="flex items-start gap-2 text-sm">
+                    <Check className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                    <span>See real-time "safe to spend" amounts after adding POs</span>
+                  </div>
+                  <div className="flex items-start gap-2 text-sm">
+                    <Check className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                    <span>Identify your low point dates and earliest purchase windows</span>
+                  </div>
+                  <div className="flex items-start gap-2 text-sm">
+                    <Check className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                    <span>Avoid cash gaps by planning around your payout schedule</span>
+                  </div>
+                </div>
+                <div className="pt-4 border-t border-border/50">
+                  <div className="flex items-center gap-2 text-sm text-primary font-semibold">
+                    <Lightbulb className="h-4 w-4" />
+                    Perfect for inventory planning and supplier negotiations
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Feature 2: Search by Date */}
+            <Card className="relative group hover:shadow-2xl transition-all duration-300 border-accent/20 bg-card/50 backdrop-blur-sm overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-accent/5 via-transparent to-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              <CardHeader className="relative">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-accent to-accent/80 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                  <Calendar className="h-6 w-6 text-white" />
+                </div>
+                <CardTitle className="text-xl font-bold">Search Buying Opportunities by Date</CardTitle>
+              </CardHeader>
+              <CardContent className="relative space-y-4">
+                <p className="text-muted-foreground">
+                  Pick any future date and discover exactly how much you can safely spend that day. Know your purchasing power in advance.
+                </p>
+                <div className="space-y-2 pt-2">
+                  <div className="flex items-start gap-2 text-sm">
+                    <Check className="h-4 w-4 text-accent mt-0.5 flex-shrink-0" />
+                    <span>View available spending power for any date within 3 months</span>
+                  </div>
+                  <div className="flex items-start gap-2 text-sm">
+                    <Check className="h-4 w-4 text-accent mt-0.5 flex-shrink-0" />
+                    <span>Get "Ready to Purchase" alerts when cash is available</span>
+                  </div>
+                  <div className="flex items-start gap-2 text-sm">
+                    <Check className="h-4 w-4 text-accent mt-0.5 flex-shrink-0" />
+                    <span>Plan around supplier payment deadlines confidently</span>
+                  </div>
+                </div>
+                <div className="pt-4 border-t border-border/50">
+                  <div className="flex items-center gap-2 text-sm text-accent font-semibold">
+                    <TrendingUp className="h-4 w-4" />
+                    Coordinate purchases with expected payout dates
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Feature 3: Search by Amount */}
+            <Card className="relative group hover:shadow-2xl transition-all duration-300 border-success/20 bg-card/50 backdrop-blur-sm overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-success/5 via-transparent to-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              <CardHeader className="relative">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-success to-success/80 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                  <Calculator className="h-6 w-6 text-white" />
+                </div>
+                <CardTitle className="text-xl font-bold">Search Buying Opportunities by Amount</CardTitle>
+              </CardHeader>
+              <CardContent className="relative space-y-4">
+                <p className="text-muted-foreground">
+                  Enter the purchase amount you need to make and find out exactly when you can afford it. Never miss growth opportunities.
+                </p>
+                <div className="space-y-2 pt-2">
+                  <div className="flex items-start gap-2 text-sm">
+                    <Check className="h-4 w-4 text-success mt-0.5 flex-shrink-0" />
+                    <span>Input any purchase amount and get exact affordability dates</span>
+                  </div>
+                  <div className="flex items-start gap-2 text-sm">
+                    <Check className="h-4 w-4 text-success mt-0.5 flex-shrink-0" />
+                    <span>See your low point date assuming zero spending until then</span>
+                  </div>
+                  <div className="flex items-start gap-2 text-sm">
+                    <Check className="h-4 w-4 text-success mt-0.5 flex-shrink-0" />
+                    <span>Make data-driven decisions on major inventory investments</span>
+                  </div>
+                </div>
+                <div className="pt-4 border-t border-border/50">
+                  <div className="flex items-center gap-2 text-sm text-success font-semibold">
+                    <Wallet className="h-4 w-4" />
+                    Time large purchases perfectly with your cash flow cycle
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Bottom CTA */}
+          <div className="text-center mt-12">
+            <Button 
+              size="lg" 
+              className="bg-gradient-primary text-white px-8 py-6 text-lg font-semibold hover:shadow-xl transition-all"
+              onClick={() => handleStartTrial(pricingPlans[1].priceId)}
+              disabled={isLoading}
+            >
+              Start Using These Features Today - Free Trial
+              <ArrowRight className="ml-2 h-5 w-5" />
+            </Button>
+            <p className="text-sm text-muted-foreground mt-3">
+              7-day free trial • No credit card required • Full access to all features
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* Features Section */}
       <section id="features" className="py-20 bg-background">
         <div className="container mx-auto px-4">
