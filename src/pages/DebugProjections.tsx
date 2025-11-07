@@ -112,26 +112,55 @@ const DebugProjections = () => {
       });
     });
 
-    // Add Amazon payouts (matches Dashboard logic)
+    // Add Amazon payouts (EXACT Dashboard logic)
     amazonPayouts.forEach(payout => {
+      const isConfirmedPayout = payout.status === 'confirmed';
+      const isOpenSettlement = payout.status === 'estimated';
+      const isForecastedPayout = payout.status === 'forecasted';
+      
       let displayDate: Date;
       let balanceImpactDate: Date;
 
-      // Different logic based on payout status
-      if (payout.status === 'confirmed' || payout.status === 'estimated') {
-        // For confirmed/estimated: use settlement_end_date + 1 day
+      if (isConfirmedPayout) {
+        // For confirmed: settlement_end_date + 1 day
         const rawData = payout.raw_settlement_data as any;
-        const settlementEndDate = rawData?.SettlementEndDate 
-          ? new Date(rawData.SettlementEndDate.replace(' UTC', 'Z'))
-          : new Date(payout.payout_date);
+        const settlementEndStr = rawData?.FinancialEventGroupEnd || rawData?.settlement_end_date;
         
-        // Settlement end date + 1 day is both display and balance impact
-        displayDate = addDays(settlementEndDate, 1);
-        balanceImpactDate = displayDate; // No additional day
+        if (settlementEndStr) {
+          displayDate = new Date(settlementEndStr);
+          displayDate.setDate(displayDate.getDate() + 1);
+        } else {
+          displayDate = new Date(payout.payout_date);
+        }
+        balanceImpactDate = displayDate;
+        
+      } else if (isOpenSettlement) {
+        // For estimated: settlement_end_date + 1 day
+        const rawData = payout.raw_settlement_data as any;
+        const settlementEndStr = rawData?.FinancialEventGroupEnd || rawData?.settlement_end_date;
+        const settlementStartStr = rawData?.settlement_start_date || rawData?.FinancialEventGroupStart;
+        
+        if (settlementEndStr) {
+          displayDate = new Date(settlementEndStr);
+        } else if (settlementStartStr) {
+          const settlementStartDate = new Date(settlementStartStr);
+          const settlementCloseDate = new Date(settlementStartDate);
+          settlementCloseDate.setDate(settlementCloseDate.getDate() + 14);
+          displayDate = settlementCloseDate;
+        } else {
+          displayDate = new Date(payout.payout_date);
+        }
+        
+        // Add +1 day for bank transfer for estimated payouts
+        displayDate = new Date(displayDate);
+        displayDate.setDate(displayDate.getDate() + 1);
+        balanceImpactDate = displayDate;
+        
       } else {
-        // For forecasted: use payout_date as display, +1 for balance impact
+        // For forecasted: payout_date as-is, +1 for balance impact
         displayDate = new Date(payout.payout_date);
-        balanceImpactDate = addDays(displayDate, 1);
+        balanceImpactDate = new Date(displayDate);
+        balanceImpactDate.setDate(balanceImpactDate.getDate() + 1);
       }
 
       // Only include future payouts
