@@ -55,10 +55,10 @@ const amazonTimeRangeOptions = [
 
 export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance, onTransactionUpdate, pendingIncomeToday, useAvailableBalance }: OverviewStatsProps & { useAvailableBalance?: boolean }) {
   const [incomingTimeRange, setIncomingTimeRange] = useState(() => {
-    return localStorage.getItem('incomingTimeRange') || "7days";
+    return localStorage.getItem('incomingTimeRange') || "3days";
   });
   const [upcomingTimeRange, setUpcomingTimeRange] = useState(() => {
-    return localStorage.getItem('upcomingTimeRange') || "7days";
+    return localStorage.getItem('upcomingTimeRange') || "3days";
   });
   const [amazonTimeRange, setAmazonTimeRange] = useState(() => {
     return localStorage.getItem('amazonTimeRange') || "next30";
