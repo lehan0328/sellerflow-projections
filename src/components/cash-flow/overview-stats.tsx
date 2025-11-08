@@ -603,7 +603,7 @@ export function OverviewStats({
         {/* Weekly Cash Change */}
         <div className="border-t pt-4">
           <p className="text-sm font-medium text-muted-foreground mb-1">Weekly Cash Change</p>
-          <p className="text-2xl font-bold mb-1">
+          <p className="text-2xl font-bold mb-1 text-center">
                 {(() => {
             // Calculate lowest balance for this week (days 0-7) vs next week (days 8-14)
             const today = new Date();
