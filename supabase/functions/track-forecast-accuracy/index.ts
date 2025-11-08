@@ -24,7 +24,7 @@ serve(async (req) => {
     const toESTDate = (utcTimestamp: string): string => {
       const date = new Date(utcTimestamp);
       // Format in EST timezone
-      const estDateStr = date.toLocaleString('en-US', { 
+      const estDateStr = date.toLocaleString('en-US', {
         timeZone: 'America/New_York',
         year: 'numeric',
         month: '2-digit',
@@ -39,21 +39,21 @@ serve(async (req) => {
     const settlementEndDate = actualPayout.raw_settlement_data?.FinancialEventGroupEnd
       ? new Date(actualPayout.raw_settlement_data.FinancialEventGroupEnd)
       : new Date(actualPayout.payout_date);
-    
+
     const settlementStartDate = actualPayout.raw_settlement_data?.FinancialEventGroupStart
       ? new Date(actualPayout.raw_settlement_data.FinancialEventGroupStart)
       : null;
-    
+
     // CRITICAL: Convert UTC timestamps to EST for consistent timezone
     // This ensures dates are consistent across the app
     const settlementCloseDate = actualPayout.raw_settlement_data?.FinancialEventGroupEnd
       ? toESTDate(actualPayout.raw_settlement_data.FinancialEventGroupEnd)
       : settlementEndDate.toISOString().split('T')[0];
-    
+
     const settlementStartDateStr = actualPayout.raw_settlement_data?.FinancialEventGroupStart
       ? toESTDate(actualPayout.raw_settlement_data.FinancialEventGroupStart)
       : null;
-    
+
     // Look back up to 7 days from settlement close
     const lookbackStart = new Date(settlementCloseDate);
     lookbackStart.setDate(lookbackStart.getDate() - 7);
@@ -65,7 +65,7 @@ serve(async (req) => {
       .eq('user_id', actualPayout.user_id) // CRITICAL: Match user_id
       .eq('status', 'forecasted')
       .gte('payout_date', lookbackStart.toISOString().split('T')[0])
-      .lt('payout_date', settlementCloseDate) // CRITICAL: < not <=
+      .lte('payout_date', settlementCloseDate) 
       .order('payout_date', { ascending: true });
 
     if (forecastError) {
@@ -84,26 +84,26 @@ serve(async (req) => {
     // Use the most recent forecast (it already contains all rollovers)
     const mostRecentForecast = rolledForecasts[rolledForecasts.length - 1]; // Already sorted ascending
     const totalForecastedAmount = Number(mostRecentForecast.total_amount);
-    
+
     // Calculate days accumulated in settlement period
     const daysAccumulated = settlementStartDate && settlementEndDate
       ? Math.ceil((settlementEndDate.getTime() - settlementStartDate.getTime()) / (1000 * 60 * 60 * 24))
       : 1; // Default to 1 day if no settlement dates
-    
+
     // Capture forecast history (for debugging/transparency)
     const forecastDetails = rolledForecasts.map(f => ({
       date: f.payout_date,
       amount: Number(f.total_amount),
       method: f.modeling_method
     }));
-    
+
     // Add note that only the most recent is used for accuracy
     console.log('[ACCURACY] Using most recent forecast for comparison:', {
       mostRecentDate: mostRecentForecast.payout_date,
       mostRecentAmount: totalForecastedAmount,
       allForecasts: forecastDetails
     });
-    
+
     console.log('[ACCURACY] Rollover analysis:', {
       settlementPeriod: `${settlementStartDateStr} to ${settlementCloseDate}`,
       daysAccumulated,
@@ -136,11 +136,11 @@ serve(async (req) => {
     const actualAmount = actualPayout.total_amount;
     const differenceAmount = actualAmount - forecastedAmount;
     // Use MAPE (Mean Absolute Percentage Error) formula: |difference| / actual * 100
-    const differencePercentage = actualAmount !== 0 
+    const differencePercentage = actualAmount !== 0
       ? (Math.abs(differenceAmount) / actualAmount) * 100
       : 0;
 
-    const userName = profile 
+    const userName = profile
       ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'Unknown'
       : 'Unknown';
 
