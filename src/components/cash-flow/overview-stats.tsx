@@ -446,8 +446,8 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
   const totalOverdueCount = overdueVendorCount + overdueIncomeCount;
 
   return (<>
-      <div className="grid gap-3 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-        <div className="bg-gradient-to-br from-green-50 to-green-100 border border-green-200 rounded-lg p-4">
+      <div className="grid gap-2 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+        <div className="bg-gradient-to-br from-green-50 to-green-100 border border-green-200 rounded-lg p-3">
           <div className="flex items-center justify-between">
             <div className="flex-1">
               <div className="flex items-center gap-2">
@@ -469,14 +469,14 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
                   </Button>
                 )}
               </div>
-              <p className="text-2xl font-bold text-green-700">
+              <p className="text-xl font-bold text-green-700">
                 {formatCurrency(displayBankBalance)}
               </p>
               <p className="text-sm text-slate-600">
                 {accounts.length === 0 ? 'No accounts connected' : useAvailableBalance ? 'Available balance' : 'Current balance'}
               </p>
               {totalOverdueCount > 0 && (
-                <div className="mt-2">
+                <div className="mt-1.5">
                   <Button
                     variant="outline"
                     size="sm"
@@ -492,7 +492,7 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
                 </div>
               )}
               {accounts.length > 0 && (
-                <div className="mt-2">
+                <div className="mt-1.5">
                   <Button
                     variant="outline"
                     size="sm"
@@ -508,12 +508,12 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
                 </div>
               )}
             </div>
-            <DollarSign className="h-8 w-8 text-green-500" />
+            <DollarSign className="h-6 w-6 text-green-500" />
           </div>
         </div>
-        <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-4">
+        <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-3">
           <div className="flex flex-col h-full">
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center justify-between mb-1.5">
               <p className="text-sm text-slate-600">Today's Activity</p>
               <div className="flex items-center gap-2">
                 <Button
@@ -524,13 +524,13 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
                 >
                   <Eye className="h-4 w-4" />
                 </Button>
-                <Calendar className="h-8 w-8 text-blue-500" />
+                <Calendar className="h-6 w-6 text-blue-500" />
               </div>
             </div>
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <div className="flex items-center gap-2 bg-white/60 rounded-lg p-1.5 border border-blue-200 mb-2">
+                  <div className="flex items-center gap-2 bg-white/60 rounded-lg p-1.5 border border-blue-200 mb-1.5">
                     <XCircle className="h-3.5 w-3.5 text-blue-600" />
                     <Label htmlFor="exclude-today-stats" className="text-xs cursor-pointer whitespace-nowrap text-slate-700">
                       Exclude Today
@@ -554,21 +554,21 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
               <div className="space-y-1">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-green-600">Income:</span>
-                  <span className="text-lg font-semibold text-green-700">
+                  <span className="text-base font-semibold text-green-700">
                     {formatCurrency(todaysIncome)}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-red-600">Expenses:</span>
-                  <span className="text-lg font-semibold text-red-700">
+                  <span className="text-base font-semibold text-red-700">
                     {formatCurrency(todaysExpenses)}
                   </span>
                 </div>
               </div>
-              <div className="mt-2 pt-2 border-t border-blue-200">
+              <div className="mt-1.5 pt-1.5 border-t border-blue-200">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium text-slate-700">Net:</span>
-                  <span className={`text-xl font-bold ${todaysIncome - todaysExpenses >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+                  <span className={`text-lg font-bold ${todaysIncome - todaysExpenses >= 0 ? 'text-green-700' : 'text-red-700'}`}>
                     {formatCurrency(todaysIncome - todaysExpenses)}
                   </span>
                 </div>
@@ -576,11 +576,11 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
             </div>
           </div>
         </div>
-        <div className="bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200 rounded-lg p-4">
+        <div className="bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200 rounded-lg p-3">
           <div className="flex items-center justify-between">
             <div className="flex-1">
               <p className="text-sm text-slate-600">Available Credit</p>
-              <p className="text-2xl font-bold text-purple-700">{formatCurrency(totalAvailableCredit)}</p>
+              <p className="text-xl font-bold text-purple-700">{formatCurrency(totalAvailableCredit)}</p>
               <div className="space-y-0.5">
                 {totalCreditLimit === 0 ? (
                   <p className="text-sm text-slate-500 italic">
@@ -599,7 +599,7 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
                 )}
               </div>
               {creditCards.length > 0 && (
-                <div className="mt-2">
+                <div className="mt-1.5">
                   <Button
                     variant="outline"
                     size="sm"
@@ -615,13 +615,13 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
                 </div>
               )}
             </div>
-            <CreditCard className="h-8 w-8 text-purple-500" />
+            <CreditCard className="h-6 w-6 text-purple-500" />
           </div>
         </div>
-        <div className="bg-gradient-to-br from-green-50 to-green-100 border border-green-200 rounded-lg p-4">
+        <div className="bg-gradient-to-br from-green-50 to-green-100 border border-green-200 rounded-lg p-3">
           <div className="flex items-center justify-between">
             <div className="flex-1">
-              <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center justify-between mb-1.5">
                 <p className="text-sm text-slate-600">Incoming $</p>
                 <Select value={incomingTimeRange} onValueChange={setIncomingTimeRange}>
                   <SelectTrigger className="w-32 h-6 text-xs">
@@ -636,11 +636,11 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
                   </SelectContent>
                 </Select>
               </div>
-              <p className="text-2xl font-bold text-green-700">{formatCurrency(incomingTotal)}</p>
+              <p className="text-xl font-bold text-green-700">{formatCurrency(incomingTotal)}</p>
               <p className="text-sm text-slate-600">
                 {incomingPayments.length > 0 ? `${incomingPayments.length} Amazon payouts & income` : "No Amazon payouts or income"}
               </p>
-              <div className="flex items-center justify-between mt-2">
+              <div className="flex items-center justify-between mt-1.5">
                 <p className="text-xs text-green-600">
                   {timeRangeOptions.find(opt => opt.value === incomingTimeRange)?.label}
                 </p>
@@ -660,13 +660,13 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
                 )}
               </div>
             </div>
-            <TrendingUp className="h-8 w-8 text-green-500" />
+            <TrendingUp className="h-6 w-6 text-green-500" />
           </div>
         </div>
-        <div className="bg-gradient-to-br from-amber-50 to-amber-100 border border-amber-200 rounded-lg p-4">
+        <div className="bg-gradient-to-br from-amber-50 to-amber-100 border border-amber-200 rounded-lg p-3">
           <div className="flex items-center justify-between">
             <div className="flex-1">
-              <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center justify-between mb-1.5">
                 <p className="text-sm text-slate-600">Upcoming Payments</p>
                 <Select value={upcomingTimeRange} onValueChange={setUpcomingTimeRange}>
                   <SelectTrigger className="w-32 h-6 text-xs">
@@ -681,11 +681,11 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
                   </SelectContent>
                 </Select>
               </div>
-              <p className="text-2xl font-bold text-amber-700">{formatCurrency(upcomingTotal)}</p>
+              <p className="text-xl font-bold text-amber-700">{formatCurrency(upcomingTotal)}</p>
               <p className="text-sm text-slate-600">
                 {upcomingPayments.length > 0 ? `${upcomingPayments.length} payments due` : "No payments due"}
               </p>
-              <div className="flex items-center justify-between mt-2">
+              <div className="flex items-center justify-between mt-1.5">
                 <p className="text-xs text-amber-600">
                   {timeRangeOptions.find(opt => opt.value === upcomingTimeRange)?.label}
                 </p>
@@ -705,14 +705,14 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
                 )}
               </div>
             </div>
-            <Calendar className="h-8 w-8 text-amber-500" />
+            <Calendar className="h-6 w-6 text-amber-500" />
           </div>
         </div>
-        <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-4">
+        <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-3">
           <div className="flex items-center justify-between">
             <div className="flex-1">
-              <p className="text-sm text-slate-600 mb-2">Weekly Cash Change</p>
-              <p className="text-2xl font-bold">
+              <p className="text-sm text-slate-600 mb-1.5">Weekly Cash Change</p>
+              <p className="text-xl font-bold">
                 {(() => {
                   // Calculate lowest balance for this week (days 0-7) vs next week (days 8-14)
                   const today = new Date();
@@ -762,7 +762,7 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
                 Projected change in lowest balance
               </p>
             </div>
-            <TrendingUp className="h-8 w-8 text-blue-500" />
+            <TrendingUp className="h-6 w-6 text-blue-500" />
           </div>
         </div>
       </div>
