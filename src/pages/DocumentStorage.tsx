@@ -966,24 +966,24 @@ export default function DocumentStorage() {
             ) : (
               <Table className="w-full table-fixed">
                 <colgroup>
-                  <col style={{ width: '25%' }} />
+                  <col style={{ width: '20%' }} />
+                  <col style={{ width: '10%' }} />
+                  <col style={{ width: '15%' }} />
                   <col style={{ width: '10%' }} />
                   <col style={{ width: '12%' }} />
-                  <col style={{ width: '10%' }} />
-                  <col style={{ width: '11%' }} />
                   <col style={{ width: '8%' }} />
-                  <col style={{ width: '12%' }} />
+                  <col style={{ width: '13%' }} />
                   <col style={{ width: '12%' }} />
                 </colgroup>
                 <TableHeader>
                   <TableRow className="bg-background border-b hover:bg-background">
-                    <TableHead className="bg-background font-semibold px-4 py-3">Name</TableHead>
+                    <TableHead className="bg-background font-semibold px-4 py-3 text-left">Name</TableHead>
                     <TableHead className="bg-background font-semibold px-4 py-3 text-left">Type</TableHead>
-                    <TableHead className="bg-background font-semibold px-4 py-3">Vendor</TableHead>
-                    <TableHead className="bg-background font-semibold px-4 py-3">Amount</TableHead>
-                    <TableHead className="bg-background font-semibold px-4 py-3">Document Date</TableHead>
-                    <TableHead className="bg-background font-semibold px-4 py-3">Size</TableHead>
-                    <TableHead className="bg-background font-semibold px-4 py-3">Uploaded</TableHead>
+                    <TableHead className="bg-background font-semibold px-4 py-3 text-left">Vendor</TableHead>
+                    <TableHead className="bg-background font-semibold px-4 py-3 text-left">Amount</TableHead>
+                    <TableHead className="bg-background font-semibold px-4 py-3 text-left">Document Date</TableHead>
+                    <TableHead className="bg-background font-semibold px-4 py-3 text-left">Size</TableHead>
+                    <TableHead className="bg-background font-semibold px-4 py-3 text-left">Uploaded</TableHead>
                     <TableHead className="bg-background font-semibold px-4 py-3 text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -1025,17 +1025,17 @@ export default function DocumentStorage() {
                             <span className="text-muted-foreground">-</span>
                           )}
                         </TableCell>
-                        <TableCell className="text-sm px-4 py-3">
+                        <TableCell className="text-sm px-4 py-3 text-left">
                           {doc.vendor_name || <span className="text-muted-foreground">-</span>}
                         </TableCell>
-                        <TableCell className="text-sm font-medium px-4 py-3">
+                        <TableCell className="text-sm font-medium px-4 py-3 text-left">
                           {doc.amount ? `$${doc.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : <span className="text-muted-foreground">-</span>}
                         </TableCell>
-                        <TableCell className="text-sm px-4 py-3">
+                        <TableCell className="text-sm px-4 py-3 text-left">
                           {doc.document_date ? format(new Date(doc.document_date), "MMM dd, yyyy") : <span className="text-muted-foreground">-</span>}
                         </TableCell>
-                        <TableCell className="px-4 py-3">{formatFileSize((doc as any).file_size || 0)}</TableCell>
-                        <TableCell className="px-4 py-3">{formatDate(doc.created_at)}</TableCell>
+                        <TableCell className="text-sm px-4 py-3 text-left">{formatFileSize((doc as any).file_size || 0)}</TableCell>
+                        <TableCell className="text-sm px-4 py-3 text-left">{formatDate(doc.created_at)}</TableCell>
                         <TableCell className="text-right px-4 py-3">
                           <div className="flex justify-end space-x-2">
                             {doc.document_type === 'purchase_order' && (
