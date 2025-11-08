@@ -236,7 +236,7 @@ export default function DocumentStorage() {
         table: 'documents_metadata',
         filter: `account_id=eq.${profile.account_id}`
       }, () => {
-        queryClient.invalidateQueries({ queryKey: ['documents', profile.account_id] });
+        queryClient.invalidateQueries({ queryKey: ['documents', profile.account_id, includeUntracked] });
       })
       .on('postgres_changes', {
         event: '*',
@@ -289,7 +289,7 @@ export default function DocumentStorage() {
       return fileName;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['documents', profile?.account_id] });
+      queryClient.invalidateQueries({ queryKey: ['documents', profile?.account_id, includeUntracked] });
       toast.success('Document uploaded successfully');
     },
     onError: (error: Error) => {
@@ -966,24 +966,24 @@ export default function DocumentStorage() {
             ) : (
               <Table className="w-full table-fixed">
                 <colgroup>
-                  <col style={{ width: '28%' }} />
-                  <col style={{ width: '8%' }} />
-                  <col style={{ width: '15%' }} />
+                  <col style={{ width: '18%' }} />
                   <col style={{ width: '9%' }} />
-                  <col style={{ width: '11%' }} />
-                  <col style={{ width: '7%' }} />
-                  <col style={{ width: '11%' }} />
-                  <col style={{ width: '11%' }} />
+                  <col style={{ width: '16%' }} />
+                  <col style={{ width: '10%' }} />
+                  <col style={{ width: '12%' }} />
+                  <col style={{ width: '8%' }} />
+                  <col style={{ width: '12%' }} />
+                  <col style={{ width: '15%' }} />
                 </colgroup>
                 <TableHeader>
                   <TableRow className="bg-background border-b hover:bg-background">
-                    <TableHead className="bg-background font-semibold px-4 py-3 text-left">Name</TableHead>
-                    <TableHead className="bg-background font-semibold px-4 py-3 text-left">Type</TableHead>
-                    <TableHead className="bg-background font-semibold px-4 py-3 text-left">Vendor</TableHead>
-                    <TableHead className="bg-background font-semibold px-4 py-3 text-left">Amount</TableHead>
-                    <TableHead className="bg-background font-semibold px-4 py-3 text-left">Document Date</TableHead>
-                    <TableHead className="bg-background font-semibold px-4 py-3 text-left">Size</TableHead>
-                    <TableHead className="bg-background font-semibold px-4 py-3 text-left">Uploaded</TableHead>
+                    <TableHead className="bg-background font-semibold px-4 py-3 text-left border-r border-border">Name</TableHead>
+                    <TableHead className="bg-background font-semibold px-4 py-3 text-left border-r border-border">Type</TableHead>
+                    <TableHead className="bg-background font-semibold px-4 py-3 text-left border-r border-border">Vendor</TableHead>
+                    <TableHead className="bg-background font-semibold px-4 py-3 text-left border-r border-border">Amount</TableHead>
+                    <TableHead className="bg-background font-semibold px-4 py-3 text-left border-r border-border">Document Date</TableHead>
+                    <TableHead className="bg-background font-semibold px-4 py-3 text-left border-r border-border">Size</TableHead>
+                    <TableHead className="bg-background font-semibold px-4 py-3 text-left border-r border-border">Uploaded</TableHead>
                     <TableHead className="bg-background font-semibold px-4 py-3 text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -991,51 +991,44 @@ export default function DocumentStorage() {
                   {filteredDocuments.map((doc) => (
                     <Collapsible key={doc.id}>
                       <TableRow className="align-top">
-                        <TableCell className="font-medium px-4 py-3">
+                        <TableCell className="font-medium px-4 py-3 border-r border-border">
                           <div className="flex items-center space-x-2 max-w-full overflow-hidden">
-                            <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                             <span 
                               className="cursor-pointer hover:text-primary transition-colors truncate flex-1 min-w-0"
                               onClick={() => setEditingDoc(doc)}
                               title="Click to edit document name"
                             >
-                              {doc.display_name || doc.name}
+                              {doc.file_name}
                             </span>
-                            {!(doc as any).storage_exists && (
-                              <Badge variant="destructive" className="text-xs ml-2 flex-shrink-0">
-                                Missing File
-                              </Badge>
-                            )}
-                            {(doc as any).untracked && (
-                              <Badge variant="secondary" className="text-xs ml-2 flex-shrink-0">
-                                Untracked
-                              </Badge>
-                            )}
                             <CollapsibleTrigger asChild>
-                              <Button variant="ghost" size="sm" className="h-6 w-6 p-0 flex-shrink-0 group" aria-label="Toggle document details">
-                                <ChevronDown className="h-4 w-4 transition-transform group-data-[state=open]:rotate-180" />
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                className="h-6 w-6 p-0 flex-shrink-0"
+                              >
+                                <ChevronDown className="h-4 w-4" />
                               </Button>
                             </CollapsibleTrigger>
                           </div>
                         </TableCell>
-                        <TableCell className="text-sm px-4 py-3 text-left">
+                        <TableCell className="text-sm px-4 py-3 text-left border-r border-border">
                           {doc.document_type ? (
                             <span className="capitalize">{doc.document_type.replace('_', ' ')}</span>
                           ) : (
                             <span className="text-muted-foreground">-</span>
                           )}
                         </TableCell>
-                        <TableCell className="text-sm px-4 py-3 text-left">
+                        <TableCell className="text-sm px-4 py-3 text-left border-r border-border">
                           <span className="truncate block">{doc.vendor_name || <span className="text-muted-foreground">-</span>}</span>
                         </TableCell>
-                        <TableCell className="text-sm font-medium px-4 py-3 text-left">
+                        <TableCell className="text-sm font-medium px-4 py-3 text-left border-r border-border">
                           <span className="truncate block">{doc.amount ? `$${doc.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : <span className="text-muted-foreground">-</span>}</span>
                         </TableCell>
-                        <TableCell className="text-sm px-4 py-3 text-left">
+                        <TableCell className="text-sm px-4 py-3 text-left border-r border-border">
                           <span className="truncate block">{doc.document_date ? format(new Date(doc.document_date), "MMM dd, yyyy") : <span className="text-muted-foreground">-</span>}</span>
                         </TableCell>
-                        <TableCell className="text-sm px-4 py-3 text-left">{formatFileSize((doc as any).file_size || 0)}</TableCell>
-                        <TableCell className="text-sm px-4 py-3 text-left">{formatDate(doc.created_at)}</TableCell>
+                        <TableCell className="text-sm px-4 py-3 text-left border-r border-border">{formatFileSize((doc as any).file_size || 0)}</TableCell>
+                        <TableCell className="text-sm px-4 py-3 text-left border-r border-border">{formatDate(doc.created_at)}</TableCell>
                         <TableCell className="text-right px-4 py-3">
                           <div className="flex justify-end space-x-2">
                             {doc.document_type === 'purchase_order' && (
