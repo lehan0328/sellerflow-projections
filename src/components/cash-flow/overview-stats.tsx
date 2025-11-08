@@ -516,7 +516,7 @@ export function OverviewStats({
             <p className="text-2xl font-bold text-foreground mb-1.5 text-center">
               {formatCurrency(displayBankBalance)}
             </p>
-            <p className="text-sm text-muted-foreground mb-2">
+            <p className="text-sm text-muted-foreground mb-2 text-center">
               {accounts.length === 0 ? 'No accounts connected' : useAvailableBalance ? 'Available balance' : 'Current balance'}
             </p>
             {totalOverdueCount > 0 && <Button variant="outline" size="sm" onClick={() => setShowOverdueModal(true)} className="mb-1.5 h-7 px-2 text-xs border-destructive text-destructive">
