@@ -2381,7 +2381,7 @@ const Dashboard = () => {
             />
             
             {/* Main Layout: Stats Sidebar + Cash Flow Visualization */}
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-3 lg:h-[680px]">
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-3 lg:h-[620px]">
               {/* Left Sidebar: Combined Stats */}
               <div className="lg:col-span-1">
                 <OverviewStats
@@ -2987,7 +2987,7 @@ const Dashboard = () => {
             </div>
           </div>
           
-          <div className="p-2 space-y-2 relative">
+          <div className="p-2 space-y-1 relative">
             {/* Content on top of watermark */}
             <div className="relative z-10">
               {renderSection()}
