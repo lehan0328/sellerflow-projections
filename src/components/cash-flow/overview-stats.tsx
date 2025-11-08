@@ -447,7 +447,7 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
 
   return (<>
       <div className="grid gap-2 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-        <div className="bg-gradient-to-br from-green-50 to-green-100 border border-green-200 rounded-lg p-3">
+        <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-3">
           <div className="flex items-center justify-between">
             <div className="flex-1">
               <div className="flex items-center gap-2">
@@ -469,7 +469,7 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
                   </Button>
                 )}
               </div>
-              <p className="text-2xl font-bold text-green-700">
+              <p className="text-2xl font-bold text-blue-700">
                 {formatCurrency(displayBankBalance)}
               </p>
               <p className="text-sm text-slate-600">
@@ -497,18 +497,18 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
                     variant="outline"
                     size="sm"
                     onClick={() => setShowBankAccountsModal(true)}
-                    className="h-7 px-2 text-xs border-green-600 text-green-700 hover:bg-green-600 hover:text-white w-full"
+                    className="h-7 px-2 text-xs border-blue-600 text-blue-700 hover:bg-blue-600 hover:text-white w-full"
                   >
                     <Eye className="h-3 w-3 mr-1" />
                     View Accounts
-                    <Badge variant="secondary" className="ml-1 h-4 px-1 text-[10px] bg-green-100 text-green-700">
+                    <Badge variant="secondary" className="ml-1 h-4 px-1 text-[10px] bg-blue-100 text-blue-700">
                       {accounts.length}
                     </Badge>
                   </Button>
                 </div>
               )}
             </div>
-            <DollarSign className="h-6 w-6 text-green-500" />
+            <DollarSign className="h-6 w-6 text-blue-500" />
           </div>
         </div>
         <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-3">
@@ -576,11 +576,11 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
             </div>
           </div>
         </div>
-        <div className="bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200 rounded-lg p-3">
+        <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-3">
           <div className="flex items-center justify-between">
             <div className="flex-1">
               <p className="text-sm text-slate-600">Available Credit</p>
-              <p className="text-2xl font-bold text-purple-700">{formatCurrency(totalAvailableCredit)}</p>
+              <p className="text-2xl font-bold text-blue-700">{formatCurrency(totalAvailableCredit)}</p>
               <div className="space-y-0.5">
                 {totalCreditLimit === 0 ? (
                   <p className="text-sm text-slate-500 italic">
@@ -594,7 +594,7 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
                       </p>
                     )}
                     <p className="text-sm text-slate-600">of {formatCurrency(totalCreditLimit)} limit</p>
-                    <p className="text-xs text-purple-600">{formatCurrency(totalCreditBalance)} used • {creditUtilization.toFixed(1)}% utilization</p>
+                    <p className="text-xs text-blue-600">{formatCurrency(totalCreditBalance)} used • {creditUtilization.toFixed(1)}% utilization</p>
                   </>
                 )}
               </div>
@@ -604,21 +604,21 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
                     variant="outline"
                     size="sm"
                     onClick={() => setShowCreditCardsModal(true)}
-                    className="h-7 px-2 text-xs border-purple-600 text-purple-700 hover:bg-purple-600 hover:text-white w-full"
+                    className="h-7 px-2 text-xs border-blue-600 text-blue-700 hover:bg-blue-600 hover:text-white w-full"
                   >
                     <Eye className="h-3 w-3 mr-1" />
                     View Cards
-                    <Badge variant="secondary" className="ml-1 h-4 px-1 text-[10px] bg-purple-100 text-purple-700">
+                    <Badge variant="secondary" className="ml-1 h-4 px-1 text-[10px] bg-blue-100 text-blue-700">
                       {creditCards.length}
                     </Badge>
                   </Button>
                 </div>
               )}
             </div>
-            <CreditCard className="h-6 w-6 text-purple-500" />
+            <CreditCard className="h-6 w-6 text-blue-500" />
           </div>
         </div>
-        <div className="bg-gradient-to-br from-green-50 to-green-100 border border-green-200 rounded-lg p-3">
+        <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-3">
           <div className="flex items-center justify-between">
             <div className="flex-1">
               <div className="flex items-center justify-between mb-1.5">
@@ -636,12 +636,12 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
                   </SelectContent>
                 </Select>
               </div>
-              <p className="text-2xl font-bold text-green-700">{formatCurrency(incomingTotal)}</p>
+              <p className="text-2xl font-bold text-blue-700">{formatCurrency(incomingTotal)}</p>
               <p className="text-sm text-slate-600">
                 {incomingPayments.length > 0 ? `${incomingPayments.length} Amazon payouts & income` : "No Amazon payouts or income"}
               </p>
               <div className="flex items-center justify-between mt-1.5">
-                <p className="text-xs text-green-600">
+                <p className="text-xs text-blue-600">
                   {timeRangeOptions.find(opt => opt.value === incomingTimeRange)?.label}
                 </p>
                 {incomingPayments.length > 0 && (
@@ -649,21 +649,21 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
                     variant="outline"
                     size="sm"
                     onClick={() => setShowIncomingModal(true)}
-                    className="h-7 px-2 text-xs border-green-600 text-green-700 hover:bg-green-600 hover:text-white"
+                    className="h-7 px-2 text-xs border-blue-600 text-blue-700 hover:bg-blue-600 hover:text-white"
                   >
                     <Eye className="h-3 w-3 mr-1" />
                     View
-                    <Badge variant="secondary" className="ml-1 h-4 px-1 text-[10px] bg-green-100 text-green-700">
+                    <Badge variant="secondary" className="ml-1 h-4 px-1 text-[10px] bg-blue-100 text-blue-700">
                       {incomingPayments.length}
                     </Badge>
                   </Button>
                 )}
               </div>
             </div>
-            <TrendingUp className="h-6 w-6 text-green-500" />
+            <TrendingUp className="h-6 w-6 text-blue-500" />
           </div>
         </div>
-        <div className="bg-gradient-to-br from-amber-50 to-amber-100 border border-amber-200 rounded-lg p-3">
+        <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-3">
           <div className="flex items-center justify-between">
             <div className="flex-1">
               <div className="flex items-center justify-between mb-1.5">
@@ -681,12 +681,12 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
                   </SelectContent>
                 </Select>
               </div>
-              <p className="text-2xl font-bold text-amber-700">{formatCurrency(upcomingTotal)}</p>
+              <p className="text-2xl font-bold text-blue-700">{formatCurrency(upcomingTotal)}</p>
               <p className="text-sm text-slate-600">
                 {upcomingPayments.length > 0 ? `${upcomingPayments.length} payments due` : "No payments due"}
               </p>
               <div className="flex items-center justify-between mt-1.5">
-                <p className="text-xs text-amber-600">
+                <p className="text-xs text-blue-600">
                   {timeRangeOptions.find(opt => opt.value === upcomingTimeRange)?.label}
                 </p>
                 {upcomingPayments.length > 0 && (
@@ -694,18 +694,18 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
                     variant="outline"
                     size="sm"
                     onClick={() => setShowUpcomingModal(true)}
-                    className="h-7 px-2 text-xs border-amber-600 text-amber-700 hover:bg-amber-600 hover:text-white"
+                    className="h-7 px-2 text-xs border-blue-600 text-blue-700 hover:bg-blue-600 hover:text-white"
                   >
                     <Eye className="h-3 w-3 mr-1" />
                     View
-                    <Badge variant="secondary" className="ml-1 h-4 px-1 text-[10px] bg-amber-100 text-amber-700">
+                    <Badge variant="secondary" className="ml-1 h-4 px-1 text-[10px] bg-blue-100 text-blue-700">
                       {upcomingPayments.length}
                     </Badge>
                   </Button>
                 )}
               </div>
             </div>
-            <Calendar className="h-6 w-6 text-amber-500" />
+            <Calendar className="h-6 w-6 text-blue-500" />
           </div>
         </div>
         <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-3">
