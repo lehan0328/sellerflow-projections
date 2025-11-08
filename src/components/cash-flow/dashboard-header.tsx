@@ -130,9 +130,9 @@ export function DashboardHeader({
       </div>
 
       {/* Centered Dashboard Title */}
-      <div className="flex justify-center items-center pt-4 pb-3">
+      <div className="flex justify-center items-center pt-8 pb-6">
         <div className="text-center">
-          <h1 className="text-3xl font-semibold bg-gradient-primary bg-clip-text text-transparent">
+          <h1 className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent">
             {getUserDisplayName()}
           </h1>
         </div>
