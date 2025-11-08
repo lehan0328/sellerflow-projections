@@ -647,7 +647,7 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
         {/* Weekly Cash Change */}
         <div className="border-t pt-4">
           <p className="text-sm font-medium text-muted-foreground mb-1">Weekly Cash Change</p>
-          <p className="text-2xl font-bold mb-1.5">
+          <p className="text-2xl font-bold mb-1">
                 {(() => {
                   // Calculate lowest balance for this week (days 0-7) vs next week (days 8-14)
                   const today = new Date();
@@ -690,7 +690,7 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
               );
             })()}
           </p>
-          <p className="text-sm text-muted-foreground">Next week vs. this week</p>
+          <p className="text-sm text-muted-foreground mb-0.5">Next week vs. this week</p>
           <p className="text-xs text-muted-foreground">Projected change in lowest balance</p>
         </div>
       </div>
