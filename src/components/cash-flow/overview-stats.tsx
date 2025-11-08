@@ -605,6 +605,9 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
             </p>
           </div>
 
+          {/* Divider */}
+          <div className="border-t border-border/50 my-4" />
+
           {/* Upcoming Payments */}
           <div>
             <div className="flex items-center justify-between mb-1">
