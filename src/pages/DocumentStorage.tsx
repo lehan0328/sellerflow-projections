@@ -992,7 +992,7 @@ export default function DocumentStorage() {
                     <Collapsible key={doc.id}>
                       <TableRow className="align-top">
                         <TableCell className="font-medium px-4 py-3">
-                          <div className="flex items-center space-x-2 max-w-full overflow-hidden">
+                          <div className="flex items-center gap-1 max-w-full overflow-hidden">
                             <span 
                               className="cursor-pointer hover:text-primary transition-colors truncate flex-1 min-w-0"
                               onClick={() => setEditingDoc(doc)}
@@ -1019,13 +1019,25 @@ export default function DocumentStorage() {
                           )}
                         </TableCell>
                         <TableCell className="text-sm px-4 py-3 text-left">
-                          <span className="truncate block">{doc.vendor_name || <span className="text-muted-foreground">-</span>}</span>
+                          {doc.vendor_name ? (
+                            <span className="truncate block">{doc.vendor_name}</span>
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
                         </TableCell>
                         <TableCell className="text-sm font-medium px-4 py-3 text-left">
-                          <span className="truncate block">{doc.amount ? `$${doc.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : <span className="text-muted-foreground">-</span>}</span>
+                          {doc.amount ? (
+                            <span className="truncate block">${doc.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
                         </TableCell>
                         <TableCell className="text-sm px-4 py-3 text-left">
-                          <span className="truncate block">{doc.document_date ? format(new Date(doc.document_date), "MMM dd, yyyy") : <span className="text-muted-foreground">-</span>}</span>
+                          {doc.document_date ? (
+                            <span className="truncate block">{format(new Date(doc.document_date), "MMM dd, yyyy")}</span>
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
                         </TableCell>
                         <TableCell className="text-sm px-4 py-3 text-left">{formatFileSize((doc as any).file_size || 0)}</TableCell>
                         <TableCell className="text-sm px-4 py-3 text-left">{formatDate(doc.created_at)}</TableCell>
