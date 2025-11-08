@@ -661,13 +661,13 @@ export const CashFlowInsights = memo(({
                 </Popover>
               </div>
               <div className="space-y-3">
-                <div className={`p-4 rounded-lg border-2 ${safeSpendingLimit < 0 ? 'bg-red-50 dark:bg-red-950/20 border-red-500' : 'bg-primary/10 border-primary/20'}`}>
+                <div className={`p-4 rounded-lg border-2 ${safeSpendingLimit < 0 ? 'bg-red-50 dark:bg-red-950/20 border-red-500' : 'bg-blue-50 dark:bg-blue-950/20 border-blue-200'}`}>
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium text-muted-foreground">Available to Spend</span>
                       {safeSpendingLimit < 0 && <AlertCircle className="h-4 w-4 text-red-600" />}
                     </div>
-                    <span className={`text-2xl font-bold ${safeSpendingLimit < 0 ? 'text-red-600' : 'text-primary'}`}>
+                    <span className={`text-2xl font-bold ${safeSpendingLimit < 0 ? 'text-red-600' : 'text-blue-700'}`}>
                       ${safeSpendingLimit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </span>
                   </div>
