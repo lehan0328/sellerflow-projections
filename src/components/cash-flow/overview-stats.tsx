@@ -469,7 +469,7 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
                   </Button>
                 )}
               </div>
-              <p className="text-xl font-bold text-green-700">
+              <p className="text-2xl font-bold text-green-700">
                 {formatCurrency(displayBankBalance)}
               </p>
               <p className="text-sm text-slate-600">
@@ -580,7 +580,7 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
           <div className="flex items-center justify-between">
             <div className="flex-1">
               <p className="text-sm text-slate-600">Available Credit</p>
-              <p className="text-xl font-bold text-purple-700">{formatCurrency(totalAvailableCredit)}</p>
+              <p className="text-2xl font-bold text-purple-700">{formatCurrency(totalAvailableCredit)}</p>
               <div className="space-y-0.5">
                 {totalCreditLimit === 0 ? (
                   <p className="text-sm text-slate-500 italic">
@@ -636,7 +636,7 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
                   </SelectContent>
                 </Select>
               </div>
-              <p className="text-xl font-bold text-green-700">{formatCurrency(incomingTotal)}</p>
+              <p className="text-2xl font-bold text-green-700">{formatCurrency(incomingTotal)}</p>
               <p className="text-sm text-slate-600">
                 {incomingPayments.length > 0 ? `${incomingPayments.length} Amazon payouts & income` : "No Amazon payouts or income"}
               </p>
@@ -681,7 +681,7 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
                   </SelectContent>
                 </Select>
               </div>
-              <p className="text-xl font-bold text-amber-700">{formatCurrency(upcomingTotal)}</p>
+              <p className="text-2xl font-bold text-amber-700">{formatCurrency(upcomingTotal)}</p>
               <p className="text-sm text-slate-600">
                 {upcomingPayments.length > 0 ? `${upcomingPayments.length} payments due` : "No payments due"}
               </p>
@@ -712,7 +712,7 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
           <div className="flex items-center justify-between">
             <div className="flex-1">
               <p className="text-sm text-slate-600 mb-1.5">Weekly Cash Change</p>
-              <p className="text-xl font-bold">
+              <p className="text-2xl font-bold">
                 {(() => {
                   // Calculate lowest balance for this week (days 0-7) vs next week (days 8-14)
                   const today = new Date();
