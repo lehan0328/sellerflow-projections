@@ -966,83 +966,89 @@ export default function DocumentStorage() {
             ) : (
               <Table className="w-full table-fixed">
                 <colgroup>
-                  <col style={{ width: '18%' }} />
-                  <col style={{ width: '9%' }} />
-                  <col style={{ width: '16%' }} />
-                  <col style={{ width: '10%' }} />
-                  <col style={{ width: '12%' }} />
-                  <col style={{ width: '8%' }} />
+                  <col style={{ width: '5%' }} />
+                  <col style={{ width: '20%' }} />
                   <col style={{ width: '12%' }} />
                   <col style={{ width: '15%' }} />
+                  <col style={{ width: '12%' }} />
+                  <col style={{ width: '12%' }} />
+                  <col style={{ width: '8%' }} />
+                  <col style={{ width: '10%' }} />
+                  <col style={{ width: '6%' }} />
                 </colgroup>
                 <TableHeader>
                   <TableRow className="bg-background border-b hover:bg-background">
-                    <TableHead className="bg-background font-semibold px-4 py-3 text-left">Name</TableHead>
-                    <TableHead className="bg-background font-semibold px-4 py-3 text-left">Type</TableHead>
+                    <TableHead className="bg-background font-semibold px-4 py-3 text-center"></TableHead>
+                    <TableHead className="bg-background font-semibold px-4 py-3 text-left">PO Name</TableHead>
+                    <TableHead className="bg-background font-semibold px-4 py-3 text-left">Document Type</TableHead>
                     <TableHead className="bg-background font-semibold px-4 py-3 text-left">Vendor</TableHead>
-                    <TableHead className="bg-background font-semibold px-4 py-3 text-left">Amount</TableHead>
+                    <TableHead className="bg-background font-semibold px-4 py-3 text-right">Amount</TableHead>
                     <TableHead className="bg-background font-semibold px-4 py-3 text-left">Document Date</TableHead>
-                    <TableHead className="bg-background font-semibold px-4 py-3 text-left">Size</TableHead>
+                    <TableHead className="bg-background font-semibold px-4 py-3 text-right">Size</TableHead>
                     <TableHead className="bg-background font-semibold px-4 py-3 text-left">Uploaded</TableHead>
-                    <TableHead className="bg-background font-semibold px-4 py-3 text-right">Actions</TableHead>
+                    <TableHead className="bg-background font-semibold px-4 py-3 text-center">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredDocuments.map((doc) => (
                     <Collapsible key={doc.id}>
-                      <TableRow className="align-top">
-                        <TableCell className="font-medium px-4 py-3">
-                          <div className="flex items-center gap-1 max-w-full overflow-hidden">
-                            <span 
-                              className="cursor-pointer hover:text-primary transition-colors truncate flex-1 min-w-0"
-                              onClick={() => setEditingDoc(doc)}
-                              title="Click to edit document name"
+                      <TableRow>
+                        <TableCell className="px-4 py-3 text-center">
+                          <CollapsibleTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              className="h-6 w-6 p-0"
                             >
-                              {doc.file_name}
-                            </span>
-                            <CollapsibleTrigger asChild>
-                              <Button 
-                                variant="ghost" 
-                                size="sm"
-                                className="h-6 w-6 p-0 flex-shrink-0"
-                              >
-                                <ChevronDown className="h-4 w-4" />
-                              </Button>
-                            </CollapsibleTrigger>
-                          </div>
+                              <ChevronDown className="h-4 w-4" />
+                            </Button>
+                          </CollapsibleTrigger>
                         </TableCell>
-                        <TableCell className="text-sm px-4 py-3 text-left">
+                        <TableCell className="px-4 py-3">
+                          <span 
+                            className="cursor-pointer hover:text-primary transition-colors truncate block"
+                            onClick={() => setEditingDoc(doc)}
+                            title={doc.display_name || doc.name}
+                          >
+                            {doc.display_name || doc.name}
+                          </span>
+                        </TableCell>
+                        <TableCell className="px-4 py-3">
                           {doc.document_type ? (
                             <span className="capitalize">{doc.document_type.replace('_', ' ')}</span>
                           ) : (
                             <span className="text-muted-foreground">-</span>
                           )}
                         </TableCell>
-                        <TableCell className="text-sm px-4 py-3 text-left">
+                        <TableCell className="px-4 py-3">
                           {doc.vendor_name ? (
-                            <span className="truncate block">{doc.vendor_name}</span>
+                            <span className="truncate block" title={doc.vendor_name}>{doc.vendor_name}</span>
                           ) : (
                             <span className="text-muted-foreground">-</span>
                           )}
                         </TableCell>
-                        <TableCell className="text-sm font-medium px-4 py-3 text-left">
+                        <TableCell className="px-4 py-3 text-right font-medium">
                           {doc.amount ? (
-                            <span className="truncate block">${doc.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                            `$${doc.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
                           ) : (
                             <span className="text-muted-foreground">-</span>
                           )}
                         </TableCell>
-                        <TableCell className="text-sm px-4 py-3 text-left">
+                        <TableCell className="px-4 py-3">
                           {doc.document_date ? (
-                            <span className="truncate block">{format(new Date(doc.document_date), "MMM dd, yyyy")}</span>
+                            format(new Date(doc.document_date), "MMM dd, yyyy")
                           ) : (
                             <span className="text-muted-foreground">-</span>
                           )}
                         </TableCell>
-                        <TableCell className="text-sm px-4 py-3 text-left">{formatFileSize((doc as any).file_size || 0)}</TableCell>
-                        <TableCell className="text-sm px-4 py-3 text-left">{formatDate(doc.created_at)}</TableCell>
-                        <TableCell className="text-right px-4 py-3">
-                          <div className="flex justify-end space-x-2">
+                        <TableCell className="px-4 py-3 text-right text-sm">
+                          {formatFileSize((doc as any).file_size || 0)}
+                        </TableCell>
+                        <TableCell className="px-4 py-3 text-sm">
+                          {formatDate(doc.created_at)}
+                        </TableCell>
+                        <TableCell className="px-4 py-3">
+                          <div className="flex justify-center gap-1">
                             {doc.document_type === 'purchase_order' && (
                               <>
                                 <input
@@ -1054,7 +1060,7 @@ export default function DocumentStorage() {
                                     const file = e.target.files?.[0];
                                     if (file) {
                                       handleReplaceDocument(doc, file);
-                                      e.target.value = ''; // Reset input
+                                      e.target.value = '';
                                     }
                                   }}
                                 />
@@ -1103,7 +1109,7 @@ export default function DocumentStorage() {
                         </TableCell>
                       </TableRow>
                       <TableRow>
-                        <TableCell colSpan={8} className="p-0 border-0">
+                        <TableCell colSpan={9} className="p-0 border-0">
                           <CollapsibleContent>
                             <div className="w-full py-4 bg-muted/30">
                               {doc.line_items && doc.line_items.length > 0 ? (
