@@ -1011,14 +1011,14 @@ export default function DocumentStorage() {
                   {filteredDocuments.map((doc) => (
                     <Collapsible key={doc.id}>
                       <tr className="border-b transition-colors hover:bg-muted/50 align-top">
-                        <td className="p-4 align-middle px-2 py-3 text-center">
+                        <td className="px-2 py-3 text-center align-middle">
                           <CollapsibleTrigger asChild>
                             <Button variant="ghost" size="sm" className="h-6 w-6 p-0 group" aria-label="Toggle document details">
                               <ChevronDown className="h-4 w-4 transition-transform group-data-[state=open]:rotate-180" />
                             </Button>
                           </CollapsibleTrigger>
                         </td>
-                        <td className="p-4 align-middle font-medium px-4 py-3">
+                        <td className="font-medium px-4 py-3 align-middle">
                           <div className="flex items-center space-x-2 overflow-hidden max-w-full">
                             <span 
                               className="cursor-pointer hover:text-primary transition-colors truncate block"
@@ -1039,7 +1039,7 @@ export default function DocumentStorage() {
                             )}
                           </div>
                         </td>
-                        <td className="p-4 align-middle text-sm px-3 py-3 text-left">
+                        <td className="text-sm px-3 py-3 text-left align-middle">
                           <div className="truncate">
                             {doc.document_type ? (
                               <span className="capitalize">{doc.document_type.replace('_', ' ')}</span>
@@ -1048,32 +1048,32 @@ export default function DocumentStorage() {
                             )}
                           </div>
                         </td>
-                        <td className="p-4 align-middle text-sm px-4 py-3">
+                        <td className="text-sm px-4 py-3 align-middle">
                           <div className="truncate">
                             {doc.vendor_name || <span className="text-muted-foreground">-</span>}
                           </div>
                         </td>
-                        <td className="p-4 align-middle text-sm font-medium px-3 py-3">
+                        <td className="text-sm font-medium px-3 py-3 align-middle">
                           <div className="whitespace-nowrap overflow-hidden text-ellipsis">
                             {doc.amount ? `$${doc.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : <span className="text-muted-foreground">-</span>}
                           </div>
                         </td>
-                        <td className="p-4 align-middle text-sm px-3 py-3">
+                        <td className="text-sm px-3 py-3 align-middle">
                           <div className="whitespace-nowrap overflow-hidden text-ellipsis">
                             {doc.document_date ? format(new Date(doc.document_date), "MMM dd, yyyy") : <span className="text-muted-foreground">-</span>}
                           </div>
                         </td>
-                        <td className="p-4 align-middle px-3 py-3">
+                        <td className="px-3 py-3 align-middle">
                           <div className="whitespace-nowrap overflow-hidden text-ellipsis text-sm">
                             {formatFileSize((doc as any).file_size || 0)}
                           </div>
                         </td>
-                        <td className="p-4 align-middle px-3 py-3">
+                        <td className="px-3 py-3 align-middle">
                           <div className="whitespace-nowrap overflow-hidden text-ellipsis text-sm">
                             {formatDate(doc.created_at)}
                           </div>
                         </td>
-                        <td className="p-4 align-middle text-right px-3 py-3">
+                        <td className="text-right px-3 py-3 align-middle">
                           <div className="flex justify-end space-x-2">
                             {doc.document_type === 'purchase_order' && (
                               <>
