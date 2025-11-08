@@ -637,7 +637,7 @@ export function OverviewStats({
           })()}
           </p>
           <p className="text-sm text-muted-foreground mb-0.5 text-center">Next week vs. this week</p>
-          <p className="text-xs text-muted-foreground">Projected change in lowest balance</p>
+          <p className="text-xs text-muted-foreground text-center">Projected change in lowest balance</p>
         </div>
       </div>
       
