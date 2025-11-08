@@ -957,7 +957,7 @@ export const CashFlowCalendar = ({
     <CardContent className="p-6">
         <div className="flex flex-col">
           <div className="relative w-full" style={{
-          height: '500px'
+          height: '560px'
         }} ref={chartWrapperRef}>
                  <div className="flex justify-between items-center mb-2 px-4">
                  <p className="text-sm text-muted-foreground">
