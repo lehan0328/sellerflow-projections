@@ -523,7 +523,7 @@ export function OverviewStats({
                 <AlertCircle className="h-3 w-3 mr-1" />
                 Overdue ({totalOverdueCount})
               </Button>}
-            {accounts.length > 0 && <Button variant="link" size="sm" onClick={() => setShowBankAccountsModal(true)} className="h-6 px-0 text-xs">
+            {accounts.length > 0 && <Button variant="link" size="sm" onClick={() => setShowBankAccountsModal(true)} className="h-6 px-0 text-xs mx-auto block">
                 View {accounts.length} account{accounts.length !== 1 ? 's' : ''}
               </Button>}
           </div>
