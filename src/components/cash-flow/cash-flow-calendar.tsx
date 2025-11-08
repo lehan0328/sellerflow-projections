@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ChevronLeft, ChevronRight, Plus, Wallet, CreditCard, Building2, CalendarIcon, TrendingUp, ShoppingBag, AlertTriangle } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Wallet, CreditCard, Building2, CalendarIcon, TrendingUp, ShoppingBag, AlertTriangle, DollarSign } from "lucide-react";
 import { useCreditCards } from "@/hooks/useCreditCards";
 import { useUserSettings } from "@/hooks/useUserSettings";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, addMonths, subMonths, subDays, addDays, startOfWeek, endOfWeek, getDay, startOfDay } from "date-fns";
@@ -910,6 +910,16 @@ export const CashFlowCalendar = ({
                 </div>
               </div>
               <div className="flex items-center space-x-2">
+                <Button 
+                  onClick={() => {
+                    // TODO: Implement search functionality
+                  }}
+                  variant="outline"
+                  size="sm"
+                >
+                  <DollarSign className="h-4 w-4 mr-2" />
+                  Search by Amount or Date
+                </Button>
                 <Select value={chartTimeRange} onValueChange={(value: '1' | '3' | '6' | '12') => setChartTimeRange(value)}>
                   <SelectTrigger className="w-[140px]">
                     <SelectValue />

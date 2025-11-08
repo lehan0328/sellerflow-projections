@@ -2395,17 +2395,7 @@ const Dashboard = () => {
             
             {/* Row 1: Cash Flow Calendar and AI Insights (Side by Side) */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:h-[700px]">
-              <div className="lg:col-span-2 h-full flex flex-col gap-4">
-                <Button 
-                  onClick={() => {
-                    // TODO: Implement search functionality
-                  }}
-                  className="w-full"
-                  variant="outline"
-                >
-                  <DollarSign className="h-4 w-4 mr-2" />
-                  Search by Amount or Date
-                </Button>
+              <div className="lg:col-span-2 h-full">
                 <CashFlowCalendar
                   events={allCalendarEvents} 
                   totalCash={displayCash}
