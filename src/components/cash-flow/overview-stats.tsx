@@ -448,213 +448,199 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
   return (
     <div className="p-3 h-full overflow-y-auto">
       <h2 className="text-lg font-bold text-foreground mb-3">Overview</h2>
-      <div className="space-y-4">
-        {/* Cash */}
-        <div>
-          <div className="flex items-center gap-1 mb-0.5">
-            <p className="text-xs font-medium text-muted-foreground">Cash</p>
-            {!balanceMatches && accounts.length > 0 && (
+      <div className="space-y-3">
+        {/* Cash & Credit - Side by Side */}
+        <div className="grid grid-cols-2 gap-2">
+          {/* Cash */}
+          <div>
+            <div className="flex items-center gap-1 mb-0.5">
+              <p className="text-xs font-medium text-muted-foreground">Cash</p>
+              {!balanceMatches && accounts.length > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleSyncRequest}
+                  disabled={isSyncing}
+                  className="h-3 w-3 p-0 text-orange-400 hover:text-orange-600"
+                  title={`Bank balance differs by ${formatCurrency(balanceDifference)}. Click to sync.`}
+                >
+                  {isSyncing ? (
+                    <RefreshCw className="h-2.5 w-2.5 animate-spin" />
+                  ) : (
+                    <AlertTriangle className="h-2.5 w-2.5" />
+                  )}
+                </Button>
+              )}
+            </div>
+            <p className="text-xl font-bold text-foreground leading-tight">
+              {formatCurrency(displayBankBalance)}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {accounts.length === 0 ? 'No accounts' : useAvailableBalance ? 'Available' : 'Current'}
+            </p>
+            {totalOverdueCount > 0 && (
               <Button
-                variant="ghost"
+                variant="outline"
                 size="sm"
-                onClick={handleSyncRequest}
-                disabled={isSyncing}
-                className="h-4 w-4 p-0 text-orange-400 hover:text-orange-600"
-                title={`Bank balance differs by ${formatCurrency(balanceDifference)}. Click to sync.`}
+                onClick={() => setShowOverdueModal(true)}
+                className="mt-1 h-5 px-1.5 text-xs border-destructive text-destructive"
               >
-                {isSyncing ? (
-                  <RefreshCw className="h-3 w-3 animate-spin" />
-                ) : (
-                  <AlertTriangle className="h-3 w-3" />
-                )}
+                <AlertCircle className="h-2.5 w-2.5 mr-0.5" />
+                {totalOverdueCount}
+              </Button>
+            )}
+            {accounts.length > 0 && (
+              <Button
+                variant="link"
+                size="sm"
+                onClick={() => setShowBankAccountsModal(true)}
+                className="h-4 px-0 text-xs"
+              >
+                View
               </Button>
             )}
           </div>
-          <p className="text-2xl font-bold text-foreground mb-0.5">
-            {formatCurrency(displayBankBalance)}
-          </p>
-          <p className="text-xs text-muted-foreground mb-1">
-            {accounts.length === 0 ? 'No accounts connected' : useAvailableBalance ? 'Available balance' : 'Current balance'}
-          </p>
-          {totalOverdueCount > 0 && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowOverdueModal(true)}
-              className="mt-1 h-6 px-2 text-xs border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
-            >
-              <AlertCircle className="h-3 w-3 mr-1" />
-              Overdue ({totalOverdueCount})
-            </Button>
-          )}
-          {accounts.length > 0 && (
-            <Button
-              variant="link"
-              size="sm"
-              onClick={() => setShowBankAccountsModal(true)}
-              className="h-5 px-0 text-xs"
-            >
-              View {accounts.length} account{accounts.length !== 1 ? 's' : ''}
-            </Button>
-          )}
+
+          {/* Available Credit */}
+          <div>
+            <p className="text-xs font-medium text-muted-foreground mb-0.5">Credit</p>
+            <p className="text-xl font-bold text-foreground leading-tight">{formatCurrency(totalAvailableCredit)}</p>
+            {totalCreditLimit === 0 ? (
+              <p className="text-xs text-muted-foreground italic">No cards</p>
+            ) : (
+              <>
+                <p className="text-xs text-muted-foreground">of {formatCurrency(totalCreditLimit)}</p>
+                <p className="text-xs text-muted-foreground">{creditUtilization.toFixed(0)}% used</p>
+              </>
+            )}
+            {creditCards.length > 0 && (
+              <Button
+                variant="link"
+                size="sm"
+                onClick={() => setShowCreditCardsModal(true)}
+                className="h-4 px-0 text-xs"
+              >
+                View
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Today's Activity */}
-        <div>
+        <div className="border-t pt-2">
           <div className="flex items-center justify-between mb-1">
-            <p className="text-xs font-medium text-muted-foreground">Today's Activity</p>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-5 px-1"
-              onClick={() => setShowTodayModal(true)}
-            >
-              <Eye className="h-3 w-3" />
-            </Button>
+            <p className="text-xs font-medium text-muted-foreground">Today</p>
+            <div className="flex items-center gap-1">
+              <Label htmlFor="exclude-today-stats" className="text-xs cursor-pointer text-muted-foreground">
+                Exclude
+              </Label>
+              <Switch
+                id="exclude-today-stats"
+                checked={excludeToday}
+                onCheckedChange={setExcludeToday}
+                className="scale-75"
+              />
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-4 px-0.5"
+                onClick={() => setShowTodayModal(true)}
+              >
+                <Eye className="h-3 w-3" />
+              </Button>
+            </div>
           </div>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="flex items-center gap-1.5 mb-1.5">
-                  <Label htmlFor="exclude-today-stats" className="text-xs cursor-pointer text-muted-foreground">
-                    Exclude Today
-                  </Label>
-                  <Switch
-                    id="exclude-today-stats"
-                    checked={excludeToday}
-                    onCheckedChange={setExcludeToday}
-                    className="scale-75"
-                  />
-                </div>
-              </TooltipTrigger>
-              <TooltipContent className="max-w-xs">
-                <p className="text-sm">
-                  Exclude Today will remove all income, expenses and recurring from safe spending power and buying opportunities
-                </p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          <div className="space-y-0.5">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-muted-foreground">Income:</span>
-              <span className="text-sm font-semibold text-green-600">
-                {formatCurrency(todaysIncome)}
-              </span>
+          <div className="grid grid-cols-3 gap-2 text-center">
+            <div>
+              <p className="text-xs text-muted-foreground">Income</p>
+              <p className="text-sm font-bold text-green-600">{formatCurrency(todaysIncome)}</p>
             </div>
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-muted-foreground">Expenses:</span>
-              <span className="text-sm font-semibold text-red-600">
-                {formatCurrency(todaysExpenses)}
-              </span>
+            <div>
+              <p className="text-xs text-muted-foreground">Expenses</p>
+              <p className="text-sm font-bold text-red-600">{formatCurrency(todaysExpenses)}</p>
             </div>
-            <div className="flex items-center justify-between pt-0.5 border-t">
-              <span className="text-xs font-medium">Net:</span>
-              <span className={`text-base font-bold ${todaysIncome - todaysExpenses >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+            <div>
+              <p className="text-xs text-muted-foreground">Net</p>
+              <p className={`text-sm font-bold ${todaysIncome - todaysExpenses >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                 {formatCurrency(todaysIncome - todaysExpenses)}
-              </span>
+              </p>
             </div>
           </div>
         </div>
 
-        {/* Available Credit */}
-        <div>
-          <p className="text-xs font-medium text-muted-foreground mb-0.5">Available Credit</p>
-          <p className="text-2xl font-bold text-foreground mb-0.5">{formatCurrency(totalAvailableCredit)}</p>
-          {totalCreditLimit === 0 ? (
-            <p className="text-xs text-muted-foreground italic">No credit cards linked</p>
-          ) : (
-            <>
-              {pendingCreditTotal > 0 && (
-                <p className="text-xs text-muted-foreground">
-                  Pending: {formatCurrency(pendingCreditTotal)}
-                </p>
-              )}
-              <p className="text-xs text-muted-foreground">of {formatCurrency(totalCreditLimit)} limit</p>
-              <p className="text-xs text-muted-foreground">{formatCurrency(totalCreditBalance)} used • {creditUtilization.toFixed(1)}% utilization</p>
-            </>
-          )}
-          {creditCards.length > 0 && (
-            <Button
-              variant="link"
-              size="sm"
-              onClick={() => setShowCreditCardsModal(true)}
-              className="h-5 px-0 text-xs"
-            >
-              View {creditCards.length} card{creditCards.length !== 1 ? 's' : ''}
-            </Button>
-          )}
-        </div>
-
-        {/* Incoming $ */}
-        <div>
-          <div className="flex items-center justify-between mb-0.5">
-            <p className="text-xs font-medium text-muted-foreground">Incoming $</p>
-            <Select value={incomingTimeRange} onValueChange={setIncomingTimeRange}>
-              <SelectTrigger className="w-24 h-5 text-xs">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {timeRangeOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+        {/* Incoming & Upcoming - Side by Side */}
+        <div className="grid grid-cols-2 gap-2 border-t pt-2">
+          {/* Incoming $ */}
+          <div>
+            <div className="flex items-center justify-between mb-0.5">
+              <p className="text-xs font-medium text-muted-foreground">Incoming</p>
+              <Select value={incomingTimeRange} onValueChange={setIncomingTimeRange}>
+                <SelectTrigger className="w-16 h-4 text-xs border-0 p-0">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {timeRangeOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <p className="text-xl font-bold text-foreground leading-tight">{formatCurrency(incomingTotal)}</p>
+            <p className="text-xs text-muted-foreground">
+              {incomingPayments.length > 0 ? `${incomingPayments.length} items` : "None"}
+            </p>
+            {incomingPayments.length > 0 && (
+              <Button
+                variant="link"
+                size="sm"
+                onClick={() => setShowIncomingModal(true)}
+                className="h-4 px-0 text-xs"
+              >
+                View
+              </Button>
+            )}
           </div>
-          <p className="text-2xl font-bold text-foreground mb-0.5">{formatCurrency(incomingTotal)}</p>
-          <p className="text-xs text-muted-foreground">
-            {incomingPayments.length > 0 ? `${incomingPayments.length} Amazon payouts & income` : "No Amazon payouts or income"}
-          </p>
-          {incomingPayments.length > 0 && (
-            <Button
-              variant="link"
-              size="sm"
-              onClick={() => setShowIncomingModal(true)}
-              className="h-5 px-0 text-xs"
-            >
-              View all
-            </Button>
-          )}
-        </div>
 
-        {/* Upcoming Payments */}
-        <div>
-          <div className="flex items-center justify-between mb-0.5">
-            <p className="text-xs font-medium text-muted-foreground">Upcoming Payments</p>
-            <Select value={upcomingTimeRange} onValueChange={setUpcomingTimeRange}>
-              <SelectTrigger className="w-24 h-5 text-xs">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {timeRangeOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          {/* Upcoming Payments */}
+          <div>
+            <div className="flex items-center justify-between mb-0.5">
+              <p className="text-xs font-medium text-muted-foreground">Upcoming</p>
+              <Select value={upcomingTimeRange} onValueChange={setUpcomingTimeRange}>
+                <SelectTrigger className="w-16 h-4 text-xs border-0 p-0">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {timeRangeOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <p className="text-xl font-bold text-foreground leading-tight">{formatCurrency(upcomingTotal)}</p>
+            <p className="text-xs text-muted-foreground">
+              {upcomingPayments.length > 0 ? `${upcomingPayments.length} due` : "None"}
+            </p>
+            {upcomingPayments.length > 0 && (
+              <Button
+                variant="link"
+                size="sm"
+                onClick={() => setShowUpcomingModal(true)}
+                className="h-4 px-0 text-xs"
+              >
+                View
+              </Button>
+            )}
           </div>
-          <p className="text-2xl font-bold text-foreground mb-0.5">{formatCurrency(upcomingTotal)}</p>
-          <p className="text-xs text-muted-foreground">
-            {upcomingPayments.length > 0 ? `${upcomingPayments.length} payments due` : "No payments due"}
-          </p>
-          {upcomingPayments.length > 0 && (
-            <Button
-              variant="link"
-              size="sm"
-              onClick={() => setShowUpcomingModal(true)}
-              className="h-5 px-0 text-xs"
-            >
-              View all
-            </Button>
-          )}
         </div>
 
         {/* Weekly Cash Change */}
-        <div>
-          <p className="text-xs font-medium text-muted-foreground mb-0.5">Weekly Cash Change</p>
-          <p className="text-2xl font-bold">
+        <div className="border-t pt-2">
+          <p className="text-xs font-medium text-muted-foreground mb-0.5">Weekly Change</p>
+          <p className="text-xl font-bold leading-tight">
                 {(() => {
                   // Calculate lowest balance for this week (days 0-7) vs next week (days 8-14)
                   const today = new Date();
