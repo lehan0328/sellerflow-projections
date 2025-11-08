@@ -84,18 +84,24 @@ export function DashboardHeader({
     return 'Dashboard';
   };
   return <div className="relative w-full">
-      {/* Logo - Top Left - Only show when sidebar is collapsed */}
-      {isSidebarCollapsed && <div className="absolute top-2 left-4 z-40">
-          <div className="flex flex-col items-center">
-            <img src={aurenIcon} alt="Auren" className="h-10 w-auto mb-0.5" />
-            <span className="text-sm font-bold bg-gradient-primary bg-clip-text text-transparent">
-              Auren
-            </span>
-          </div>
-        </div>}
+      {/* Header Container */}
+      <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="flex h-14 items-center justify-between px-4">
+          {/* Logo - Left side - Only show when sidebar is collapsed */}
+          {isSidebarCollapsed && (
+            <div className="flex flex-col items-center">
+              <img src={aurenIcon} alt="Auren" className="h-8 w-auto mb-0.5" />
+              <span className="text-xs font-bold bg-gradient-primary bg-clip-text text-transparent">
+                Auren
+              </span>
+            </div>
+          )}
+          
+          {/* Spacer when sidebar is open */}
+          {!isSidebarCollapsed && <div />}
 
-      {/* Navigation and User Menu - Top Right */}
-      <div className="absolute top-2 right-4 z-40 flex items-center space-x-3">
+          {/* Navigation and User Menu - Right side */}
+          <div className="flex items-center space-x-3">
         {!isDemo && is_trialing && trial_end && (
           <Badge variant="outline" className="bg-blue-500/10 border-blue-500/30 text-blue-600 dark:text-blue-400 px-3 py-1">
             Professional Plan Trial - Ends {new Date(trial_end).toLocaleDateString()}
@@ -127,6 +133,8 @@ export function DashboardHeader({
           onIncomeClick={onIncomeClick}
         />}
         {isDemo ? <DemoUserMenu /> : <UserMenu />}
-      </div>
+          </div>
+        </div>
+      </header>
     </div>;
 }
