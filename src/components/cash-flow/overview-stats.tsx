@@ -594,7 +594,7 @@ export function OverviewStats({
               </Select>
             </div>
             <p className="text-2xl font-bold text-foreground mb-1.5 text-center">{formatCurrency(upcomingTotal)}</p>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground text-center">
               {upcomingPayments.length > 0 ? `${upcomingPayments.length} payments due` : "No payments"}
             </p>
           </div>
