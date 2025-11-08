@@ -99,6 +99,7 @@ export const CashFlowInsights = memo(({
     income: number;
     forecastedPayouts: number;
   } | null>(null);
+  const [includeCreditInOpportunities, setIncludeCreditInOpportunities] = useState(false);
   const netDaily = dailyInflow - dailyOutflow;
   const healthStatus = netDaily >= 0 ? "positive" : "negative";
 
@@ -475,6 +476,27 @@ export const CashFlowInsights = memo(({
 
   const adjustedOpportunities = useMemo(() => getAdjustedOpportunities(), [getAdjustedOpportunities]);
 
+  // Merge cash opportunities with credit card available credit
+  const mergedOpportunities = useMemo(() => {
+    if (!includeCreditInOpportunities || creditCards.length === 0) {
+      return adjustedOpportunities; // Return cash-only
+    }
+    
+    // Calculate total available credit
+    const totalAvailableCredit = creditCards.reduce((sum, card) => {
+      const effectiveCreditLimit = card.credit_limit_override || card.credit_limit;
+      const effectiveAvailableCredit = effectiveCreditLimit - card.balance;
+      return sum + effectiveAvailableCredit;
+    }, 0);
+    
+    // Add available credit to each opportunity
+    return adjustedOpportunities.map(opp => ({
+      ...opp,
+      balance: opp.balance + totalAvailableCredit,
+      includesCredit: true
+    }));
+  }, [adjustedOpportunities, includeCreditInOpportunities, creditCards]);
+
   const handleDateSearch = useCallback(async (date: Date) => {
     setSearchedDate(date);
     const dateStr = date.toISOString().split('T')[0];
@@ -791,15 +813,15 @@ export const CashFlowInsights = memo(({
                      </p>}
                   
                   {allBuyingOpportunities && allBuyingOpportunities.filter(opp => opp.balance > 0).length > 0 && (
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => setShowAllOpportunities(true)}
-                      className="w-full"
-                    >
-                      <ShoppingCart className="h-4 w-4 mr-2" />
-                      View All {allBuyingOpportunities.filter(opp => opp.balance > 0).length} {allBuyingOpportunities.filter(opp => opp.balance > 0).length === 1 ? 'Opportunity' : 'Opportunities'}
-                    </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => setShowAllOpportunities(true)}
+                    className="w-full"
+                  >
+                    <ShoppingCart className="h-4 w-4 mr-2" />
+                    View All {mergedOpportunities.filter(opp => opp.balance > 0).length} {mergedOpportunities.filter(opp => opp.balance > 0).length === 1 ? 'Opportunity' : 'Opportunities'}
+                  </Button>
                   )}
                 </div>
               </div>
@@ -845,6 +867,32 @@ export const CashFlowInsights = memo(({
                     <p className="text-[10px] text-muted-foreground mt-2">
                       Combined spending power from all your credit cards
                     </p>
+                    
+                    {/* Toggle to Include Credit in Buying Opportunities */}
+                    <div className="flex items-center justify-between mt-3 p-2 bg-white/50 dark:bg-gray-900/50 rounded">
+                      <div className="flex items-center gap-2">
+                        <Label htmlFor="include-credit" className="text-xs font-medium cursor-pointer">
+                          Include in Buying Opportunities
+                        </Label>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <button className="inline-flex">
+                                <Info className="h-3 w-3 text-muted-foreground" />
+                              </button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Combine cash and credit for total buying power</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
+                      <Switch
+                        id="include-credit"
+                        checked={includeCreditInOpportunities}
+                        onCheckedChange={setIncludeCreditInOpportunities}
+                      />
+                    </div>
                   </div>
                   
                   <Button 
@@ -870,7 +918,7 @@ export const CashFlowInsights = memo(({
               All Buying Opportunities
             </DialogTitle>
             <DialogDescription>
-              View all your upcoming buying opportunities based on projected cash flow. All opportunities reflect transactions within the next 3 months only.
+              View all your upcoming buying opportunities based on projected cash flow{includeCreditInOpportunities && " plus available credit"}. All opportunities reflect transactions within the next 3 months only.
             </DialogDescription>
           </DialogHeader>
           
@@ -966,7 +1014,7 @@ export const CashFlowInsights = memo(({
             </div>
             
             <div className="space-y-2 pb-4">
-              {adjustedOpportunities.map((opp, index) => {
+              {mergedOpportunities.map((opp, index) => {
                 const [year, month, day] = opp.date.split('-').map(Number);
                 const date = new Date(year, month - 1, day);
                 const formattedDate = date.toLocaleDateString('en-US', {
@@ -990,8 +1038,14 @@ export const CashFlowInsights = memo(({
                   <div key={index} className="p-4 rounded-lg border bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border-blue-200 dark:border-blue-800">
                     <div className="flex items-center justify-between mb-3">
                       <div>
-                        <div className="text-2xl font-bold text-blue-600">
+                        <div className="text-2xl font-bold text-blue-600 flex items-center gap-2">
                           ${opp.balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          {(opp as any).includesCredit && (
+                            <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/30 text-[10px] py-0">
+                              <CreditCard className="h-3 w-3 mr-1" />
+                              + Credit
+                            </Badge>
+                          )}
                         </div>
                         <div className="text-xs text-muted-foreground">Safe to spend</div>
                       </div>
@@ -1080,7 +1134,7 @@ export const CashFlowInsights = memo(({
                     {(() => {
                       const amount = parseFloat(searchAmount);
                       // Find the earliest opportunity where balance >= amount
-                      const matchingOpp = adjustedOpportunities.find(opp => opp.balance >= amount);
+                      const matchingOpp = mergedOpportunities.find(opp => opp.balance >= amount);
                       
                       if (!matchingOpp) {
                         return (
