@@ -363,7 +363,7 @@ const FlexReport = () => {
       handleDownload();
     }
   };
-  return <div className="h-screen overflow-auto bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 p-2 md:p-4">
+  return <div className="light h-screen overflow-auto bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 p-2 md:p-4">
       <div className="max-w-4xl mx-auto scale-[0.85] origin-top">
         {/* Action Buttons */}
         <div className="flex items-center justify-between mb-4">
