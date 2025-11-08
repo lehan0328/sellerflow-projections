@@ -236,7 +236,7 @@ export default function DocumentStorage() {
         table: 'documents_metadata',
         filter: `account_id=eq.${profile.account_id}`
       }, () => {
-        queryClient.invalidateQueries({ queryKey: ['documents', profile.account_id, includeUntracked] });
+        queryClient.invalidateQueries({ queryKey: ['documents', profile.account_id] });
       })
       .on('postgres_changes', {
         event: '*',
@@ -289,7 +289,7 @@ export default function DocumentStorage() {
       return fileName;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['documents', profile?.account_id, includeUntracked] });
+      queryClient.invalidateQueries({ queryKey: ['documents', profile?.account_id] });
       toast.success('Document uploaded successfully');
     },
     onError: (error: Error) => {
@@ -964,144 +964,143 @@ export default function DocumentStorage() {
                 </p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full border-collapse border">
-                  <thead>
-                    <tr className="bg-background border-b">
-                      <th className="bg-background font-semibold px-4 py-3 text-center border-r whitespace-nowrap w-[5%]"></th>
-                      <th className="bg-background font-semibold px-4 py-3 text-left border-r whitespace-nowrap w-[20%]">PO Name</th>
-                      <th className="bg-background font-semibold px-4 py-3 text-left border-r whitespace-nowrap w-[12%]">Document Type</th>
-                      <th className="bg-background font-semibold px-4 py-3 text-left border-r whitespace-nowrap w-[15%]">Vendor</th>
-                      <th className="bg-background font-semibold px-4 py-3 text-right border-r whitespace-nowrap w-[12%]">Amount</th>
-                      <th className="bg-background font-semibold px-4 py-3 text-left border-r whitespace-nowrap w-[12%]">Document Date</th>
-                      <th className="bg-background font-semibold px-4 py-3 text-right border-r whitespace-nowrap w-[8%]">Size</th>
-                      <th className="bg-background font-semibold px-4 py-3 text-left border-r whitespace-nowrap w-[10%]">Uploaded</th>
-                      <th className="bg-background font-semibold px-4 py-3 text-center whitespace-nowrap w-[6%]">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredDocuments.map((doc) => (
-                      <Collapsible key={doc.id}>
-                        <tr className="border-b transition-colors hover:bg-muted/50">
-                          <td className="px-4 py-3 text-center border-r whitespace-nowrap w-[5%]">
-                            <CollapsibleTrigger asChild>
-                              <Button 
-                                variant="ghost" 
-                                size="sm"
-                                className="h-6 w-6 p-0"
-                              >
-                                <ChevronDown className="h-4 w-4" />
-                              </Button>
-                            </CollapsibleTrigger>
-                          </td>
-                          <td className="px-4 py-3 border-r whitespace-nowrap overflow-hidden w-[20%]">
+              <Table className="w-full table-fixed">
+                <colgroup>
+                  <col style={{ width: '25%' }} />
+                  <col style={{ width: '10%' }} />
+                  <col style={{ width: '12%' }} />
+                  <col style={{ width: '10%' }} />
+                  <col style={{ width: '11%' }} />
+                  <col style={{ width: '8%' }} />
+                  <col style={{ width: '12%' }} />
+                  <col style={{ width: '12%' }} />
+                </colgroup>
+                <TableHeader>
+                  <TableRow className="bg-background border-b hover:bg-background">
+                    <TableHead className="bg-background font-semibold px-4 py-3">Name</TableHead>
+                    <TableHead className="bg-background font-semibold px-4 py-3 text-left">Type</TableHead>
+                    <TableHead className="bg-background font-semibold px-4 py-3">Vendor</TableHead>
+                    <TableHead className="bg-background font-semibold px-4 py-3">Amount</TableHead>
+                    <TableHead className="bg-background font-semibold px-4 py-3">Document Date</TableHead>
+                    <TableHead className="bg-background font-semibold px-4 py-3">Size</TableHead>
+                    <TableHead className="bg-background font-semibold px-4 py-3">Uploaded</TableHead>
+                    <TableHead className="bg-background font-semibold px-4 py-3 text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredDocuments.map((doc) => (
+                    <Collapsible key={doc.id}>
+                      <TableRow className="align-top">
+                        <TableCell className="font-medium px-4 py-3">
+                          <div className="flex items-center space-x-2">
+                            <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                             <span 
-                              className="cursor-pointer hover:text-primary transition-colors truncate block"
+                              className="cursor-pointer hover:text-primary transition-colors truncate"
                               onClick={() => setEditingDoc(doc)}
-                              title={doc.display_name || doc.name}
+                              title="Click to edit document name"
                             >
                               {doc.display_name || doc.name}
                             </span>
-                          </td>
-                          <td className="px-4 py-3 border-r whitespace-nowrap w-[12%]">
-                            {doc.document_type ? (
-                              <span className="capitalize">{doc.document_type.replace('_', ' ')}</span>
-                            ) : (
-                              <span className="text-muted-foreground">-</span>
+                            {!(doc as any).storage_exists && (
+                              <Badge variant="destructive" className="text-xs ml-2 flex-shrink-0">
+                                Missing File
+                              </Badge>
                             )}
-                          </td>
-                          <td className="px-4 py-3 border-r whitespace-nowrap overflow-hidden w-[15%]">
-                            {doc.vendor_name ? (
-                              <span className="truncate block" title={doc.vendor_name}>{doc.vendor_name}</span>
-                            ) : (
-                              <span className="text-muted-foreground">-</span>
+                            {(doc as any).untracked && (
+                              <Badge variant="secondary" className="text-xs ml-2 flex-shrink-0">
+                                Untracked
+                              </Badge>
                             )}
-                          </td>
-                          <td className="px-4 py-3 text-right font-medium border-r whitespace-nowrap w-[12%]">
-                            {doc.amount ? (
-                              `$${doc.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                            ) : (
-                              <span className="text-muted-foreground">-</span>
-                            )}
-                          </td>
-                          <td className="px-4 py-3 border-r whitespace-nowrap w-[12%]">
-                            {doc.document_date ? (
-                              format(new Date(doc.document_date), "MMM dd, yyyy")
-                            ) : (
-                              <span className="text-muted-foreground">-</span>
-                            )}
-                          </td>
-                          <td className="px-4 py-3 text-right text-sm border-r whitespace-nowrap w-[8%]">
-                            {formatFileSize((doc as any).file_size || 0)}
-                          </td>
-                          <td className="px-4 py-3 text-sm border-r whitespace-nowrap w-[10%]">
-                            {formatDate(doc.created_at)}
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap w-[6%]">
-                            <div className="flex justify-center gap-1">
-                              {doc.document_type === 'purchase_order' && (
-                                <>
-                                  <input
-                                    type="file"
-                                    id={`replace-${doc.id}`}
-                                    className="hidden"
-                                    accept="image/*,.pdf"
-                                    onChange={(e) => {
-                                      const file = e.target.files?.[0];
-                                      if (file) {
-                                        handleReplaceDocument(doc, file);
-                                        e.target.value = '';
-                                      }
-                                    }}
-                                  />
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => document.getElementById(`replace-${doc.id}`)?.click()}
-                                    disabled={replacingDocument === doc.id}
-                                    title="Replace document file"
-                                  >
-                                    {replacingDocument === doc.id ? (
-                                      <Loader2 className="h-4 w-4 animate-spin" />
-                                    ) : (
-                                      <Upload className="h-4 w-4" />
-                                    )}
-                                  </Button>
-                                </>
-                              )}
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => setEditingDoc(doc)}
-                                title="Edit document details"
-                              >
-                                <Edit className="h-4 w-4" />
+                            <CollapsibleTrigger asChild>
+                              <Button variant="ghost" size="sm" className="h-6 w-6 p-0 flex-shrink-0 group" aria-label="Toggle document details">
+                                <ChevronDown className="h-4 w-4 transition-transform group-data-[state=open]:rotate-180" />
                               </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleDownload(doc.name, doc)}
-                                title="Download document"
-                                disabled={!(doc as any).storage_exists}
-                              >
-                                <Download className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => setDeleteTarget(doc.name)}
-                                className="text-destructive hover:text-destructive"
-                                title="Delete document"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </td>
-                        </tr>
-                        <tr className="border-0">
-                          <td colSpan={9} className="p-0 border-0">
-                            <CollapsibleContent>
-                              <div className="w-full py-4 bg-muted/30">
+                            </CollapsibleTrigger>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-sm px-4 py-3 text-left">
+                          {doc.document_type ? (
+                            <span className="capitalize">{doc.document_type.replace('_', ' ')}</span>
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-sm px-4 py-3">
+                          {doc.vendor_name || <span className="text-muted-foreground">-</span>}
+                        </TableCell>
+                        <TableCell className="text-sm font-medium px-4 py-3">
+                          {doc.amount ? `$${doc.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : <span className="text-muted-foreground">-</span>}
+                        </TableCell>
+                        <TableCell className="text-sm px-4 py-3">
+                          {doc.document_date ? format(new Date(doc.document_date), "MMM dd, yyyy") : <span className="text-muted-foreground">-</span>}
+                        </TableCell>
+                        <TableCell className="px-4 py-3">{formatFileSize((doc as any).file_size || 0)}</TableCell>
+                        <TableCell className="px-4 py-3">{formatDate(doc.created_at)}</TableCell>
+                        <TableCell className="text-right px-4 py-3">
+                          <div className="flex justify-end space-x-2">
+                            {doc.document_type === 'purchase_order' && (
+                              <>
+                                <input
+                                  type="file"
+                                  id={`replace-${doc.id}`}
+                                  className="hidden"
+                                  accept="image/*,.pdf"
+                                  onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) {
+                                      handleReplaceDocument(doc, file);
+                                      e.target.value = ''; // Reset input
+                                    }
+                                  }}
+                                />
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => document.getElementById(`replace-${doc.id}`)?.click()}
+                                  disabled={replacingDocument === doc.id}
+                                  title="Replace document file"
+                                >
+                                  {replacingDocument === doc.id ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <Upload className="h-4 w-4" />
+                                  )}
+                                </Button>
+                              </>
+                            )}
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setEditingDoc(doc)}
+                              title="Edit document details"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDownload(doc.name, doc)}
+                              title="Download document"
+                              disabled={!(doc as any).storage_exists}
+                            >
+                              <Download className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setDeleteTarget(doc.name)}
+                              className="text-destructive hover:text-destructive"
+                              title="Delete document"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell colSpan={8} className="p-0 border-0">
+                          <CollapsibleContent>
+                            <div className="w-full py-4 bg-muted/30">
                               {doc.line_items && doc.line_items.length > 0 ? (
                                 <div className="space-y-2 px-4">
                                   <div className="text-sm font-semibold mb-3">Line Items ({doc.line_items.length})</div>
@@ -1148,15 +1147,14 @@ export default function DocumentStorage() {
                                   </div>
                                 </div>
                               )}
-                              </div>
-                            </CollapsibleContent>
-                          </td>
-                        </tr>
-                      </Collapsible>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                            </div>
+                          </CollapsibleContent>
+                        </TableCell>
+                      </TableRow>
+                    </Collapsible>
+                  ))}
+                </TableBody>
+              </Table>
             )}
           </CardContent>
         </Card>
