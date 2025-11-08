@@ -2976,7 +2976,7 @@ const Dashboard = () => {
         <div className="flex-1 overflow-y-auto relative z-10">
           {/* Header with sidebar trigger */}
           <div className="sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
-            <div className="flex items-center min-h-[120px] px-6">
+            <div className="flex items-center min-h-[70px] px-6">
               <SidebarTrigger className="mr-4 self-start mt-6" />
               <DashboardHeader />
             </div>
