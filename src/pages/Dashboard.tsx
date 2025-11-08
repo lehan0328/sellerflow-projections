@@ -2374,53 +2374,28 @@ const Dashboard = () => {
             {/* Amazon Sync Progress Banner */}
             <AmazonSyncBanner />
             
-            <OverviewStats
-              totalCash={displayCash} 
-              events={allCalendarEvents}
-              onUpdateCashBalance={handleUpdateCashBalance}
-              onTransactionUpdate={() => {
-                refetchVendorTransactions();
-                refetchSafeSpending();
-              }}
-              pendingIncomeToday={pendingIncomeToday}
-              useAvailableBalance={useAvailableBalance}
-            />
-            
             {/* Transaction Match Notification */}
             <TransactionMatchNotification 
               unmatchedCount={unmatchedTransactionsCount} 
               onNavigate={() => handleSectionChange("match-transactions")}
             />
             
-            
-            {/* Row 1: Cash Flow Calendar and AI Insights (Side by Side) */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:h-[700px]">
-              <div className="lg:col-span-2 h-full">
-                <CashFlowCalendar
-                  events={allCalendarEvents} 
-                  totalCash={displayCash}
-                  onEditTransaction={handleEditTransaction}
-                  onUpdateTransactionDate={handleUpdateTransactionDate}
-                  todayInflow={todayInflow}
-                  todayOutflow={todayOutflow}
-                  upcomingExpenses={upcomingExpenses}
-                  incomeItems={incomeItems}
-                  bankAccountBalance={displayBankBalance}
-                  projectedDailyBalances={(safeSpendingData?.calculation?.daily_balances || []).map(d => ({ 
-                    date: new Date(d.date), 
-                    balance: d.balance 
-                  }))}
-                  vendors={vendors}
-                  onVendorClick={handleEditVendorOrder}
-                  onIncomeClick={handleEditIncome}
-                  reserveAmount={reserveAmount}
-                  excludeToday={excludeToday}
-                  safeSpendingLimit={safeSpendingData?.safe_spending_limit || 0}
-                  allBuyingOpportunities={safeSpendingData?.calculation?.all_buying_opportunities || []}
-                  dailyBalances={safeSpendingData?.calculation?.daily_balances || []}
+            {/* Main Layout: Stats Sidebar + Cash Flow Visualization */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:h-[700px]">
+              {/* Left Sidebar: Compact Stats */}
+              <div className="lg:col-span-3 space-y-4 overflow-y-auto">
+                <OverviewStats
+                  totalCash={displayCash} 
+                  events={allCalendarEvents}
+                  onUpdateCashBalance={handleUpdateCashBalance}
+                  onTransactionUpdate={() => {
+                    refetchVendorTransactions();
+                    refetchSafeSpending();
+                  }}
+                  pendingIncomeToday={pendingIncomeToday}
+                  useAvailableBalance={useAvailableBalance}
                 />
-              </div>
-              <div className="lg:col-span-1 h-full">
+                
                 <CashFlowInsights
                   currentBalance={displayCash}
                   dailyInflow={todayInflow}
@@ -2484,6 +2459,33 @@ const Dashboard = () => {
                       onReviewMatches={() => navigate("/bank-transactions")}
                     />
                   }
+                />
+              </div>
+              
+              {/* Right Main Area: Cash Flow Calendar */}
+              <div className="lg:col-span-9 h-full">
+                <CashFlowCalendar
+                  events={allCalendarEvents} 
+                  totalCash={displayCash}
+                  onEditTransaction={handleEditTransaction}
+                  onUpdateTransactionDate={handleUpdateTransactionDate}
+                  todayInflow={todayInflow}
+                  todayOutflow={todayOutflow}
+                  upcomingExpenses={upcomingExpenses}
+                  incomeItems={incomeItems}
+                  bankAccountBalance={displayBankBalance}
+                  projectedDailyBalances={(safeSpendingData?.calculation?.daily_balances || []).map(d => ({ 
+                    date: new Date(d.date), 
+                    balance: d.balance 
+                  }))}
+                  vendors={vendors}
+                  onVendorClick={handleEditVendorOrder}
+                  onIncomeClick={handleEditIncome}
+                  reserveAmount={reserveAmount}
+                  excludeToday={excludeToday}
+                  safeSpendingLimit={safeSpendingData?.safe_spending_limit || 0}
+                  allBuyingOpportunities={safeSpendingData?.calculation?.all_buying_opportunities || []}
+                  dailyBalances={safeSpendingData?.calculation?.daily_balances || []}
                 />
               </div>
             </div>

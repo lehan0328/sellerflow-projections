@@ -446,7 +446,7 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
   const totalOverdueCount = overdueVendorCount + overdueIncomeCount;
 
   return (<>
-      <div className="grid gap-2 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+      <div className="grid gap-2 grid-cols-1">
         <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-3">
           <div className="flex items-center justify-between">
             <div className="flex-1">
