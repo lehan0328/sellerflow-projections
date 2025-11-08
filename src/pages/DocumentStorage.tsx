@@ -1145,9 +1145,9 @@ export default function DocumentStorage() {
                       <TableRow>
                         <TableCell colSpan={9} className="p-0 border-0">
                           <CollapsibleContent>
-                            <div className="w-full py-4 bg-muted/30">
+                            <div className="w-full py-4 px-4 bg-muted/30">
                               {doc.line_items && doc.line_items.length > 0 ? (
-                                <div className="space-y-2 px-4">
+                                <div className="space-y-2">
                                   <div className="text-sm font-semibold mb-3">Line Items ({doc.line_items.length})</div>
                                   <div className="space-y-1.5">
                                     {doc.line_items.map((item, idx) => (
@@ -1169,7 +1169,7 @@ export default function DocumentStorage() {
                                   </div>
                                 </div>
                               ) : (
-                                <div className="space-y-3 px-4">
+                                <div className="space-y-3">
                                   <div className="text-sm font-semibold mb-2">Details</div>
                                   <div className="text-sm text-muted-foreground">No line items found for this document.</div>
                                   <div className="grid md:grid-cols-3 gap-4 text-sm">
