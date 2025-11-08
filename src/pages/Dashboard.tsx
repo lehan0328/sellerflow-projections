@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from "react";
 import { addDays, isToday, isBefore, startOfDay, format } from "date-fns";
 import { calculateCalendarBalances } from "@/lib/calendarBalances";
 import { useNavigate, useLocation } from "react-router-dom";
-import { RefreshCw, Building2, CreditCard as CreditCardIcon, TrendingUp, TrendingDown, Calendar, CheckCircle, User, Database, Trash2, AlertTriangle, Shield, Users, Palette, Sun, Moon, Monitor } from "lucide-react";
+import { RefreshCw, Building2, CreditCard as CreditCardIcon, TrendingUp, TrendingDown, Calendar, CheckCircle, User, Database, Trash2, AlertTriangle, Shield, Users, Palette, Sun, Moon, Monitor, DollarSign } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
@@ -2395,8 +2395,18 @@ const Dashboard = () => {
             
             {/* Row 1: Cash Flow Calendar and AI Insights (Side by Side) */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:h-[700px]">
-              <div className="lg:col-span-2 h-full">
-                <CashFlowCalendar 
+              <div className="lg:col-span-2 h-full flex flex-col gap-4">
+                <Button 
+                  onClick={() => {
+                    // TODO: Implement search functionality
+                  }}
+                  className="w-full"
+                  variant="outline"
+                >
+                  <DollarSign className="h-4 w-4 mr-2" />
+                  Search by Amount or Date
+                </Button>
+                <CashFlowCalendar
                   events={allCalendarEvents} 
                   totalCash={displayCash}
                   onEditTransaction={handleEditTransaction}
