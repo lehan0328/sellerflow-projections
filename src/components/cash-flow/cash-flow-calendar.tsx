@@ -2,6 +2,9 @@ import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -121,6 +124,12 @@ export const CashFlowCalendar = ({
   const [zoomState, setZoomState] = useState<{ left?: number; right?: number } | null>(null);
   const [refAreaLeft, setRefAreaLeft] = useState<string | null>(null);
   const [refAreaRight, setRefAreaRight] = useState<string | null>(null);
+  
+  // Search state
+  const [showSearchDialog, setShowSearchDialog] = useState(false);
+  const [searchAmount, setSearchAmount] = useState('');
+  const [searchDate, setSearchDate] = useState<Date | undefined>(undefined);
+  const [searchResults, setSearchResults] = useState<{date: string; events: CashFlowEvent[]}[]>([]);
   
   // Tooltip and chart state - MUST be with other hooks
   const [activeTooltipIndex, setActiveTooltipIndex] = useState<number | null>(null);
@@ -871,6 +880,48 @@ export const CashFlowCalendar = ({
     }
   };
 
+  const handleSearch = () => {
+    const results: {date: string; events: CashFlowEvent[]}[] = [];
+    
+    // Search by amount if provided
+    if (searchAmount && !isNaN(parseFloat(searchAmount))) {
+      const targetAmount = parseFloat(searchAmount);
+      const tolerance = 0.01; // Allow for small differences
+      
+      chartData.forEach((day: any) => {
+        const matchingEvents = (day.transactions || []).filter((event: CashFlowEvent) => 
+          Math.abs(event.amount - targetAmount) < tolerance
+        );
+        
+        if (matchingEvents.length > 0) {
+          results.push({
+            date: day.date,
+            events: matchingEvents
+          });
+        }
+      });
+    }
+    
+    // Search by date if provided
+    if (searchDate) {
+      const searchDateStr = format(searchDate, 'MMM dd');
+      const matchingDay = chartData.find((day: any) => day.date === searchDateStr);
+      
+      if (matchingDay && matchingDay.transactions?.length > 0) {
+        results.push({
+          date: matchingDay.date,
+          events: matchingDay.transactions
+        });
+      }
+    }
+    
+    setSearchResults(results);
+    
+    if (results.length === 0) {
+      toast.error('No transactions found matching your search criteria');
+    }
+  };
+
   const chartConfig = {
     cashBalance: {
       label: "Cash Balance",
@@ -911,9 +962,7 @@ export const CashFlowCalendar = ({
               </div>
               <div className="flex items-center space-x-2">
                 <Button 
-                  onClick={() => {
-                    // TODO: Implement search functionality
-                  }}
+                  onClick={() => setShowSearchDialog(true)}
                   variant="outline"
                   size="sm"
                 >
@@ -1393,6 +1442,77 @@ export const CashFlowCalendar = ({
         open={showDayTransactionsModal}
         onOpenChange={setShowDayTransactionsModal}
       />
+      
+      {/* Search Dialog */}
+      <Dialog open={showSearchDialog} onOpenChange={setShowSearchDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Search Transactions</DialogTitle>
+            <DialogDescription>
+              Search for transactions by amount or date
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="search-amount">Search by Amount</Label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+                <Input
+                  id="search-amount"
+                  type="number"
+                  placeholder="0.00"
+                  value={searchAmount}
+                  onChange={(e) => setSearchAmount(e.target.value)}
+                  className="pl-7"
+                />
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Search by Date</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-full justify-start text-left">
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {searchDate ? format(searchDate, 'PPP') : 'Pick a date'}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={searchDate}
+                    onSelect={setSearchDate}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+            
+            <Button onClick={handleSearch} className="w-full">
+              Search
+            </Button>
+            
+            {searchResults.length > 0 && (
+              <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                <h4 className="font-medium text-sm">Results ({searchResults.length} {searchResults.length === 1 ? 'day' : 'days'})</h4>
+                {searchResults.map((result, idx) => (
+                  <div key={idx} className="p-3 border rounded-lg space-y-1">
+                    <div className="font-medium text-sm">{result.date}</div>
+                    {result.events.map((event, eventIdx) => (
+                      <div key={eventIdx} className="text-xs text-muted-foreground pl-2 border-l-2 border-primary/20">
+                        <div className="flex justify-between">
+                          <span>{event.description}</span>
+                          <span className="font-medium">${event.amount.toFixed(2)}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 };
