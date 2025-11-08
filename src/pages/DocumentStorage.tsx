@@ -966,17 +966,19 @@ export default function DocumentStorage() {
             ) : (
               <Table className="w-full table-fixed">
                 <colgroup>
-                  <col style={{ width: '25%' }} />
+                  <col style={{ width: '5%' }} />
+                  <col style={{ width: '23%' }} />
                   <col style={{ width: '10%' }} />
                   <col style={{ width: '12%' }} />
                   <col style={{ width: '10%' }} />
-                  <col style={{ width: '11%' }} />
+                  <col style={{ width: '10%' }} />
                   <col style={{ width: '8%' }} />
-                  <col style={{ width: '12%' }} />
+                  <col style={{ width: '10%' }} />
                   <col style={{ width: '12%' }} />
                 </colgroup>
                 <TableHeader>
                   <TableRow className="bg-muted border-b hover:bg-muted">
+                    <TableHead className="font-semibold px-4 py-3 text-center"></TableHead>
                     <TableHead className="font-semibold px-4 py-3 text-left">Name</TableHead>
                     <TableHead className="font-semibold px-4 py-3 text-left">Type</TableHead>
                     <TableHead className="font-semibold px-4 py-3 text-left">Vendor</TableHead>
@@ -991,6 +993,13 @@ export default function DocumentStorage() {
                   {filteredDocuments.map((doc) => (
                     <Collapsible key={doc.id}>
                       <TableRow className="align-top">
+                        <TableCell className="px-4 py-3 text-center">
+                          <CollapsibleTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-6 w-6 p-0 group" aria-label="Toggle document details">
+                              <ChevronDown className="h-4 w-4 transition-transform group-data-[state=open]:rotate-180" />
+                            </Button>
+                          </CollapsibleTrigger>
+                        </TableCell>
                         <TableCell className="font-medium px-4 py-3">
                           <div className="flex items-center space-x-2">
                             <span 
@@ -1010,11 +1019,6 @@ export default function DocumentStorage() {
                                 Untracked
                               </Badge>
                             )}
-                            <CollapsibleTrigger asChild>
-                              <Button variant="ghost" size="sm" className="h-6 w-6 p-0 flex-shrink-0 group" aria-label="Toggle document details">
-                                <ChevronDown className="h-4 w-4 transition-transform group-data-[state=open]:rotate-180" />
-                              </Button>
-                            </CollapsibleTrigger>
                           </div>
                         </TableCell>
                         <TableCell className="text-sm px-4 py-3 text-left">
@@ -1097,7 +1101,7 @@ export default function DocumentStorage() {
                         </TableCell>
                       </TableRow>
                       <TableRow>
-                        <TableCell colSpan={8} className="p-0 border-0">
+                        <TableCell colSpan={9} className="p-0 border-0">
                           <CollapsibleContent>
                             <div className="w-full py-4 bg-muted/30">
                               {doc.line_items && doc.line_items.length > 0 ? (
