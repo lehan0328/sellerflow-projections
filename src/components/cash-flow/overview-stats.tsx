@@ -449,8 +449,50 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
     <div className="p-4 h-full overflow-y-auto flex flex-col border border-border rounded-lg bg-background/10 backdrop-blur-sm">
       <h2 className="text-xl font-bold text-foreground mb-4">Overview</h2>
       <div className="space-y-6 flex-1">
+        {/* Today's Activity */}
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-sm font-medium text-muted-foreground">Today's Activity</p>
+            <div className="flex items-center gap-2">
+              <Label htmlFor="exclude-today-stats" className="text-xs cursor-pointer text-muted-foreground">
+                Exclude Today
+              </Label>
+              <Switch
+                id="exclude-today-stats"
+                checked={excludeToday}
+                onCheckedChange={setExcludeToday}
+                className="scale-75"
+              />
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 px-1"
+                onClick={() => setShowTodayModal(true)}
+              >
+                <Eye className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-3">
+            <div className="text-center">
+              <p className="text-xs text-muted-foreground mb-1">Income</p>
+              <p className="text-lg font-bold text-green-600">{formatCurrency(todaysIncome)}</p>
+            </div>
+            <div className="text-center">
+              <p className="text-xs text-muted-foreground mb-1">Expenses</p>
+              <p className="text-lg font-bold text-red-600">{formatCurrency(todaysExpenses)}</p>
+            </div>
+            <div className="text-center">
+              <p className="text-xs text-muted-foreground mb-1">Net</p>
+              <p className={`text-lg font-bold ${todaysIncome - todaysExpenses >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {formatCurrency(todaysIncome - todaysExpenses)}
+              </p>
+            </div>
+          </div>
+        </div>
+
         {/* Cash & Credit - Side by Side */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-4 border-t pt-4">
           {/* Cash */}
           <div>
             <div className="flex items-center gap-1.5 mb-1">
@@ -523,48 +565,6 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
                 View {creditCards.length} card{creditCards.length !== 1 ? 's' : ''}
               </Button>
             )}
-          </div>
-        </div>
-
-        {/* Today's Activity */}
-        <div className="border-t pt-4">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-sm font-medium text-muted-foreground">Today's Activity</p>
-            <div className="flex items-center gap-2">
-              <Label htmlFor="exclude-today-stats" className="text-xs cursor-pointer text-muted-foreground">
-                Exclude Today
-              </Label>
-              <Switch
-                id="exclude-today-stats"
-                checked={excludeToday}
-                onCheckedChange={setExcludeToday}
-                className="scale-75"
-              />
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-6 px-1"
-                onClick={() => setShowTodayModal(true)}
-              >
-                <Eye className="h-3.5 w-3.5" />
-              </Button>
-            </div>
-          </div>
-          <div className="grid grid-cols-3 gap-3">
-            <div className="text-center">
-              <p className="text-xs text-muted-foreground mb-1">Income</p>
-              <p className="text-lg font-bold text-green-600">{formatCurrency(todaysIncome)}</p>
-            </div>
-            <div className="text-center">
-              <p className="text-xs text-muted-foreground mb-1">Expenses</p>
-              <p className="text-lg font-bold text-red-600">{formatCurrency(todaysExpenses)}</p>
-            </div>
-            <div className="text-center">
-              <p className="text-xs text-muted-foreground mb-1">Net</p>
-              <p className={`text-lg font-bold ${todaysIncome - todaysExpenses >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {formatCurrency(todaysIncome - todaysExpenses)}
-              </p>
-            </div>
           </div>
         </div>
 
