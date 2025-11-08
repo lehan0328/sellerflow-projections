@@ -445,8 +445,10 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
 
   const totalOverdueCount = overdueVendorCount + overdueIncomeCount;
 
-  return (<>
-      <div className="grid gap-2 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+  return (
+    <div className="bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200 rounded-lg p-4 h-full overflow-y-auto">
+      <h2 className="text-lg font-semibold text-slate-700 mb-4">Overview</h2>
+      <div className="space-y-3">
         <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-3">
           <div className="flex items-center justify-between">
             <div className="flex-1">
@@ -765,6 +767,7 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
             <TrendingUp className="h-6 w-6 text-blue-500" />
           </div>
         </div>
+      </div>
       </div>
       
       {/* Sync Confirmation Dialog */}
