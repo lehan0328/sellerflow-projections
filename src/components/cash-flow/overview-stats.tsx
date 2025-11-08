@@ -565,7 +565,7 @@ export function OverviewStats({
               </Select>
             </div>
             <p className="text-2xl font-bold text-foreground mb-1.5 text-center">{formatCurrency(incomingTotal)}</p>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground text-center">
               {incomingPayments.length > 0 ? `${incomingPayments.length} Amazon payouts & income` : "No income"}
             </p>
           </div>
