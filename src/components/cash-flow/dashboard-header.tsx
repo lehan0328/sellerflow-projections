@@ -85,7 +85,7 @@ export function DashboardHeader({
   };
   return <div className="relative w-full">
       {/* Logo - Top Left - Only show when sidebar is collapsed */}
-      {isSidebarCollapsed && <div className="absolute top-4 left-4 z-40">
+      {isSidebarCollapsed && <div className="absolute top-2 left-4 z-40">
           <div className="flex flex-col items-center">
             <img src={aurenIcon} alt="Auren" className="h-10 w-auto mb-0.5" />
             <span className="text-sm font-bold bg-gradient-primary bg-clip-text text-transparent">
@@ -95,7 +95,7 @@ export function DashboardHeader({
         </div>}
 
       {/* Navigation and User Menu - Top Right */}
-      <div className="absolute top-4 right-4 z-40 flex items-center space-x-3">
+      <div className="absolute top-2 right-4 z-40 flex items-center space-x-3">
         {!isDemo && is_trialing && trial_end && (
           <Badge variant="outline" className="bg-blue-500/10 border-blue-500/30 text-blue-600 dark:text-blue-400 px-3 py-1">
             Professional Plan Trial - Ends {new Date(trial_end).toLocaleDateString()}
