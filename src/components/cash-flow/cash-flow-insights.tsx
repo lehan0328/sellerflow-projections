@@ -601,39 +601,7 @@ export const CashFlowInsights = memo(({
 
 
   return <Card className="shadow-card h-full flex flex-col bg-background/10 backdrop-blur-sm">
-      <CardHeader>
-        <CardTitle className="text-lg flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-primary" />
-            AI Insights
-          </div>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" size="sm">
-                <Search className="h-4 w-4 mr-2" />
-                Search Date
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="end">
-              <CalendarComponent
-                mode="single"
-                selected={searchedDate}
-                onSelect={(date) => {
-                  if (date) {
-                    handleDateSearch(date);
-                    setShowDateSearch(true);
-                  }
-                }}
-                className="pointer-events-auto"
-              />
-            </PopoverContent>
-          </Popover>
-        </CardTitle>
-        <p className="text-xs text-muted-foreground mt-1">
-          All projections reflect transactions within the next 3 months only
-        </p>
-      </CardHeader>
-      <CardContent className="space-y-4 flex-1 overflow-auto">
+      <CardContent className="space-y-4 flex-1 overflow-auto pt-6">
             {/* Safe Spending Power */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
@@ -663,16 +631,27 @@ export const CashFlowInsights = memo(({
                     </Tooltip>
                   </TooltipProvider>
                 </h4>
-                {allBuyingOpportunities.length > 0 && (
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={() => setShowAllOpportunities(true)}
-                    className="text-xs"
-                  >
-                    See All ({allBuyingOpportunities.length})
-                  </Button>
-                )}
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <Search className="h-4 w-4 mr-2" />
+                      Search Date
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="end">
+                    <CalendarComponent
+                      mode="single"
+                      selected={searchedDate}
+                      onSelect={(date) => {
+                        if (date) {
+                          handleDateSearch(date);
+                          setShowDateSearch(true);
+                        }
+                      }}
+                      className="pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
               <div className="space-y-3">
                 <div className={`p-4 rounded-lg border-2 ${safeSpendingLimit < 0 ? 'bg-red-50 dark:bg-red-950/20 border-red-500' : 'bg-primary/10 border-primary/20'}`}>
