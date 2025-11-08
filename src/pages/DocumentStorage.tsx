@@ -21,14 +21,6 @@ import { toast } from "sonner";
 import { useVendors } from "@/hooks/useVendors";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -990,43 +982,44 @@ export default function DocumentStorage() {
                 </p>
               </div>
             ) : (
-              <Table className="w-full table-fixed">
-                <colgroup>
-                  <col style={{ width: '3%' }} />
-                  <col style={{ width: '22%' }} />
-                  <col style={{ width: '9%' }} />
-                  <col style={{ width: '14%' }} />
-                  <col style={{ width: '9%' }} />
-                  <col style={{ width: '11%' }} />
-                  <col style={{ width: '7%' }} />
-                  <col style={{ width: '12%' }} />
-                  <col style={{ width: '13%' }} />
-                </colgroup>
-                <TableHeader>
-                  <TableRow className="bg-muted border-b hover:bg-muted">
-                    <TableHead className="font-semibold px-2 py-3 text-center"></TableHead>
-                    <TableHead className="font-semibold px-4 py-3 text-left">Name</TableHead>
-                    <TableHead className="font-semibold px-3 py-3 text-left">Type</TableHead>
-                    <TableHead className="font-semibold px-4 py-3 text-left">Vendor</TableHead>
-                    <TableHead className="font-semibold px-3 py-3 text-left">Amount</TableHead>
-                    <TableHead className="font-semibold px-3 py-3 text-left">Document Date</TableHead>
-                    <TableHead className="font-semibold px-3 py-3 text-left">Size</TableHead>
-                    <TableHead className="font-semibold px-3 py-3 text-left">Uploaded</TableHead>
-                    <TableHead className="font-semibold px-3 py-3 text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
+              <div className="w-full overflow-x-auto">
+                <table className="w-full table-fixed min-w-full border-collapse">
+                  <colgroup>
+                    <col style={{ width: '3%' }} />
+                    <col style={{ width: '22%' }} />
+                    <col style={{ width: '9%' }} />
+                    <col style={{ width: '14%' }} />
+                    <col style={{ width: '9%' }} />
+                    <col style={{ width: '11%' }} />
+                    <col style={{ width: '7%' }} />
+                    <col style={{ width: '12%' }} />
+                    <col style={{ width: '13%' }} />
+                  </colgroup>
+                  <thead className="border-b">
+                    <tr className="bg-muted border-b hover:bg-muted">
+                      <th className="font-semibold px-2 py-3 text-center text-left align-middle text-muted-foreground h-12"></th>
+                      <th className="font-semibold px-4 py-3 text-left align-middle text-muted-foreground h-12">Name</th>
+                      <th className="font-semibold px-3 py-3 text-left align-middle text-muted-foreground h-12">Type</th>
+                      <th className="font-semibold px-4 py-3 text-left align-middle text-muted-foreground h-12">Vendor</th>
+                      <th className="font-semibold px-3 py-3 text-left align-middle text-muted-foreground h-12">Amount</th>
+                      <th className="font-semibold px-3 py-3 text-left align-middle text-muted-foreground h-12">Document Date</th>
+                      <th className="font-semibold px-3 py-3 text-left align-middle text-muted-foreground h-12">Size</th>
+                      <th className="font-semibold px-3 py-3 text-left align-middle text-muted-foreground h-12">Uploaded</th>
+                      <th className="font-semibold px-3 py-3 text-right align-middle text-muted-foreground h-12">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
                   {filteredDocuments.map((doc) => (
                     <Collapsible key={doc.id}>
-                      <TableRow className="align-top">
-                        <TableCell className="px-2 py-3 text-center">
+                      <tr className="align-top border-b transition-colors data-[state=selected]:bg-muted hover:bg-muted/50">
+                        <td className="px-2 py-3 text-center align-middle">
                           <CollapsibleTrigger asChild>
                             <Button variant="ghost" size="sm" className="h-6 w-6 p-0 group" aria-label="Toggle document details">
                               <ChevronDown className="h-4 w-4 transition-transform group-data-[state=open]:rotate-180" />
                             </Button>
                           </CollapsibleTrigger>
-                        </TableCell>
-                        <TableCell className="font-medium px-4 py-3">
+                        </td>
+                        <td className="font-medium px-4 py-3 align-middle">
                           <div className="flex items-center space-x-2 overflow-hidden max-w-full">
                             <span 
                               className="cursor-pointer hover:text-primary transition-colors truncate block"
@@ -1046,8 +1039,8 @@ export default function DocumentStorage() {
                               </Badge>
                             )}
                           </div>
-                        </TableCell>
-                        <TableCell className="text-sm px-3 py-3 text-left">
+                        </td>
+                        <td className="text-sm px-3 py-3 text-left align-middle">
                           <div className="truncate">
                             {doc.document_type ? (
                               <span className="capitalize">{doc.document_type.replace('_', ' ')}</span>
@@ -1055,33 +1048,33 @@ export default function DocumentStorage() {
                               <span className="text-muted-foreground">-</span>
                             )}
                           </div>
-                        </TableCell>
-                        <TableCell className="text-sm px-4 py-3">
+                        </td>
+                        <td className="text-sm px-4 py-3 align-middle">
                           <div className="truncate">
                             {doc.vendor_name || <span className="text-muted-foreground">-</span>}
                           </div>
-                        </TableCell>
-                        <TableCell className="text-sm font-medium px-3 py-3">
+                        </td>
+                        <td className="text-sm font-medium px-3 py-3 align-middle">
                           <div className="whitespace-nowrap overflow-hidden text-ellipsis">
                             {doc.amount ? `$${doc.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : <span className="text-muted-foreground">-</span>}
                           </div>
-                        </TableCell>
-                        <TableCell className="text-sm px-3 py-3">
+                        </td>
+                        <td className="text-sm px-3 py-3 align-middle">
                           <div className="whitespace-nowrap overflow-hidden text-ellipsis">
                             {doc.document_date ? format(new Date(doc.document_date), "MMM dd, yyyy") : <span className="text-muted-foreground">-</span>}
                           </div>
-                        </TableCell>
-                        <TableCell className="px-3 py-3">
+                        </td>
+                        <td className="px-3 py-3 align-middle">
                           <div className="whitespace-nowrap overflow-hidden text-ellipsis text-sm">
                             {formatFileSize((doc as any).file_size || 0)}
                           </div>
-                        </TableCell>
-                        <TableCell className="px-3 py-3">
+                        </td>
+                        <td className="px-3 py-3 align-middle">
                           <div className="whitespace-nowrap overflow-hidden text-ellipsis text-sm">
                             {formatDate(doc.created_at)}
                           </div>
-                        </TableCell>
-                        <TableCell className="text-right px-3 py-3">
+                        </td>
+                        <td className="text-right px-3 py-3 align-middle">
                           <div className="flex justify-end space-x-2">
                             {doc.document_type === 'purchase_order' && (
                               <>
@@ -1140,10 +1133,10 @@ export default function DocumentStorage() {
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </div>
-                        </TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell colSpan={9} className="p-0 border-0">
+                        </td>
+                      </tr>
+                      <tr className="border-b transition-colors data-[state=selected]:bg-muted hover:bg-muted/50">
+                        <td colSpan={9} className="p-0 border-0 align-middle">
                           <CollapsibleContent>
                             <div className="w-full py-4 bg-muted/30">
                               {doc.line_items && doc.line_items.length > 0 ? (
@@ -1194,12 +1187,13 @@ export default function DocumentStorage() {
                               )}
                             </div>
                           </CollapsibleContent>
-                        </TableCell>
-                      </TableRow>
+                        </td>
+                      </tr>
                     </Collapsible>
                   ))}
-                </TableBody>
-              </Table>
+                </tbody>
+              </table>
+            </div>
             )}
           </CardContent>
         </Card>
