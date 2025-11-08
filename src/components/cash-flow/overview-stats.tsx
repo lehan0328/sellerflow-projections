@@ -448,7 +448,7 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
   return (
     <div className="p-4 h-full overflow-y-auto flex flex-col border border-border rounded-lg bg-background/10 backdrop-blur-sm">
       <h2 className="text-xl font-bold text-foreground mb-4">Overview</h2>
-      <div className="space-y-4 flex-1">
+      <div className="space-y-6 flex-1">
         {/* Today's Activity */}
         <div>
           <div className="flex items-center justify-between mb-3">

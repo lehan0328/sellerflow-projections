@@ -608,7 +608,7 @@ export const CashFlowInsights = memo(({
 
 
   return <Card className="shadow-card h-full flex flex-col bg-background/10 backdrop-blur-sm">
-      <CardContent className="space-y-3 flex-1 overflow-auto pt-6">
+      <CardContent className="space-y-4 flex-1 overflow-auto pt-6">
             {/* Safe Spending Power */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
