@@ -982,18 +982,18 @@ export default function DocumentStorage() {
                 </p>
               </div>
             ) : (
-              <div className="w-full">
-                <table className="w-full border-collapse" style={{ tableLayout: 'fixed', width: '100%' }}>
+              <div className="w-full overflow-x-auto">
+                <table className="w-full table-fixed min-w-full border-collapse">
                   <colgroup>
-                    <col style={{ width: '60px' }} />
-                    <col style={{ width: '320px' }} />
-                    <col style={{ width: '140px' }} />
-                    <col style={{ width: '200px' }} />
-                    <col style={{ width: '130px' }} />
-                    <col style={{ width: '160px' }} />
-                    <col style={{ width: '100px' }} />
-                    <col style={{ width: '180px' }} />
-                    <col style={{ width: '190px' }} />
+                    <col style={{ width: '3%' }} />
+                    <col style={{ width: '22%' }} />
+                    <col style={{ width: '9%' }} />
+                    <col style={{ width: '14%' }} />
+                    <col style={{ width: '9%' }} />
+                    <col style={{ width: '11%' }} />
+                    <col style={{ width: '7%' }} />
+                    <col style={{ width: '12%' }} />
+                    <col style={{ width: '13%' }} />
                   </colgroup>
                   <thead className="border-b">
                     <tr className="bg-muted border-b hover:bg-muted">
