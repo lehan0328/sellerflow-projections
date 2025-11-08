@@ -964,31 +964,32 @@ export default function DocumentStorage() {
                 </p>
               </div>
             ) : (
-              <Table className="w-full table-fixed">
-                <colgroup>
-                  <col style={{ width: '5%' }} />
-                  <col style={{ width: '23%' }} />
-                  <col style={{ width: '10%' }} />
-                  <col style={{ width: '12%' }} />
-                  <col style={{ width: '10%' }} />
-                  <col style={{ width: '10%' }} />
-                  <col style={{ width: '8%' }} />
-                  <col style={{ width: '10%' }} />
-                  <col style={{ width: '12%' }} />
-                </colgroup>
-                <TableHeader>
-                  <TableRow className="bg-muted border-b hover:bg-muted">
-                    <TableHead className="font-semibold px-4 py-3 text-center"></TableHead>
-                    <TableHead className="font-semibold px-4 py-3 text-left">Name</TableHead>
-                    <TableHead className="font-semibold px-4 py-3 text-left">Type</TableHead>
-                    <TableHead className="font-semibold px-4 py-3 text-left">Vendor</TableHead>
-                    <TableHead className="font-semibold px-4 py-3 text-left">Amount</TableHead>
-                    <TableHead className="font-semibold px-4 py-3 text-left">Document Date</TableHead>
-                    <TableHead className="font-semibold px-4 py-3 text-left">Size</TableHead>
-                    <TableHead className="font-semibold px-4 py-3 text-left">Uploaded</TableHead>
-                    <TableHead className="font-semibold px-4 py-3 text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
+              <div className="overflow-x-auto">
+                <Table className="w-full">
+                  <colgroup>
+                    <col style={{ width: '5%' }} />
+                    <col style={{ width: '23%' }} />
+                    <col style={{ width: '10%' }} />
+                    <col style={{ width: '12%' }} />
+                    <col style={{ width: '10%' }} />
+                    <col style={{ width: '10%' }} />
+                    <col style={{ width: '8%' }} />
+                    <col style={{ width: '10%' }} />
+                    <col style={{ width: '12%' }} />
+                  </colgroup>
+                  <TableHeader>
+                    <TableRow className="bg-muted border-b hover:bg-muted">
+                      <TableHead className="font-semibold px-4 py-3 text-center"></TableHead>
+                      <TableHead className="font-semibold px-4 py-3 text-left">Name</TableHead>
+                      <TableHead className="font-semibold px-4 py-3 text-left">Type</TableHead>
+                      <TableHead className="font-semibold px-4 py-3 text-left">Vendor</TableHead>
+                      <TableHead className="font-semibold px-4 py-3 text-left">Amount</TableHead>
+                      <TableHead className="font-semibold px-4 py-3 text-left">Document Date</TableHead>
+                      <TableHead className="font-semibold px-4 py-3 text-left">Size</TableHead>
+                      <TableHead className="font-semibold px-4 py-3 text-left">Uploaded</TableHead>
+                      <TableHead className="font-semibold px-4 py-3 text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
                 <TableBody>
                   {filteredDocuments.map((doc) => (
                     <Collapsible key={doc.id}>
@@ -1158,6 +1159,7 @@ export default function DocumentStorage() {
                   ))}
                 </TableBody>
               </Table>
+              </div>
             )}
           </CardContent>
         </Card>
