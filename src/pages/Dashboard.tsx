@@ -2381,7 +2381,7 @@ const Dashboard = () => {
             />
             
             {/* Main Layout: Stats Sidebar + Cash Flow Visualization */}
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 lg:h-[700px]">
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-3 lg:h-[680px]">
               {/* Left Sidebar: Combined Stats */}
               <div className="lg:col-span-1">
                 <OverviewStats
@@ -2398,7 +2398,7 @@ const Dashboard = () => {
               </div>
               
               {/* Right Side: Cash Flow Calendar and Insights */}
-              <div className="lg:col-span-3 grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
+              <div className="lg:col-span-3 grid grid-cols-1 lg:grid-cols-3 gap-3 h-full">
                 <div className="lg:col-span-2 h-full">
                   <CashFlowCalendar
                   events={allCalendarEvents} 
