@@ -43,6 +43,7 @@ export function OverdueTransactionsModal({ open, onOpenChange, onUpdate }: Overd
     setProcessingId(id);
     try {
       await markAsPaid(id);
+      onUpdate?.();
     } finally {
       setProcessingId(null);
     }
@@ -52,6 +53,7 @@ export function OverdueTransactionsModal({ open, onOpenChange, onUpdate }: Overd
     setProcessingId(id);
     try {
       await deleteTransaction(id);
+      onUpdate?.();
     } finally {
       setProcessingId(null);
     }
@@ -61,6 +63,7 @@ export function OverdueTransactionsModal({ open, onOpenChange, onUpdate }: Overd
     setProcessingId(income.id);
     try {
       await updateIncome(income.id, { ...income, status: 'received' });
+      onUpdate?.();
     } finally {
       setProcessingId(null);
     }
@@ -70,6 +73,7 @@ export function OverdueTransactionsModal({ open, onOpenChange, onUpdate }: Overd
     setProcessingId(id);
     try {
       await deleteIncome(id);
+      onUpdate?.();
     } finally {
       setProcessingId(null);
     }
