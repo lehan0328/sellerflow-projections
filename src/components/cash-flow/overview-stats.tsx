@@ -599,7 +599,7 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
                 </SelectContent>
               </Select>
             </div>
-            <p className="text-2xl font-bold text-foreground mb-1.5">{formatCurrency(incomingTotal)}</p>
+            <p className="text-2xl font-bold text-foreground mb-1.5 text-center">{formatCurrency(incomingTotal)}</p>
             <p className="text-sm text-muted-foreground">
               {incomingPayments.length > 0 ? `${incomingPayments.length} Amazon payouts & income` : "No income"}
             </p>
