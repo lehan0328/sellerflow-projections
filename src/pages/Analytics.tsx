@@ -19,7 +19,7 @@ import { useMemo, useState, useEffect } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { format } from "date-fns";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 export default function Analytics() {
   const navigate = useNavigate();
   const {
@@ -646,7 +646,7 @@ export default function Analytics() {
             <TrendingUp className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">${metrics.totalInflow.toLocaleString()}</div>
+            <div className="text-2xl font-bold text-green-600">{formatCurrency(metrics.totalInflow)}</div>
             <p className="text-xs text-muted-foreground">Month to date</p>
           </CardContent>
         </Card>
@@ -657,7 +657,7 @@ export default function Analytics() {
             <TrendingDown className="h-4 w-4 text-red-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">${metrics.totalOutflow.toLocaleString()}</div>
+            <div className="text-2xl font-bold text-red-600">{formatCurrency(metrics.totalOutflow)}</div>
             <p className="text-xs text-muted-foreground">Month to date</p>
           </CardContent>
         </Card>
@@ -668,7 +668,7 @@ export default function Analytics() {
             <Package className="h-4 w-4 text-purple-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-purple-600">${metrics.amazonRevenueFiltered.toLocaleString()}</div>
+            <div className="text-2xl font-bold text-purple-600">{formatCurrency(metrics.amazonRevenueFiltered)}</div>
             <p className="text-xs text-muted-foreground">Month to date</p>
           </CardContent>
         </Card>
@@ -680,7 +680,7 @@ export default function Analytics() {
           </CardHeader>
           <CardContent>
             <div className={`text-2xl font-bold ${metrics.netCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              {metrics.netCashFlow >= 0 ? '+' : ''}${metrics.netCashFlow.toLocaleString()}
+              {metrics.netCashFlow >= 0 ? '+' : ''}{formatCurrency(metrics.netCashFlow)}
             </div>
             <p className="text-xs text-muted-foreground">Month to date</p>
           </CardContent>
@@ -693,10 +693,10 @@ export default function Analytics() {
           </CardHeader>
           <CardContent>
             <div className={`text-2xl font-bold ${metrics.totalForecastedIncome - metrics.totalForecastedExpenses >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              {metrics.totalForecastedIncome - metrics.totalForecastedExpenses >= 0 ? '+' : ''}${(metrics.totalForecastedIncome - metrics.totalForecastedExpenses).toLocaleString()}
+              {metrics.totalForecastedIncome - metrics.totalForecastedExpenses >= 0 ? '+' : ''}{formatCurrency(metrics.totalForecastedIncome - metrics.totalForecastedExpenses)}
             </div>
             <p className="text-xs text-muted-foreground">
-              ${metrics.totalForecastedIncome.toLocaleString()} income / ${metrics.totalForecastedExpenses.toLocaleString()} expenses
+              {formatCurrency(metrics.totalForecastedIncome)} income / {formatCurrency(metrics.totalForecastedExpenses)} expenses
             </p>
           </CardContent>
         </Card>
@@ -741,10 +741,7 @@ export default function Analytics() {
                     status: p.status
                   }))
                 });
-                return totalProjected.toLocaleString(undefined, {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2
-                });
+                return formatCurrency(totalProjected).replace('$', '');
               })()}
                 </div>
                 <p className="text-xs text-muted-foreground">
@@ -763,25 +760,19 @@ export default function Analytics() {
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-muted-foreground">Income:</span>
                     <span className="text-sm font-semibold text-green-600">
-                      +${recurringExpenses.filter(r => r.type === 'income' && r.is_active).reduce((sum, r) => {
+                      +${formatCurrency(recurringExpenses.filter(r => r.type === 'income' && r.is_active).reduce((sum, r) => {
                     const occurrences = generateRecurringDates(r, new Date(new Date().getFullYear(), new Date().getMonth(), 1), new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0));
                     return sum + occurrences.length * r.amount;
-                  }, 0).toLocaleString(undefined, {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2
-                  })}
+                  }, 0)).replace('$', '')}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-muted-foreground">Expenses:</span>
                     <span className="text-sm font-semibold text-red-600">
-                      -${recurringExpenses.filter(r => r.type === 'expense' && r.is_active).reduce((sum, r) => {
+                      -${formatCurrency(recurringExpenses.filter(r => r.type === 'expense' && r.is_active).reduce((sum, r) => {
                     const occurrences = generateRecurringDates(r, new Date(new Date().getFullYear(), new Date().getMonth(), 1), new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0));
                     return sum + occurrences.length * r.amount;
-                  }, 0).toLocaleString(undefined, {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2
-                  })}
+                  }, 0)).replace('$', '')}
                     </span>
                   </div>
                 </div>
@@ -795,10 +786,7 @@ export default function Analytics() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-amber-600">
-                  ${dbTransactions.filter(tx => tx.type === 'purchase_order' && tx.status === 'pending').reduce((sum, tx) => sum + tx.amount, 0).toLocaleString(undefined, {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-              })}
+                  {formatCurrency(dbTransactions.filter(tx => tx.type === 'purchase_order' && tx.status === 'pending').reduce((sum, tx) => sum + tx.amount, 0))}
                 </div>
                 <p className="text-xs text-muted-foreground">
                   {dbTransactions.filter(tx => tx.type === 'purchase_order' && tx.status === 'pending').length} pending orders
@@ -839,7 +827,7 @@ export default function Analytics() {
                 }) => `${name} ${(percent * 100).toFixed(0)}%`} outerRadius={80} fill="#8884d8" dataKey="value">
                       {incomeBySource.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
                     </Pie>
-                    <Tooltip formatter={value => `$${Number(value).toLocaleString()}`} />
+                    <Tooltip formatter={value => formatCurrency(Number(value))} />
                   </PieChart>
                 </ResponsiveContainer>
                 
@@ -852,7 +840,7 @@ export default function Analytics() {
                   }} />
                         <span className="text-sm font-medium">{source.name}</span>
                       </div>
-                      <span className="text-sm font-semibold">${source.value.toLocaleString()}</span>
+                      <span className="text-sm font-semibold">{formatCurrency(source.value)}</span>
                     </div>)}
                   {incomeBySource.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">No income in this period</p>}
                 </div>
@@ -888,7 +876,7 @@ export default function Analytics() {
                 }) => `${name} ${(percent * 100).toFixed(0)}%`} outerRadius={80} fill="#8884d8" dataKey="value">
                       {vendorCategoryData.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
                     </Pie>
-                    <Tooltip formatter={value => `$${Number(value).toLocaleString()}`} />
+                    <Tooltip formatter={value => formatCurrency(Number(value))} />
                   </PieChart>
                 </ResponsiveContainer>
                 
@@ -901,7 +889,7 @@ export default function Analytics() {
                   }} />
                         <span className="text-sm font-medium">{category.name}</span>
                       </div>
-                      <span className="text-sm font-semibold">${category.value.toLocaleString()}</span>
+                      <span className="text-sm font-semibold">{formatCurrency(category.value)}</span>
                     </div>)}
                   {vendorCategoryData.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">No expenses in this period</p>}
                 </div>
@@ -944,7 +932,7 @@ export default function Analytics() {
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis type="number" />
                     <YAxis dataKey="name" type="category" width={150} />
-                    <Tooltip formatter={value => `$${Number(value).toLocaleString()}`} />
+                    <Tooltip formatter={value => formatCurrency(Number(value))} />
                     <Bar dataKey="amount" fill="#8b5cf6" />
                   </BarChart>
                 </ResponsiveContainer> : <div className="space-y-2">
@@ -955,7 +943,7 @@ export default function Analytics() {
                         </div>
                         <span className="font-medium">{vendor.name}</span>
                       </div>
-                      <span className="text-lg font-bold">${vendor.amount.toLocaleString()}</span>
+                      <span className="text-lg font-bold">{formatCurrency(vendor.amount)}</span>
                     </div>)}
                   {topVendors.length === 0 && <div className="text-center text-muted-foreground py-8">
                       No vendor spending data for this period
@@ -974,7 +962,7 @@ export default function Analytics() {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="month" />
                   <YAxis />
-                  <Tooltip formatter={value => `$${Number(value).toLocaleString()}`} />
+                  <Tooltip formatter={value => formatCurrency(Number(value))} />
                   <Legend />
                   <Line type="monotone" dataKey="revenue" stroke="#10b981" strokeWidth={2} />
                 </LineChart>
@@ -1026,7 +1014,7 @@ export default function Analytics() {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="month" />
                   <YAxis />
-                  <Tooltip formatter={value => `$${Number(value).toLocaleString()}`} />
+                  <Tooltip formatter={value => formatCurrency(Number(value))} />
                   <Legend />
                   <Area type="monotone" dataKey="income" stackId="1" stroke="#10b981" fill="#10b981" fillOpacity={0.6} />
                   <Area type="monotone" dataKey="expenses" stackId="2" stroke="#ef4444" fill="#ef4444" fillOpacity={0.6} />
@@ -1045,7 +1033,7 @@ export default function Analytics() {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="month" />
                   <YAxis />
-                  <Tooltip formatter={value => `$${Number(value).toLocaleString()}`} />
+                  <Tooltip formatter={value => formatCurrency(Number(value))} />
                   <Bar dataKey="net" fill="#8b5cf6">
                     {cashFlowData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.net >= 0 ? '#10b981' : '#ef4444'} />)}
                   </Bar>
