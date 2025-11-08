@@ -977,13 +977,13 @@ export default function DocumentStorage() {
                 </colgroup>
                 <TableHeader>
                   <TableRow className="bg-background border-b hover:bg-background">
-                    <TableHead className="bg-background font-semibold px-4 py-3 text-left border-r border-border">Name</TableHead>
-                    <TableHead className="bg-background font-semibold px-4 py-3 text-left border-r border-border">Type</TableHead>
-                    <TableHead className="bg-background font-semibold px-4 py-3 text-left border-r border-border">Vendor</TableHead>
-                    <TableHead className="bg-background font-semibold px-4 py-3 text-left border-r border-border">Amount</TableHead>
-                    <TableHead className="bg-background font-semibold px-4 py-3 text-left border-r border-border">Document Date</TableHead>
-                    <TableHead className="bg-background font-semibold px-4 py-3 text-left border-r border-border">Size</TableHead>
-                    <TableHead className="bg-background font-semibold px-4 py-3 text-left border-r border-border">Uploaded</TableHead>
+                    <TableHead className="bg-background font-semibold px-4 py-3 text-left">Name</TableHead>
+                    <TableHead className="bg-background font-semibold px-4 py-3 text-left">Type</TableHead>
+                    <TableHead className="bg-background font-semibold px-4 py-3 text-left">Vendor</TableHead>
+                    <TableHead className="bg-background font-semibold px-4 py-3 text-left">Amount</TableHead>
+                    <TableHead className="bg-background font-semibold px-4 py-3 text-left">Document Date</TableHead>
+                    <TableHead className="bg-background font-semibold px-4 py-3 text-left">Size</TableHead>
+                    <TableHead className="bg-background font-semibold px-4 py-3 text-left">Uploaded</TableHead>
                     <TableHead className="bg-background font-semibold px-4 py-3 text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -991,7 +991,7 @@ export default function DocumentStorage() {
                   {filteredDocuments.map((doc) => (
                     <Collapsible key={doc.id}>
                       <TableRow className="align-top">
-                        <TableCell className="font-medium px-4 py-3 border-r border-border">
+                        <TableCell className="font-medium px-4 py-3">
                           <div className="flex items-center space-x-2 max-w-full overflow-hidden">
                             <span 
                               className="cursor-pointer hover:text-primary transition-colors truncate flex-1 min-w-0"
