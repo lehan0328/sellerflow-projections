@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Download, Share2, TrendingUp, DollarSign, CreditCard, ShoppingCart, Calendar, ArrowLeft, Eye, EyeOff, Lock, BadgeCheck, Users, Zap, Sparkles } from "lucide-react";
@@ -19,11 +19,25 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import { useTheme } from "next-themes";
 
 const FlexReport = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
+  const { theme, setTheme } = useTheme();
+
+  // Force light mode when component mounts, restore on unmount
+  useEffect(() => {
+    const previousTheme = theme;
+    setTheme('light');
+    
+    return () => {
+      if (previousTheme) {
+        setTheme(previousTheme);
+      }
+    };
+  }, []);
 
   // Check user role - staff cannot access flex report
   const { data: userRole } = useQuery({
@@ -363,7 +377,7 @@ const FlexReport = () => {
       handleDownload();
     }
   };
-  return <div className="light h-screen overflow-auto bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 p-2 md:p-4">
+  return <div className="h-screen overflow-auto bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 p-2 md:p-4">
       <div className="max-w-4xl mx-auto scale-[0.85] origin-top">
         {/* Action Buttons */}
         <div className="flex items-center justify-between mb-4">
