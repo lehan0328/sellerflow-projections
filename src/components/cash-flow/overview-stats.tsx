@@ -530,7 +530,7 @@ export function OverviewStats({
 
           {/* Available Credit */}
           <div>
-            <p className="text-sm font-medium text-muted-foreground mb-1">Available Credit</p>
+            <p className="text-sm font-medium text-muted-foreground mb-1">Credit</p>
             <p className="text-2xl font-bold text-foreground mb-1.5 text-center">{formatCurrency(totalAvailableCredit)}</p>
             {totalCreditLimit === 0 ? <p className="text-sm text-muted-foreground italic">No credit cards linked</p> : <>
                 <p className="text-sm text-muted-foreground text-center">of {formatCurrency(totalCreditLimit)} limit</p>
