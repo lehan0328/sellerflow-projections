@@ -976,15 +976,15 @@ export default function DocumentStorage() {
                   <col style={{ width: '12%' }} />
                 </colgroup>
                 <TableHeader>
-                  <TableRow className="bg-background border-b hover:bg-background">
-                    <TableHead className="bg-background font-semibold px-4 py-3">Name</TableHead>
-                    <TableHead className="bg-background font-semibold px-4 py-3 text-left">Type</TableHead>
-                    <TableHead className="bg-background font-semibold px-4 py-3">Vendor</TableHead>
-                    <TableHead className="bg-background font-semibold px-4 py-3">Amount</TableHead>
-                    <TableHead className="bg-background font-semibold px-4 py-3">Document Date</TableHead>
-                    <TableHead className="bg-background font-semibold px-4 py-3">Size</TableHead>
-                    <TableHead className="bg-background font-semibold px-4 py-3">Uploaded</TableHead>
-                    <TableHead className="bg-background font-semibold px-4 py-3 text-right">Actions</TableHead>
+                  <TableRow className="bg-muted border-b hover:bg-muted">
+                    <TableHead className="font-semibold px-4 py-3 text-left">Name</TableHead>
+                    <TableHead className="font-semibold px-4 py-3 text-left">Type</TableHead>
+                    <TableHead className="font-semibold px-4 py-3 text-left">Vendor</TableHead>
+                    <TableHead className="font-semibold px-4 py-3 text-left">Amount</TableHead>
+                    <TableHead className="font-semibold px-4 py-3 text-left">Document Date</TableHead>
+                    <TableHead className="font-semibold px-4 py-3 text-left">Size</TableHead>
+                    <TableHead className="font-semibold px-4 py-3 text-left">Uploaded</TableHead>
+                    <TableHead className="font-semibold px-4 py-3 text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
