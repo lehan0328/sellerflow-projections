@@ -513,7 +513,7 @@ export function OverviewStats({
                   {isSyncing ? <RefreshCw className="h-3 w-3 animate-spin" /> : <AlertTriangle className="h-3 w-3" />}
                 </Button>}
             </div>
-            <p className="text-2xl font-bold text-foreground mb-1.5">
+            <p className="text-2xl font-bold text-foreground mb-1.5 text-center">
               {formatCurrency(displayBankBalance)}
             </p>
             <p className="text-sm text-muted-foreground mb-2">
