@@ -25,9 +25,11 @@ import { PendingNotificationsPanel } from "./pending-notifications-panel";
 
 // Utility function for consistent currency formatting
 const formatCurrency = (amount: number): string => {
-  return amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return amount.toLocaleString('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
 };
-
 interface CashFlowEvent {
   id: string;
   type: 'inflow' | 'outflow' | 'credit-payment' | 'purchase-order';
@@ -41,7 +43,6 @@ interface CashFlowEvent {
   date: Date;
   balanceImpactDate?: Date; // When the funds actually become available (e.g., +1 day for forecasted payouts)
 }
-
 interface IncomeItem {
   id: string;
   amount: number;
@@ -50,7 +51,6 @@ interface IncomeItem {
   description: string;
   source: string;
 }
-
 interface Vendor {
   id: string;
   name: string;
@@ -60,7 +60,6 @@ interface Vendor {
   status: string;
   poName?: string;
 }
-
 interface CashFlowCalendarProps {
   events?: CashFlowEvent[];
   totalCash?: number;
@@ -75,16 +74,25 @@ interface CashFlowCalendarProps {
   onVendorClick?: (vendor: Vendor) => void;
   onIncomeClick?: (income: IncomeItem) => void;
   reserveAmount?: number;
-  projectedDailyBalances?: Array<{ date: Date; balance: number }>;
+  projectedDailyBalances?: Array<{
+    date: Date;
+    balance: number;
+  }>;
   excludeToday?: boolean; // NEW: Whether to exclude today's transactions from projected balance
   safeSpendingLimit?: number; // The calculated safe spending available from useSafeSpending hook
-  allBuyingOpportunities?: Array<{ date: string; balance: number; available_date?: string }>; // NEW: Buying opportunities from safe spending
-  dailyBalances?: Array<{ date: string; balance: number }>; // NEW: Daily balance projections
+  allBuyingOpportunities?: Array<{
+    date: string;
+    balance: number;
+    available_date?: string;
+  }>; // NEW: Buying opportunities from safe spending
+  dailyBalances?: Array<{
+    date: string;
+    balance: number;
+  }>; // NEW: Daily balance projections
 }
-
-export const CashFlowCalendar = ({ 
-  events: propEvents = [], 
-  totalCash = 0, 
+export const CashFlowCalendar = ({
+  events: propEvents = [],
+  totalCash = 0,
   onEditTransaction,
   onUpdateTransactionDate,
   todayInflow = 0,
@@ -97,14 +105,22 @@ export const CashFlowCalendar = ({
   onIncomeClick,
   reserveAmount = 0,
   projectedDailyBalances = [],
-  excludeToday = false, // Default to false (include today's transactions)
-  safeSpendingLimit = 0, // Safe spending available to spend
-  allBuyingOpportunities = [], // NEW: Buying opportunities
-  dailyBalances = [], // NEW: Daily balance projections
+  excludeToday = false,
+  // Default to false (include today's transactions)
+  safeSpendingLimit = 0,
+  // Safe spending available to spend
+  allBuyingOpportunities = [],
+  // NEW: Buying opportunities
+  dailyBalances = [] // NEW: Daily balance projections
 }: CashFlowCalendarProps) => {
-  const { totalAvailableCredit } = useCreditCards();
-  const { chartPreferences, updateChartPreferences } = useUserSettings();
-  
+  const {
+    totalAvailableCredit
+  } = useCreditCards();
+  const {
+    chartPreferences,
+    updateChartPreferences
+  } = useUserSettings();
+
   // ALL STATE HOOKS MUST BE AT THE TOP - DO NOT ADD ANY BETWEEN DATA PROCESSING
   const [currentDate, setCurrentDate] = useState(new Date());
   const [chartTimeRange, setChartTimeRange] = useState<'1' | '3' | '6' | '12'>('3');
@@ -126,39 +142,51 @@ export const CashFlowCalendar = ({
   const [creditCardColor, setCreditCardColor] = useState(chartPreferences.creditCardColor);
   const [reserveColor, setReserveColor] = useState(chartPreferences.reserveColor);
   const [forecastColor, setForecastColor] = useState(chartPreferences.forecastColor);
-  
+
   // Zoom state
-  const [zoomState, setZoomState] = useState<{ left?: number; right?: number } | null>(null);
+  const [zoomState, setZoomState] = useState<{
+    left?: number;
+    right?: number;
+  } | null>(null);
   const [refAreaLeft, setRefAreaLeft] = useState<string | null>(null);
   const [refAreaRight, setRefAreaRight] = useState<string | null>(null);
-  
+
   // Search state
   const [showSearchDialog, setShowSearchDialog] = useState(false);
   const [searchType, setSearchType] = useState<'amount' | 'date'>('amount');
   const [searchAmount, setSearchAmount] = useState('');
   const [searchDate, setSearchDate] = useState('');
-  const [searchResults, setSearchResults] = useState<{date: string; events: CashFlowEvent[]}[]>([]);
-  
+  const [searchResults, setSearchResults] = useState<{
+    date: string;
+    events: CashFlowEvent[];
+  }[]>([]);
+
   // Tooltip and chart state - MUST be with other hooks
   const [activeTooltipIndex, setActiveTooltipIndex] = useState<number | null>(null);
   const chartWrapperRef = useRef<HTMLDivElement | null>(null);
   const [chartWidth, setChartWidth] = useState<number>(0);
   const throttleRef = useRef<number | null>(null);
-  const chartMargin = { top: 32, right: 16, left: 8, bottom: 16 };
-  
-  useEffect(() => { console.log('[Calendar] currentDate changed:', currentDate); }, [currentDate]);
-  
+  const chartMargin = {
+    top: 32,
+    right: 16,
+    left: 8,
+    bottom: 16
+  };
+  useEffect(() => {
+    console.log('[Calendar] currentDate changed:', currentDate);
+  }, [currentDate]);
+
   // Chart resize observer
   useEffect(() => {
     if (!chartWrapperRef.current) return;
-    const ro = new ResizeObserver((entries) => {
+    const ro = new ResizeObserver(entries => {
       const w = entries[0]?.contentRect?.width;
       if (typeof w === 'number') setChartWidth(w);
     });
     ro.observe(chartWrapperRef.current);
     return () => ro.disconnect();
   }, []);
-  
+
   // Sync local state with loaded preferences
   useEffect(() => {
     setShowCashFlowLine(chartPreferences.showCashFlowLine);
@@ -171,14 +199,14 @@ export const CashFlowCalendar = ({
     setReserveColor(chartPreferences.reserveColor);
     setForecastColor(chartPreferences.forecastColor);
   }, [chartPreferences]);
-  
+
   // Total available cash baseline comes from Overview (displayCash)
   const totalAvailableCash = totalCash;
-  
+
   // Account start date (inclusive)
   const accountStartDate = new Date('2025-09-29');
   accountStartDate.setHours(0, 0, 0, 0);
-  
+
   // Filter events to only those on/after the account start date
   let events = propEvents.filter(e => {
     const d = new Date(e.date);
@@ -189,55 +217,52 @@ export const CashFlowCalendar = ({
   // Automatically filter out overdue unmatched transactions
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  
   events = events.filter(event => {
     const eventDate = new Date(event.date);
     eventDate.setHours(0, 0, 0, 0);
-    
+
     // Keep future events
     if (eventDate >= today) return true;
-    
+
     // For past events, check if they're matched/received
     // If it's an income event, check if corresponding income item is received
     if (event.type === 'inflow') {
-      const correspondingIncome = incomeItems.find(income => 
-        income.description === event.description &&
-        Math.abs(income.amount - event.amount) < 0.01
-      );
+      const correspondingIncome = incomeItems.find(income => income.description === event.description && Math.abs(income.amount - event.amount) < 0.01);
       // Keep if received, filter out if pending/overdue
       return correspondingIncome?.status === 'received';
     }
-    
+
     // For vendor/purchase-order events, check if corresponding vendor is paid
     if (event.type === 'purchase-order' || event.vendor) {
-      const correspondingVendor = vendors.find(vendor =>
-        vendor.name === event.vendor || vendor.poName === event.poName
-      );
+      const correspondingVendor = vendors.find(vendor => vendor.name === event.vendor || vendor.poName === event.poName);
       // Keep if paid, filter out if not paid
       return correspondingVendor?.status === 'paid';
     }
-    
+
     // Keep all other event types (credit payments, recurring, etc.)
     return true;
   });
 
   // Hide calendar monetary summaries if there's no user data
   const hasAnyData = events.length > 0 || (incomeItems?.length ?? 0) > 0;
-
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
-  
-  // Always show current month view
-  const calendarStartWithWeek = startOfWeek(monthStart, { weekStartsOn: 0 }); // Sunday = 0
-  const calendarEndWithWeek = endOfWeek(monthEnd, { weekStartsOn: 0 });
-     
-  const days = eachDayOfInterval({ start: calendarStartWithWeek, end: calendarEndWithWeek });
 
+  // Always show current month view
+  const calendarStartWithWeek = startOfWeek(monthStart, {
+    weekStartsOn: 0
+  }); // Sunday = 0
+  const calendarEndWithWeek = endOfWeek(monthEnd, {
+    weekStartsOn: 0
+  });
+  const days = eachDayOfInterval({
+    start: calendarStartWithWeek,
+    end: calendarEndWithWeek
+  });
   const weeksInView = Math.ceil(days.length / 7);
   const is6Rows = weeksInView > 5;
   const gridRowsClass = is6Rows ? 'grid-rows-6' : 'grid-rows-5';
   const cellHeightClass = is6Rows ? 'h-[70px]' : 'h-[85px]';
-
   const getEventsForDay = (date: Date) => {
     return events.filter(event => {
       // Use balanceImpactDate if available (for forecasted payouts), otherwise use date
@@ -245,7 +270,6 @@ export const CashFlowCalendar = ({
       return format(impactDate, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd');
     });
   };
-
   const getDayBalance = (date: Date) => {
     const dayEvents = getEventsForDay(date);
     return dayEvents.reduce((total, event) => {
@@ -257,63 +281,53 @@ export const CashFlowCalendar = ({
   const getPendingIncomeForToday = (date: Date) => {
     const checkDate = startOfDay(new Date(date));
     const today = startOfDay(new Date());
-    
+
     // Only show pending on today
     if (checkDate.getTime() !== today.getTime()) return 0;
 
     // Get pending from regular income items
-    const regularPending = incomeItems
-      .filter(income => {
-        if (income.status === 'received') return false;
-        const incomeDate = startOfDay(new Date(income.paymentDate));
-        // Only show pending if due date is today or earlier (past/current, not future)
-        return incomeDate <= today;
-      })
-      .reduce((sum, income) => sum + income.amount, 0);
+    const regularPending = incomeItems.filter(income => {
+      if (income.status === 'received') return false;
+      const incomeDate = startOfDay(new Date(income.paymentDate));
+      // Only show pending if due date is today or earlier (past/current, not future)
+      return incomeDate <= today;
+    }).reduce((sum, income) => sum + income.amount, 0);
 
-  // Get recurring income events that are due today or earlier
-  const recurringPending = events
-    .filter(event => {
+    // Get recurring income events that are due today or earlier
+    const recurringPending = events.filter(event => {
       if (!event.id.startsWith('recurring-')) return false;
       if (event.type !== 'inflow') return false;
       const eventDate = startOfDay(new Date(event.date));
       // Only include if due date is today or earlier
       return eventDate <= today;
-    })
-    .reduce((sum, event) => sum + event.amount, 0);
-
-  return regularPending + recurringPending;
+    }).reduce((sum, event) => sum + event.amount, 0);
+    return regularPending + recurringPending;
   };
 
   // Get overdue income - only show on TODAY
   const getOverdueIncomeForToday = (date: Date) => {
     const checkDate = startOfDay(new Date(date));
     const today = startOfDay(new Date());
-    
+
     // Only show overdue on today
     if (checkDate.getTime() !== today.getTime()) return 0;
 
     // Get overdue from regular income items
-    const regularOverdue = incomeItems
-      .filter(income => {
-        if (income.status === 'received') return false;
-        const incomeDate = startOfDay(new Date(income.paymentDate));
-        // Overdue if payment date is before today
-        return incomeDate < today;
-      })
-      .reduce((sum, income) => sum + income.amount, 0);
+    const regularOverdue = incomeItems.filter(income => {
+      if (income.status === 'received') return false;
+      const incomeDate = startOfDay(new Date(income.paymentDate));
+      // Overdue if payment date is before today
+      return incomeDate < today;
+    }).reduce((sum, income) => sum + income.amount, 0);
 
     // Get overdue from recurring income events
-    const recurringOverdue = events
-      .filter(event => {
-        if (!event.id.startsWith('recurring-')) return false;
-        if (event.type !== 'inflow') return false;
-        const eventDate = startOfDay(new Date(event.date));
-        // Overdue if payment date is before today
-        return eventDate < today;
-      })
-      .reduce((sum, event) => sum + event.amount, 0);
-
+    const recurringOverdue = events.filter(event => {
+      if (!event.id.startsWith('recurring-')) return false;
+      if (event.type !== 'inflow') return false;
+      const eventDate = startOfDay(new Date(event.date));
+      // Overdue if payment date is before today
+      return eventDate < today;
+    }).reduce((sum, event) => sum + event.amount, 0);
     return regularOverdue + recurringOverdue;
   };
 
@@ -321,25 +335,22 @@ export const CashFlowCalendar = ({
   const getOverdueVendorsForToday = (date: Date) => {
     const checkDate = startOfDay(new Date(date));
     const today = startOfDay(new Date());
-    
+
     // Only show overdue on today
     if (checkDate.getTime() !== today.getTime()) return 0;
-
-    return vendors
-      .filter(vendor => {
-        if (vendor.status === 'paid' || vendor.totalOwed <= 0) return false;
-        const paymentDate = startOfDay(new Date(vendor.nextPaymentDate));
-        // Overdue if payment date is before today
-        return paymentDate < today;
-      })
-      .reduce((sum, vendor) => sum + vendor.nextPaymentAmount, 0);
+    return vendors.filter(vendor => {
+      if (vendor.status === 'paid' || vendor.totalOwed <= 0) return false;
+      const paymentDate = startOfDay(new Date(vendor.nextPaymentDate));
+      // Overdue if payment date is before today
+      return paymentDate < today;
+    }).reduce((sum, vendor) => sum + vendor.nextPaymentAmount, 0);
   };
 
   // Calculate Net Amount for future dates (projected balance)
   const getNetAmountForFutureDate = (date: Date) => {
     const checkDate = startOfDay(new Date(date));
     const today = startOfDay(new Date());
-    
+
     // Only calculate for future dates
     if (checkDate <= today) return null;
 
@@ -386,45 +397,38 @@ export const CashFlowCalendar = ({
       }
     });
 
-  // Add all other events (excluding ones already counted via incomeItems/vendors/recurring)
-  events.forEach(event => {
-    const eventDate = startOfDay(new Date(event.date));
-    if (eventDate > today && eventDate <= checkDate) {
-      // Skip recurring events (already counted above)
-      if (event.id.startsWith('recurring-')) return;
-      // Skip income events; handled by incomeItems
-      if (event.type === 'inflow') return;
-      // Skip vendor-related events; handled by vendors list
-      if (event.type === 'purchase-order' || !!event.vendor) return;
-      // Count remaining event types (e.g., credit payments, manual outflows)
-      const delta = (event.type === 'outflow' || event.type === 'credit-payment') ? -event.amount : event.amount;
-      netAmount += delta;
-    }
-  });
-
+    // Add all other events (excluding ones already counted via incomeItems/vendors/recurring)
+    events.forEach(event => {
+      const eventDate = startOfDay(new Date(event.date));
+      if (eventDate > today && eventDate <= checkDate) {
+        // Skip recurring events (already counted above)
+        if (event.id.startsWith('recurring-')) return;
+        // Skip income events; handled by incomeItems
+        if (event.type === 'inflow') return;
+        // Skip vendor-related events; handled by vendors list
+        if (event.type === 'purchase-order' || !!event.vendor) return;
+        // Count remaining event types (e.g., credit payments, manual outflows)
+        const delta = event.type === 'outflow' || event.type === 'credit-payment' ? -event.amount : event.amount;
+        netAmount += delta;
+      }
+    });
     return netAmount;
   };
-
   const getTotalCashForDay = (date: Date) => {
     const target = new Date(date);
     target.setHours(0, 0, 0, 0);
 
     // Calculate cumulative net change from all events up to and including target day
-    const eventsUpToDay = events.filter((event) => {
+    const eventsUpToDay = events.filter(event => {
       const ed = new Date(event.date);
       ed.setHours(0, 0, 0, 0);
       return ed <= target;
     });
-
-    const netChange = eventsUpToDay.reduce(
-      (total, event) => total + (event.type === 'inflow' ? event.amount : -event.amount),
-      0
-    );
+    const netChange = eventsUpToDay.reduce((total, event) => total + (event.type === 'inflow' ? event.amount : -event.amount), 0);
 
     // Start with bank account balance (or totalCash baseline) and apply net change from transactions
     return bankAccountBalance + netChange;
   };
-
   const getAvailableCreditForDay = (date: Date) => {
     const target = new Date(date);
     target.setHours(0, 0, 0, 0);
@@ -433,7 +437,7 @@ export const CashFlowCalendar = ({
     let availableCredit = totalAvailableCredit;
 
     // Get all credit card PURCHASES up to target date (these DECREASE available credit)
-    const creditCardPurchasesUpToDay = events.filter((event) => {
+    const creditCardPurchasesUpToDay = events.filter(event => {
       if (!event.creditCardId) return false; // Only credit card purchases
       const ed = new Date(event.date);
       ed.setHours(0, 0, 0, 0);
@@ -446,7 +450,7 @@ export const CashFlowCalendar = ({
     });
 
     // Get all credit card PAYMENTS up to target date (these INCREASE available credit when paid)
-    const creditPaymentsUpToDay = events.filter((event) => {
+    const creditPaymentsUpToDay = events.filter(event => {
       if (event.type !== 'credit-payment') return false;
       const ed = new Date(event.date);
       ed.setHours(0, 0, 0, 0);
@@ -457,10 +461,8 @@ export const CashFlowCalendar = ({
     creditPaymentsUpToDay.forEach(payment => {
       availableCredit += payment.amount;
     });
-
     return Math.max(0, availableCredit);
   };
-
   const getEventIcon = (event: CashFlowEvent) => {
     if (event.source === 'Amazon-Forecasted') return <ShoppingBag className="h-3 w-3 text-purple-600" />;
     if (event.source === 'Amazon') return <ShoppingBag className="h-3 w-3" />;
@@ -468,7 +470,6 @@ export const CashFlowCalendar = ({
     if (event.type === 'purchase-order' || event.vendor) return <Building2 className="h-3 w-3" />;
     return <Wallet className="h-3 w-3" />;
   };
-
   const getEventColor = (event: CashFlowEvent) => {
     // Forecasted Amazon payouts get special purple/dashed styling
     if (event.source === 'Amazon-Forecasted' && event.type === 'inflow') {
@@ -489,9 +490,8 @@ export const CashFlowCalendar = ({
     }
     return 'bg-finance-negative/20 text-finance-negative border-finance-negative/30';
   };
-
   const navigateMonth = (direction: 'prev' | 'next') => {
-    setCurrentDate((prev) => {
+    setCurrentDate(prev => {
       const tentative = direction === 'prev' ? subMonths(prev, 1) : addMonths(prev, 1);
       const minMonth = startOfMonth(accountStartDate);
       const next = tentative < minMonth ? minMonth : tentative;
@@ -499,22 +499,18 @@ export const CashFlowCalendar = ({
       return next;
     });
   };
-
   const handleDragStart = (e: React.DragEvent, transaction: CashFlowEvent) => {
     e.stopPropagation();
     setDraggedTransaction(transaction);
     e.dataTransfer.effectAllowed = 'move';
   };
-
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
   };
-
   const handleDrop = async (e: React.DragEvent, targetDate: Date) => {
     e.preventDefault();
     e.stopPropagation();
-    
     if (!draggedTransaction || !onUpdateTransactionDate) {
       setDraggedTransaction(null);
       return;
@@ -522,7 +518,6 @@ export const CashFlowCalendar = ({
 
     // Determine if it's a vendor transaction or income transaction
     const eventType = draggedTransaction.type === 'purchase-order' || draggedTransaction.vendor ? 'vendor' : 'income';
-    
     try {
       await onUpdateTransactionDate(draggedTransaction.id, targetDate, eventType);
       toast.success("Transaction date updated successfully");
@@ -530,18 +525,13 @@ export const CashFlowCalendar = ({
       console.error('Error updating transaction date:', error);
       toast.error("Failed to update transaction date");
     }
-    
     setDraggedTransaction(null);
   };
 
   // Calculate average Amazon payout from historical confirmed payouts  
   const averageAmazonPayout = (() => {
-    const confirmedPayouts = events.filter(e => 
-      e.source === 'Amazon' && e.type === 'inflow'
-    );
-    
+    const confirmedPayouts = events.filter(e => e.source === 'Amazon' && e.type === 'inflow');
     if (confirmedPayouts.length === 0) return 0;
-    
     const total = confirmedPayouts.reduce((sum, e) => sum + e.amount, 0);
     return total / confirmedPayouts.length;
   })();
@@ -554,36 +544,35 @@ export const CashFlowCalendar = ({
     today.setHours(0, 0, 0, 0);
     const chartStart = today; // Start from today
     const chartEnd = endOfMonth(addMonths(today, monthsToShow)); // End at the end of month X months from now
-    
-    const days = eachDayOfInterval({ start: chartStart, end: chartEnd });
-    
+
+    const days = eachDayOfInterval({
+      start: chartStart,
+      end: chartEnd
+    });
+
     // CRITICAL: Always calculate projected balances cumulatively from bank balance
     // Day 0 (today) = bank balance
     // Day 1 = Day 0 + Day 1 net cash flow  
     // Day 2 = Day 1 + Day 2 net cash flow, etc.
-    
+
     let runningTotal = bankAccountBalance; // Start with actual bank balance today
     let cumulativeInflow = 0;
     let cumulativeOutflow = 0;
-    
     return days.map((day, dayIndex) => {
       const dayEvents = events.filter(event => {
         // Use balanceImpactDate if available (for forecasted payouts), otherwise use date
         const impactDate = event.balanceImpactDate || event.date;
         return format(impactDate, 'yyyy-MM-dd') === format(day, 'yyyy-MM-dd');
       });
-      
       const dailyInflow = dayEvents.filter(e => e.type === 'inflow').reduce((sum, e) => sum + e.amount, 0);
       const dailyOutflow = dayEvents.filter(e => e.type !== 'inflow').reduce((sum, e) => sum + e.amount, 0);
       const dailyChange = dailyInflow - dailyOutflow;
-      
       cumulativeInflow += dailyInflow;
       cumulativeOutflow += dailyOutflow;
-      
       const dayToCheck = new Date(day);
       dayToCheck.setHours(0, 0, 0, 0);
       const isToday = format(dayToCheck, 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd');
-      
+
       // CRITICAL: Projected balance calculation
       // For today: Start with bank balance, add today's transactions UNLESS excludeToday is enabled
       // For future days: Add daily changes cumulatively
@@ -592,54 +581,46 @@ export const CashFlowCalendar = ({
       } else {
         runningTotal += dailyChange;
       }
-      
+
       // Check if this day has an Amazon payout
       const hasAmazonPayout = dayEvents.some(e => e.source === 'Amazon' && e.type === 'inflow');
       const hasAmazonForecast = dayEvents.some(e => e.source === 'Amazon-Forecasted' && e.type === 'inflow');
-      
+
       // Group events by type for detailed breakdown
       const inflowEvents = dayEvents.filter(e => e.type === 'inflow');
       const purchaseOrderEvents = dayEvents.filter(e => e.type === 'purchase-order');
       const creditPaymentEvents = dayEvents.filter(e => e.type === 'credit-payment');
       const outflowEvents = dayEvents.filter(e => e.type === 'outflow');
-      
+
       // Check if any credit card transactions on this day
       const hasCreditCardTransaction = dayEvents.some(e => e.creditCardId || e.type === 'credit-payment');
-      
-      // Calculate pending/overdue for this specific date
-      const dayPendingIncome = incomeItems
-        .filter(income => {
-          if (income.status === 'received') return false;
-          const incomeDate = startOfDay(new Date(income.paymentDate));
-          return incomeDate <= dayToCheck && incomeDate >= today;
-        })
-        .reduce((sum, income) => sum + income.amount, 0);
-      
-      const dayOverdueIncome = incomeItems
-        .filter(income => {
-          if (income.status === 'received') return false;
-          const incomeDate = startOfDay(new Date(income.paymentDate));
-          return incomeDate < today;
-        })
-        .reduce((sum, income) => sum + income.amount, 0);
 
-      const dayOverdueVendors = vendors
-        .filter(vendor => {
-          if (vendor.status === 'paid' || vendor.totalOwed <= 0) return false;
-          const paymentDate = startOfDay(new Date(vendor.nextPaymentDate));
-          return paymentDate < today;
-        })
-        .reduce((sum, vendor) => sum + vendor.nextPaymentAmount, 0);
-      
+      // Calculate pending/overdue for this specific date
+      const dayPendingIncome = incomeItems.filter(income => {
+        if (income.status === 'received') return false;
+        const incomeDate = startOfDay(new Date(income.paymentDate));
+        return incomeDate <= dayToCheck && incomeDate >= today;
+      }).reduce((sum, income) => sum + income.amount, 0);
+      const dayOverdueIncome = incomeItems.filter(income => {
+        if (income.status === 'received') return false;
+        const incomeDate = startOfDay(new Date(income.paymentDate));
+        return incomeDate < today;
+      }).reduce((sum, income) => sum + income.amount, 0);
+      const dayOverdueVendors = vendors.filter(vendor => {
+        if (vendor.status === 'paid' || vendor.totalOwed <= 0) return false;
+        const paymentDate = startOfDay(new Date(vendor.nextPaymentDate));
+        return paymentDate < today;
+      }).reduce((sum, vendor) => sum + vendor.nextPaymentAmount, 0);
+
       // Calculate available credit for this specific day
       const availableCreditForDay = getAvailableCreditForDay(day);
-      
       return {
         date: format(day, 'MMM dd'),
         fullDate: day,
         cashFlow: runningTotal,
         cashBalance: runningTotal,
-        forecastPayout: runningTotal, // Now aligned with cash balance
+        forecastPayout: runningTotal,
+        // Now aligned with cash balance
         totalResources: runningTotal + availableCreditForDay,
         availableCredit: runningTotal + availableCreditForDay,
         creditCardBalance: availableCreditForDay,
@@ -663,54 +644,45 @@ export const CashFlowCalendar = ({
         overdueVendors: dayOverdueVendors,
         hasAmazonPayout,
         hasAmazonForecast,
-        hasCreditCardTransaction,
+        hasCreditCardTransaction
       };
     });
   };
-  
   const chartData = generateChartData();
-  
+
   // Get zoomed data based on zoom state
   const getDisplayData = () => {
     if (!zoomState) return chartData;
-    const { left = 0, right = chartData.length - 1 } = zoomState;
+    const {
+      left = 0,
+      right = chartData.length - 1
+    } = zoomState;
     return chartData.slice(left, right + 1);
   };
-  
   const displayData = getDisplayData();
-  
+
   // Use the safe spending limit directly from the safe spending calculation
   // This ensures the calendar shows the exact same "Available to Spend" as the stats box
   const lowestProjectedBalance = safeSpendingLimit;
-  
   console.log('📊 [Calendar] Available to Spend from safe spending:', {
     safeSpendingLimit,
     reserveAmount
   });
-  
+
   // Memoize Y-axis domain calculation
   const yDomain = useMemo((): [number, number] => {
-    const yValues = displayData.flatMap((d: any) => [
-      d.cashBalance,
-      d.totalResources,
-      d.creditCardBalance,
-      d.reserveAmount,
-      d.projectedBalance,
-      d.cashFlow,
-    ].filter((v: any) => typeof v === 'number')) as number[];
+    const yValues = displayData.flatMap((d: any) => [d.cashBalance, d.totalResources, d.creditCardBalance, d.reserveAmount, d.projectedBalance, d.cashFlow].filter((v: any) => typeof v === 'number')) as number[];
 
     // Include the lowest projected balance (available to spend) in the domain
     if (typeof lowestProjectedBalance === 'number' && !isNaN(lowestProjectedBalance)) {
       yValues.push(lowestProjectedBalance);
     }
-
     const yMin = yValues.length ? Math.min(...yValues) : 0;
     const yMax = yValues.length ? Math.max(...yValues) : 0;
     const yRange = Math.max(1, yMax - yMin);
     const yPadding = Math.max(1000, Math.round(yRange * 0.05));
     return [yMin - yPadding, yMax + yPadding];
   }, [displayData, lowestProjectedBalance]);
-  
   const getChartInnerWidth = () => {
     const svg = chartWrapperRef.current?.querySelector('svg.recharts-surface') as SVGElement | null;
     return svg?.clientWidth || chartWidth || 0;
@@ -720,7 +692,6 @@ export const CashFlowCalendar = ({
   const computeIndexFromClientX = (clientX: number) => {
     const svg = chartWrapperRef.current?.querySelector('svg.recharts-surface') as SVGElement | null;
     const grid = chartWrapperRef.current?.querySelector('.recharts-cartesian-grid') as SVGGElement | null;
-
     if (svg && grid) {
       const svgRect = svg.getBoundingClientRect();
       const gridRect = grid.getBoundingClientRect();
@@ -741,19 +712,18 @@ export const CashFlowCalendar = ({
     const idx = Math.round(fraction * (displayData.length - 1));
     return Math.max(0, Math.min(displayData.length - 1, idx));
   };
-  
+
   // Wrapper-level handlers to keep tooltip active across the whole chart area (including left margins)
   const handleWrapperMouseMove = useCallback((ev: any) => {
     if (throttleRef.current) return;
-    
     throttleRef.current = window.setTimeout(() => {
       throttleRef.current = null;
     }, 50); // Increased throttle for better performance
-    
+
     const idx = computeIndexFromClientX(ev.clientX);
     setActiveTooltipIndex(idx);
   }, [displayData.length]);
-  
+
   // Memoize colors to prevent function recreation
   const memoizedColors = useMemo(() => {
     const cashColor = cashFlowColor?.startsWith?.('hsl') ? '#3b82f6' : cashFlowColor;
@@ -764,16 +734,26 @@ export const CashFlowCalendar = ({
       reserveColor
     };
   }, [cashFlowColor, totalResourcesColor, creditCardColor, reserveColor]);
-
   const buildTooltipPayload = useCallback((index: number) => {
     const d = displayData[index as number];
     if (!d) return [];
     const items: any[] = [];
     const safePush = (key: string, color: string) => {
       const v = (d as any)[key];
-      if (typeof v === 'number') items.push({ dataKey: key, name: key, value: v, color, payload: d });
+      if (typeof v === 'number') items.push({
+        dataKey: key,
+        name: key,
+        value: v,
+        color,
+        payload: d
+      });
     };
-    const { cashColor, totalResourcesColor, creditCardColor, reserveColor } = memoizedColors;
+    const {
+      cashColor,
+      totalResourcesColor,
+      creditCardColor,
+      reserveColor
+    } = memoizedColors;
     safePush('totalResources', totalResourcesColor);
     safePush('cashBalance', cashColor);
     safePush('creditCardBalance', creditCardColor);
@@ -785,23 +765,21 @@ export const CashFlowCalendar = ({
     safePush('availableCredit', totalResourcesColor);
     safePush('creditCardCredit', creditCardColor);
     safePush('reserve', reserveColor);
-
     return items;
   }, [displayData, memoizedColors]);
-  
+
   // Memoize tooltip payload to prevent recalculation on every render
   const tooltipPayload = useMemo(() => {
     if (activeTooltipIndex === null) return [];
     return buildTooltipPayload(activeTooltipIndex);
   }, [activeTooltipIndex, buildTooltipPayload]);
-  
+
   // Zoom handlers
   const handleMouseDown = (e: any) => {
     if (e && e.activeLabel) {
       setRefAreaLeft(e.activeLabel);
     }
   };
-  
   const handleMouseMove = (e: any) => {
     if (!e) return;
     let idx: number | null = null;
@@ -836,45 +814,38 @@ export const CashFlowCalendar = ({
       const clientX = (e as any).clientX ?? 0;
       idx = computeIndexFromClientX(clientX);
     }
-
     if (idx !== null) setActiveTooltipIndex(idx);
-
     if (refAreaLeft && e.activeLabel) {
       setRefAreaRight(e.activeLabel);
     }
   };
-
   const handleMouseUp = () => {
     if (refAreaLeft && refAreaRight) {
       const leftIndex = chartData.findIndex(d => d.date === refAreaLeft);
       const rightIndex = chartData.findIndex(d => d.date === refAreaRight);
-      
       if (leftIndex !== -1 && rightIndex !== -1) {
         const left = Math.min(leftIndex, rightIndex);
         const right = Math.max(leftIndex, rightIndex);
-        
         if (right - left > 0) {
-          setZoomState({ left, right });
+          setZoomState({
+            left,
+            right
+          });
         }
       }
     }
-    
     setRefAreaLeft(null);
     setRefAreaRight(null);
   };
-  
   const handleZoomOut = () => {
     setZoomState(null);
   };
-
   const handleChartClick = (data: any) => {
     // Only handle chart click if we're not in zoom selection mode
     if (refAreaLeft || refAreaRight) return;
-    
     if (data && data.activePayload && data.activePayload[0]) {
       const dayData = data.activePayload[0].payload;
       const transactions = dayData.transactions || [];
-      
       if (transactions.length === 1) {
         // Single transaction - show individual transaction modal
         setSelectedTransaction(transactions[0]);
@@ -887,20 +858,19 @@ export const CashFlowCalendar = ({
       }
     }
   };
-
   const handleSearch = () => {
-    const results: {date: string; events: CashFlowEvent[]}[] = [];
-    
+    const results: {
+      date: string;
+      events: CashFlowEvent[];
+    }[] = [];
+
     // Search by amount if provided
     if (searchAmount && !isNaN(parseFloat(searchAmount))) {
       const targetAmount = parseFloat(searchAmount);
       const tolerance = 0.01; // Allow for small differences
-      
+
       chartData.forEach((day: any) => {
-        const matchingEvents = (day.transactions || []).filter((event: CashFlowEvent) => 
-          Math.abs(event.amount - targetAmount) < tolerance
-        );
-        
+        const matchingEvents = (day.transactions || []).filter((event: CashFlowEvent) => Math.abs(event.amount - targetAmount) < tolerance);
         if (matchingEvents.length > 0) {
           results.push({
             date: day.date,
@@ -909,12 +879,11 @@ export const CashFlowCalendar = ({
         }
       });
     }
-    
+
     // Search by date if provided
     if (searchDate) {
       const searchDateStr = format(searchDate, 'MMM dd');
       const matchingDay = chartData.find((day: any) => day.date === searchDateStr);
-      
       if (matchingDay && matchingDay.transactions?.length > 0) {
         results.push({
           date: matchingDay.date,
@@ -922,39 +891,34 @@ export const CashFlowCalendar = ({
         });
       }
     }
-    
     setSearchResults(results);
-    
     if (results.length === 0) {
       toast.error('No transactions found matching your search criteria');
     }
   };
-
   const chartConfig = {
     cashBalance: {
       label: "Cash Balance",
-      color: cashFlowColor,
+      color: cashFlowColor
     },
     totalResources: {
       label: "Total Resources",
-      color: totalResourcesColor,
+      color: totalResourcesColor
     },
     creditCardBalance: {
       label: "Available Credit",
-      color: creditCardColor,
+      color: creditCardColor
     },
     reserveAmount: {
       label: "Reserve Amount",
-      color: reserveColor,
+      color: reserveColor
     },
     forecastPayout: {
       label: "Forecast Payout",
-      color: forecastColor,
-    },
+      color: forecastColor
+    }
   };
-
-  return (
-    <Card className="shadow-card h-[700px] flex flex-col bg-background/10 backdrop-blur-sm">
+  return <Card className="shadow-card h-[700px] flex flex-col bg-background/10 backdrop-blur-sm">
       <div className="relative flex-shrink-0">        
         <CardHeader className="pb-4 flex-shrink-0">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
@@ -969,11 +933,7 @@ export const CashFlowCalendar = ({
                 </div>
               </div>
               <div className="flex items-center space-x-2">
-                <Button 
-                  onClick={() => setShowSearchDialog(true)}
-                  variant="outline"
-                  size="sm"
-                >
+                <Button onClick={() => setShowSearchDialog(true)} variant="outline" size="sm">
                   <DollarSign className="h-4 w-4 mr-2" />
                   Search by Amount or Date
                 </Button>
@@ -996,11 +956,9 @@ export const CashFlowCalendar = ({
     
     <CardContent className="p-6">
         <div className="flex flex-col">
-          <div
-            className="relative w-full"
-            style={{ height: '500px' }}
-            ref={chartWrapperRef}
-          >
+          <div className="relative w-full" style={{
+          height: '500px'
+        }} ref={chartWrapperRef}>
                  <div className="flex justify-between items-center mb-2 px-4">
                  <p className="text-sm text-muted-foreground">
                    {zoomState ? 'Click and drag to zoom in further • ' : 'Click and drag to zoom into a specific time period • '}
@@ -1008,287 +966,185 @@ export const CashFlowCalendar = ({
                      {displayData.length} days shown
                    </span>
                  </p>
-                 {zoomState && (
-                   <Button 
-                     variant="outline" 
-                     size="sm" 
-                     onClick={handleZoomOut}
-                     className="text-xs"
-                   >
+                 {zoomState && <Button variant="outline" size="sm" onClick={handleZoomOut} className="text-xs">
                      Reset Zoom
-                   </Button>
-                 )}
+                   </Button>}
                </div>
                 <ChartContainer config={chartConfig} className="h-full w-full">
                   <ResponsiveContainer width="100%" height="100%">
-                       <LineChart
-                        data={displayData} 
-                        onClick={handleChartClick}
-                         onMouseDown={handleMouseDown}
-                         onMouseMove={handleMouseMove}
-                        onMouseUp={handleMouseUp}
-                        onMouseLeave={() => setActiveTooltipIndex(null)}
-                        margin={chartMargin}
-                        syncMethod="index"
-                      >
+                       <LineChart data={displayData} onClick={handleChartClick} onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={() => setActiveTooltipIndex(null)} margin={chartMargin} syncMethod="index">
                       <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis 
-                        dataKey="date" 
-                        tick={{ fontSize: 12 }}
-                        interval="preserveStartEnd"
-                      />
-                       <YAxis 
-                        tick={{ fontSize: 12 }}
-                        tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
-                        domain={yDomain}
-                        allowDataOverflow
-                      />
-                       <ChartTooltip 
-                        isAnimationActive={false}
-                        allowEscapeViewBox={{ x: true, y: true }}
-                        cursor={{ strokeDasharray: '3 3' }}
-                        position={{ x: 12, y: 12 }}
-                        wrapperStyle={{ pointerEvents: 'none' }}
-                        active={activeTooltipIndex !== null}
-                        payload={tooltipPayload}
-                        label={activeTooltipIndex !== null ? displayData[activeTooltipIndex]?.date : undefined}
-                        content={
-                          <ChartTooltipContent 
-                            formatter={(value: number, name: string) => {
-                              const labels: Record<string, string> = {
-                                totalResources: "Total Resources:",
-                                cashBalance: "Cash Flow:",
-                                creditCardBalance: "Available Credit:",
-                                reserveAmount: "Reserve Amount:",
-                                forecastPayout: "Forecast Payout:",
-                                projectedBalance: "Projected Balance:",
-                                cashFlow: "Cash Flow:",
-                                availableCredit: "Total Resources:",
-                                creditCardCredit: "Available Credit:",
-                                reserve: "Reserve Amount:",
-                              };
-                              return [labels[name] || name, `$${formatCurrency(value)}`];
-                            }}
-                            itemSorter={(item) => {
-                              const order = [
-                                "totalResources",
-                                "cashBalance",
-                                "creditCardBalance",
-                                "reserveAmount",
-                                "forecastPayout",
-                                "projectedBalance",
-                                "cashFlow",
-                                "availableCredit",
-                                "creditCardCredit",
-                                "reserve",
-                              ];
-                              return order.indexOf(item.dataKey as string);
-                            }}
-                          />
-                        }
-                        labelFormatter={useCallback((label, payload) => {
-                          if (!payload?.[0]) return label;
-                          
-                          const data = payload[0].payload;
-                          const hasTransactions = data.transactions?.length > 0;
-                          
-                          return (
-                            <div className="space-y-2 min-w-[300px]">
+                      <XAxis dataKey="date" tick={{
+                  fontSize: 12
+                }} interval="preserveStartEnd" />
+                       <YAxis tick={{
+                  fontSize: 12
+                }} tickFormatter={value => `$${(value / 1000).toFixed(0)}k`} domain={yDomain} allowDataOverflow />
+                       <ChartTooltip isAnimationActive={false} allowEscapeViewBox={{
+                  x: true,
+                  y: true
+                }} cursor={{
+                  strokeDasharray: '3 3'
+                }} position={{
+                  x: 12,
+                  y: 12
+                }} wrapperStyle={{
+                  pointerEvents: 'none'
+                }} active={activeTooltipIndex !== null} payload={tooltipPayload} label={activeTooltipIndex !== null ? displayData[activeTooltipIndex]?.date : undefined} content={<ChartTooltipContent formatter={(value: number, name: string) => {
+                  const labels: Record<string, string> = {
+                    totalResources: "Total Resources:",
+                    cashBalance: "Cash Flow:",
+                    creditCardBalance: "Available Credit:",
+                    reserveAmount: "Reserve Amount:",
+                    forecastPayout: "Forecast Payout:",
+                    projectedBalance: "Projected Balance:",
+                    cashFlow: "Cash Flow:",
+                    availableCredit: "Total Resources:",
+                    creditCardCredit: "Available Credit:",
+                    reserve: "Reserve Amount:"
+                  };
+                  return [labels[name] || name, `$${formatCurrency(value)}`];
+                }} itemSorter={item => {
+                  const order = ["totalResources", "cashBalance", "creditCardBalance", "reserveAmount", "forecastPayout", "projectedBalance", "cashFlow", "availableCredit", "creditCardCredit", "reserve"];
+                  return order.indexOf(item.dataKey as string);
+                }} />} labelFormatter={useCallback((label, payload) => {
+                  if (!payload?.[0]) return label;
+                  const data = payload[0].payload;
+                  const hasTransactions = data.transactions?.length > 0;
+                  return <div className="space-y-2 min-w-[300px]">
                               <p className="font-semibold text-base border-b pb-2">{label}</p>
                               
-                              {data.hasAmazonPayout && (
-                                <p className="text-orange-600 font-medium flex items-center gap-1">
+                              {data.hasAmazonPayout && <p className="text-orange-600 font-medium flex items-center gap-1">
                                   <ShoppingBag className="h-3 w-3" />
                                   Amazon Payout
-                                </p>
-                              )}
-                              {data.hasAmazonForecast && (
-                                <p className="text-purple-600 font-medium flex items-center gap-1">
+                                </p>}
+                              {data.hasAmazonForecast && <p className="text-purple-600 font-medium flex items-center gap-1">
                                   <ShoppingBag className="h-3 w-3" />
                                   Amazon Payout (Forecasted)
-                                </p>
-                              )}
+                                </p>}
                               
                               <div className="space-y-1">
                                 <p className="font-bold text-base">
                                   Projected Balance: <span className="text-primary">${data.cashFlow?.toLocaleString()}</span>
                                 </p>
-                                {data.dailyChange !== 0 && (
-                                  <p className={data.dailyChange > 0 ? 'text-green-600 font-medium' : 'text-red-600 font-medium'}>
+                                {data.dailyChange !== 0 && <p className={data.dailyChange > 0 ? 'text-green-600 font-medium' : 'text-red-600 font-medium'}>
                                     Daily Net: {data.dailyChange > 0 ? '+' : ''}${Math.abs(data.dailyChange).toLocaleString()}
-                                  </p>
-                                )}
+                                  </p>}
                               </div>
 
-                              {hasTransactions && (
-                                <div className="space-y-1.5 border-t pt-2">
+                              {hasTransactions && <div className="space-y-1.5 border-t pt-2">
                                   <p className="font-semibold text-xs uppercase text-muted-foreground">Daily Activity</p>
-                                   {data.inflow > 0 && (
-                                     <p className="text-green-600 font-medium">↑ Inflows: +${formatCurrency(data.inflow)}</p>
-                                   )}
-                                   {data.outflow > 0 && (
-                                     <p className="text-red-600 font-medium">↓ Outflows: -${formatCurrency(data.outflow)}</p>
-                                   )}
-                                </div>
-                              )}
+                                   {data.inflow > 0 && <p className="text-green-600 font-medium">↑ Inflows: +${formatCurrency(data.inflow)}</p>}
+                                   {data.outflow > 0 && <p className="text-red-600 font-medium">↓ Outflows: -${formatCurrency(data.outflow)}</p>}
+                                </div>}
 
-                              {(data.overdueIncome > 0 || data.overdueVendors > 0) && (
-                                <div className="space-y-1 border-t pt-2">
+                              {(data.overdueIncome > 0 || data.overdueVendors > 0) && <div className="space-y-1 border-t pt-2">
                                   <p className="font-semibold text-xs uppercase text-muted-foreground">Outstanding</p>
-                                  {data.overdueIncome > 0 && (
-                                    <p className="text-xs text-red-600 flex items-center gap-1">
+                                  {data.overdueIncome > 0 && <p className="text-xs text-red-600 flex items-center gap-1">
                                       <AlertTriangle className="h-3 w-3" />
                                       Overdue Income: ${data.overdueIncome.toLocaleString()}
-                                    </p>
-                                  )}
-                                  {data.overdueVendors > 0 && (
-                                    <p className="text-xs text-red-600 flex items-center gap-1">
+                                    </p>}
+                                  {data.overdueVendors > 0 && <p className="text-xs text-red-600 flex items-center gap-1">
                                       <AlertTriangle className="h-3 w-3" />
                                       Overdue Vendors: ${data.overdueVendors.toLocaleString()}
-                                    </p>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          );
-                        }, [])}
-                      />
-                       {showCashFlowLine && (
-                        <Line 
-                          type="monotone" 
-                          dataKey="cashBalance" 
-                          stroke={cashFlowColor.startsWith('hsl') ? '#3b82f6' : cashFlowColor}
-                          strokeWidth={2}
-                          dot={(props: any) => {
-                            const { cx, cy, payload, index } = props;
-                            
-                            // Always render an invisible dot to enable hovering on all dates
-                            // Larger radius (16px) for better hover detection
-                            if (!payload.transactions || payload.transactions.length === 0) {
-                              return <circle key={`cash-empty-${index}`} cx={cx} cy={cy} r={16} fill="transparent" cursor="pointer" />;
-                            }
-                            
-                            // Don't show dots for forecasted Amazon payouts but keep hover area
-                            if (payload.hasAmazonForecast) {
-                              return <circle key={`cash-forecast-${index}`} cx={cx} cy={cy} r={16} fill="transparent" cursor="pointer" />;
-                            }
-                            
-                            if (payload.hasAmazonPayout) {
-                              // Confirmed payout - orange with large hover area
-                              return (
-                                <g key={`cash-payout-${index}`}>
+                                    </p>}
+                                </div>}
+                            </div>;
+                }, [])} />
+                       {showCashFlowLine && <Line type="monotone" dataKey="cashBalance" stroke={cashFlowColor.startsWith('hsl') ? '#3b82f6' : cashFlowColor} strokeWidth={2} dot={(props: any) => {
+                  const {
+                    cx,
+                    cy,
+                    payload,
+                    index
+                  } = props;
+
+                  // Always render an invisible dot to enable hovering on all dates
+                  // Larger radius (16px) for better hover detection
+                  if (!payload.transactions || payload.transactions.length === 0) {
+                    return <circle key={`cash-empty-${index}`} cx={cx} cy={cy} r={16} fill="transparent" cursor="pointer" />;
+                  }
+
+                  // Don't show dots for forecasted Amazon payouts but keep hover area
+                  if (payload.hasAmazonForecast) {
+                    return <circle key={`cash-forecast-${index}`} cx={cx} cy={cy} r={16} fill="transparent" cursor="pointer" />;
+                  }
+                  if (payload.hasAmazonPayout) {
+                    // Confirmed payout - orange with large hover area
+                    return <g key={`cash-payout-${index}`}>
                                   <circle cx={cx} cy={cy} r={16} fill="transparent" cursor="pointer" />
                                   <circle cx={cx} cy={cy} r={6} fill="#f97316" stroke="#ea580c" strokeWidth={2} />
                                   <circle cx={cx} cy={cy} r={3} fill="#fff" />
-                                </g>
-                              );
-                            }
-                            const fillColor = cashFlowColor.startsWith('hsl') ? '#3b82f6' : cashFlowColor;
-                            return (
-                              <g key={`cash-dot-${index}`}>
+                                </g>;
+                  }
+                  const fillColor = cashFlowColor.startsWith('hsl') ? '#3b82f6' : cashFlowColor;
+                  return <g key={`cash-dot-${index}`}>
                                 <circle cx={cx} cy={cy} r={16} fill="transparent" cursor="pointer" />
                                 <circle cx={cx} cy={cy} r={4} fill={fillColor} cursor="pointer" />
-                              </g>
-                            );
-                          }}
-                          activeDot={{ r: 8, cursor: 'pointer', strokeWidth: 0 }}
-                        />
-                      )}
-                       {showTotalResourcesLine && (
-                        <Line
-                          type="monotone"
-                          dataKey="totalResources"
-                          stroke={totalResourcesColor}
-                          strokeWidth={2}
-                          dot={false}
-                          activeDot={{ r: 8, cursor: 'pointer', strokeWidth: 0 }}
-                        />
-                      )}
-                      {showCreditCardLine && (
-                        <Line
-                          type="monotone"
-                          dataKey="creditCardBalance"
-                          stroke={creditCardColor}
-                          strokeWidth={2}
-                          dot={(props: any) => {
-                            const { cx, cy, payload, index } = props;
-                            if (payload.hasCreditCardTransaction) {
-                              return (
-                                <g key={`credit-balance-${index}`}>
+                              </g>;
+                }} activeDot={{
+                  r: 8,
+                  cursor: 'pointer',
+                  strokeWidth: 0
+                }} />}
+                       {showTotalResourcesLine && <Line type="monotone" dataKey="totalResources" stroke={totalResourcesColor} strokeWidth={2} dot={false} activeDot={{
+                  r: 8,
+                  cursor: 'pointer',
+                  strokeWidth: 0
+                }} />}
+                      {showCreditCardLine && <Line type="monotone" dataKey="creditCardBalance" stroke={creditCardColor} strokeWidth={2} dot={(props: any) => {
+                  const {
+                    cx,
+                    cy,
+                    payload,
+                    index
+                  } = props;
+                  if (payload.hasCreditCardTransaction) {
+                    return <g key={`credit-balance-${index}`}>
                                   <circle cx={cx} cy={cy} r={16} fill="transparent" cursor="pointer" />
-                                  <circle 
-                                    cx={cx} 
-                                    cy={cy} 
-                                    r={4} 
-                                    fill={creditCardColor}
-                                    stroke="white"
-                                    strokeWidth={2}
-                                  />
-                                </g>
-                              );
-                            }
-                            return <circle key={`credit-balance-empty-${index}`} cx={cx} cy={cy} r={16} fill="transparent" cursor="pointer" />;
-                          }}
-                          activeDot={{ r: 8, cursor: 'pointer', strokeWidth: 0 }}
-                        />
-                      )}
-                       {showReserveLine && (
-                        <Line
-                          type="monotone"
-                          dataKey="reserveAmount"
-                          stroke={reserveColor}
-                          strokeWidth={2}
-                          strokeDasharray="5 5"
-                          dot={false}
-                          activeDot={{ r: 8, cursor: 'pointer', strokeWidth: 0 }}
-                        />
-                       )}
+                                  <circle cx={cx} cy={cy} r={4} fill={creditCardColor} stroke="white" strokeWidth={2} />
+                                </g>;
+                  }
+                  return <circle key={`credit-balance-empty-${index}`} cx={cx} cy={cy} r={16} fill="transparent" cursor="pointer" />;
+                }} activeDot={{
+                  r: 8,
+                  cursor: 'pointer',
+                  strokeWidth: 0
+                }} />}
+                       {showReserveLine && <Line type="monotone" dataKey="reserveAmount" stroke={reserveColor} strokeWidth={2} strokeDasharray="5 5" dot={false} activeDot={{
+                  r: 8,
+                  cursor: 'pointer',
+                  strokeWidth: 0
+                }} />}
                        {/* Purple line for forecasted Amazon payouts */}
-                       <Line
-                         type="monotone"
-                         dataKey="forecastPayout"
-                         stroke="#9333ea"
-                         strokeWidth={2}
-                         dot={false}
-                         activeDot={{ r: 8, cursor: 'pointer', strokeWidth: 0 }}
-                       />
-                        {showForecastLine && (
-                        <>
+                       <Line type="monotone" dataKey="forecastPayout" stroke="#9333ea" strokeWidth={2} dot={false} activeDot={{
+                  r: 8,
+                  cursor: 'pointer',
+                  strokeWidth: 0
+                }} />
+                        {showForecastLine && <>
                           {/* Projected Balance line - Cash + Forecasts (Purple) - includes mathematical forecasted payouts */}
-                          <Line
-                            type="monotone"
-                            dataKey="projectedBalance"
-                            stroke="#9333ea"
-                            strokeWidth={2}
-                            strokeDasharray="3 3"
-                            dot={(props: any) => {
-                              const { cx, cy, index } = props;
-                              // Invisible hover area for forecast line
-                              return <circle key={`forecast-${index}`} cx={cx} cy={cy} r={16} fill="transparent" cursor="pointer" />;
-                            }}
-                            activeDot={{ r: 8, cursor: 'pointer', strokeWidth: 0 }}
-                            name="Projected Cash Balance (with Mathematical Forecasts)"
-                          />
-                         </>
-                       )}
-                       {showLowestBalanceLine && (
-                         <ReferenceLine
-                           y={lowestProjectedBalance}
-                           stroke={lowestBalanceColor}
-                           strokeWidth={2}
-                           strokeDasharray="3 3"
-                           label={{ value: 'Available to Spend', position: 'insideTopRight', fill: lowestBalanceColor, fontSize: 12 }}
-                         />
-                       )}
-                       {refAreaLeft && refAreaRight && (
-                         <ReferenceArea
-                           x1={refAreaLeft}
-                           x2={refAreaRight}
-                           strokeOpacity={0.3}
-                           fill="hsl(var(--primary))"
-                           fillOpacity={0.3}
-                         />
-                       )}
+                          <Line type="monotone" dataKey="projectedBalance" stroke="#9333ea" strokeWidth={2} strokeDasharray="3 3" dot={(props: any) => {
+                    const {
+                      cx,
+                      cy,
+                      index
+                    } = props;
+                    // Invisible hover area for forecast line
+                    return <circle key={`forecast-${index}`} cx={cx} cy={cy} r={16} fill="transparent" cursor="pointer" />;
+                  }} activeDot={{
+                    r: 8,
+                    cursor: 'pointer',
+                    strokeWidth: 0
+                  }} name="Projected Cash Balance (with Mathematical Forecasts)" />
+                         </>}
+                       {showLowestBalanceLine && <ReferenceLine y={lowestProjectedBalance} stroke={lowestBalanceColor} strokeWidth={2} strokeDasharray="3 3" label={{
+                  value: 'Available to Spend',
+                  position: 'insideTopRight',
+                  fill: lowestBalanceColor,
+                  fontSize: 12
+                }} />}
+                       {refAreaLeft && refAreaRight && <ReferenceArea x1={refAreaLeft} x2={refAreaRight} strokeOpacity={0.3} fill="hsl(var(--primary))" fillOpacity={0.3} />}
                       </LineChart>
                   </ResponsiveContainer>
             </ChartContainer>
@@ -1297,136 +1153,106 @@ export const CashFlowCalendar = ({
         <div className="flex flex-wrap items-center justify-between gap-4 mt-6 pt-4 border-t flex-shrink-0">
           <div className="flex items-center gap-6 text-sm">
                 <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="resources-toggle"
-                    checked={showTotalResourcesLine}
-                    onChange={(e) => {
-                      setShowTotalResourcesLine(e.target.checked);
-                      updateChartPreferences({ showTotalResourcesLine: e.target.checked });
-                    }}
-                    className="w-4 h-4 rounded border-gray-300"
-                  />
+                  <input type="checkbox" id="resources-toggle" checked={showTotalResourcesLine} onChange={e => {
+                setShowTotalResourcesLine(e.target.checked);
+                updateChartPreferences({
+                  showTotalResourcesLine: e.target.checked
+                });
+              }} className="w-4 h-4 rounded border-gray-300" />
                   <label htmlFor="resources-color" className="cursor-pointer">
-                    <input
-                      type="color"
-                      id="resources-color"
-                      value={totalResourcesColor}
-                      onChange={(e) => {
-                        setTotalResourcesColor(e.target.value);
-                        updateChartPreferences({ totalResourcesColor: e.target.value });
-                      }}
-                      className="w-3 h-3 rounded cursor-pointer border-0 p-0"
-                      style={{ appearance: 'none', backgroundColor: totalResourcesColor }}
-                    />
+                    <input type="color" id="resources-color" value={totalResourcesColor} onChange={e => {
+                  setTotalResourcesColor(e.target.value);
+                  updateChartPreferences({
+                    totalResourcesColor: e.target.value
+                  });
+                }} className="w-3 h-3 rounded cursor-pointer border-0 p-0" style={{
+                  appearance: 'none',
+                  backgroundColor: totalResourcesColor
+                }} />
                   </label>
                   <label htmlFor="resources-toggle" className="cursor-pointer">Total Resources (Cash + Credit)</label>
                 </div>
                 <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="cashflow-toggle"
-                    checked={showCashFlowLine}
-                    onChange={(e) => {
-                      setShowCashFlowLine(e.target.checked);
-                      updateChartPreferences({ showCashFlowLine: e.target.checked });
-                    }}
-                    className="w-4 h-4 rounded border-gray-300"
-                  />
+                  <input type="checkbox" id="cashflow-toggle" checked={showCashFlowLine} onChange={e => {
+                setShowCashFlowLine(e.target.checked);
+                updateChartPreferences({
+                  showCashFlowLine: e.target.checked
+                });
+              }} className="w-4 h-4 rounded border-gray-300" />
                   <label htmlFor="cashflow-color" className="cursor-pointer">
-                    <input
-                      type="color"
-                      id="cashflow-color"
-                      value={cashFlowColor.startsWith('hsl') ? '#3b82f6' : cashFlowColor}
-                      onChange={(e) => {
-                        setCashFlowColor(e.target.value);
-                        updateChartPreferences({ cashFlowColor: e.target.value });
-                      }}
-                      className="w-3 h-3 rounded cursor-pointer border-0 p-0"
-                      style={{ appearance: 'none', backgroundColor: cashFlowColor.startsWith('hsl') ? '#3b82f6' : cashFlowColor }}
-                    />
+                    <input type="color" id="cashflow-color" value={cashFlowColor.startsWith('hsl') ? '#3b82f6' : cashFlowColor} onChange={e => {
+                  setCashFlowColor(e.target.value);
+                  updateChartPreferences({
+                    cashFlowColor: e.target.value
+                  });
+                }} className="w-3 h-3 rounded cursor-pointer border-0 p-0" style={{
+                  appearance: 'none',
+                  backgroundColor: cashFlowColor.startsWith('hsl') ? '#3b82f6' : cashFlowColor
+                }} />
                   </label>
                   <label htmlFor="cashflow-toggle" className="cursor-pointer">Cash Balance</label>
                 </div>
                 <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="credit-toggle"
-                    checked={showCreditCardLine}
-                    onChange={(e) => {
-                      setShowCreditCardLine(e.target.checked);
-                      updateChartPreferences({ showCreditCardLine: e.target.checked });
-                    }}
-                    className="w-4 h-4 rounded border-gray-300"
-                  />
+                  <input type="checkbox" id="credit-toggle" checked={showCreditCardLine} onChange={e => {
+                setShowCreditCardLine(e.target.checked);
+                updateChartPreferences({
+                  showCreditCardLine: e.target.checked
+                });
+              }} className="w-4 h-4 rounded border-gray-300" />
                   <label htmlFor="credit-color" className="cursor-pointer">
-                    <input
-                      type="color"
-                      id="credit-color"
-                      value={creditCardColor}
-                      onChange={(e) => {
-                        setCreditCardColor(e.target.value);
-                        updateChartPreferences({ creditCardColor: e.target.value });
-                      }}
-                      className="w-3 h-3 rounded cursor-pointer border-0 p-0"
-                      style={{ appearance: 'none', backgroundColor: creditCardColor }}
-                    />
+                    <input type="color" id="credit-color" value={creditCardColor} onChange={e => {
+                  setCreditCardColor(e.target.value);
+                  updateChartPreferences({
+                    creditCardColor: e.target.value
+                  });
+                }} className="w-3 h-3 rounded cursor-pointer border-0 p-0" style={{
+                  appearance: 'none',
+                  backgroundColor: creditCardColor
+                }} />
                   </label>
                   <label htmlFor="credit-toggle" className="cursor-pointer">Available Credit</label>
                 </div>
                 <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="reserve-toggle"
-                    checked={showReserveLine}
-                    onChange={(e) => {
-                      setShowReserveLine(e.target.checked);
-                      updateChartPreferences({ showReserveLine: e.target.checked });
-                    }}
-                    className="w-4 h-4 rounded border-gray-300"
-                  />
+                  <input type="checkbox" id="reserve-toggle" checked={showReserveLine} onChange={e => {
+                setShowReserveLine(e.target.checked);
+                updateChartPreferences({
+                  showReserveLine: e.target.checked
+                });
+              }} className="w-4 h-4 rounded border-gray-300" />
                   <label htmlFor="reserve-color" className="cursor-pointer">
-                    <input
-                      type="color"
-                      id="reserve-color"
-                      value={reserveColor}
-                      onChange={(e) => {
-                        setReserveColor(e.target.value);
-                        updateChartPreferences({ reserveColor: e.target.value });
-                      }}
-                      className="w-3 h-3 rounded cursor-pointer border-0 p-0"
-                      style={{ appearance: 'none', backgroundColor: reserveColor }}
-                    />
+                    <input type="color" id="reserve-color" value={reserveColor} onChange={e => {
+                  setReserveColor(e.target.value);
+                  updateChartPreferences({
+                    reserveColor: e.target.value
+                  });
+                }} className="w-3 h-3 rounded cursor-pointer border-0 p-0" style={{
+                  appearance: 'none',
+                  backgroundColor: reserveColor
+                }} />
                   </label>
                   <label htmlFor="reserve-toggle" className="cursor-pointer">Reserve Amount</label>
             </div>
                 <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="lowest-balance-toggle"
-                    checked={showLowestBalanceLine}
-                    onChange={(e) => {
-                      setShowLowestBalanceLine(e.target.checked);
-                      updateChartPreferences({ showLowestBalanceLine: e.target.checked });
-                    }}
-                    className="w-4 h-4 rounded border-gray-300"
-                  />
+                  <input type="checkbox" id="lowest-balance-toggle" checked={showLowestBalanceLine} onChange={e => {
+                setShowLowestBalanceLine(e.target.checked);
+                updateChartPreferences({
+                  showLowestBalanceLine: e.target.checked
+                });
+              }} className="w-4 h-4 rounded border-gray-300" />
                   <label htmlFor="lowest-balance-color" className="cursor-pointer">
-                    <input
-                      type="color"
-                      id="lowest-balance-color"
-                      value={lowestBalanceColor}
-                      onChange={(e) => {
-                        setLowestBalanceColor(e.target.value);
-                        updateChartPreferences({ lowestBalanceColor: e.target.value });
-                      }}
-                      className="w-3 h-3 rounded cursor-pointer border-0 p-0"
-                      style={{ appearance: 'none', backgroundColor: lowestBalanceColor }}
-                    />
+                    <input type="color" id="lowest-balance-color" value={lowestBalanceColor} onChange={e => {
+                  setLowestBalanceColor(e.target.value);
+                  updateChartPreferences({
+                    lowestBalanceColor: e.target.value
+                  });
+                }} className="w-3 h-3 rounded cursor-pointer border-0 p-0" style={{
+                  appearance: 'none',
+                  backgroundColor: lowestBalanceColor
+                }} />
                   </label>
-                  <label htmlFor="lowest-balance-toggle" className="cursor-pointer flex items-center gap-1">
-                    Available to Spend
-                    <span className="text-xs text-muted-foreground">
+                  <label htmlFor="lowest-balance-toggle" className="cursor-pointer flex items-center gap-1">Lowest Projected
+
+($11,177)<span className="text-xs text-muted-foreground">
                       (${Math.round(lowestProjectedBalance).toLocaleString()})
                     </span>
                   </label>
@@ -1437,19 +1263,8 @@ export const CashFlowCalendar = ({
         </div>
       </CardContent>
       
-      <TransactionDetailModal
-        transaction={selectedTransaction}
-        open={showTransactionModal}
-        onOpenChange={setShowTransactionModal}
-        onEdit={onEditTransaction}
-      />
+      <TransactionDetailModal transaction={selectedTransaction} open={showTransactionModal} onOpenChange={setShowTransactionModal} onEdit={onEditTransaction} />
       
-      <DayTransactionsModal
-        transactions={selectedDayTransactions}
-        date={selectedDate}
-        open={showDayTransactionsModal}
-        onOpenChange={setShowDayTransactionsModal}
-      />
-    </Card>
-  );
+      <DayTransactionsModal transactions={selectedDayTransactions} date={selectedDate} open={showDayTransactionsModal} onOpenChange={setShowDayTransactionsModal} />
+    </Card>;
 };
