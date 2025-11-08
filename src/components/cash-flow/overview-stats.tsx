@@ -536,7 +536,7 @@ export function OverviewStats({
                 <p className="text-sm text-muted-foreground text-center">of {formatCurrency(totalCreditLimit)} limit</p>
                 <p className="text-sm text-muted-foreground mb-2 text-center">{creditUtilization.toFixed(1)}% utilization</p>
               </>}
-            {creditCards.length > 0 && <Button variant="link" size="sm" onClick={() => setShowCreditCardsModal(true)} className="h-6 px-0 text-xs">
+            {creditCards.length > 0 && <Button variant="link" size="sm" onClick={() => setShowCreditCardsModal(true)} className="h-6 px-0 text-xs mx-auto block">
                 View {creditCards.length} card{creditCards.length !== 1 ? 's' : ''}
               </Button>}
           </div>
