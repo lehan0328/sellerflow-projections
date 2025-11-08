@@ -802,15 +802,6 @@ export const CashFlowInsights = memo(({
                       </Button>
                     </div>}
                 </div>
-                  <div className="flex justify-between items-center p-2 bg-muted/50 rounded">
-                    <span className="text-muted-foreground">Lowest Projected (next 90 days)</span>
-                    <span className="font-semibold text-orange-600">
-                      ${projectedLowestBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </span>
-                  </div>
-                   {lowestBalanceDate && <p className="text-xs text-muted-foreground italic p-2 border-t border-border/50 mt-2 pt-2">
-                       📊 <strong>Formula:</strong> Lowest Projected ${projectedLowestBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} - Reserve ${reserveAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} = Available to Spend ${safeSpendingLimit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                     </p>}
                   
                   {allBuyingOpportunities && allBuyingOpportunities.filter(opp => opp.balance > 0).length > 0 && (
                   <Button 
