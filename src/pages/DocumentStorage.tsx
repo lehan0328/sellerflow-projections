@@ -993,7 +993,6 @@ export default function DocumentStorage() {
                       <TableRow className="align-top">
                         <TableCell className="font-medium px-4 py-3">
                           <div className="flex items-center space-x-2">
-                            <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                             <span 
                               className="cursor-pointer hover:text-primary transition-colors truncate"
                               onClick={() => setEditingDoc(doc)}
