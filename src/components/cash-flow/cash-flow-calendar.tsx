@@ -1250,9 +1250,9 @@ export const CashFlowCalendar = ({
                   backgroundColor: lowestBalanceColor
                 }} />
                   </label>
-                  <label htmlFor="lowest-balance-toggle" className="cursor-pointer flex items-center gap-1">Lowest Projected
-
-($11,177)<span className="text-xs text-muted-foreground">
+                  <label htmlFor="lowest-balance-toggle" className="cursor-pointer flex items-center gap-1">
+                    Lowest Projected
+                    <span className="text-xs text-muted-foreground">
                       (${Math.round(lowestProjectedBalance).toLocaleString()})
                     </span>
                   </label>
