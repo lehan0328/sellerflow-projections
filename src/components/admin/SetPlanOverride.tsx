@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Loader2, Crown } from "lucide-react";
 
 export const SetPlanOverride = () => {
   const { user } = useAuth();
@@ -16,6 +16,28 @@ export const SetPlanOverride = () => {
   const [planTier, setPlanTier] = useState<string>("");
   const [reason, setReason] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const handleGrantLifetimeAccess = async (email: string) => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('set-plan-override', {
+        body: {
+          userEmail: email,
+          planTier: 'enterprise',
+          reason: 'Lifetime Enterprise Access - Granted by Admin'
+        }
+      });
+
+      if (error) throw error;
+
+      toast.success(`Lifetime enterprise access granted to ${email}`);
+    } catch (error: any) {
+      console.error("Error granting lifetime access:", error);
+      toast.error(error.message || "Failed to grant lifetime access");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSetOverride = async () => {
     if (!userEmail || !planTier) {
@@ -90,6 +112,26 @@ export const SetPlanOverride = () => {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
+        {/* Quick Actions */}
+        <div className="space-y-4 p-4 border rounded-lg bg-gradient-to-br from-primary/10 to-primary/5">
+          <div className="flex items-center gap-2">
+            <Crown className="h-5 w-5 text-primary" />
+            <h3 className="font-semibold">Quick Actions</h3>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            One-click lifetime access grants
+          </p>
+          <Button 
+            onClick={() => handleGrantLifetimeAccess('daniel@levelbrands.com')}
+            disabled={loading}
+            className="w-full gap-2"
+          >
+            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            <Crown className="h-4 w-4" />
+            Grant Lifetime Access to daniel@levelbrands.com
+          </Button>
+        </div>
+
         {/* Quick set for current user */}
         <div className="space-y-4 p-4 border rounded-lg bg-muted/50">
           <h3 className="font-semibold">Quick Set for Current User</h3>
