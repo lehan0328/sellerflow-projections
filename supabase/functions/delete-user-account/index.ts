@@ -38,8 +38,8 @@ serve(async (req) => {
     if (!adminUser) throw new Error("User not authenticated");
 
     // Check if user is the website admin
-    const WEBSITE_ADMIN_EMAIL = 'chuandy914@gmail.com';
-    const isWebsiteAdmin = adminUser.email === WEBSITE_ADMIN_EMAIL;
+    const WEBSITE_ADMIN_EMAILS = ['chuandy914@gmail.com', 'orders@imarand.com'];
+    const isWebsiteAdmin = WEBSITE_ADMIN_EMAILS.includes(adminUser.email || '');
     
     if (!isWebsiteAdmin) {
       // If not website admin, check if they're an account owner trying to delete team member

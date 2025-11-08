@@ -28,8 +28,8 @@ serve(async (req) => {
     if (userError || !user) throw new Error("Unauthorized");
 
     // Check if user is the website admin
-    const WEBSITE_ADMIN_EMAIL = 'chuandy914@gmail.com';
-    if (user.email !== WEBSITE_ADMIN_EMAIL) {
+    const WEBSITE_ADMIN_EMAILS = ['chuandy914@gmail.com', 'orders@imarand.com'];
+    if (!WEBSITE_ADMIN_EMAILS.includes(user.email || '')) {
       throw new Error("Admin access required");
     }
     

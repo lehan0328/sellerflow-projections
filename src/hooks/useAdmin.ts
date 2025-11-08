@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
-// Website admin email - only this user can access the admin dashboard
-const WEBSITE_ADMIN_EMAIL = 'chuandy914@gmail.com';
+// Website admin emails - only these users can access the admin dashboard
+const WEBSITE_ADMIN_EMAILS = ['chuandy914@gmail.com', 'orders@imarand.com'];
 
 export const useAdmin = () => {
   const [isAdmin, setIsAdmin] = useState(false);
@@ -29,7 +29,7 @@ export const useAdmin = () => {
       }
 
       // Check if user is the website admin (superuser)
-      const isWebsiteAdmin = session.user.email === WEBSITE_ADMIN_EMAIL;
+      const isWebsiteAdmin = WEBSITE_ADMIN_EMAILS.includes(session.user.email || '');
       setIsAdmin(isWebsiteAdmin);
 
       // Check user's company role

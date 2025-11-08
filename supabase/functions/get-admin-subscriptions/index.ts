@@ -33,7 +33,8 @@ serve(async (req) => {
     }
 
     // Check if user is admin
-    const isWebsiteAdmin = user.email === 'chuandy914@gmail.com';
+    const WEBSITE_ADMIN_EMAILS = ['chuandy914@gmail.com', 'orders@imarand.com'];
+    const isWebsiteAdmin = WEBSITE_ADMIN_EMAILS.includes(user.email || '');
     if (!isWebsiteAdmin) {
       throw new Error("Admin access required");
     }

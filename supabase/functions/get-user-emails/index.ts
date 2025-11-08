@@ -42,8 +42,8 @@ serve(async (req) => {
     }
 
     // Check if user is website admin OR if they're requesting emails for their own account's users
-    const WEBSITE_ADMIN_EMAIL = 'chuandy914@gmail.com';
-    const isWebsiteAdmin = userData.user.email === WEBSITE_ADMIN_EMAIL;
+    const WEBSITE_ADMIN_EMAILS = ['chuandy914@gmail.com', 'orders@imarand.com'];
+    const isWebsiteAdmin = WEBSITE_ADMIN_EMAILS.includes(userData.user.email || '');
 
     // If not website admin, verify they're only requesting emails for users in their account
     if (!isWebsiteAdmin) {

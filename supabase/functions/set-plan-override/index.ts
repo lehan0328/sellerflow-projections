@@ -6,7 +6,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const WEBSITE_ADMIN_EMAIL = 'chuandy914@gmail.com';
+const WEBSITE_ADMIN_EMAILS = ['chuandy914@gmail.com', 'orders@imarand.com'];
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -34,7 +34,7 @@ serve(async (req) => {
     }
 
     // Verify caller is website admin
-    if (caller.email !== WEBSITE_ADMIN_EMAIL) {
+    if (!WEBSITE_ADMIN_EMAILS.includes(caller.email || '')) {
       throw new Error("Unauthorized - Admin access required");
     }
 
