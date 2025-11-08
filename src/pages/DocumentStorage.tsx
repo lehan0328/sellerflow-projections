@@ -1011,24 +1011,24 @@ export default function DocumentStorage() {
                             </CollapsibleTrigger>
                           </div>
                         </TableCell>
-                        <TableCell className="text-sm px-4 py-3 text-left border-r border-border">
+                        <TableCell className="text-sm px-4 py-3 text-left">
                           {doc.document_type ? (
                             <span className="capitalize">{doc.document_type.replace('_', ' ')}</span>
                           ) : (
                             <span className="text-muted-foreground">-</span>
                           )}
                         </TableCell>
-                        <TableCell className="text-sm px-4 py-3 text-left border-r border-border">
+                        <TableCell className="text-sm px-4 py-3 text-left">
                           <span className="truncate block">{doc.vendor_name || <span className="text-muted-foreground">-</span>}</span>
                         </TableCell>
-                        <TableCell className="text-sm font-medium px-4 py-3 text-left border-r border-border">
+                        <TableCell className="text-sm font-medium px-4 py-3 text-left">
                           <span className="truncate block">{doc.amount ? `$${doc.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : <span className="text-muted-foreground">-</span>}</span>
                         </TableCell>
-                        <TableCell className="text-sm px-4 py-3 text-left border-r border-border">
+                        <TableCell className="text-sm px-4 py-3 text-left">
                           <span className="truncate block">{doc.document_date ? format(new Date(doc.document_date), "MMM dd, yyyy") : <span className="text-muted-foreground">-</span>}</span>
                         </TableCell>
-                        <TableCell className="text-sm px-4 py-3 text-left border-r border-border">{formatFileSize((doc as any).file_size || 0)}</TableCell>
-                        <TableCell className="text-sm px-4 py-3 text-left border-r border-border">{formatDate(doc.created_at)}</TableCell>
+                        <TableCell className="text-sm px-4 py-3 text-left">{formatFileSize((doc as any).file_size || 0)}</TableCell>
+                        <TableCell className="text-sm px-4 py-3 text-left">{formatDate(doc.created_at)}</TableCell>
                         <TableCell className="text-right px-4 py-3">
                           <div className="flex justify-end space-x-2">
                             {doc.document_type === 'purchase_order' && (
