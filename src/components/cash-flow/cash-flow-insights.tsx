@@ -97,6 +97,7 @@ export const CashFlowInsights = memo(({
     availableCredit: number;
     expenses: number;
     income: number;
+    forecastedPayouts: number;
   } | null>(null);
   const netDaily = dailyInflow - dailyOutflow;
   const healthStatus = netDaily >= 0 ? "positive" : "negative";
@@ -488,12 +489,14 @@ export const CashFlowInsights = memo(({
       .filter(e => e.type === 'income' && e.start.split('T')[0] === dateStr)
       .reduce((sum, e) => sum + e.amount, 0);
     
-    // Add confirmed Amazon payouts as same-day income
+    // Add confirmed and forecasted Amazon payouts
+    let dayForecastedPayouts = 0;
     amazonPayouts.forEach(payout => {
       const isConfirmedPayout = payout.status === 'confirmed';
+      const isForecastedPayout = payout.status === 'forecasted';
       
-      if (isConfirmedPayout) {
-        // For confirmed payouts, calculate arrival date from settlement_end_date + 1 day
+      if (isConfirmedPayout || isForecastedPayout) {
+        // Calculate arrival date from settlement_end_date + 1 day
         const rawData = (payout as any).raw_settlement_data;
         const settlementEndStr = rawData?.FinancialEventGroupEnd || rawData?.settlement_end_date;
         
@@ -502,9 +505,13 @@ export const CashFlowInsights = memo(({
           arrivalDate.setDate(arrivalDate.getDate() + 1);
           const arrivalDateStr = arrivalDate.toISOString().split('T')[0];
           
-          // Add as income if it arrives on the searched date
+          // Add to appropriate category based on status
           if (arrivalDateStr === dateStr) {
-            dayIncome += Number(payout.total_amount);
+            if (isForecastedPayout) {
+              dayForecastedPayouts += Number(payout.total_amount);
+            } else {
+              dayIncome += Number(payout.total_amount);
+            }
           }
         }
       }
@@ -565,7 +572,8 @@ export const CashFlowInsights = memo(({
       projectedCash,
       availableCredit: totalAvailableCredit,
       expenses: dayExpenses,
-      income: dayIncome
+      income: dayIncome,
+      forecastedPayouts: dayForecastedPayouts
     });
   }, [events, amazonPayouts, allBuyingOpportunities, currentBalance, reserveAmount, creditCards]);
 
@@ -1541,6 +1549,14 @@ export const CashFlowInsights = memo(({
                   <span className="text-2xl font-bold text-emerald-600">
                     ${dateSearchResults.income.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </span>
+                  {dateSearchResults.forecastedPayouts > 0 && (
+                    <div className="mt-2 pt-2 border-t border-emerald-200 dark:border-emerald-800">
+                      <span className="text-xs text-muted-foreground">+ Forecasted Payouts</span>
+                      <div className="text-lg font-semibold text-emerald-600">
+                        ${dateSearchResults.forecastedPayouts.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
