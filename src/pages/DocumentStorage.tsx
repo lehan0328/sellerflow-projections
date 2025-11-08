@@ -940,9 +940,9 @@ export default function DocumentStorage() {
               </div>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-0">
             {documentsError ? (
-              <div className="text-center py-12">
+              <div className="text-center py-12 px-6">
                 <div className="text-destructive mb-4">
                   <FileText className="h-12 w-12 mx-auto mb-2" />
                   <p className="font-semibold">Error loading documents</p>
@@ -956,12 +956,12 @@ export default function DocumentStorage() {
                 </Button>
               </div>
             ) : isLoadingProfile ? (
-              <div className="text-center py-12 text-muted-foreground">
+              <div className="text-center py-12 px-6 text-muted-foreground">
                 <Loader2 className="h-8 w-8 mx-auto mb-4 animate-spin" />
                 Loading your account...
               </div>
             ) : !profile?.account_id ? (
-              <div className="text-center py-12">
+              <div className="text-center py-12 px-6">
                 <div className="text-destructive mb-4">
                   <FileText className="h-12 w-12 mx-auto mb-2" />
                   <p className="font-semibold">Account Not Found</p>
@@ -975,12 +975,12 @@ export default function DocumentStorage() {
                 </Button>
               </div>
             ) : isLoading ? (
-              <div className="text-center py-12 text-muted-foreground">
+              <div className="text-center py-12 px-6 text-muted-foreground">
                 <Loader2 className="h-8 w-8 mx-auto mb-4 animate-spin" />
                 Loading documents...
               </div>
             ) : filteredDocuments.length === 0 ? (
-              <div className="text-center py-12">
+              <div className="text-center py-12 px-6">
                 <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                 <p className="text-muted-foreground">
                   {searchQuery ? 'No documents match your search' : 'No documents uploaded yet'}
