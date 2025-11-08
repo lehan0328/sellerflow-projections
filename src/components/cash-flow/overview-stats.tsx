@@ -575,7 +575,7 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
             <div className="flex items-center justify-between mb-1">
               <p className="text-sm font-medium text-muted-foreground">Incoming $</p>
               <Select value={incomingTimeRange} onValueChange={setIncomingTimeRange}>
-                <SelectTrigger className="w-20 h-6 text-xs">
+                <SelectTrigger className="w-28 h-6 text-xs">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -608,7 +608,7 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
             <div className="flex items-center justify-between mb-1">
               <p className="text-sm font-medium text-muted-foreground">Upcoming Payments</p>
               <Select value={upcomingTimeRange} onValueChange={setUpcomingTimeRange}>
-                <SelectTrigger className="w-20 h-6 text-xs">
+                <SelectTrigger className="w-28 h-6 text-xs">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
