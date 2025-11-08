@@ -85,8 +85,8 @@ export function DashboardHeader({
   };
   return <div className="relative w-full">
       {/* Header Container */}
-      <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="flex h-14 items-center justify-between px-4">
+      <header className="border-b border-border/50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="flex items-center justify-between px-4 py-4">
           {/* Logo - Left side - Only show when sidebar is collapsed */}
           {isSidebarCollapsed && (
             <div className="flex flex-col items-center">
