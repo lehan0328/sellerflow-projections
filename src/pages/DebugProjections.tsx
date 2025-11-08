@@ -8,6 +8,7 @@ import { useIncome } from '@/hooks/useIncome';
 import { useRecurringExpenses } from '@/hooks/useRecurringExpenses';
 import { useCreditCards } from '@/hooks/useCreditCards';
 import { useAmazonPayouts } from '@/hooks/useAmazonPayouts';
+import { useCashFlowEvents } from '@/hooks/useCashFlowEvents';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -48,6 +49,7 @@ const DebugProjections = () => {
   const { recurringExpenses } = useRecurringExpenses();
   const { creditCards } = useCreditCards();
   const { amazonPayouts } = useAmazonPayouts();
+  const { cashFlowEvents } = useCashFlowEvents();
 
   // Calculate current balance from accounts (matches Dashboard logic)
   const totalAvailableBalance = accounts.reduce((sum, account) => {
@@ -63,6 +65,17 @@ const DebugProjections = () => {
   const allCalendarEvents = useMemo(() => {
     const today = startOfDay(new Date());
     const events: any[] = [];
+
+    // Add cash flow events (legacy manual entries)
+    cashFlowEvents.forEach(event => {
+      events.push({
+        id: `cash-flow-${event.id}`,
+        type: event.type === 'inflow' ? 'inflow' : 'outflow',
+        amount: Number(event.amount),
+        description: event.description || 'Cash Flow Event',
+        date: new Date(event.event_date),
+      });
+    });
 
     // Add vendor transactions (purchase orders)
     vendorTransactions
@@ -190,7 +203,7 @@ const DebugProjections = () => {
     });
 
     return events;
-  }, [vendorTransactions, incomeItems, recurringExpenses, creditCards, amazonPayouts]);
+  }, [cashFlowEvents, vendorTransactions, incomeItems, recurringExpenses, creditCards, amazonPayouts]);
 
   // Use the exact same calendar calculation as Dashboard
   const chartBalances = useMemo(() => {
