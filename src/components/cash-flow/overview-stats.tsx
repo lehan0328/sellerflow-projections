@@ -768,7 +768,6 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
           </div>
         </div>
       </div>
-      </div>
       
       {/* Sync Confirmation Dialog */}
       <Dialog open={showSyncDialog} onOpenChange={setShowSyncDialog}>
@@ -961,6 +960,6 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
           </div>
         </DialogContent>
       </Dialog>
-    </>
+    </div>
   );
 }
