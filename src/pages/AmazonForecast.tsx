@@ -25,7 +25,7 @@ import {
 } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
+import { cn, parseISODate } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 import {
   LineChart as RechartsLineChart,
@@ -286,7 +286,7 @@ export default function AmazonForecast() {
         // Specific month (YYYY-MM format)
         const [year, month] = avgPayoutPeriod.split('-').map(Number);
         filteredPayouts = confirmedPayouts.filter(p => {
-          const payoutDate = new Date(p.payout_date);
+          const payoutDate = parseISODate(p.payout_date);
           return payoutDate.getFullYear() === year && payoutDate.getMonth() === month - 1;
         });
         
@@ -301,10 +301,22 @@ export default function AmazonForecast() {
         
         let daysToUse;
         if (isCurrentMonth) {
-          // For current month: use days elapsed so far (month-to-date)
-          daysToUse = now.getDate(); // Current day of month (1-31)
-          avgPayoutLabel = avgPayoutLabel + ' (MTD)'; // Add MTD indicator
-          console.log('[AmazonForecast] Current month - using days elapsed:', daysToUse);
+          // For current month: calculate from last payout's close date
+          const lastClosedPayout = confirmedPayouts
+            .filter(p => p.status === 'confirmed')
+            .sort((a, b) => new Date(b.payout_date).getTime() - new Date(a.payout_date).getTime())[0];
+          
+          if (lastClosedPayout?.raw_settlement_data?.FinancialEventGroupEnd) {
+            const closeDate = new Date(lastClosedPayout.raw_settlement_data.FinancialEventGroupEnd);
+            daysToUse = closeDate.getDate(); // Get day-of-month (1-31)
+            avgPayoutLabel = avgPayoutLabel + ' (MTD)';
+            console.log('[AmazonForecast] Current month - using day-of-month from last close:', daysToUse, 'Close date:', closeDate);
+          } else {
+            // Fallback to regular MTD if no close date available
+            daysToUse = now.getDate();
+            avgPayoutLabel = avgPayoutLabel + ' (MTD)';
+            console.log('[AmazonForecast] Current month - fallback to days elapsed:', daysToUse);
+          }
         } else {
           // For past months: use total days in that month
           daysToUse = new Date(year, month, 0).getDate();
@@ -828,17 +840,19 @@ export default function AmazonForecast() {
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Last 60 Days Total:</span>
+                      <span className="text-muted-foreground">Previous 30 Days Total:</span>
                       <span className="font-mono">
                         ${(() => {
                           const now = new Date();
                           now.setHours(0, 0, 0, 0);
                           const sixtyDaysAgo = new Date(now);
                           sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+                          const thirtyOneDaysAgo = new Date(now);
+                          thirtyOneDaysAgo.setDate(thirtyOneDaysAgo.getDate() - 31);
                           const total = confirmedPayouts
                             .filter(p => {
                               const date = new Date(p.payout_date);
-                              return date >= sixtyDaysAgo && date <= now;
+                              return date >= sixtyDaysAgo && date < thirtyOneDaysAgo;
                             })
                             .reduce((sum, p) => sum + p.total_amount, 0);
                           return total.toLocaleString();
@@ -1025,10 +1039,7 @@ export default function AmazonForecast() {
                           <div className="flex items-center gap-4">
                             <div className="flex flex-col">
                               <span className="text-sm font-medium">
-                                {format(new Date(payout.payout_date), 'MMM dd, yyyy')}
-                              </span>
-                              <span className="text-xs text-muted-foreground">
-                                Settlement ID: {payout.settlement_id}
+                                {format(parseISODate(payout.payout_date), 'MMM dd, yyyy')}
                               </span>
                             </div>
                           </div>

@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Building2, Calendar, DollarSign, AlertTriangle, Edit, CreditCard, Search, ArrowUpDown, Filter, Trash2, Link2, ExternalLink, Banknote, ChevronRight, ChevronDown } from "lucide-react";
+import { Building2, Calendar, DollarSign, AlertTriangle, Edit, CreditCard, Search, ArrowUpDown, Filter, Trash2, Link2, ExternalLink, Banknote, ChevronRight, ChevronDown, Landmark } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
@@ -19,6 +19,7 @@ import { useVendors, type Vendor } from "@/hooks/useVendors";
 import { VendorOrderDetailModal } from "./vendor-order-detail-modal";
 import { TransactionEditModal } from "./transaction-edit-modal";
 import { PartialPaymentModal } from "./partial-payment-modal";
+import { PartialPaymentDeleteDialog } from "./partial-payment-delete-dialog";
 import { useTransactionMatching } from "@/hooks/useTransactionMatching";
 import { BankTransaction } from "./bank-transaction-log";
 import { toast } from "sonner";
@@ -69,6 +70,8 @@ export const VendorsOverview = ({
   const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
   const [lineItemsByTransaction, setLineItemsByTransaction] = useState<Record<string, any[]>>({});
   const [matchingPOsByTransaction, setMatchingPOsByTransaction] = useState<Record<string, any[]>>({});
+  const [deleteDialogTx, setDeleteDialogTx] = useState<VendorTransaction | null>(null);
+  const [deleteDialogAmounts, setDeleteDialogAmounts] = useState<{ paidAmount: number; totalAmount: number }>({ paidAmount: 0, totalAmount: 0 });
 
   const toggleRow = (transactionId: string) => {
     setExpandedRows(prev => ({ ...prev, [transactionId]: !prev[transactionId] }));
@@ -84,7 +87,7 @@ export const VendorsOverview = ({
       const { data, error } = await supabase
         .from('purchase_order_line_items')
         .select('*')
-        .eq('transaction_id', transactionId)
+        .eq('vendor_id', transactionId) // Using vendor_id to match transaction's vendor
         .order('created_at', { ascending: true });
 
       if (error) throw error;
@@ -111,6 +114,7 @@ export const VendorsOverview = ({
         .from('transactions')
         .select(`
           id,
+          vendor_id,
           description,
           amount,
           due_date,
@@ -141,7 +145,7 @@ export const VendorsOverview = ({
         const { data: otherLineItems } = await supabase
           .from('purchase_order_line_items')
           .select('*')
-          .eq('transaction_id', transaction.id);
+          .eq('vendor_id', transaction.vendor_id); // Match by vendor instead
 
         if (!otherLineItems || otherLineItems.length === 0) continue;
 
@@ -300,15 +304,68 @@ export const VendorsOverview = ({
     }
   };
 
-  const handleDeleteTransaction = async (transactionId: string) => {
+  const handleDeleteTransaction = async (transaction: VendorTransaction) => {
+    // Check if this is a partial payment remaining balance
+    if (transaction.description.endsWith('.2')) {
+      // Fetch the amounts before showing the dialog
+      const amounts = await getPartialPaymentAmounts(transaction);
+      setDeleteDialogAmounts(amounts);
+      setDeleteDialogTx(transaction);
+    } else {
+      // Regular transaction - delete directly
+      try {
+        await deleteTransaction(transaction.id, false);
+        toast.success("Transaction deleted successfully");
+        onVendorUpdate?.();
+      } catch (error) {
+        console.error('Error deleting transaction:', error);
+        toast.error("Failed to delete transaction");
+      }
+    }
+  };
+
+  const handleDeleteRemainingOnly = async () => {
+    if (!deleteDialogTx) return;
     try {
-      await deleteTransaction(transactionId);
-      toast.success("Transaction deleted successfully");
+      await deleteTransaction(deleteDialogTx.id, false);
+      toast.success("Remaining balance deleted successfully");
+      setDeleteDialogTx(null);
       onVendorUpdate?.();
     } catch (error) {
-      console.error('Error deleting transaction:', error);
-      toast.error("Failed to delete transaction");
+      console.error('Error deleting remaining balance:', error);
+      toast.error("Failed to delete remaining balance");
     }
+  };
+
+  const handleReverseEntirePayment = async () => {
+    if (!deleteDialogTx) return;
+    try {
+      await deleteTransaction(deleteDialogTx.id, true);
+      toast.success("Partial payment reversed successfully");
+      setDeleteDialogTx(null);
+      onVendorUpdate?.();
+    } catch (error) {
+      console.error('Error reversing payment:', error);
+      toast.error("Failed to reverse payment");
+    }
+  };
+
+  const getPartialPaymentAmounts = async (transaction: VendorTransaction) => {
+    if (!transaction.description.endsWith('.2')) {
+      return { paidAmount: 0, totalAmount: transaction.amount };
+    }
+
+    const baseDescription = transaction.description.replace('.2', '');
+    const { data: paidTx } = await supabase
+      .from('transactions')
+      .select('amount')
+      .eq('description', `${baseDescription}.1`)
+      .single();
+
+    const paidAmount = paidTx?.amount || 0;
+    const totalAmount = paidAmount + transaction.amount;
+
+    return { paidAmount, totalAmount };
   };
 
   const handlePayToday = async (transactionId: string) => {
@@ -563,18 +620,30 @@ export const VendorsOverview = ({
                     }
                     toggleRow(tx.id);
                   }}>
+                    <TableCell className="w-[30px]">
+                      {expandedRows[tx.id] ? (
+                        <ChevronDown className="h-4 w-4" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4" />
+                      )}
+                    </TableCell>
                     <TableCell className="font-medium">{tx.vendorName}</TableCell>
                     <TableCell>{tx.description || 'N/A'}</TableCell>
                     <TableCell>
-                      <div className="flex flex-col items-start space-y-1">
+                      <div className="flex items-center gap-2">
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              {tx.creditCardId ? <Badge variant="outline" className="text-xs px-1.5 py-0.5 border-primary bg-primary/10">
-                                  <CreditCard className="h-3 w-3 text-primary" />
-                                </Badge> : <Badge variant="outline" className="text-xs px-1.5 py-0.5 border-green-600 bg-green-600/10">
-                                  <Banknote className="h-3 w-3 text-green-600" />
-                                </Badge>}
+                              <div className={cn(
+                                "p-2 rounded-full",
+                                tx.creditCardId ? "bg-blue-100 dark:bg-blue-950" : "bg-green-100 dark:bg-green-950"
+                              )}>
+                                {tx.creditCardId ? (
+                                  <CreditCard className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                                ) : (
+                                  <Landmark className="h-4 w-4 text-green-600 dark:text-green-400" />
+                                )}
+                              </div>
                             </TooltipTrigger>
                             <TooltipContent>
                               <p>{tx.creditCardId ? 'Credit card purchase' : 'Cash purchase'}</p>
@@ -696,7 +765,7 @@ export const VendorsOverview = ({
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
                                   <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                  <AlertDialogAction onClick={() => handleDeleteTransaction(tx.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                  <AlertDialogAction onClick={() => handleDeleteTransaction(tx)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
                                     Delete
                                   </AlertDialogAction>
                                 </AlertDialogFooter>
@@ -728,5 +797,20 @@ export const VendorsOverview = ({
       <PartialPaymentModal open={!!partialPaymentTx} onOpenChange={open => {
       if (!open) setPartialPaymentTx(null);
     }} transactionId={partialPaymentTx?.id || ''} totalAmount={partialPaymentTx?.amount || 0} vendorName={partialPaymentTx?.vendorName || ''} poNumber={partialPaymentTx?.description || ''} onConfirm={handlePartialPayment} />
+
+      {deleteDialogTx && (
+        <PartialPaymentDeleteDialog
+          open={!!deleteDialogTx}
+          onOpenChange={(open) => {
+            if (!open) setDeleteDialogTx(null);
+          }}
+          transactionDescription={deleteDialogTx.description}
+          remainingAmount={deleteDialogTx.amount}
+          paidAmount={deleteDialogAmounts.paidAmount}
+          totalAmount={deleteDialogAmounts.totalAmount}
+          onDeleteRemaining={handleDeleteRemainingOnly}
+          onReverseAll={handleReverseEntirePayment}
+        />
+      )}
     </Card>;
 };

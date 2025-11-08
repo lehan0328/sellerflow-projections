@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,6 +10,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 import { CalendarIcon, Plus, Trash2, Search, Upload, Loader2, FileText } from "lucide-react";
 import { format, addDays, parse } from "date-fns";
 import { Card, CardContent } from "@/components/ui/card";
@@ -24,6 +25,7 @@ import { AddCategoryDialog } from "./add-category-dialog";
 import { hasPlanAccess } from "@/lib/planUtils";
 import { UpgradeModal } from "@/components/upgrade-modal";
 import { useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 interface Vendor {
   id: string;
   name: string;
@@ -39,6 +41,7 @@ interface PurchaseOrderFormProps {
   onSubmitOrder: (orderData: any) => void;
   onDeleteAllVendors?: () => void;
   onAddVendor: (vendorData: any) => void;
+  allBuyingOpportunities?: Array<{ date: string; balance: number; available_date?: string }>;
 }
 interface PaymentSchedule {
   id: string;
@@ -46,15 +49,25 @@ interface PaymentSchedule {
   dueDate: Date | undefined;
   description: string;
 }
+
+interface LineItem {
+  id: string;
+  sku: string;
+  productName: string;
+  quantity: number;
+  unitPrice: number;
+}
 export const PurchaseOrderForm = ({
   open,
   onOpenChange,
   vendors,
   onSubmitOrder,
   onDeleteAllVendors,
-  onAddVendor
+  onAddVendor,
+  allBuyingOpportunities
 }: PurchaseOrderFormProps) => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { categories, addCategory, refetch: refetchCategories } = useCategories('expense', false);
   const {
     creditCards
@@ -81,9 +94,10 @@ export const PurchaseOrderForm = ({
     paymentMethod: "bank-transfer" as "bank-transfer" | "credit-card",
     selectedCreditCard: "",
     splitPayment: false,
-    documentType: "purchase_order" as "sales_order" | "invoice" | "proforma_invoice" | "purchase_order",
-    extractedLineItems: [] as Array<{ sku?: string; productName: string; quantity?: number }>
+    documentType: "purchase_order" as "sales_order" | "invoice" | "proforma_invoice" | "purchase_order"
   });
+  
+  const [lineItems, setLineItems] = useState<LineItem[]>([]);
   const [cardSplits, setCardSplits] = useState<Array<{
     cardId: string;
     amount: string;
@@ -133,6 +147,26 @@ export const PurchaseOrderForm = ({
   // Filter unique vendors based on search term
   const filteredVendors = uniqueVendors.filter(vendor => vendor.name.toLowerCase().includes(vendorSearchTerm.toLowerCase()));
 
+  // Calculate total from line items
+  const lineItemsTotal = React.useMemo(() => {
+    return lineItems.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
+  }, [lineItems]);
+
+  // Auto-suggest earliest affordable date based on amount or line items total
+  const suggestedDate = React.useMemo(() => {
+    if (!allBuyingOpportunities || allBuyingOpportunities.length === 0) return null;
+    
+    // Use line items total if available, otherwise use manual amount
+    const targetAmount = lineItems.length > 0 ? lineItemsTotal : parseFloat(formData.amount || "0");
+    
+    if (targetAmount <= 0) return null;
+    
+    // Find the earliest opportunity where balance is sufficient
+    const opportunity = allBuyingOpportunities.find(opp => opp.balance >= targetAmount);
+    
+    return opportunity;
+  }, [allBuyingOpportunities, formData.amount, lineItemsTotal, lineItems.length]);
+
   // Reset form when dialog opens/closes
   useEffect(() => {
     if (open) {
@@ -156,9 +190,9 @@ export const PurchaseOrderForm = ({
         paymentMethod: "bank-transfer",
         selectedCreditCard: "",
         splitPayment: false,
-        documentType: "purchase_order",
-        extractedLineItems: []
+        documentType: "purchase_order"
       });
+      setLineItems([]);
       setCardSplits([{
         cardId: "",
         amount: ""
@@ -294,6 +328,28 @@ export const PurchaseOrderForm = ({
     
     setPaymentSchedule(updatedSchedule);
   };
+  
+  const addLineItem = () => {
+    const newItem: LineItem = {
+      id: Date.now().toString(),
+      sku: "",
+      productName: "",
+      quantity: 1,
+      unitPrice: 0
+    };
+    setLineItems([...lineItems, newItem]);
+  };
+  
+  const removeLineItem = (id: string) => {
+    setLineItems(lineItems.filter(item => item.id !== id));
+  };
+  
+  const updateLineItem = (id: string, field: keyof LineItem, value: any) => {
+    setLineItems(lineItems.map(item => 
+      item.id === id ? { ...item, [field]: value } : item
+    ));
+  };
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.poName || !formData.vendor || !formData.amount) {
@@ -336,7 +392,7 @@ export const PurchaseOrderForm = ({
       dueDate: calculatedDueDate,
       paymentSchedule: formData.paymentType === "preorder" ? paymentSchedule : undefined,
       lineItemDescription: formData.description, // Pass description separately for line item creation
-      extractedLineItems: formData.extractedLineItems // Pass extracted line items
+      lineItems: lineItems // Pass line items array
     };
     console.log("Submitting purchase order:", orderData);
     onSubmitOrder(orderData);
@@ -375,6 +431,7 @@ export const PurchaseOrderForm = ({
 
         // Save metadata
         const {
+          data: docMetadata,
           error: metadataError
         } = await supabase.from('documents_metadata').insert({
           user_id: user.id,
@@ -388,9 +445,38 @@ export const PurchaseOrderForm = ({
           amount: parseFloat(formData.amount),
           document_date: formData.poDate.toISOString().split('T')[0],
           document_type: formData.documentType || 'purchase_order'
-        });
+        }).select().single();
+        
         if (metadataError) throw metadataError;
+
+        // Save line items if any exist
+        if (docMetadata && lineItems.length > 0) {
+          const lineItemsToInsert = lineItems.map(item => ({
+            user_id: user.id,
+            account_id: profile.account_id,
+            document_id: docMetadata.id,
+            vendor_id: formData.vendorId || null,
+            sku: item.sku || null,
+            product_name: item.productName,
+            quantity: item.quantity,
+            unit_price: item.unitPrice
+          }));
+
+          const { error: lineItemsError } = await supabase
+            .from('purchase_order_line_items')
+            .insert(lineItemsToInsert);
+          
+          if (lineItemsError) {
+            console.error('Error saving line items:', lineItemsError);
+            toast.error('Document saved but failed to save line items');
+          } else {
+            console.log(`Saved ${lineItems.length} line items for document:`, safeFileName);
+          }
+        }
         console.log('Document saved to storage:', safeFileName);
+        
+        // Invalidate documents cache to refresh Document Storage page
+        await queryClient.invalidateQueries({ queryKey: ['documents'], refetchType: 'all' });
       } catch (error) {
         console.error('Error saving document:', error);
         toast.error('Failed to save document to storage');
@@ -573,20 +659,29 @@ export const PurchaseOrderForm = ({
         const extracted = data.data;
         console.log("Extracted data from document:", extracted);
 
-        // Auto-fill form fields with extracted data
+        // Auto-fill form fields with extracted data (description removed since line items capture that)
         setFormData(prev => ({
           ...prev,
-          poName: extracted.poNumber || extracted.orderNumber || prev.poName, // Use PO number or Order number
+          poName: extracted.poNumber || extracted.orderNumber || prev.poName,
           amount: extracted.amount || prev.amount,
-          description: extracted.description || prev.description,
           category: extracted.category || prev.category,
-          notes: extracted.notes || prev.notes,
           netTermsDays: extracted.netTermsDays || prev.netTermsDays,
           dueDate: extracted.dueDate ? parse(extracted.dueDate, 'yyyy-MM-dd', new Date()) : prev.dueDate,
           deliveryDate: extracted.deliveryDate ? parse(extracted.deliveryDate, 'yyyy-MM-dd', new Date()) : prev.deliveryDate,
-          documentType: extracted.documentType || prev.documentType,
-          extractedLineItems: extracted.lineItems || [] // Store line items for later
+          documentType: extracted.documentType || prev.documentType
         }));
+        
+        // Convert extracted line items to editable format
+        if (extracted.lineItems && extracted.lineItems.length > 0) {
+          const convertedItems: LineItem[] = extracted.lineItems.map((item: any, index: number) => ({
+            id: `extracted-${Date.now()}-${index}`,
+            sku: item.sku || "",
+            productName: item.productName || "",
+            quantity: item.quantity || 1,
+            unitPrice: item.unitPrice || 0
+          }));
+          setLineItems(convertedItems);
+        }
 
         // Try to match vendor name
         if (extracted.vendorName) {
@@ -701,7 +796,12 @@ export const PurchaseOrderForm = ({
                       </div>
                     </div>
                   <div>
-                    <h4 className="font-semibold text-sm mb-1">Upload Purchase Order Document</h4>
+                    <div className="flex items-center justify-center gap-2 mb-1">
+                      <h4 className="font-semibold text-sm">Upload Purchase Order Document</h4>
+                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 bg-primary/10 text-primary border-primary/20">
+                        Growing+
+                      </Badge>
+                    </div>
                     <p className="text-xs text-muted-foreground mb-0.5">
                       Let AI automatically fill the form from your document
                     </p>
@@ -779,6 +879,44 @@ export const PurchaseOrderForm = ({
                 ...prev,
                 amount: e.target.value
               }))} required className="h-10" />
+                
+                {/* Suggested Affordable Date */}
+                {suggestedDate && (
+                  <div className="animate-fade-in">
+                    {suggestedDate.balance >= (lineItems.length > 0 ? lineItemsTotal : parseFloat(formData.amount || "0")) ? (
+                      <div className="flex items-center justify-between gap-2 p-2 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900/30 rounded-md">
+                        <div className="flex items-center gap-2">
+                          <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+                          <span className="text-xs font-medium text-green-800 dark:text-green-300">
+                            Can afford on {format(new Date(suggestedDate.date), "MMM d, yyyy")}
+                          </span>
+                        </div>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          className="h-6 px-2 text-xs hover:bg-green-100 dark:hover:bg-green-900/30"
+                          onClick={() => {
+                            setFormData(prev => ({
+                              ...prev,
+                              poDate: new Date(suggestedDate.date)
+                            }));
+                            toast.success("Date updated to suggested date");
+                          }}
+                        >
+                          Use This Date
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 p-2 bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-900/30 rounded-md">
+                        <div className="h-2 w-2 rounded-full bg-yellow-500" />
+                        <span className="text-xs font-medium text-yellow-800 dark:text-yellow-300">
+                          Amount exceeds 90-day buying opportunities
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -1204,28 +1342,146 @@ export const PurchaseOrderForm = ({
                 </div>}
             </div>
 
-            {/* Description */}
+            {/* Line Items Section */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-medium">Line Items</Label>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  size="sm"
+                  onClick={addLineItem}
+                  className="h-8"
+                >
+                  <Plus className="h-3 w-3 mr-1" />
+                  Add Item
+                </Button>
+              </div>
+              
+              {lineItems.length === 0 ? (
+                <div className="text-center py-8 border-2 border-dashed rounded-lg bg-muted/30">
+                  <p className="text-sm text-muted-foreground">No line items added yet.</p>
+                  <p className="text-xs text-muted-foreground mt-1">Upload a document or click "Add Item" to create line items</p>
+                </div>
+              ) : (
+                <div className="border rounded-lg overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead className="bg-muted/50 border-b">
+                        <tr>
+                          <th className="text-left p-2 font-medium">SKU</th>
+                          <th className="text-left p-2 font-medium">Product Name</th>
+                          <th className="text-left p-2 font-medium w-24">Qty</th>
+                          <th className="text-left p-2 font-medium w-32">Unit Price</th>
+                          <th className="text-left p-2 font-medium w-32">Total</th>
+                          <th className="w-10"></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {lineItems.map((item) => {
+                          const itemTotal = (item.quantity || 0) * (item.unitPrice || 0);
+                          return (
+                            <tr key={item.id} className="border-b last:border-b-0">
+                              <td className="p-2">
+                                <Input
+                                  value={item.sku}
+                                  onChange={(e) => updateLineItem(item.id, 'sku', e.target.value)}
+                                  placeholder="SKU"
+                                  className="h-8 text-sm"
+                                />
+                              </td>
+                              <td className="p-2">
+                                <Input
+                                  value={item.productName}
+                                  onChange={(e) => updateLineItem(item.id, 'productName', e.target.value)}
+                                  placeholder="Product name"
+                                  className="h-8 text-sm"
+                                />
+                              </td>
+                              <td className="p-2">
+                                <Input
+                                  type="number"
+                                  value={item.quantity}
+                                  onChange={(e) => updateLineItem(item.id, 'quantity', parseInt(e.target.value) || 0)}
+                                  placeholder="1"
+                                  min="0"
+                                  className="h-8 text-sm"
+                                />
+                              </td>
+                              <td className="p-2">
+                                <Input
+                                  type="number"
+                                  value={item.unitPrice}
+                                  onChange={(e) => updateLineItem(item.id, 'unitPrice', parseFloat(e.target.value) || 0)}
+                                  placeholder="0.00"
+                                  step="0.01"
+                                  min="0"
+                                  className="h-8 text-sm"
+                                />
+                              </td>
+                              <td className="p-2">
+                                <div className="h-8 flex items-center px-3 bg-muted/30 rounded-md text-sm font-medium">
+                                  ${itemTotal.toFixed(2)}
+                                </div>
+                              </td>
+                              <td className="p-2">
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => removeLineItem(item.id)}
+                                  className="h-8 w-8 p-0 hover:bg-destructive/10 hover:text-destructive"
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                      <tfoot className="bg-muted/30 border-t-2">
+                        <tr className="font-semibold">
+                          <td className="p-2" colSpan={2}>Totals</td>
+                          <td className="p-2">
+                            <div className="h-8 flex items-center px-3 bg-primary/10 rounded-md">
+                              {lineItems.reduce((sum, item) => sum + (item.quantity || 0), 0)}
+                            </div>
+                          </td>
+                          <td className="p-2"></td>
+                          <td className="p-2">
+                            <div className="h-8 flex items-center px-3 bg-primary/10 rounded-md">
+                              ${lineItems.reduce((sum, item) => sum + ((item.quantity || 0) * (item.unitPrice || 0)), 0).toFixed(2)}
+                            </div>
+                          </td>
+                          <td className="p-2"></td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Disclaimer */}
+            {lineItems.length > 0 && (
+              <p className="text-xs text-muted-foreground italic">
+                Note: If the total here and total amount extracted from AI does not match, check for credits applied
+              </p>
+            )}
+
+            {/* Description - now for general notes about line items */}
             <div className="space-y-2">
-              <Label htmlFor="description" className="text-sm font-medium">Description</Label>
+              <Label htmlFor="description" className="text-sm font-medium">Description (optional)</Label>
               <Textarea 
                 id="description" 
-                placeholder="Brief description of the purchase order..." 
+                placeholder="Additional details about the line items..." 
                 value={formData.description} 
                 onChange={e => setFormData(prev => ({
                   ...prev,
                   description: e.target.value
                 }))} 
-                className="min-h-[80px] resize-none"
+                className="min-h-[60px] resize-none"
               />
-            </div>
-
-            {/* Notes */}
-            <div className="space-y-2">
-              <Label htmlFor="notes">Notes (optional)</Label>
-              <Textarea id="notes" placeholder="Additional notes or comments" value={formData.notes} onChange={e => setFormData(prev => ({
-              ...prev,
-              notes: e.target.value
-            }))} rows={2} />
             </div>
 
             {/* Submit Button */}

@@ -83,7 +83,7 @@ export default function DocumentStorage() {
   const { vendors } = useVendors();
 
   // Fetch user's account_id
-  const { data: profile } = useQuery({
+  const { data: profile, refetch: refetchProfile } = useQuery({
     queryKey: ['profile', user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
@@ -100,10 +100,15 @@ export default function DocumentStorage() {
   });
 
   // Fetch documents with metadata
-  const { data: documents, isLoading, refetch } = useQuery({
+  const { data: documents, isLoading, error: documentsError, refetch } = useQuery({
     queryKey: ['documents', profile?.account_id, includeUntracked],
     queryFn: async () => {
-      if (!profile?.account_id) return [];
+      if (!profile?.account_id) {
+        console.log('[DocumentStorage] No account_id found in profile');
+        return [];
+      }
+      
+      console.log('[DocumentStorage] Fetching documents for account:', profile.account_id);
       
       // Fetch all metadata first
       const { data: metadata, error: metadataError } = await supabase
@@ -121,7 +126,12 @@ export default function DocumentStorage() {
         `)
         .eq('account_id', profile.account_id);
 
-      if (metadataError) throw metadataError;
+      if (metadataError) {
+        console.error('[DocumentStorage] Error fetching metadata:', metadataError);
+        throw metadataError;
+      }
+      
+      console.log('[DocumentStorage] Fetched metadata:', metadata?.length || 0, 'documents');
 
       // Always fetch storage files to verify existence
       let files: any[] = [];
@@ -863,9 +873,10 @@ export default function DocumentStorage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => {
+                  onClick={async () => {
                     toast.info('Refreshing documents...');
-                    refetch();
+                    await Promise.all([refetch(), refetchProfile()]);
+                    toast.success('Documents refreshed');
                   }}
                   disabled={isLoading}
                 >
@@ -924,7 +935,21 @@ export default function DocumentStorage() {
             </div>
           </CardHeader>
           <CardContent>
-            {isLoading ? (
+            {documentsError ? (
+              <div className="text-center py-12">
+                <div className="text-destructive mb-4">
+                  <FileText className="h-12 w-12 mx-auto mb-2" />
+                  <p className="font-semibold">Error loading documents</p>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    {documentsError.message || 'Failed to fetch documents. Please try refreshing.'}
+                  </p>
+                </div>
+                <Button onClick={() => refetch()} variant="outline">
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Try Again
+                </Button>
+              </div>
+            ) : isLoading ? (
               <div className="text-center py-12 text-muted-foreground">
                 Loading documents...
               </div>

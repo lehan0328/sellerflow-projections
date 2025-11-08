@@ -8,9 +8,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useVendors, type Vendor } from "@/hooks/useVendors";
-import { Building2, Plus, Trash2, Pencil, Search } from "lucide-react";
+import { Building2, Plus, Trash2, Pencil, Search, CreditCard, Banknote, DollarSign, FileText, Landmark } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { capitalizeName, cn } from "@/lib/utils";
 
 interface VendorFormData {
   name: string;
@@ -86,7 +87,7 @@ export function VendorManagement() {
       }
 
       await addVendor({
-        name: formData.name,
+        name: capitalizeName(formData.name),
         totalOwed: 0,
         nextPaymentDate: dueDate,
         nextPaymentAmount: 0,
@@ -132,7 +133,7 @@ export function VendorManagement() {
 
     try {
       await updateVendor(editingVendor.id, {
-        name: formData.name,
+        name: capitalizeName(formData.name),
         category: formData.category,
         paymentType: formData.paymentType as any,
         paymentMethod: formData.paymentMethod as any,
@@ -177,6 +178,24 @@ export function VendorManagement() {
   const getPaymentMethodLabel = (paymentMethod?: string) => {
     const option = paymentMethodOptions.find(opt => opt.value === paymentMethod);
     return option ? option.label : 'Bank Transfer';
+  };
+
+  const getPaymentMethodIcon = (paymentMethod?: string) => {
+    switch (paymentMethod) {
+      case 'credit-card':
+        return CreditCard;
+      case 'cash':
+        return Banknote;
+      case 'bank-transfer':
+      case 'ach':
+        return Landmark;
+      case 'wire':
+        return DollarSign;
+      case 'check':
+        return FileText;
+      default:
+        return Landmark;
+    }
   };
 
   // Filter and sort vendors
@@ -380,12 +399,24 @@ export function VendorManagement() {
                          <p className="text-sm text-muted-foreground">
                            Payment Terms: {getPaymentTypeLabel(vendor.paymentType || 'total', vendor.netTermsDays)}
                          </p>
-                         <p className="text-xs text-muted-foreground">
-                           Method: {getPaymentMethodLabel(vendor.paymentMethod)}
-                         </p>
                        </div>
                     </div>
                     <div className="flex items-center space-x-2">
+                      {(() => {
+                        const PaymentIcon = getPaymentMethodIcon(vendor.paymentMethod);
+                        const isCard = vendor.paymentMethod === 'credit-card';
+                        return (
+                          <div className={cn(
+                            "p-2 rounded-full",
+                            isCard ? "bg-blue-100 dark:bg-blue-950" : "bg-green-100 dark:bg-green-950"
+                          )}>
+                            <PaymentIcon className={cn(
+                              "h-4 w-4",
+                              isCard ? "text-blue-600 dark:text-blue-400" : "text-green-600 dark:text-green-400"
+                            )} />
+                          </div>
+                        );
+                      })()}
                       <Button
                         variant="ghost"
                         size="sm"

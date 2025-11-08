@@ -1,7 +1,7 @@
 import React, { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Download, Share2, TrendingUp, DollarSign, CreditCard, ShoppingCart, Calendar, ArrowLeft, Eye, EyeOff, Lock, BadgeCheck, Users } from "lucide-react";
+import { Download, Share2, TrendingUp, DollarSign, CreditCard, ShoppingCart, Calendar, ArrowLeft, Eye, EyeOff, Lock, BadgeCheck, Users, Zap, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useBankAccounts } from "@/hooks/useBankAccounts";
 import { useCreditCards } from "@/hooks/useCreditCards";
@@ -14,7 +14,7 @@ import { useReserveAmount } from "@/hooks/useReserveAmount";
 import { useAmazonPayouts } from "@/hooks/useAmazonPayouts";
 import { useAmazonRevenue } from "@/hooks/useAmazonRevenue";
 import { addDays, isWithinInterval, startOfDay } from "date-fns";
-import aurenLogo from "@/assets/auren-full-logo.png";
+import aurenLogo from "@/assets/auren-icon-blue.png";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
@@ -112,11 +112,17 @@ const FlexReport = () => {
   const next30Days = addDays(today, 30);
   const next90Days = addDays(today, 90);
 
-  // Total upcoming purchase orders (pending transactions)
-  const upcomingPurchaseOrders = transactions.filter(tx => tx.type === 'purchase_order' && tx.status === 'pending' && tx.dueDate && isWithinInterval(new Date(tx.dueDate), {
-    start: today,
-    end: next30Days
-  })).reduce((sum, tx) => sum + Number(tx.amount), 0);
+  // Calculate forecasted 90-day Amazon payout (total forecasted payouts)
+  const forecasted90DayPayout = amazonPayouts
+    .filter(payout => {
+      const payoutDate = new Date(payout.payout_date);
+      return (payout.status === 'forecasted' || payout.status === 'estimated') && 
+             isWithinInterval(payoutDate, { start: today, end: next90Days });
+    })
+    .reduce((sum, payout) => sum + Number(payout.total_amount || 0), 0);
+
+  // Total pending purchase orders (all)
+  const upcomingPurchaseOrders = transactions.filter(tx => tx.type === 'purchase_order' && tx.status === 'pending').reduce((sum, tx) => sum + Number(tx.amount), 0);
 
   // Total vendor payments scheduled
   const upcomingVendorPayments = vendors.filter(v => v.status !== 'paid' && Number(v.totalOwed || 0) > 0).reduce((sum, v) => sum + Number(v.totalOwed || 0), 0);
@@ -357,10 +363,10 @@ const FlexReport = () => {
       handleDownload();
     }
   };
-  return <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 p-4 md:p-8">
-      <div className="max-w-4xl mx-auto">
+  return <div className="h-screen overflow-auto bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 p-2 md:p-4">
+      <div className="max-w-4xl mx-auto scale-[0.85] origin-top">
         {/* Action Buttons */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-4">
           <Button variant="outline" onClick={() => navigate('/dashboard')} className="gap-2">
             <ArrowLeft className="w-4 h-4" />
             Back to Dashboard
@@ -391,12 +397,12 @@ const FlexReport = () => {
           
           {/* Auren Watermark */}
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden">
-            <img src={aurenLogo} alt="" className="w-[600px] opacity-[0.08] select-none rotate-[-15deg] scale-110" />
+            <img src={aurenLogo} alt="" className="w-[600px] opacity-[0.25] select-none rotate-[-15deg] scale-110" />
           </div>
           
-          <div className="relative z-10 p-2 md:p-4">
+          <div className="relative z-10 p-3 md:p-4">
             {/* Header with Branding */}
-            <div className="flex items-center justify-between mb-6 pb-4 border-b-2 border-gradient-to-r from-blue-200 via-purple-200 to-blue-200">
+            <div className="flex items-center justify-between mb-4 pb-4 border-b-2 border-gradient-to-r from-blue-200 via-purple-200 to-blue-200">
               <div>
                 <h1 className="text-2xl md:text-3xl font-bold text-blue-800 mb-2 tracking-tight">
                   Financial Power Report
@@ -431,7 +437,7 @@ const FlexReport = () => {
             </div>
 
             {/* Primary Metric - Available to Spend */}
-            <div className="mb-6 text-center bg-gradient-to-br from-emerald-50/50 to-green-50/50 backdrop-blur-sm rounded-2xl p-5 border border-emerald-200/50 shadow-lg relative">
+            <div className="mb-4 text-center bg-gradient-to-br from-emerald-50 to-green-50 backdrop-blur-sm rounded-2xl p-5 border border-emerald-200/50 shadow-lg relative">
               <div className="absolute top-3 right-3 flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 border-2 border-emerald-600 rounded-full">
                 <div className="w-1.5 h-1.5 bg-emerald-600 rounded-full"></div>
                 <span className="text-[10px] font-black text-emerald-700 uppercase tracking-wider">Live Verified</span>
@@ -473,7 +479,7 @@ const FlexReport = () => {
             {/* Metrics Grid */}
             <div className="grid grid-cols-2 gap-3 mb-5">
               {/* Max 90 Day Spending Power */}
-              <div className="group bg-gradient-to-br from-blue-50 via-blue-100/80 to-blue-50 rounded-2xl p-4 border-2 border-blue-200/60 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm relative">
+              <div className="group bg-gradient-to-br from-blue-50 via-blue-100 to-blue-50 rounded-2xl p-4 border-2 border-blue-200/60 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm relative">
                 <div className="absolute top-3 right-3 flex items-center gap-1 px-2.5 py-1 bg-blue-50 border-2 border-blue-600 rounded-full">
                   <div className="w-1 h-1 bg-blue-600 rounded-full"></div>
                   <span className="text-[10px] font-black text-blue-700 uppercase tracking-wider">Verified</span>
@@ -504,7 +510,7 @@ const FlexReport = () => {
               </div>
 
               {/* Available Credit */}
-              <div className="group bg-gradient-to-br from-purple-50 via-purple-100/80 to-purple-50 rounded-2xl p-4 border-2 border-purple-200/60 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm relative">
+              <div className="group bg-gradient-to-br from-purple-50 via-purple-100 to-purple-50 rounded-2xl p-4 border-2 border-purple-200/60 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm relative">
                 <div className="absolute top-3 right-3 flex items-center gap-1 px-2.5 py-1 bg-purple-50 border-2 border-purple-600 rounded-full">
                   <div className="w-1 h-1 bg-purple-600 rounded-full"></div>
                   <span className="text-[10px] font-black text-purple-700 uppercase tracking-wider">Verified</span>
@@ -534,39 +540,9 @@ const FlexReport = () => {
                 </button>
               </div>
 
-              {/* Upcoming Income */}
-              <div className="group bg-gradient-to-br from-emerald-50 via-emerald-100/80 to-emerald-50 rounded-2xl p-4 border-2 border-emerald-200/60 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm relative">
-                <div className="absolute top-3 right-3 flex items-center gap-1 px-2.5 py-1 bg-emerald-50 border-2 border-emerald-600 rounded-full">
-                  <div className="w-1 h-1 bg-emerald-600 rounded-full"></div>
-                  <span className="text-[10px] font-black text-emerald-700 uppercase tracking-wider">Verified</span>
-                </div>
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="p-2 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl shadow-md group-hover:scale-110 transition-transform duration-300">
-                    <TrendingUp className="w-4 h-4 text-white" />
-                  </div>
-              <p className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Received Income (30d)</p>
-            </div>
-            <p className={`text-2xl font-black text-emerald-700 drop-shadow-sm transition-all duration-300 ${!visibility.upcomingIncome ? 'blur-lg' : ''}`}>{formatCurrency(receivedIncome)}</p>
-                {showPercentageChange && (
-                  <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg mt-1 ${percentageChanges.upcomingIncome >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                    <TrendingUp className={`w-2.5 h-2.5 ${percentageChanges.upcomingIncome >= 0 ? '' : 'rotate-180'}`} />
-                    <span className="text-[10px] font-bold">{Math.abs(percentageChanges.upcomingIncome)}%</span>
-                  </div>
-                )}
-                <button
-                  onClick={() => toggleVisibility('upcomingIncome')}
-                  className="absolute bottom-4 right-4 p-2 rounded-lg hover:bg-emerald-100/50 transition-colors z-10"
-                >
-                  {visibility.upcomingIncome ? (
-                    <Eye className="w-4 h-4 text-blue-600" />
-                  ) : (
-                    <EyeOff className="w-4 h-4 text-slate-400" />
-                  )}
-                </button>
-              </div>
 
               {/* Purchase Orders */}
-              <div className="group bg-gradient-to-br from-orange-50 via-orange-100/80 to-orange-50 rounded-2xl p-4 border-2 border-orange-200/60 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm relative">
+              <div className="group bg-gradient-to-br from-orange-50 via-orange-100 to-orange-50 rounded-2xl p-4 border-2 border-orange-200/60 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm relative">
                 <div className="absolute top-3 right-3 flex items-center gap-1 px-2.5 py-1 bg-orange-50 border-2 border-orange-600 rounded-full">
                   <div className="w-1 h-1 bg-orange-600 rounded-full"></div>
                   <span className="text-[10px] font-black text-orange-700 uppercase tracking-wider">Verified</span>
@@ -596,50 +572,26 @@ const FlexReport = () => {
                 </button>
               </div>
 
-              {/* Active Vendors */}
-              <div className="group bg-gradient-to-br from-indigo-50 via-indigo-100/80 to-indigo-50 rounded-2xl p-4 border-2 border-indigo-200/60 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm relative">
-                <div className="absolute top-3 right-3 flex items-center gap-1 px-2.5 py-1 bg-indigo-50 border-2 border-indigo-600 rounded-full">
-                  <div className="w-1 h-1 bg-indigo-600 rounded-full"></div>
-                  <span className="text-[10px] font-black text-indigo-700 uppercase tracking-wider">Verified</span>
-                </div>
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="p-2 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl shadow-md group-hover:scale-110 transition-transform duration-300">
-                    <Users className="w-4 h-4 text-white" />
-                  </div>
-                  <p className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Total Vendors</p>
-                </div>
-                <p className={`text-2xl font-black text-indigo-700 drop-shadow-sm transition-all duration-300 ${!visibility.vendorCount ? 'blur-lg' : ''}`}>{totalVendorCount}</p>
-                {showPercentageChange && (
-                  <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg mt-1 ${percentageChanges.vendorCount >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                    <TrendingUp className={`w-2.5 h-2.5 ${percentageChanges.vendorCount >= 0 ? '' : 'rotate-180'}`} />
-                    <span className="text-[10px] font-bold">{Math.abs(percentageChanges.vendorCount)}%</span>
-                  </div>
-                )}
-                <button
-                  onClick={() => toggleVisibility('vendorCount')}
-                  className="absolute bottom-4 right-4 p-2 rounded-lg hover:bg-indigo-100/50 transition-colors z-10"
-                >
-                  {visibility.vendorCount ? (
-                    <Eye className="w-4 h-4 text-blue-600" />
-                  ) : (
-                    <EyeOff className="w-4 h-4 text-slate-400" />
-                  )}
-                </button>
-              </div>
 
               {/* Amazon Revenue (30d) */}
-              <div className="group bg-gradient-to-br from-amber-50 via-amber-100/80 to-amber-50 rounded-2xl p-4 border-2 border-amber-200/60 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm relative">
-                <div className="absolute top-3 right-3 flex items-center gap-1 px-2.5 py-1 bg-amber-50 border-2 border-amber-600 rounded-full">
-                  <div className="w-1 h-1 bg-amber-600 rounded-full"></div>
-                  <span className="text-[10px] font-black text-amber-700 uppercase tracking-wider">Verified</span>
+              <div className="group bg-gradient-to-br from-violet-50 via-purple-100 to-violet-50 rounded-2xl p-4 border-2 border-purple-300/60 shadow-lg hover:shadow-2xl transition-all duration-300 backdrop-blur-sm relative ring-2 ring-purple-200/30">
+                <div className="absolute top-3 right-3 flex items-center gap-1 px-2.5 py-1 bg-purple-50 border-2 border-purple-600 rounded-full">
+                  <div className="w-1 h-1 bg-purple-600 rounded-full animate-pulse"></div>
+                  <span className="text-[10px] font-black text-purple-700 uppercase tracking-wider">Verified</span>
                 </div>
                 <div className="flex items-center gap-2 mb-2">
-                  <div className="p-2 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl shadow-md group-hover:scale-110 transition-transform duration-300">
-                    <ShoppingCart className="w-4 h-4 text-white" />
+                  <div className="relative">
+                    <div className="p-2 bg-gradient-to-br from-purple-500 to-violet-600 rounded-xl shadow-md group-hover:scale-110 transition-transform duration-300">
+                      <Zap className="w-4 h-4 text-white" />
+                    </div>
+                    <Sparkles className="absolute -top-1 -right-1 w-3 h-3 text-purple-500 animate-pulse" />
                   </div>
-                  <p className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Amazon Payout This Month</p>
+                  <div className="flex flex-col">
+                    <p className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Forecasted 90 Day Payout</p>
+                    <span className="text-[9px] font-bold text-purple-600 uppercase tracking-wider">Core Feature</span>
+                  </div>
                 </div>
-                <p className={`text-2xl font-black text-amber-700 drop-shadow-sm transition-all duration-300 ${!visibility.amazonRevenue ? 'blur-lg' : ''}`}>{formatCurrency(amazonRevenueThisMonth)}</p>
+                <p className={`text-2xl font-black text-purple-700 drop-shadow-sm transition-all duration-300 ${!visibility.amazonRevenue ? 'blur-lg' : ''}`}>{formatCurrency(forecasted90DayPayout)}</p>
                 {showPercentageChange && (
                   <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg mt-1 ${percentageChanges.amazonRevenue >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                     <TrendingUp className={`w-2.5 h-2.5 ${percentageChanges.amazonRevenue >= 0 ? '' : 'rotate-180'}`} />
@@ -648,7 +600,7 @@ const FlexReport = () => {
                 )}
                 <button
                   onClick={() => toggleVisibility('amazonRevenue')}
-                  className="absolute bottom-4 right-4 p-2 rounded-lg hover:bg-amber-100/50 transition-colors z-10"
+                  className="absolute bottom-4 right-4 p-2 rounded-lg hover:bg-purple-100/50 transition-colors z-10"
                 >
                   {visibility.amazonRevenue ? (
                     <Eye className="w-4 h-4 text-blue-600" />
@@ -659,7 +611,7 @@ const FlexReport = () => {
               </div>
 
               {/* Total Amazon Payouts */}
-              <div className="group bg-gradient-to-br from-orange-50 via-orange-100/80 to-orange-50 rounded-2xl p-4 border-2 border-orange-200/60 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm relative">
+              <div className="group bg-gradient-to-br from-orange-50 via-orange-100 to-orange-50 rounded-2xl p-4 border-2 border-orange-200/60 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm relative">
                 <div className="absolute top-3 right-3 flex items-center gap-1 px-2.5 py-1 bg-orange-50 border-2 border-orange-600 rounded-full">
                   <div className="w-1 h-1 bg-orange-600 rounded-full"></div>
                   <span className="text-[10px] font-black text-orange-700 uppercase tracking-wider">Verified</span>
@@ -693,7 +645,7 @@ const FlexReport = () => {
               </div>
 
               {/* Payout Growth Rate */}
-              <div className="group bg-gradient-to-br from-green-50 via-green-100/80 to-green-50 rounded-2xl p-4 border-2 border-green-200/60 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm relative">
+              <div className="group bg-gradient-to-br from-green-50 via-green-100 to-green-50 rounded-2xl p-4 border-2 border-green-200/60 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm relative">
                 <div className="absolute top-3 right-3 flex items-center gap-1 px-2.5 py-1 bg-green-50 border-2 border-green-600 rounded-full">
                   <div className="w-1 h-1 bg-green-600 rounded-full"></div>
                   <span className="text-[10px] font-black text-green-700 uppercase tracking-wider">Verified</span>

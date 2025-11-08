@@ -4,7 +4,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAmazonPayouts } from "@/hooks/useAmazonPayouts";
 import { Loader2, CheckCircle2, Clock, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
-import { CleanupDuplicateAmazonButton } from "./cleanup-duplicate-amazon-button";
+import { parseISODate } from "@/lib/utils";
 
 interface AmazonSettledPayoutsProps {
   open: boolean;
@@ -38,9 +38,8 @@ export const AmazonSettledPayouts = ({ open, onOpenChange }: AmazonSettledPayout
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[80vh]">
         <DialogHeader>
-          <DialogTitle className="flex items-center justify-between">
-            <span>Amazon Settlement History</span>
-            <CleanupDuplicateAmazonButton />
+          <DialogTitle>
+            Amazon Settlement History
           </DialogTitle>
           <DialogDescription>
             Actual payouts confirmed and pending from Amazon
@@ -85,22 +84,12 @@ export const AmazonSettledPayouts = ({ open, onOpenChange }: AmazonSettledPayout
               )}
             </div>
 
-            {hasDailyAccount && estimatedPayouts.length === 0 && (
-              <Alert className="mb-4 border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/20">
-                <AlertCircle className="h-4 w-4 text-blue-600" />
-                <AlertDescription className="text-xs">
-                  Open settlements are hidden for daily accounts to prevent double-counting with daily forecasts.
-                  Your daily forecast tracker shows all pending cash flows.
-                </AlertDescription>
-              </Alert>
-            )}
-
             {/* Payout List */}
             <ScrollArea className="h-[400px] pr-4">
               <div className="space-y-2">
                 {settledPayouts.map((payout) => {
                   const isConfirmed = payout.status === 'confirmed';
-                  const date = new Date(payout.payout_date);
+                  const date = parseISODate(payout.payout_date);
                   
                   return (
                     <div 
@@ -108,7 +97,7 @@ export const AmazonSettledPayouts = ({ open, onOpenChange }: AmazonSettledPayout
                       className="p-4 rounded-lg border bg-card hover:bg-muted/50 transition-colors"
                     >
                       <div className="flex items-start justify-between gap-3">
-                        <div className="flex-1 min-w-0">
+                        <div className="flex-1 min-w-0 overflow-hidden">
                           <div className="flex items-center gap-2 mb-2">
                             <span className={`px-2 py-0.5 rounded text-xs font-medium ${
                               isConfirmed
@@ -124,23 +113,15 @@ export const AmazonSettledPayouts = ({ open, onOpenChange }: AmazonSettledPayout
                             )}
                           </div>
                           
-                          <p className="text-sm font-medium">
-                            Settlement ID: {payout.settlement_id}
-                          </p>
+                <p className="text-sm font-medium truncate">
+                  Settlement ID: {payout.settlement_id}
+                </p>
                           
                           {payout.amazon_accounts && (
                             <p className="text-xs text-muted-foreground mt-1">
                               {payout.amazon_accounts.account_name} • {payout.marketplace_name}
                             </p>
                           )}
-                          
-                          <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
-                            <span>Orders: ${payout.orders_total?.toLocaleString() || 0}</span>
-                            <span>Fees: ${payout.fees_total?.toLocaleString() || 0}</span>
-                            {payout.refunds_total > 0 && (
-                              <span>Refunds: ${payout.refunds_total?.toLocaleString() || 0}</span>
-                            )}
-                          </div>
                           
                           <p className="text-xs text-muted-foreground mt-2">
                             {format(date, 'MMMM dd, yyyy')}

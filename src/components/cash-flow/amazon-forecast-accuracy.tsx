@@ -227,9 +227,9 @@ export const AmazonForecastAccuracy = () => {
         
         {/* Frontend Outliers Notice */}
         {totalExcluded > 0 && (
-          <Alert className="border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/20">
-            <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-            <AlertDescription className="text-amber-800 dark:text-amber-200">
+          <Alert className="border-amber-200/40 bg-amber-50/30 dark:border-amber-800/30 dark:bg-amber-950/10 py-2">
+            <AlertCircle className="h-3 w-3 text-amber-500/60 dark:text-amber-400/50" />
+            <AlertDescription className="text-xs text-amber-700/70 dark:text-amber-300/60">
               {totalExcluded} extreme outlier{totalExcluded > 1 ? 's' : ''} excluded from calculations:
               {thresholdExcluded > 0 && ` ${thresholdExcluded} with errors over 200%`}
               {thresholdExcluded > 0 && iqrExcluded > 0 && ', '}
@@ -259,20 +259,100 @@ export const AmazonForecastAccuracy = () => {
           </div>
 
           <div className="flex flex-col items-center justify-center p-4 bg-muted/50 rounded-lg">
-            <span className="text-xs text-muted-foreground mb-1">Avg Error (MAPE)</span>
-            <span className="text-2xl font-bold">{calculatedMAPE.toFixed(1)}%</span>
+            <span className="text-xs text-muted-foreground mb-1">Recent Trend</span>
+            <span className={`text-2xl font-bold ${
+              (() => {
+                if (filteredLogs.length < 4) return '';
+                const midpoint = Math.floor(filteredLogs.length / 2);
+                const recentHalf = filteredLogs.slice(0, midpoint);
+                const olderHalf = filteredLogs.slice(midpoint);
+                const recentAvg = recentHalf.reduce((sum, log) => sum + (100 - Math.abs(log.difference_percentage)), 0) / recentHalf.length;
+                const olderAvg = olderHalf.reduce((sum, log) => sum + (100 - Math.abs(log.difference_percentage)), 0) / olderHalf.length;
+                const trend = recentAvg - olderAvg;
+                return trend > 0 ? 'text-green-600' : trend < 0 ? 'text-red-600' : '';
+              })()
+            }`}>
+              {(() => {
+                if (filteredLogs.length < 4) return 'N/A';
+                const midpoint = Math.floor(filteredLogs.length / 2);
+                const recentHalf = filteredLogs.slice(0, midpoint);
+                const olderHalf = filteredLogs.slice(midpoint);
+                const recentAvg = recentHalf.reduce((sum, log) => sum + (100 - Math.abs(log.difference_percentage)), 0) / recentHalf.length;
+                const olderAvg = olderHalf.reduce((sum, log) => sum + (100 - Math.abs(log.difference_percentage)), 0) / olderHalf.length;
+                const trend = recentAvg - olderAvg;
+                return trend > 0 ? `+${trend.toFixed(1)}%` : `${trend.toFixed(1)}%`;
+              })()}
+            </span>
             <span className="text-xs text-muted-foreground mt-1">
-              {calculatedMAPE < 10 ? '🎯 Excellent' : calculatedMAPE < 20 ? '✓ Good' : '⚠️ High'}
+              {(() => {
+                if (filteredLogs.length < 4) return 'Need more data';
+                const midpoint = Math.floor(filteredLogs.length / 2);
+                const recentHalf = filteredLogs.slice(0, midpoint);
+                const olderHalf = filteredLogs.slice(midpoint);
+                const recentAvg = recentHalf.reduce((sum, log) => sum + (100 - Math.abs(log.difference_percentage)), 0) / recentHalf.length;
+                const olderAvg = olderHalf.reduce((sum, log) => sum + (100 - Math.abs(log.difference_percentage)), 0) / olderHalf.length;
+                const trend = recentAvg - olderAvg;
+                return trend > 2 ? '📈 Improving' : trend < -2 ? '📉 Declining' : '➡️ Stable';
+              })()}
             </span>
           </div>
 
           <div className="flex flex-col items-center justify-center p-4 bg-muted/50 rounded-lg">
-            <span className="text-xs text-muted-foreground mb-1">Bias</span>
-            <span className={`text-2xl font-bold ${calculatedBias > 0 ? 'text-orange-600' : calculatedBias < 0 ? 'text-blue-600' : 'text-green-600'}`}>
-              {calculatedBias > 0 ? '+' : ''}{calculatedBias.toFixed(1)}%
+            <span className="text-xs text-muted-foreground mb-1">Confidence Score</span>
+            <span className={`text-2xl font-bold ${
+              (() => {
+                if (filteredLogs.length < 3) return '';
+                const recentLogs = filteredLogs.slice(0, Math.min(10, filteredLogs.length));
+                const errors = recentLogs.map(log => Math.abs(log.difference_percentage));
+                const mean = errors.reduce((sum, err) => sum + err, 0) / errors.length;
+                const variance = errors.reduce((sum, err) => sum + Math.pow(err - mean, 2), 0) / errors.length;
+                const stdDev = Math.sqrt(variance);
+                
+                // Calculate accuracy-based confidence
+                const recentAccuracy = recentLogs.reduce((sum, log) => sum + (100 - Math.abs(log.difference_percentage)), 0) / recentLogs.length;
+                
+                // Calculate consistency factor (0 to 1, where 1 is perfectly consistent)
+                const maxStdDev = 50; // Normalize standard deviation to a 0-1 scale
+                const consistencyFactor = Math.max(0, 1 - (stdDev / maxStdDev));
+                
+                // Confidence = Accuracy × Consistency (weighted 70% accuracy, 30% consistency)
+                const confidence = Math.max(0, Math.min(100, (recentAccuracy * 0.7) + (consistencyFactor * 100 * 0.3)));
+                
+                return confidence >= 80 ? 'text-green-600' : confidence >= 60 ? 'text-yellow-600' : 'text-red-600';
+              })()
+            }`}>
+              {(() => {
+                if (filteredLogs.length < 3) return 'N/A';
+                const recentLogs = filteredLogs.slice(0, Math.min(10, filteredLogs.length));
+                const errors = recentLogs.map(log => Math.abs(log.difference_percentage));
+                const mean = errors.reduce((sum, err) => sum + err, 0) / errors.length;
+                const variance = errors.reduce((sum, err) => sum + Math.pow(err - mean, 2), 0) / errors.length;
+                const stdDev = Math.sqrt(variance);
+                
+                const recentAccuracy = recentLogs.reduce((sum, log) => sum + (100 - Math.abs(log.difference_percentage)), 0) / recentLogs.length;
+                const maxStdDev = 50;
+                const consistencyFactor = Math.max(0, 1 - (stdDev / maxStdDev));
+                const confidence = Math.max(0, Math.min(100, (recentAccuracy * 0.7) + (consistencyFactor * 100 * 0.3)));
+                
+                return confidence.toFixed(0);
+              })()}
             </span>
             <span className="text-xs text-muted-foreground mt-1">
-              {Math.abs(calculatedBias) < 5 ? '✓ Balanced' : calculatedBias > 0 ? '📉 Over-forecast' : '📈 Under-forecast'}
+              {(() => {
+                if (filteredLogs.length < 3) return 'Need more data';
+                const recentLogs = filteredLogs.slice(0, Math.min(10, filteredLogs.length));
+                const errors = recentLogs.map(log => Math.abs(log.difference_percentage));
+                const mean = errors.reduce((sum, err) => sum + err, 0) / errors.length;
+                const variance = errors.reduce((sum, err) => sum + Math.pow(err - mean, 2), 0) / errors.length;
+                const stdDev = Math.sqrt(variance);
+                
+                const recentAccuracy = recentLogs.reduce((sum, log) => sum + (100 - Math.abs(log.difference_percentage)), 0) / recentLogs.length;
+                const maxStdDev = 50;
+                const consistencyFactor = Math.max(0, 1 - (stdDev / maxStdDev));
+                const confidence = Math.max(0, Math.min(100, (recentAccuracy * 0.7) + (consistencyFactor * 100 * 0.3)));
+                
+                return confidence >= 80 ? '🎯 High' : confidence >= 60 ? '✓ Moderate' : '⚠️ Low';
+              })()}
             </span>
           </div>
         </div>

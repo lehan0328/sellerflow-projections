@@ -1,16 +1,18 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useCallback } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, Eye, EyeOff } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ArrowLeft, Eye, EyeOff, Check, X, Loader2 } from "lucide-react";
 import aurenIcon from "@/assets/auren-icon-blue.png";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 export const SignUp = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [signUpData, setSignUpData] = useState({
@@ -21,7 +23,18 @@ export const SignUp = () => {
     lastName: '',
     company: '',
     monthlyAmazonRevenue: '',
+    referralCode: '',
   });
+  const [referralCodeStatus, setReferralCodeStatus] = useState<'idle' | 'validating' | 'valid' | 'invalid'>('idle');
+
+  // Check for referral code in URL parameters
+  useEffect(() => {
+    const refCode = searchParams.get('ref') || searchParams.get('referral');
+    if (refCode) {
+      const upperCode = refCode.toUpperCase().trim();
+      setSignUpData(prev => ({ ...prev, referralCode: upperCode }));
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     // Check if user is already authenticated
@@ -43,6 +56,42 @@ export const SignUp = () => {
 
     return () => subscription.unsubscribe();
   }, [navigate]);
+
+  // Referral code validation function
+  const validateReferralCode = useCallback(async (code: string) => {
+    if (!code || code.length < 3) {
+      setReferralCodeStatus('idle');
+      return;
+    }
+
+    setReferralCodeStatus('validating');
+
+    try {
+      const { data, error } = await supabase
+        .from('referral_codes')
+        .select('code')
+        .eq('code', code.toUpperCase())
+        .single();
+
+      setReferralCodeStatus(data && !error ? 'valid' : 'invalid');
+    } catch (err) {
+      setReferralCodeStatus('invalid');
+    }
+  }, []);
+
+  // Debounce the validation
+  useEffect(() => {
+    if (!signUpData.referralCode) {
+      setReferralCodeStatus('idle');
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      validateReferralCode(signUpData.referralCode);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [signUpData.referralCode, validateReferralCode]);
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,19 +115,26 @@ export const SignUp = () => {
     try {
       const redirectUrl = `${window.location.origin}/auth`;
       
-      const { data, error } = await supabase.auth.signUp({
-        email: signUpData.email,
-        password: signUpData.password,
-        options: {
-          emailRedirectTo: redirectUrl,
-          data: {
-            first_name: signUpData.firstName,
-            last_name: signUpData.lastName,
-            company: signUpData.company,
-            monthly_amazon_revenue: signUpData.monthlyAmazonRevenue,
-          }
-        }
-      });
+    const metadata: Record<string, any> = {
+      first_name: signUpData.firstName,
+      last_name: signUpData.lastName,
+      company: signUpData.company,
+      monthly_amazon_revenue: signUpData.monthlyAmazonRevenue,
+    };
+
+    // Only include referral code if it's valid
+    if (signUpData.referralCode && referralCodeStatus === 'valid') {
+      metadata.referral_code = signUpData.referralCode.toUpperCase();
+    }
+
+    const { data, error } = await supabase.auth.signUp({
+      email: signUpData.email,
+      password: signUpData.password,
+      options: {
+        emailRedirectTo: redirectUrl,
+        data: metadata
+      }
+    });
 
       if (error) throw error;
 
@@ -115,37 +171,24 @@ export const SignUp = () => {
       {/* Grid pattern overlay */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,hsl(var(--primary)/0.03)_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--primary)/0.03)_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_50%,#000_70%,transparent_110%)]" />
       
-      {/* Back button */}
-      <div className="relative z-10 p-4 md:p-8">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => navigate('/')}
-          className="backdrop-blur-sm bg-background/50 border border-primary/10 hover:bg-background/80 hover:border-primary/20 transition-all"
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Home
-        </Button>
-      </div>
-      
-      <div className="flex-1 flex items-center justify-center p-4">
-        <div className="w-full max-w-md space-y-6 relative z-10">
+      <div className="flex-1 flex items-center justify-center p-4 pt-8">
+        <div className="w-full max-w-2xl space-y-6 relative z-10">
           {/* Header */}
-          <div className="text-center space-y-6">
+          <div className="text-center space-y-4">
             <div className="flex items-center justify-center animate-fade-in">
               <div className="relative">
                 <div className="absolute inset-0 bg-gradient-primary rounded-2xl blur-2xl opacity-30 animate-pulse" />
                 <div className="relative">
-                  <img src={aurenIcon} alt="Auren" className="h-20 w-auto" />
+                  <img src={aurenIcon} alt="Auren" className="h-14 w-auto" />
                 </div>
               </div>
             </div>
             
-            <div className="space-y-3">
-              <h1 className="text-4xl font-bold tracking-tight">
+            <div className="space-y-2">
+              <h1 className="text-3xl font-bold tracking-tight">
                 Create Your Account
               </h1>
-              <p className="text-muted-foreground text-lg">
+              <p className="text-muted-foreground text-base">
                 Start managing your Amazon business cash flow today
               </p>
             </div>
@@ -183,87 +226,135 @@ export const SignUp = () => {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="company" className="text-base">Company Name</Label>
-                  <Input
-                    id="company"
-                    type="text"
-                    value={signUpData.company}
-                    onChange={(e) => setSignUpData({ ...signUpData, company: e.target.value })}
-                    className="h-12 border-primary/20 bg-background/50 backdrop-blur-sm focus:border-primary focus:ring-primary/20 transition-all"
-                    disabled={loading}
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="monthlyAmazonRevenue" className="text-base">Monthly Amazon Revenue</Label>
-                  <Input
-                    id="monthlyAmazonRevenue"
-                    type="text"
-                    placeholder="e.g., $50,000 or $500k"
-                    value={signUpData.monthlyAmazonRevenue}
-                    onChange={(e) => setSignUpData({ ...signUpData, monthlyAmazonRevenue: e.target.value })}
-                    className="h-12 border-primary/20 bg-background/50 backdrop-blur-sm focus:border-primary focus:ring-primary/20 transition-all"
-                    disabled={loading}
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="email" className="text-base">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={signUpData.email}
-                    onChange={(e) => setSignUpData({ ...signUpData, email: e.target.value })}
-                    className="h-12 border-primary/20 bg-background/50 backdrop-blur-sm focus:border-primary focus:ring-primary/20 transition-all"
-                    disabled={loading}
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="password" className="text-base">Password</Label>
-                  <div className="relative">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="company" className="text-base">Company Name</Label>
                     <Input
-                      id="password"
-                      type={showPassword ? "text" : "password"}
-                      value={signUpData.password}
-                      onChange={(e) => setSignUpData({ ...signUpData, password: e.target.value })}
-                      className="h-12 pr-12 border-primary/20 bg-background/50 backdrop-blur-sm focus:border-primary focus:ring-primary/20 transition-all"
+                      id="company"
+                      type="text"
+                      value={signUpData.company}
+                      onChange={(e) => setSignUpData({ ...signUpData, company: e.target.value })}
+                      className="h-12 border-primary/20 bg-background/50 backdrop-blur-sm focus:border-primary focus:ring-primary/20 transition-all"
                       disabled={loading}
                       required
                     />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors"
-                    >
-                      {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                    </button>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="email" className="text-base">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={signUpData.email}
+                      onChange={(e) => setSignUpData({ ...signUpData, email: e.target.value })}
+                      className="h-12 border-primary/20 bg-background/50 backdrop-blur-sm focus:border-primary focus:ring-primary/20 transition-all"
+                      disabled={loading}
+                      required
+                    />
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="confirmPassword" className="text-base">Confirm Password</Label>
-                  <Input
-                    id="confirmPassword"
-                    type={showPassword ? "text" : "password"}
-                    value={signUpData.confirmPassword}
-                    onChange={(e) => setSignUpData({ ...signUpData, confirmPassword: e.target.value })}
-                    className="h-12 border-primary/20 bg-background/50 backdrop-blur-sm focus:border-primary focus:ring-primary/20 transition-all"
-                    disabled={loading}
-                    required
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="password" className="text-base">Password</Label>
+                    <div className="relative">
+                      <Input
+                        id="password"
+                        type={showPassword ? "text" : "password"}
+                        value={signUpData.password}
+                        onChange={(e) => setSignUpData({ ...signUpData, password: e.target.value })}
+                        className="h-12 pr-12 border-primary/20 bg-background/50 backdrop-blur-sm focus:border-primary focus:ring-primary/20 transition-all"
+                        disabled={loading}
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors"
+                      >
+                        {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                      </button>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="confirmPassword" className="text-base">Confirm Password</Label>
+                    <Input
+                      id="confirmPassword"
+                      type={showPassword ? "text" : "password"}
+                      value={signUpData.confirmPassword}
+                      onChange={(e) => setSignUpData({ ...signUpData, confirmPassword: e.target.value })}
+                      className="h-12 border-primary/20 bg-background/50 backdrop-blur-sm focus:border-primary focus:ring-primary/20 transition-all"
+                      disabled={loading}
+                      required
+                    />
+                  </div>
                 </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="monthlyAmazonRevenue" className="text-base">Monthly Amazon Revenue</Label>
+                    <Input
+                      id="monthlyAmazonRevenue"
+                      type="text"
+                      placeholder="e.g., $50,000 or $500k"
+                      value={signUpData.monthlyAmazonRevenue}
+                      onChange={(e) => setSignUpData({ ...signUpData, monthlyAmazonRevenue: e.target.value })}
+                      className="h-12 border-primary/20 bg-background/50 backdrop-blur-sm focus:border-primary focus:ring-primary/20 transition-all"
+                      disabled={loading}
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="referralCode" className="text-base">
+                      Referral Code <span className="text-muted-foreground text-sm font-normal">(Optional)</span>
+                    </Label>
+                    <div className="relative">
+                      <Input
+                        id="referralCode"
+                        type="text"
+                        placeholder="Enter referral code"
+                        value={signUpData.referralCode}
+                        onChange={(e) => {
+                          const value = e.target.value.toUpperCase().trim();
+                          setSignUpData({ ...signUpData, referralCode: value });
+                        }}
+                        className="h-12 pr-12 border-primary/20 bg-background/50 backdrop-blur-sm focus:border-primary focus:ring-primary/20 transition-all"
+                        maxLength={20}
+                        disabled={loading}
+                      />
+                      {referralCodeStatus === 'validating' && (
+                        <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 animate-spin text-muted-foreground" />
+                      )}
+                      {referralCodeStatus === 'valid' && (
+                        <Check className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-green-500" />
+                      )}
+                      {referralCodeStatus === 'invalid' && (
+                        <X className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-destructive" />
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {referralCodeStatus === 'valid' && (
+                  <Alert className="bg-green-500/10 border-green-500/20">
+                    <Check className="h-4 w-4 text-green-500" />
+                    <AlertDescription className="text-green-600 dark:text-green-400 text-sm">
+                      Valid code! You'll get 10% off for 6 months after your trial ends.
+                    </AlertDescription>
+                  </Alert>
+                )}
+                {referralCodeStatus === 'invalid' && (
+                  <p className="text-xs text-destructive">
+                    Invalid referral code. You can still sign up without it.
+                  </p>
+                )}
 
                 <Button
                   type="submit"
                   className="w-full h-12 text-base font-medium bg-gradient-primary shadow-lg hover:shadow-xl transition-all"
                   disabled={loading}
                 >
-                  {loading ? 'Creating Account...' : 'Create Account'}
+                  {loading ? 'Starting Trial...' : 'Start 7 Day Trial - No Card Required'}
                 </Button>
               </form>
 

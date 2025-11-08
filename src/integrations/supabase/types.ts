@@ -1746,43 +1746,49 @@ export type Database = {
       }
       purchase_order_line_items: {
         Row: {
+          account_id: string | null
           created_at: string
           description: string | null
           document_id: string | null
           id: string
           product_name: string
-          quantity: number
+          quantity: number | null
           sku: string | null
           total_price: number | null
-          transaction_id: string
           unit_price: number | null
           updated_at: string
+          user_id: string
+          vendor_id: string | null
         }
         Insert: {
+          account_id?: string | null
           created_at?: string
           description?: string | null
           document_id?: string | null
           id?: string
           product_name: string
-          quantity?: number
+          quantity?: number | null
           sku?: string | null
           total_price?: number | null
-          transaction_id: string
           unit_price?: number | null
           updated_at?: string
+          user_id: string
+          vendor_id?: string | null
         }
         Update: {
+          account_id?: string | null
           created_at?: string
           description?: string | null
           document_id?: string | null
           id?: string
           product_name?: string
-          quantity?: number
+          quantity?: number | null
           sku?: string | null
           total_price?: number | null
-          transaction_id?: string
           unit_price?: number | null
           updated_at?: string
+          user_id?: string
+          vendor_id?: string | null
         }
         Relationships: [
           {
@@ -1790,13 +1796,6 @@ export type Database = {
             columns: ["document_id"]
             isOneToOne: false
             referencedRelation: "documents_metadata"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "purchase_order_line_items_transaction_id_fkey"
-            columns: ["transaction_id"]
-            isOneToOne: false
-            referencedRelation: "transactions"
             referencedColumns: ["id"]
           },
         ]
@@ -1852,6 +1851,7 @@ export type Database = {
           amount: number
           category: string | null
           created_at: string
+          credit_card_id: string | null
           end_date: string | null
           frequency: string
           id: string
@@ -1869,6 +1869,7 @@ export type Database = {
           amount?: number
           category?: string | null
           created_at?: string
+          credit_card_id?: string | null
           end_date?: string | null
           frequency?: string
           id?: string
@@ -1886,6 +1887,7 @@ export type Database = {
           amount?: number
           category?: string | null
           created_at?: string
+          credit_card_id?: string | null
           end_date?: string | null
           frequency?: string
           id?: string
@@ -1898,7 +1900,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "recurring_expenses_credit_card_id_fkey"
+            columns: ["credit_card_id"]
+            isOneToOne: false
+            referencedRelation: "credit_cards"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       referral_codes: {
         Row: {
@@ -2174,6 +2184,7 @@ export type Database = {
           account_id: string | null
           amount: number
           archived: boolean
+          category: string | null
           created_at: string
           credit_card_id: string | null
           customer_id: string | null
@@ -2192,6 +2203,7 @@ export type Database = {
           account_id?: string | null
           amount: number
           archived?: boolean
+          category?: string | null
           created_at?: string
           credit_card_id?: string | null
           customer_id?: string | null
@@ -2210,6 +2222,7 @@ export type Database = {
           account_id?: string | null
           amount?: number
           archived?: boolean
+          category?: string | null
           created_at?: string
           credit_card_id?: string | null
           customer_id?: string | null
@@ -2485,6 +2498,7 @@ export type Database = {
       }
       cleanup_expired_reset_tokens: { Args: never; Returns: undefined }
       cleanup_old_bank_transactions: { Args: never; Returns: undefined }
+      clear_user_documents: { Args: never; Returns: undefined }
       decrypt_banking_credential: {
         Args: { encrypted_text: string }
         Returns: string

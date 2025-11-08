@@ -15,6 +15,7 @@ export interface RecurringExpense {
   type: 'income' | 'expense';
   category: string | null;
   notes: string | null;
+  credit_card_id: string | null;
   created_at: string;
   updated_at: string;
 }

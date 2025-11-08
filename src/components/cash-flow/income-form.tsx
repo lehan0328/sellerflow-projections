@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useCategories } from "@/hooks/useCategories";
 import { AddCategoryDialog } from "./add-category-dialog";
-import { Plus, TrendingUp, TrendingDown } from "lucide-react";
+import { Plus, TrendingUp, TrendingDown, CreditCard, AlertCircle } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CalendarIcon, Search } from "lucide-react";
@@ -15,6 +15,8 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { CustomerForm } from "./customer-form";
+import { useCreditCards } from "@/hooks/useCreditCards";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface Customer {
   id: string;
@@ -47,6 +49,7 @@ export const IncomeForm = ({
 }: IncomeFormProps) => {
   const { categories: incomeCategories, addCategory: addIncomeCategory } = useCategories('income', isRecurring);
   const { categories: expenseCategories, addCategory: addExpenseCategory } = useCategories('expense', isRecurring);
+  const { creditCards } = useCreditCards();
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [formData, setFormData] = useState({
     type: "income" as "income" | "expense",
@@ -60,7 +63,9 @@ export const IncomeForm = ({
     category: editingIncome?.category || "",
     notes: editingIncome?.notes || "",
     isRecurring: editingIncome?.isRecurring || isRecurring,
-    recurringFrequency: editingIncome?.recurringFrequency || "monthly" as "daily" | "weekly" | "bi-weekly" | "monthly" | "2-months" | "3-months" | "weekdays"
+    recurringFrequency: editingIncome?.recurringFrequency || "monthly" as "daily" | "weekly" | "bi-weekly" | "monthly" | "2-months" | "3-months" | "weekdays",
+    paymentMethod: "bank-transfer" as "bank-transfer" | "credit-card",
+    creditCardId: editingIncome?.creditCardId || ""
   });
 
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
@@ -90,7 +95,9 @@ export const IncomeForm = ({
         category: editingIncome.category || "",
         notes: editingIncome.notes || "",
         isRecurring: editingIncome.isRecurring || isRecurring,
-        recurringFrequency: editingIncome.recurringFrequency || "monthly"
+        recurringFrequency: editingIncome.recurringFrequency || "monthly",
+        paymentMethod: "bank-transfer",
+        creditCardId: ""
       });
       setCustomerSearchTerm(editingIncome.customer || "");
     } else {
@@ -106,7 +113,9 @@ export const IncomeForm = ({
         category: "",
         notes: "",
         isRecurring: isRecurring,
-        recurringFrequency: "monthly"
+        recurringFrequency: "monthly",
+        paymentMethod: "bank-transfer",
+        creditCardId: ""
       });
       setCustomerSearchTerm("");
     }
@@ -153,13 +162,20 @@ export const IncomeForm = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Validate credit card selection for recurring expenses
+    if (formData.isRecurring && formData.type === "expense" && formData.paymentMethod === "credit-card" && !formData.creditCardId) {
+      toast.error("Please select a credit card");
+      return;
+    }
+    
     const data = {
       id: editingIncome?.id || Date.now().toString(),
       ...formData,
       amount: parseFloat(formData.amount),
       paymentDate: formData.paymentDate || new Date(),
       status: editingIncome?.status || 'pending',
-      customerId: formData.customerId || undefined
+      customerId: formData.customerId || undefined,
+      creditCardId: (formData.isRecurring && formData.type === "expense" && formData.paymentMethod === "credit-card") ? formData.creditCardId : undefined
     };
     
     console.log("Submitting:", data);
@@ -187,7 +203,9 @@ export const IncomeForm = ({
       category: "",
       notes: "",
       isRecurring: isRecurring,
-      recurringFrequency: "monthly"
+      recurringFrequency: "monthly",
+      paymentMethod: "bank-transfer",
+      creditCardId: ""
     });
   };
 
@@ -503,6 +521,110 @@ export const IncomeForm = ({
                       <SelectItem value="3-months">Every 3 Months</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+              )}
+
+              {/* Credit Card Payment Method - only for recurring expenses */}
+              {(formData.isRecurring || isRecurring) && formData.type === "expense" && (
+                <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
+                  <div className="space-y-3">
+                    <Label className="text-sm font-medium">Payment Method *</Label>
+                    <div className="flex gap-1.5 p-0.5 bg-muted rounded-lg">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          handleInputChange("paymentMethod", "bank-transfer");
+                          handleInputChange("creditCardId", "");
+                        }}
+                        className={cn(
+                          "flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-md text-sm font-medium transition-all",
+                          formData.paymentMethod === "bank-transfer"
+                            ? "bg-background shadow-sm text-foreground border"
+                            : "text-muted-foreground hover:text-foreground"
+                        )}
+                      >
+                        Cash
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleInputChange("paymentMethod", "credit-card")}
+                        className={cn(
+                          "flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-md text-sm font-medium transition-all",
+                          formData.paymentMethod === "credit-card"
+                            ? "bg-background shadow-sm text-foreground border"
+                            : "text-muted-foreground hover:text-foreground"
+                        )}
+                      >
+                        <CreditCard className="h-3.5 w-3.5" />
+                        Credit Card
+                      </button>
+                    </div>
+                  </div>
+
+                  {formData.paymentMethod === "credit-card" && (
+                    <>
+                      <div className="space-y-2">
+                        <Label htmlFor="creditCard">Select Credit Card *</Label>
+                        <Select 
+                          value={formData.creditCardId}
+                          onValueChange={(value) => handleInputChange("creditCardId", value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Choose a credit card" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {creditCards.map(card => {
+                              const availableCredit = (card.credit_limit || 0) - (card.balance || 0);
+                              const amount = parseFloat(formData.amount) || 0;
+                              const isInsufficient = amount > availableCredit;
+                              
+                              return (
+                                <SelectItem key={card.id} value={card.id}>
+                                  <div className="flex items-center justify-between w-full">
+                                    <div className="flex items-center gap-2">
+                                      <CreditCard className="h-4 w-4" />
+                                      <span>{card.account_name}</span>
+                                    </div>
+                                    <span className={cn(
+                                      "text-xs ml-2",
+                                      isInsufficient ? "text-destructive" : "text-muted-foreground"
+                                    )}>
+                                      ${availableCredit.toLocaleString()} available
+                                    </span>
+                                  </div>
+                                </SelectItem>
+                              );
+                            })}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {formData.creditCardId && formData.amount && (() => {
+                        const selectedCard = creditCards.find(c => c.id === formData.creditCardId);
+                        if (selectedCard) {
+                          const availableCredit = (selectedCard.credit_limit || 0) - (selectedCard.balance || 0);
+                          const amount = parseFloat(formData.amount) || 0;
+                          if (amount > availableCredit) {
+                            return (
+                              <Alert variant="destructive">
+                                <AlertCircle className="h-4 w-4" />
+                                <AlertDescription>
+                                  This amount (${amount.toLocaleString()}) exceeds the available credit (${availableCredit.toLocaleString()}) on this card. You can still proceed, but ensure credit is available when the charge occurs.
+                                </AlertDescription>
+                              </Alert>
+                            );
+                          }
+                        }
+                        return null;
+                      })()}
+
+                      <Alert>
+                        <AlertDescription className="text-sm">
+                          Note: Your card will be charged when this expense is due, not now. This only tracks which card will be used for future charges.
+                        </AlertDescription>
+                      </Alert>
+                    </>
+                  )}
                 </div>
               )}
 

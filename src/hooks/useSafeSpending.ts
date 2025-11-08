@@ -4,6 +4,15 @@ import { generateRecurringDates } from "@/lib/recurringDates";
 import { format } from "date-fns";
 import { useAmazonPayouts } from "./useAmazonPayouts";
 
+interface Transaction {
+  type: string;
+  description?: string;
+  amount: number;
+  status?: string;
+  settlementId?: string;
+  name?: string;
+}
+
 interface SafeSpendingData {
   safe_spending_limit: number;
   reserve_amount: number;
@@ -22,13 +31,29 @@ interface SafeSpendingData {
       balance: number;
       available_date?: string;
     }>;
-    daily_balances?: Array<{ date: string; balance: number }>;
+    daily_balances?: Array<{ 
+      date: string; 
+      balance: number;
+      starting_balance?: number;
+      net_change?: number;
+      transactions?: Transaction[];
+    }>;
   };
 }
 
 interface DailyBalance {
   date: string;
   balance: number;
+  starting_balance?: number;
+  net_change?: number;
+  transactions?: Array<{
+    type: string;
+    description?: string;
+    amount: number;
+    status?: string;
+    settlementId?: string;
+    name?: string;
+  }>;
 }
 
 export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTransactions: boolean = false, useAvailableBalance: boolean = true) => {
@@ -169,26 +194,53 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
           .eq('is_active', true)
       ]);
 
-      // Use Amazon payouts from useAmazonPayouts hook (ensures same data as Dashboard)
+      // Filter Amazon payouts with proper T+1 handling for confirmed payouts
       const filteredAmazonPayouts = amazonPayouts.filter(payout => {
         const payoutDate = parseLocalDate(payout.payout_date);
+        
+        // ALWAYS include open settlements (estimated status) - they represent real accumulating funds
+        if (payout.status === 'estimated') {
+          return true;
+        }
+        
+        // For confirmed payouts, check if funds are available (T+1) within our projection window
+        if (payout.status === 'confirmed') {
+          // Calculate funds available date (T+1 from settlement end)
+          const rawData = (payout as any).raw_settlement_data;
+          const settlementEndStr = rawData?.FinancialEventGroupEnd || rawData?.settlement_end_date;
+          
+          let fundsAvailableDate: Date;
+          if (settlementEndStr) {
+            const dateStr = new Date(settlementEndStr).toISOString().split('T')[0];
+            const settlementEndDate = parseLocalDate(dateStr);
+            fundsAvailableDate = new Date(settlementEndDate);
+            fundsAvailableDate.setDate(fundsAvailableDate.getDate() + 1);
+          } else {
+            // Fallback to payout_date + T+1
+            fundsAvailableDate = new Date(payoutDate);
+            fundsAvailableDate.setDate(fundsAvailableDate.getDate() + 1);
+          }
+          
+          // Include if funds are available between today and futureDate
+          return fundsAvailableDate >= today && fundsAvailableDate <= futureDate;
+        }
+        
+        // For forecasted payouts, use standard date range check
         return payoutDate >= today && payoutDate <= futureDate;
       });
       
-      console.log('🔍 [useSafeSpending] Using Amazon payouts from useAmazonPayouts hook:', {
+      console.log('🔍 [useSafeSpending] Filtered Amazon payouts:', {
         total: filteredAmazonPayouts.length,
         confirmed: filteredAmazonPayouts.filter(p => p.status === 'confirmed').length,
         estimated: filteredAmazonPayouts.filter(p => p.status === 'estimated').length,
         forecasted: filteredAmazonPayouts.filter(p => p.status === 'forecasted').length,
-        forecastsEnabled,
-        dec12Payouts: filteredAmazonPayouts.filter(p => {
-          const d = new Date(p.payout_date);
-          return d.getFullYear() === 2025 && d.getMonth() === 11 && d.getDate() === 12;
-        }).map(p => ({
-          date: p.payout_date,
-          amount: p.total_amount,
-          status: p.status
-        }))
+        confirmedPayouts: filteredAmazonPayouts
+          .filter(p => p.status === 'confirmed')
+          .map(p => ({
+            settlement_id: p.settlement_id,
+            payout_date: p.payout_date,
+            amount: p.total_amount
+          }))
       });
 
       // Check if we have any forecast data
@@ -270,6 +322,14 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
           
           if (income.status !== 'received') {
             if (incomeDate.getTime() === targetDate.getTime()) {
+              // Skip sales categories that are counted from transactions to avoid duplication
+              if (income.category === 'Sales' || 
+                  income.category === 'Sales Orders' || 
+                  income.category === 'Customer Payments' ||
+                  income.category === 'Service') {
+                return; // These are counted from dbTransactions
+              }
+              
               const amt = Number(income.amount);
               dayChange += amt;
               if (isTargetDateRange) {
@@ -288,17 +348,22 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
           let fundsAvailableDate: Date;
           
           if (isConfirmedPayout) {
-            // For confirmed payouts, use FinancialEventGroupEnd from raw_settlement_data (matches overview-stats logic)
+            // For confirmed payouts, use FinancialEventGroupEnd + T+1 (next day availability)
             const rawData = (payout as any).raw_settlement_data;
             const settlementEndStr = rawData?.FinancialEventGroupEnd || rawData?.settlement_end_date;
             
             if (settlementEndStr) {
               // Extract date portion and parse as local date
               const dateStr = new Date(settlementEndStr).toISOString().split('T')[0];
-              fundsAvailableDate = parseLocalDate(dateStr);
+              const settlementEndDate = parseLocalDate(dateStr);
+              
+              // Add T+1 for next-day availability (consistent with other payout types)
+              fundsAvailableDate = new Date(settlementEndDate);
+              fundsAvailableDate.setDate(fundsAvailableDate.getDate() + 1);
             } else {
-              // Fallback to payout_date if no settlement data available
+              // Fallback to payout_date + T+1 if no settlement data available
               fundsAvailableDate = parseLocalDate(payout.payout_date);
+              fundsAvailableDate.setDate(fundsAvailableDate.getDate() + 1);
             }
           } else if (isEstimatedPayout) {
             // For estimated payouts, calculate from settlement end date + 1 day
@@ -495,8 +560,24 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
           }
         });
 
+        const startingBalance = runningBalance;
         runningBalance += dayChange;
-        dailyBalances.push({ date: targetDateStr, balance: runningBalance });
+        
+        // Store transaction details for each day
+        dailyBalances.push({ 
+          date: targetDateStr, 
+          balance: runningBalance,
+          starting_balance: startingBalance,
+          net_change: dayChange,
+          transactions: transactionLog.map(t => ({
+            type: t.type,
+            description: t.vendor || t.card || t.name || t.settlementId || '',
+            amount: t.amount,
+            status: t.status,
+            settlementId: t.settlementId,
+            name: t.name
+          }))
+        });
         
         // Log transactions for target date range
         if (isTargetDateRange && (dayChange !== 0 || targetDateStr === '2024-10-31' || targetDateStr === '2025-12-12')) {
@@ -586,7 +667,7 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
             }
             
             allBuyingOpportunities.push({
-              date: currentDay.date,
+              date: nextDay.date, // Use nextDay when money actually arrives, not the valley bottom
               balance: opportunityAmount, // This is what can safely be spent (low point balance - reserve)
               available_date: earliestAvailableDate
             });

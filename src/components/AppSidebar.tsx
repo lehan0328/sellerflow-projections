@@ -62,9 +62,7 @@ const transactionSections = [{
 const resourceSections = [{
   id: "guides",
   title: "Guides",
-  icon: BookOpen,
-  isRoute: true,
-  url: "/guides"
+  icon: BookOpen
 }, {
   id: "settings",
   title: "Settings",

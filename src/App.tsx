@@ -1,4 +1,3 @@
-import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -32,6 +31,8 @@ import GuidesAddingIncome from "./pages/GuidesAddingIncome";
 import GuidesAddRecurringIncome from "./pages/GuidesAddRecurringIncome";
 import GuidesAddRecurringExpense from "./pages/GuidesAddRecurringExpense";
 import GuidesEditingTransactions from "./pages/GuidesEditingTransactions";
+import GuidesPartialPayment from "./pages/GuidesPartialPayment";
+import GuidesEarlyPaymentReceived from "./pages/GuidesEarlyPaymentReceived";
 import GuidesSearchByAmount from "./pages/GuidesSearchByAmount";
 import GuidesSearchByDate from "./pages/GuidesSearchByDate";
 import GuidesPayoutForecasting from "./pages/GuidesPayoutForecasting";
@@ -74,6 +75,7 @@ import Reimbursements from "./pages/Reimbursements";
 import AdvancedAnalytics from "./pages/AdvancedAnalytics";
 import Accounting from "./pages/Accounting";
 import Platforms from "./pages/Platforms";
+import DebugProjections from "./pages/DebugProjections";
 
 const queryClient = new QueryClient();
 
@@ -82,7 +84,6 @@ const App = () => (
     <BrowserRouter>
       <ExcludeTodayProvider>
         <TooltipProvider>
-          <Toaster />
           <Sonner />
           <PaymentAccessControl>
           <Routes>
@@ -100,11 +101,6 @@ const App = () => (
           <Route path="/docs/getting-started" element={<DocsGettingStarted />} />
           <Route path="/docs/amazon-integration" element={<DocsAmazonIntegration />} />
           <Route path="/docs/faq" element={<DocsFAQ />} />
-          <Route path="/guides" element={
-            <ProtectedRoute>
-              <Guides />
-            </ProtectedRoute>
-          } />
           <Route path="/guides/purchase-orders" element={
             <ProtectedRoute>
               <GuidesPurchaseOrders />
@@ -133,6 +129,16 @@ const App = () => (
           <Route path="/guides/editing-transactions" element={
             <ProtectedRoute>
               <GuidesEditingTransactions />
+            </ProtectedRoute>
+          } />
+          <Route path="/guides/partial-payment" element={
+            <ProtectedRoute>
+              <GuidesPartialPayment />
+            </ProtectedRoute>
+          } />
+          <Route path="/guides/early-payment-received" element={
+            <ProtectedRoute>
+              <GuidesEarlyPaymentReceived />
             </ProtectedRoute>
           } />
             <Route path="/guides/payout-forecasting" element={
@@ -267,6 +273,11 @@ const App = () => (
                 <FlexReport />
               </ProtectedRoute>
             } />
+          <Route path="/debug-projections" element={
+            <ProtectedRoute>
+              <DebugProjections />
+            </ProtectedRoute>
+          } />
           <Route path="/amazon-oauth-callback" element={<AmazonOAuthCallback />} />
           <Route path="/oauth-redirect" element={<OAuthRedirect />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

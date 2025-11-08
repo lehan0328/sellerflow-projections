@@ -11,7 +11,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useRecurringExpenses, RecurringExpense } from "@/hooks/useRecurringExpenses";
-import { Repeat, Plus, Trash2, Pencil, Search } from "lucide-react";
+import { useCreditCards } from "@/hooks/useCreditCards";
+import { Repeat, Plus, Trash2, Pencil, Search, CreditCard } from "lucide-react";
 import { toast } from "sonner";
 import { format, addMonths } from "date-fns";
 
@@ -30,6 +31,7 @@ interface RecurringExpenseFormData {
 
 export function RecurringExpenseManagement() {
   const { recurringExpenses, isLoading, createRecurringExpense, updateRecurringExpense, deleteRecurringExpense } = useRecurringExpenses();
+  const { creditCards } = useCreditCards();
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [editingExpense, setEditingExpense] = useState<RecurringExpense | null>(null);
@@ -87,7 +89,8 @@ export function RecurringExpenseManagement() {
       is_active: formData.is_active,
       type: formData.type,
       category: formData.category || null,
-      notes: formData.notes || null
+      notes: formData.notes || null,
+      credit_card_id: null
     };
 
     createRecurringExpense(expenseData);
@@ -133,7 +136,8 @@ export function RecurringExpenseManagement() {
       is_active: formData.is_active,
       type: formData.type,
       category: formData.category || null,
-      notes: formData.notes || null
+      notes: formData.notes || null,
+      credit_card_id: null
     };
 
     updateRecurringExpense({ id: editingExpense.id, ...expenseData });
@@ -383,7 +387,12 @@ export function RecurringExpenseManagement() {
 
             {filteredAndSortedExpenses.length > 0 ? (
               <div className="space-y-2">
-                {filteredAndSortedExpenses.map((expense) => (
+                {filteredAndSortedExpenses.map((expense) => {
+                  const linkedCard = expense.credit_card_id 
+                    ? creditCards.find(c => c.id === expense.credit_card_id)
+                    : null;
+                  
+                  return (
                   <div key={expense.id} className="flex items-center justify-between p-3 border rounded-lg">
                     <div className="flex items-center space-x-3">
                       <div className="p-2 bg-muted rounded-full">
@@ -395,6 +404,12 @@ export function RecurringExpenseManagement() {
                           <Badge variant={expense.type === 'income' ? 'default' : 'destructive'} className="text-xs">
                             {expense.type === 'income' ? 'Income' : 'Expense'}
                           </Badge>
+                          {linkedCard && (
+                            <Badge variant="outline" className="text-xs flex items-center gap-1">
+                              <CreditCard className="h-3 w-3" />
+                              {linkedCard.account_name}
+                            </Badge>
+                          )}
                         </div>
                         {expense.category && (
                           <p className="text-xs text-muted-foreground">{expense.category}</p>
@@ -441,7 +456,8 @@ export function RecurringExpenseManagement() {
                       </AlertDialog>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <div className="text-center py-8 text-muted-foreground">

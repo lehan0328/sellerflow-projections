@@ -1,8 +1,9 @@
 import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Repeat, Pencil, Filter, Trash2, Search, ArrowUpDown } from "lucide-react";
+import { Plus, Repeat, Pencil, Filter, Trash2, Search, ArrowUpDown, CreditCard, Landmark } from "lucide-react";
 import { useRecurringExpenses, RecurringExpense } from "@/hooks/useRecurringExpenses";
+import { useCreditCards } from "@/hooks/useCreditCards";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -13,12 +14,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { format, addMonths } from "date-fns";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { format, addMonths, startOfMonth, endOfMonth } from "date-fns";
+import { generateRecurringDates } from "@/lib/recurringDates";
 import { useNavigate } from "react-router-dom";
+import { cn } from "@/lib/utils";
 
 export const RecurringExpensesOverview = () => {
   const navigate = useNavigate();
   const { recurringExpenses, isLoading, updateRecurringExpense, deleteRecurringExpense } = useRecurringExpenses();
+  const { creditCards } = useCreditCards();
   const [filterType, setFilterType] = useState<'all' | 'income' | 'expense'>('all');
   const [showInactive, setShowInactive] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -101,25 +106,20 @@ export const RecurringExpensesOverview = () => {
   const activeIncome = activeTransactions.filter(item => item.type === 'income');
   const activeExpenses = activeTransactions.filter(item => item.type === 'expense');
   
-  // Convert all frequencies to monthly equivalent
-  const getMonthlyAmount = (amount: number, frequency: string) => {
-    switch (frequency) {
-      case 'daily': return amount * 30; // Average days per month
-      case 'weekly': return amount * 4; // 4 weeks per month (flat)
-      case 'bi-weekly': return amount * 2; // 2 bi-weekly periods per month (flat)
-      case 'weekdays': return amount * 22; // Average weekdays per month
-      case 'monthly': return amount;
-      case '2-months': return amount / 2; // Every 2 months
-      case '3-months': return amount / 3; // Every 3 months
-      default: return amount;
-    }
-  };
+  // Calculate exact monthly amount based on actual calendar occurrences
+  const currentMonth = new Date();
   
   const totalMonthlyIncome = activeIncome
-    .reduce((sum, item) => sum + getMonthlyAmount(Number(item.amount), item.frequency), 0);
+    .reduce((sum, item) => {
+      const occurrences = generateRecurringDates(item, startOfMonth(currentMonth), endOfMonth(currentMonth));
+      return sum + (occurrences.length * Number(item.amount));
+    }, 0);
     
   const totalMonthlyExpense = activeExpenses
-    .reduce((sum, item) => sum + getMonthlyAmount(Number(item.amount), item.frequency), 0);
+    .reduce((sum, item) => {
+      const occurrences = generateRecurringDates(item, startOfMonth(currentMonth), endOfMonth(currentMonth));
+      return sum + (occurrences.length * Number(item.amount));
+    }, 0);
 
   const maxEndDate = format(addMonths(new Date(), 3), 'yyyy-MM-dd');
 
@@ -151,6 +151,24 @@ export const RecurringExpensesOverview = () => {
       setIsDeleteDialogOpen(false);
       setDeletingExpense(null);
     }
+  };
+
+  const getPaymentMethodDisplay = (expense: RecurringExpense) => {
+    if (!expense.credit_card_id) {
+      return { icon: Landmark, label: 'Cash/Bank', details: null };
+    }
+    
+    const card = creditCards.find(c => c.id === expense.credit_card_id);
+    if (card) {
+      const last4 = card.masked_account_number?.slice(-4) || '****';
+      return { 
+        icon: CreditCard, 
+        label: card.account_name || 'Credit Card',
+        details: `••${last4}`
+      };
+    }
+    
+    return { icon: CreditCard, label: 'Credit Card', details: null };
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -297,23 +315,53 @@ export const RecurringExpensesOverview = () => {
                       <Badge variant={item.type === 'income' ? 'default' : 'destructive'} className="text-xs">
                         {item.type}
                       </Badge>
+                      <Badge variant="outline" className="text-xs">
+                        {item.frequency}
+                      </Badge>
                     </div>
                     {item.transaction_name && (
                       <p className="text-xs text-muted-foreground mt-0.5">{item.transaction_name}</p>
                     )}
-                    <div className="flex items-center gap-2 mt-1">
-                      <Badge variant="outline" className="text-xs">
-                        {item.frequency}
-                      </Badge>
-                      {item.category && (
+                    {item.category && (
+                      <div className="flex items-center gap-2 mt-1">
                         <span className="text-xs text-muted-foreground">
                           {item.category}
                         </span>
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="text-right">
+                    <div className="text-right flex items-center gap-3">
+                      {item.type === 'expense' && (() => {
+                        const paymentMethod = getPaymentMethodDisplay(item);
+                        const PaymentIcon = paymentMethod.icon;
+                        const isCard = item.credit_card_id !== null;
+                        return (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className="flex items-center gap-2">
+                                  <div className={cn(
+                                    "p-2 rounded-full",
+                                    isCard ? "bg-blue-100 dark:bg-blue-950" : "bg-green-100 dark:bg-green-950"
+                                  )}>
+                                    <PaymentIcon className={cn(
+                                      "h-4 w-4",
+                                      isCard ? "text-blue-600 dark:text-blue-400" : "text-green-600 dark:text-green-400"
+                                    )} />
+                                  </div>
+                                  {paymentMethod.details && (
+                                    <span className="text-xs text-muted-foreground">{paymentMethod.details}</span>
+                                  )}
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>{paymentMethod.label}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        );
+                      })()}
                       <p className={`font-semibold ${
                         item.type === 'income'
                           ? 'text-green-600 dark:text-green-400'

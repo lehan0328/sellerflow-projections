@@ -10,6 +10,7 @@ import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import { useCategories } from "@/hooks/useCategories";
 import { AddCategoryDialog } from "./add-category-dialog";
+import { capitalizeName } from "@/lib/utils";
 
 interface CustomerFormProps {
   open: boolean;
@@ -30,7 +31,7 @@ export const CustomerForm = ({ open, onOpenChange, onAddCustomer }: CustomerForm
     
     const customer = {
       id: Date.now().toString(),
-      name: formData.name,
+      name: capitalizeName(formData.name),
       category: formData.category
     };
     

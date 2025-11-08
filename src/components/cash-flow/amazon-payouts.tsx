@@ -401,15 +401,6 @@ export function AmazonPayouts() {
               <CardTitle>Amazon Payouts</CardTitle>
             </div>
             
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => setShowSettledPayouts(true)}
-            >
-              <FileText className="h-4 w-4 mr-2" />
-              View Settlements ({settledPayoutsCount})
-            </Button>
-            
             <Button variant="outline" size="sm" onClick={() => navigate('/dashboard?view=settings&section=amazon')}>
               <Settings className="h-4 w-4 mr-2" />
               Manage
@@ -438,21 +429,6 @@ export function AmazonPayouts() {
                 minute: '2-digit'
               }) : 'Never'}
                 </div>
-                <Button
-                  variant="outline" 
-                  size="sm" 
-                  onClick={handleSyncAllAccounts} 
-                  disabled={
-                    isSyncing !== null || 
-                    amazonAccounts.some(acc => 
-                      acc.sync_status === 'syncing' || 
-                      acc.sync_message?.includes('Rate limited')
-                    )
-                  }
-                >
-                  <RefreshCw className={`h-4 w-4 mr-2 ${isSyncing || amazonAccounts.some(acc => acc.sync_status === 'syncing') ? 'animate-spin' : ''}`} />
-                  {amazonAccounts.some(acc => acc.sync_message?.includes('Rate limited')) ? 'Rate Limited' : 'Sync'}
-                </Button>
               </>}
           </div>
         </div>
@@ -544,11 +520,6 @@ export function AmazonPayouts() {
                         </div>
                         <div className="text-xs text-muted-foreground mt-0.5">
                           {account.sync_message || 'No sync data'}
-                          {account.sync_status === 'syncing' && !account.initial_sync_complete && (
-                            <div className="text-amber-600 font-medium mt-1">
-                              ⏱ Initial sync may take 4-6 hours due to Amazon rate limits (0.5 req/sec = 1 page every 2 seconds)
-                            </div>
-                          )}
                         </div>
                         {account.sync_progress && account.sync_progress < 100 && account.sync_status !== 'idle' && (
                           <div className="mt-1">
@@ -575,24 +546,35 @@ export function AmazonPayouts() {
                           Starting...
                         </Badge>
                       )}
-                      <span className="text-xs text-muted-foreground whitespace-nowrap">
-                        {account.transaction_count || 0} transactions
-                      </span>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={account.sync_status === 'syncing' || isSyncing === account.id}
+                        onClick={async () => {
+                          try {
+                            setIsSyncing(account.id);
+                            await syncAmazonAccount(account.id);
+                            toast.success('Sync initiated successfully');
+                          } catch (error: any) {
+                            console.error('Sync error:', error);
+                            toast.error(error.message || 'Failed to sync account');
+                          } finally {
+                            setIsSyncing(null);
+                          }
+                        }}
+                        className="h-7 px-2"
+                      >
+                        {isSyncing === account.id ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <RefreshCw className="h-3 w-3" />
+                        )}
+                      </Button>
                     </div>
                   </div>
                 );
               })}
             </div>
-            {amazonAccounts.some(a => !a.initial_sync_complete) && (
-              <Alert className="mt-3 bg-amber-500/5 border-amber-500/20">
-                <Clock className="h-4 w-4 text-amber-600" />
-                <AlertDescription className="text-xs">
-                  <strong>Initial sync may take 4-6 hours</strong> due to Amazon's strict rate limiting (0.5 requests/second).
-                  We pace requests conservatively at 1 page every 2 seconds to prevent API bans.
-                  The sync will continue in the background. You can close this page and return later to check progress.
-                </AlertDescription>
-              </Alert>
-            )}
           </div>
         )}
         
@@ -963,8 +945,8 @@ export function AmazonPayouts() {
           });
         })()}
         {amazonPayouts.length > 0 && <div className="pt-2">
-            <Button variant="outline" className="w-full" onClick={() => navigate('/dashboard?view=settings&section=amazon')}>
-              View Amazon Settings & Full Schedule
+            <Button variant="outline" className="w-full" onClick={() => setShowSettledPayouts(true)}>
+              View Settlement History
             </Button>
           </div>}
       </CardContent>

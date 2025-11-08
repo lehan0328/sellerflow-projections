@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { addDays, isToday, isBefore, startOfDay, format } from "date-fns";
+import { calculateCalendarBalances } from "@/lib/calendarBalances";
 import { useNavigate, useLocation } from "react-router-dom";
 import { RefreshCw, Building2, CreditCard as CreditCardIcon, TrendingUp, TrendingDown, Calendar, CheckCircle, User, Database, Trash2, AlertTriangle, Shield, Users, Palette, Sun, Moon, Monitor } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -51,6 +52,7 @@ import { CategoryManagement } from "@/components/settings/category-management";
 import { BillingInvoices } from "@/components/settings/billing-invoices";
 import { ForecastSettings } from "@/components/settings/forecast-settings";
 import { FeatureRequest } from "@/components/settings/feature-request";
+import { GuidesContent } from "@/components/GuidesContent";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useUserSettings } from "@/hooks/useUserSettings";
 import { useReserveAmount } from "@/hooks/useReserveAmount";
@@ -1107,6 +1109,7 @@ const Dashboard = () => {
         type: 'income',
         category: null,
         notes: incomeData.description || incomeData.notes || null,
+        credit_card_id: null
       });
 
       toast({
@@ -1149,6 +1152,7 @@ const Dashboard = () => {
       amount: amount,
       description: incomeData.description || 'Income',
       transactionDate: paymentDate,
+      category: incomeData.category,
       status: paymentDateStartOfDay <= today ? 'completed' : 'pending'
     });
 
@@ -1185,6 +1189,7 @@ const Dashboard = () => {
         type: 'expense',
         category: null,
         notes: expenseData.description || expenseData.notes || null,
+        credit_card_id: expenseData.creditCardId || null
       });
 
       toast({
@@ -1989,61 +1994,51 @@ const Dashboard = () => {
       totalEvents: allCalendarEvents.length
     });
     
-    const endDate = addDays(today, 90); // Next 90 days (3 months)
-    const dailyBalances: Array<{ date: Date; balance: number }> = [];
-    let runningBalance = displayBankBalance; // Start with current bank balance (based on toggle)
-    
-    let currentDate = new Date(today);
-    while (currentDate <= endDate) {
-      currentDate.setHours(0, 0, 0, 0);
-      const dateStr = format(currentDate, 'yyyy-MM-dd');
-      
-      // Get all events that impact balance on this day (use balanceImpactDate if available)
-      const dayEvents = allCalendarEvents.filter(event => {
-        const impactDate = event.balanceImpactDate || event.date;
-        return format(impactDate, 'yyyy-MM-dd') === dateStr;
-      });
-      
-      // Calculate net change for the day (exactly like the calendar does)
-      const dailyInflow = dayEvents.filter(e => e.type === 'inflow').reduce((sum, e) => sum + e.amount, 0);
-      const dailyOutflow = dayEvents.filter(e => e.type !== 'inflow').reduce((sum, e) => sum + e.amount, 0);
-      const dailyChange = dailyInflow - dailyOutflow;
-      
-      runningBalance += dailyChange;
-      dailyBalances.push({ date: new Date(currentDate), balance: runningBalance });
-      
-      // Log specific dates in target range
-      if (dateStr >= '2024-10-31' && dateStr <= '2025-12-12' && (dailyChange !== 0 || dateStr === '2024-10-31' || dateStr === '2025-12-12')) {
-        console.log(`📊 [Calendar] ${dateStr}:`, {
-          events: dayEvents.length,
-          eventBreakdown: {
-            vendor: dayEvents.filter(e => e.vendor).length,
-            income: dayEvents.filter(e => e.type === 'inflow' && !e.source?.includes('Amazon')).length,
-            amazon: dayEvents.filter(e => e.source?.includes('Amazon')).length,
-            creditCard: dayEvents.filter(e => e.type === 'credit-payment').length,
-            recurring: dayEvents.filter(e => e.source === 'Recurring' || e.vendor === 'Recurring').length
-          },
-          dailyInflow: dailyInflow.toFixed(2),
-          dailyOutflow: dailyOutflow.toFixed(2),
-          dailyChange: dailyChange.toFixed(2),
-          runningBalance: runningBalance.toFixed(2),
-          previousBalance: (runningBalance - dailyChange).toFixed(2)
-        });
-      }
-      
-      currentDate = addDays(currentDate, 1);
-    }
-    
-    // Find the minimum balance
-    if (dailyBalances.length === 0) return { balance: displayBankBalance, date: format(today, 'yyyy-MM-dd') };
-    
-    const minBalanceData = dailyBalances.reduce((min, current) => 
-      current.balance < min.balance ? current : min
+    const { dailyBalances, minimumBalance, minimumDate } = calculateCalendarBalances(
+      displayBankBalance,
+      allCalendarEvents,
+      90
     );
     
+    // Log specific dates in target range for debugging
+    dailyBalances.forEach(day => {
+      if (day.date >= '2024-10-31' && day.date <= '2025-12-12' && (day.dailyChange !== 0 || day.date === '2024-10-31' || day.date === '2025-12-12')) {
+        console.log(`📊 [Calendar] ${day.date}:`, {
+          events: day.events,
+          eventBreakdown: {
+            vendor: allCalendarEvents.filter(e => {
+              const impactDate = e.balanceImpactDate || e.date;
+              return format(impactDate, 'yyyy-MM-dd') === day.date && e.vendor;
+            }).length,
+            income: allCalendarEvents.filter(e => {
+              const impactDate = e.balanceImpactDate || e.date;
+              return format(impactDate, 'yyyy-MM-dd') === day.date && e.type === 'inflow' && !e.source?.includes('Amazon');
+            }).length,
+            amazon: allCalendarEvents.filter(e => {
+              const impactDate = e.balanceImpactDate || e.date;
+              return format(impactDate, 'yyyy-MM-dd') === day.date && e.source?.includes('Amazon');
+            }).length,
+            creditCard: allCalendarEvents.filter(e => {
+              const impactDate = e.balanceImpactDate || e.date;
+              return format(impactDate, 'yyyy-MM-dd') === day.date && e.type === 'credit-payment';
+            }).length,
+            recurring: allCalendarEvents.filter(e => {
+              const impactDate = e.balanceImpactDate || e.date;
+              return format(impactDate, 'yyyy-MM-dd') === day.date && (e.source === 'Recurring' || e.vendor === 'Recurring');
+            }).length
+          },
+          dailyInflow: day.dailyInflow.toFixed(2),
+          dailyOutflow: day.dailyOutflow.toFixed(2),
+          dailyChange: day.dailyChange.toFixed(2),
+          runningBalance: day.runningBalance.toFixed(2),
+          previousBalance: (day.runningBalance - day.dailyChange).toFixed(2)
+        });
+      }
+    });
+    
     return {
-      balance: minBalanceData.balance,
-      date: format(minBalanceData.date, 'yyyy-MM-dd')
+      balance: minimumBalance,
+      date: minimumDate
     };
   };
 
@@ -2947,6 +2942,9 @@ const Dashboard = () => {
       case "customers":
         return <CustomerManagement />;
       
+      case "guides":
+        return <GuidesContent />;
+      
       default:
         return null;
     }
@@ -3003,6 +3001,7 @@ const Dashboard = () => {
               onSubmitOrder={handlePurchaseOrderSubmit}
               onDeleteAllVendors={deleteAllVendors}
               onAddVendor={addVendor}
+              allBuyingOpportunities={safeSpendingData?.calculation?.all_buying_opportunities}
             />
           )}
 
