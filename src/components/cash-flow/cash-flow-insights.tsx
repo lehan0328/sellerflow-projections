@@ -743,9 +743,9 @@ export const CashFlowInsights = memo(({
                         </span>
                       </div>
                       {allBuyingOpportunities[1].available_date && (
-                        <div className="flex items-center justify-between p-1.5 bg-green-50 dark:bg-green-950/20 rounded border border-green-200 dark:border-green-800">
+                        <div className="flex items-center justify-between p-1.5 bg-blue-50 dark:bg-blue-950/20 rounded border border-blue-200 dark:border-blue-800">
                           <span className="text-muted-foreground text-xs">Earliest Purchase Date</span>
-                          <span className="font-semibold text-green-600">
+                          <span className="font-semibold text-blue-600">
                             {(() => {
                               const [year, month, day] = allBuyingOpportunities[1].available_date.split('-').map(Number);
                               const date = new Date(year, month - 1, day);
@@ -774,7 +774,7 @@ export const CashFlowInsights = memo(({
                         <X className="h-4 w-4 text-red-600" />
                       </Button>
                     </div> : <div className="flex items-center gap-2">
-                      <span className="font-semibold text-amber-600">
+                      <span className="font-semibold text-blue-600">
                         -${reserveAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </span>
                       <Button 
@@ -824,13 +824,13 @@ export const CashFlowInsights = memo(({
               ) : (
                 <div className="space-y-2">
                   {/* Total Available Credit Summary */}
-                  <div className="p-4 rounded-lg bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 border-2 border-green-200 dark:border-green-800">
+                  <div className="p-4 rounded-lg bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/30 dark:to-blue-950/30 border-2 border-blue-200 dark:border-blue-800">
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-xs font-medium text-muted-foreground">Total Available Credit</span>
-                      <CreditCard className="h-4 w-4 text-green-600" />
+                      <CreditCard className="h-4 w-4 text-blue-600" />
                     </div>
                     <div className="flex items-baseline gap-2">
-                      <span className="text-3xl font-bold text-green-600">
+                      <span className="text-3xl font-bold text-blue-600">
                         ${creditCards.reduce((sum, card) => {
                           const effectiveCreditLimit = card.credit_limit_override || card.credit_limit;
                           const effectiveAvailableCredit = effectiveCreditLimit - card.balance;
@@ -916,7 +916,7 @@ export const CashFlowInsights = memo(({
             <div className="space-y-2 p-3 bg-muted/30 rounded-lg">
               <div className="flex items-center justify-between">
                 <h4 className="text-xs font-semibold flex items-center gap-1.5">
-                  <ShoppingCart className="h-3.5 w-3.5 text-orange-600" />
+                  <ShoppingCart className="h-3.5 w-3.5 text-blue-600" />
                   Project Purchase Orders
                 </h4>
                 {tempProjections.length > 0 && (
@@ -974,8 +974,8 @@ export const CashFlowInsights = memo(({
               </Button>
               
               {tempProjections.length > 0 && (
-                <div className="p-2 bg-orange-50 dark:bg-orange-950/20 rounded border border-orange-200 dark:border-orange-800 mt-2">
-                  <p className="text-xs font-semibold text-orange-700 dark:text-orange-400 mb-1.5">
+                <div className="p-2 bg-blue-50 dark:bg-blue-950/20 rounded border border-blue-200 dark:border-blue-800 mt-2">
+                  <p className="text-xs font-semibold text-blue-700 dark:text-blue-400 mb-1.5">
                     🔮 Active Projections
                   </p>
                   <div className="text-xs text-muted-foreground space-y-0.5">
@@ -1018,7 +1018,7 @@ export const CashFlowInsights = memo(({
                         <div className="text-2xl font-bold text-blue-600 flex items-center gap-2">
                           ${opp.balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           {(opp as any).includesCredit && (
-                            <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/30 text-[10px] py-0">
+                            <Badge variant="outline" className="bg-blue-500/10 text-blue-600 border-blue-500/30 text-[10px] py-0">
                               <CreditCard className="h-3 w-3 mr-1" />
                               + Credit
                             </Badge>
@@ -1037,9 +1037,9 @@ export const CashFlowInsights = memo(({
                         <span className="font-medium">{formattedDate}</span>
                       </div>
                       {availableDate && (
-                        <div className="flex justify-between p-2 bg-green-100 dark:bg-green-900/30 rounded">
-                          <span className="text-green-700 dark:text-green-400 font-medium">Earliest Purchase:</span>
-                          <span className="font-bold text-green-600">{availableDate}</span>
+                        <div className="flex justify-between p-2 bg-blue-100 dark:bg-blue-900/30 rounded">
+                          <span className="text-blue-700 dark:text-blue-400 font-medium">Earliest Purchase:</span>
+                          <span className="font-bold text-blue-600">{availableDate}</span>
                         </div>
                       )}
                     </div>
@@ -1143,15 +1143,15 @@ export const CashFlowInsights = memo(({
                       }
                       
                       return (
-                        <div className="p-4 rounded-lg border bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 border-green-200 dark:border-green-800">
+                        <div className="p-4 rounded-lg border bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/30 dark:to-blue-950/30 border-blue-200 dark:border-blue-800">
                           <div className="flex items-center justify-between mb-3">
                             <div>
-                              <div className="text-2xl font-bold text-green-600">
+                              <div className="text-2xl font-bold text-blue-600">
                                 ${matchingOpp.balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                               </div>
                               <div className="text-xs text-muted-foreground">Available</div>
                             </div>
-                            <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/30">
+                            <Badge variant="outline" className="bg-blue-500/10 text-blue-600 border-blue-500/30">
                               Can afford ${searchAmount}
                             </Badge>
                           </div>
@@ -1162,9 +1162,9 @@ export const CashFlowInsights = memo(({
                               <span className="font-medium">{formattedDate}</span>
                             </div>
                             {availableDate && (
-                              <div className="flex justify-between p-2 bg-green-100 dark:bg-green-900/30 rounded">
-                                <span className="text-green-700 dark:text-green-400 font-medium">Earliest Purchase:</span>
-                                <span className="font-bold text-green-600">{availableDate}</span>
+                              <div className="flex justify-between p-2 bg-blue-100 dark:bg-blue-900/30 rounded">
+                                <span className="text-blue-700 dark:text-blue-400 font-medium">Earliest Purchase:</span>
+                                <span className="font-bold text-blue-600">{availableDate}</span>
                               </div>
                             )}
                           </div>
@@ -1314,16 +1314,16 @@ export const CashFlowInsights = memo(({
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <CreditCard className="h-5 w-5 text-green-600" />
+              <CreditCard className="h-5 w-5 text-blue-600" />
               All Credit Cards
             </DialogTitle>
           </DialogHeader>
           <ScrollArea className="max-h-[600px] pr-4">
               <div className="space-y-2.5">
-              <div className="p-3 rounded-lg bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 border border-green-200 dark:border-green-800 mb-2">
+              <div className="p-3 rounded-lg bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/30 dark:to-blue-950/30 border border-blue-200 dark:border-blue-800 mb-2">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium text-gray-600 dark:text-gray-300">Total Available Credit</span>
-                  <span className="text-xl font-bold text-green-700 dark:text-green-400">
+                  <span className="text-xl font-bold text-blue-700 dark:text-blue-400">
                     ${creditCards.reduce((sum, card) => {
                       const effectiveCreditLimit = card.credit_limit_override || card.credit_limit;
                       const effectiveAvailableCredit = effectiveCreditLimit - card.balance;
@@ -1360,7 +1360,7 @@ export const CashFlowInsights = memo(({
                         {/* Due Date & Statement Balance */}
                         <div className="flex gap-3 text-xs">
                           {card.payment_due_date && (
-                            <span className="text-orange-600 dark:text-orange-400 font-medium">
+                            <span className="text-blue-600 dark:text-blue-400 font-medium">
                               Due: {new Date(card.payment_due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                             </span>
                           )}
@@ -1552,12 +1552,12 @@ export const CashFlowInsights = memo(({
                   </span>
                 </div>
 
-                <div className="p-4 rounded-lg bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 border border-green-200 dark:border-green-800">
+                <div className="p-4 rounded-lg bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/30 dark:to-blue-950/30 border border-blue-200 dark:border-blue-800">
                   <div className="flex items-center gap-2 mb-2">
-                    <CreditCard className="h-4 w-4 text-green-600" />
+                    <CreditCard className="h-4 w-4 text-blue-600" />
                     <span className="text-xs font-medium text-muted-foreground">Available Credit</span>
                   </div>
-                  <span className="text-2xl font-bold text-green-600">
+                  <span className="text-2xl font-bold text-blue-600">
                     ${dateSearchResults.availableCredit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </span>
                 </div>
@@ -1597,10 +1597,10 @@ export const CashFlowInsights = memo(({
                 </div>
               </div>
 
-              <div className="p-4 rounded-lg bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-950/30 dark:to-violet-950/30 border border-purple-200 dark:border-purple-800">
+              <div className="p-4 rounded-lg bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/30 dark:to-blue-950/30 border border-blue-200 dark:border-blue-800">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium text-muted-foreground">Total Available Funds</span>
-                  <span className="text-xl font-bold text-purple-600">
+                  <span className="text-xl font-bold text-blue-600">
                     ${(dateSearchResults.projectedCash + dateSearchResults.availableCredit).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </span>
                 </div>
