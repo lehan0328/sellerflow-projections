@@ -10,7 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { DollarSign, Calendar, TrendingUp, Plus, Edit, Search, ArrowUpDown, Trash2, Link2, ExternalLink } from "lucide-react";
 import { format } from "date-fns";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useMemo } from "react";
 import { useTransactionMatching } from "@/hooks/useTransactionMatching";
@@ -196,13 +196,13 @@ export const IncomeOverview = ({ incomeItems, bankTransactions = [], onCollectTo
               <div className="flex items-center space-x-2">
                 <DollarSign className="h-4 w-4 text-muted-foreground" />
                 <span className="text-muted-foreground">Expected:</span>
-                <span className="font-semibold">${totalExpected.toLocaleString()}</span>
+                <span className="font-semibold">{formatCurrency(totalExpected)}</span>
               </div>
               {pendingAmount > 0 && (
                 <div className="flex items-center space-x-2">
                   <Calendar className="h-4 w-4 text-orange-500" />
                   <span className="text-orange-500 font-semibold">
-                    ${pendingAmount.toLocaleString()} Pending
+                    {formatCurrency(pendingAmount)} Pending
                   </span>
                 </div>
               )}
@@ -321,7 +321,7 @@ export const IncomeOverview = ({ incomeItems, bankTransactions = [], onCollectTo
                     <TableCell className="font-medium">{income.source}</TableCell>
                     <TableCell>{income.description}</TableCell>
                     <TableCell className="font-semibold">
-                      ${income.amount.toLocaleString()}
+                      {formatCurrency(income.amount)}
                     </TableCell>
                     <TableCell>
                       {income.paymentDate.toLocaleDateString()}
@@ -446,7 +446,7 @@ export const IncomeOverview = ({ incomeItems, bankTransactions = [], onCollectTo
               Are you sure you want to mark this income as received? This will:
               <br />
               • Keep the original payment date ({confirmingIncome?.paymentDate.toLocaleDateString()})
-              • Add ${confirmingIncome?.amount.toLocaleString() || 0} to your available cash
+              • Add {formatCurrency(confirmingIncome?.amount || 0)} to your available cash
               • Mark the payment as completed
             </AlertDialogDescription>
           </AlertDialogHeader>

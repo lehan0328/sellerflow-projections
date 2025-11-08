@@ -18,7 +18,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { format, addMonths, startOfMonth, endOfMonth } from "date-fns";
 import { generateRecurringDates } from "@/lib/recurringDates";
 import { useNavigate } from "react-router-dom";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 
 export const RecurringExpensesOverview = () => {
   const navigate = useNavigate();
@@ -287,14 +287,14 @@ export const RecurringExpensesOverview = () => {
               <div className="bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-900 rounded-lg p-3">
                 <p className="text-sm text-muted-foreground">Monthly Income</p>
                 <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-                  ${totalMonthlyIncome.toLocaleString()}
+                  {formatCurrency(totalMonthlyIncome)}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">{activeIncome.length} active</p>
               </div>
               <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 rounded-lg p-3">
                 <p className="text-sm text-muted-foreground">Monthly Expenses</p>
                 <p className="text-2xl font-bold text-red-600 dark:text-red-400">
-                  ${totalMonthlyExpense.toLocaleString()}
+                  {formatCurrency(totalMonthlyExpense)}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">{activeExpenses.length} active</p>
               </div>
@@ -367,7 +367,7 @@ export const RecurringExpensesOverview = () => {
                           ? 'text-green-600 dark:text-green-400'
                           : 'text-red-600 dark:text-red-400'
                       }`}>
-                        ${Number(item.amount).toLocaleString()}
+                        {formatCurrency(Number(item.amount))}
                       </p>
                     </div>
                     <Button

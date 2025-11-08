@@ -21,6 +21,7 @@ import { useRecurringExpenses } from "@/hooks/useRecurringExpenses";
 import { generateRecurringDates } from "@/lib/recurringDates";
 import { OverdueTransactionsModal } from "./overdue-transactions-modal";
 import { TransactionsListModal } from "./transactions-list-modal";
+import { formatCurrency } from "@/lib/utils";
 interface OverviewStatsProps {
   totalCash?: number;
   events?: Array<{
@@ -242,9 +243,6 @@ export function OverviewStats({
     console.log('🔄 [OVERVIEW STATS] Exclude today changed to:', excludeToday, '- refetching safe spending');
     refetchSafeSpending();
   }, [excludeToday]);
-
-  // Calculate dynamic values based on events
-  const formatCurrency = (amount: number) => `$${amount.toLocaleString()}`;
 
   // Check if balances match (within $1 tolerance)
   const balanceMatches = Math.abs(totalCash - displayBankBalance) < 1.00;

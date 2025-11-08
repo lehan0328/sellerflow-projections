@@ -11,7 +11,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Building2, Calendar, DollarSign, AlertTriangle, Edit, CreditCard, Search, ArrowUpDown, Filter, Trash2, Link2, ExternalLink, Banknote, ChevronRight, ChevronDown, Landmark } from "lucide-react";
 import { format } from "date-fns";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useMemo } from "react";
 import { useVendorTransactions, type VendorTransaction } from "@/hooks/useVendorTransactions";
@@ -469,12 +469,12 @@ export const VendorsOverview = ({
             <div className="flex items-center space-x-2">
               <DollarSign className="h-4 w-4 text-muted-foreground" />
               <span className="text-muted-foreground">Total Owed:</span>
-              <span className="font-semibold">${totalOwed.toLocaleString()}</span>
+              <span className="font-semibold">{formatCurrency(totalOwed)}</span>
             </div>
             {overdueAmount > 0 && <div className="flex items-center space-x-2">
                 <AlertTriangle className="h-4 w-4 text-destructive" />
                 <span className="text-destructive font-semibold">
-                  ${overdueAmount.toLocaleString()} Overdue
+                  {formatCurrency(overdueAmount)} Overdue
                 </span>
               </div>}
             </div>
@@ -651,7 +651,7 @@ export const VendorsOverview = ({
                           </Tooltip>
                         </TooltipProvider>
                         <span className="font-semibold">
-                          ${(tx.amount || 0).toLocaleString()}
+                          {formatCurrency(tx.amount || 0)}
                         </span>
                       </div>
                     </TableCell>
