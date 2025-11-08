@@ -568,8 +568,8 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
           </div>
         </div>
 
-        {/* Incoming & Upcoming - Side by Side */}
-        <div className="grid grid-cols-2 gap-4 border-t pt-4">
+        {/* Incoming & Upcoming - Stacked */}
+        <div className="space-y-4 border-t pt-4">
           {/* Incoming $ */}
           <div>
             <div className="flex items-center justify-between mb-1">
