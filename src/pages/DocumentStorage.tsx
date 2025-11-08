@@ -966,14 +966,14 @@ export default function DocumentStorage() {
             ) : (
               <Table className="w-full table-fixed">
                 <colgroup>
-                  <col style={{ width: '20%' }} />
-                  <col style={{ width: '10%' }} />
-                  <col style={{ width: '15%' }} />
-                  <col style={{ width: '10%' }} />
-                  <col style={{ width: '12%' }} />
+                  <col style={{ width: '28%' }} />
                   <col style={{ width: '8%' }} />
-                  <col style={{ width: '13%' }} />
-                  <col style={{ width: '12%' }} />
+                  <col style={{ width: '15%' }} />
+                  <col style={{ width: '9%' }} />
+                  <col style={{ width: '11%' }} />
+                  <col style={{ width: '7%' }} />
+                  <col style={{ width: '11%' }} />
+                  <col style={{ width: '11%' }} />
                 </colgroup>
                 <TableHeader>
                   <TableRow className="bg-background border-b hover:bg-background">
@@ -992,10 +992,10 @@ export default function DocumentStorage() {
                     <Collapsible key={doc.id}>
                       <TableRow className="align-top">
                         <TableCell className="font-medium px-4 py-3">
-                          <div className="flex items-center space-x-2">
+                          <div className="flex items-center space-x-2 max-w-full overflow-hidden">
                             <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                             <span 
-                              className="cursor-pointer hover:text-primary transition-colors truncate"
+                              className="cursor-pointer hover:text-primary transition-colors truncate flex-1 min-w-0"
                               onClick={() => setEditingDoc(doc)}
                               title="Click to edit document name"
                             >
@@ -1026,13 +1026,13 @@ export default function DocumentStorage() {
                           )}
                         </TableCell>
                         <TableCell className="text-sm px-4 py-3 text-left">
-                          {doc.vendor_name || <span className="text-muted-foreground">-</span>}
+                          <span className="truncate block">{doc.vendor_name || <span className="text-muted-foreground">-</span>}</span>
                         </TableCell>
                         <TableCell className="text-sm font-medium px-4 py-3 text-left">
-                          {doc.amount ? `$${doc.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : <span className="text-muted-foreground">-</span>}
+                          <span className="truncate block">{doc.amount ? `$${doc.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : <span className="text-muted-foreground">-</span>}</span>
                         </TableCell>
                         <TableCell className="text-sm px-4 py-3 text-left">
-                          {doc.document_date ? format(new Date(doc.document_date), "MMM dd, yyyy") : <span className="text-muted-foreground">-</span>}
+                          <span className="truncate block">{doc.document_date ? format(new Date(doc.document_date), "MMM dd, yyyy") : <span className="text-muted-foreground">-</span>}</span>
                         </TableCell>
                         <TableCell className="text-sm px-4 py-3 text-left">{formatFileSize((doc as any).file_size || 0)}</TableCell>
                         <TableCell className="text-sm px-4 py-3 text-left">{formatDate(doc.created_at)}</TableCell>
