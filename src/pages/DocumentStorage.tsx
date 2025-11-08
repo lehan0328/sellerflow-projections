@@ -993,17 +993,17 @@ export default function DocumentStorage() {
                   {filteredDocuments.map((doc) => (
                     <Collapsible key={doc.id}>
                       <TableRow className="align-top">
-                        <TableCell className="px-4 py-3 text-center">
+                        <TableCell className="px-4 py-3 text-center w-[5%]">
                           <CollapsibleTrigger asChild>
                             <Button variant="ghost" size="sm" className="h-6 w-6 p-0 group" aria-label="Toggle document details">
                               <ChevronDown className="h-4 w-4 transition-transform group-data-[state=open]:rotate-180" />
                             </Button>
                           </CollapsibleTrigger>
                         </TableCell>
-                        <TableCell className="font-medium px-4 py-3">
-                          <div className="flex items-center space-x-2 overflow-hidden">
+                        <TableCell className="font-medium px-4 py-3 w-[23%]">
+                          <div className="flex items-center space-x-2 overflow-hidden max-w-full">
                             <span 
-                              className="cursor-pointer hover:text-primary transition-colors truncate"
+                              className="cursor-pointer hover:text-primary transition-colors truncate block"
                               onClick={() => setEditingDoc(doc)}
                               title="Click to edit document name"
                             >
@@ -1021,25 +1021,41 @@ export default function DocumentStorage() {
                             )}
                           </div>
                         </TableCell>
-                        <TableCell className="text-sm px-4 py-3 text-left truncate">
-                          {doc.document_type ? (
-                            <span className="capitalize">{doc.document_type.replace('_', ' ')}</span>
-                          ) : (
-                            <span className="text-muted-foreground">-</span>
-                          )}
+                        <TableCell className="text-sm px-4 py-3 text-left w-[10%]">
+                          <div className="truncate">
+                            {doc.document_type ? (
+                              <span className="capitalize">{doc.document_type.replace('_', ' ')}</span>
+                            ) : (
+                              <span className="text-muted-foreground">-</span>
+                            )}
+                          </div>
                         </TableCell>
-                        <TableCell className="text-sm px-4 py-3 truncate">
-                          {doc.vendor_name || <span className="text-muted-foreground">-</span>}
+                        <TableCell className="text-sm px-4 py-3 w-[12%]">
+                          <div className="truncate">
+                            {doc.vendor_name || <span className="text-muted-foreground">-</span>}
+                          </div>
                         </TableCell>
-                        <TableCell className="text-sm font-medium px-4 py-3 whitespace-nowrap">
-                          {doc.amount ? `$${doc.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : <span className="text-muted-foreground">-</span>}
+                        <TableCell className="text-sm font-medium px-4 py-3 w-[10%]">
+                          <div className="whitespace-nowrap overflow-hidden text-ellipsis">
+                            {doc.amount ? `$${doc.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : <span className="text-muted-foreground">-</span>}
+                          </div>
                         </TableCell>
-                        <TableCell className="text-sm px-4 py-3 whitespace-nowrap">
-                          {doc.document_date ? format(new Date(doc.document_date), "MMM dd, yyyy") : <span className="text-muted-foreground">-</span>}
+                        <TableCell className="text-sm px-4 py-3 w-[10%]">
+                          <div className="whitespace-nowrap overflow-hidden text-ellipsis">
+                            {doc.document_date ? format(new Date(doc.document_date), "MMM dd, yyyy") : <span className="text-muted-foreground">-</span>}
+                          </div>
                         </TableCell>
-                        <TableCell className="px-4 py-3 whitespace-nowrap">{formatFileSize((doc as any).file_size || 0)}</TableCell>
-                        <TableCell className="px-4 py-3 whitespace-nowrap">{formatDate(doc.created_at)}</TableCell>
-                        <TableCell className="text-right px-4 py-3">
+                        <TableCell className="px-4 py-3 w-[8%]">
+                          <div className="whitespace-nowrap overflow-hidden text-ellipsis">
+                            {formatFileSize((doc as any).file_size || 0)}
+                          </div>
+                        </TableCell>
+                        <TableCell className="px-4 py-3 w-[10%]">
+                          <div className="whitespace-nowrap overflow-hidden text-ellipsis">
+                            {formatDate(doc.created_at)}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right px-4 py-3 w-[12%]">
                           <div className="flex justify-end space-x-2">
                             {doc.document_type === 'purchase_order' && (
                               <>
