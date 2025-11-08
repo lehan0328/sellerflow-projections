@@ -2982,7 +2982,7 @@ const Dashboard = () => {
             </div>
           </div>
           
-          <div className="p-6 space-y-6 relative origin-top-left scale-75">
+          <div className="p-6 space-y-6 relative">
             {/* Content on top of watermark */}
             <div className="relative z-10">
               {renderSection()}
