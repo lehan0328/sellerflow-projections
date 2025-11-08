@@ -8,7 +8,10 @@ import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ChevronLeft, ChevronRight, Plus, Wallet, CreditCard, Building2, CalendarIcon, TrendingUp, ShoppingBag, AlertTriangle, DollarSign } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import { ChevronLeft, ChevronRight, Plus, Wallet, CreditCard, Building2, CalendarIcon, TrendingUp, ShoppingBag, AlertTriangle, DollarSign, ArrowLeft, Check, AlertCircle, Search } from "lucide-react";
 import { useCreditCards } from "@/hooks/useCreditCards";
 import { useUserSettings } from "@/hooks/useUserSettings";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, addMonths, subMonths, subDays, addDays, startOfWeek, endOfWeek, getDay, startOfDay } from "date-fns";
@@ -75,6 +78,8 @@ interface CashFlowCalendarProps {
   projectedDailyBalances?: Array<{ date: Date; balance: number }>;
   excludeToday?: boolean; // NEW: Whether to exclude today's transactions from projected balance
   safeSpendingLimit?: number; // The calculated safe spending available from useSafeSpending hook
+  allBuyingOpportunities?: Array<{ date: string; balance: number; available_date?: string }>; // NEW: Buying opportunities from safe spending
+  dailyBalances?: Array<{ date: string; balance: number }>; // NEW: Daily balance projections
 }
 
 export const CashFlowCalendar = ({ 
@@ -94,6 +99,8 @@ export const CashFlowCalendar = ({
   projectedDailyBalances = [],
   excludeToday = false, // Default to false (include today's transactions)
   safeSpendingLimit = 0, // Safe spending available to spend
+  allBuyingOpportunities = [], // NEW: Buying opportunities
+  dailyBalances = [], // NEW: Daily balance projections
 }: CashFlowCalendarProps) => {
   const { totalAvailableCredit } = useCreditCards();
   const { chartPreferences, updateChartPreferences } = useUserSettings();
@@ -127,8 +134,9 @@ export const CashFlowCalendar = ({
   
   // Search state
   const [showSearchDialog, setShowSearchDialog] = useState(false);
+  const [searchType, setSearchType] = useState<'amount' | 'date'>('amount');
   const [searchAmount, setSearchAmount] = useState('');
-  const [searchDate, setSearchDate] = useState<Date | undefined>(undefined);
+  const [searchDate, setSearchDate] = useState('');
   const [searchResults, setSearchResults] = useState<{date: string; events: CashFlowEvent[]}[]>([]);
   
   // Tooltip and chart state - MUST be with other hooks

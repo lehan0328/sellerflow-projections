@@ -2416,6 +2416,8 @@ const Dashboard = () => {
                   reserveAmount={reserveAmount}
                   excludeToday={excludeToday}
                   safeSpendingLimit={safeSpendingData?.safe_spending_limit || 0}
+                  allBuyingOpportunities={safeSpendingData?.calculation?.all_buying_opportunities || []}
+                  dailyBalances={safeSpendingData?.calculation?.daily_balances || []}
                 />
               </div>
               <div className="lg:col-span-1 h-full">
