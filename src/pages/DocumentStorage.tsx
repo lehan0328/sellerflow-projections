@@ -992,41 +992,41 @@ export default function DocumentStorage() {
             ) : (
               <Table className="w-full table-fixed">
                 <colgroup>
-                  <col style={{ width: '5%' }} />
-                  <col style={{ width: '23%' }} />
-                  <col style={{ width: '10%' }} />
+                  <col style={{ width: '3%' }} />
+                  <col style={{ width: '22%' }} />
+                  <col style={{ width: '9%' }} />
+                  <col style={{ width: '14%' }} />
+                  <col style={{ width: '9%' }} />
+                  <col style={{ width: '11%' }} />
+                  <col style={{ width: '7%' }} />
                   <col style={{ width: '12%' }} />
-                  <col style={{ width: '10%' }} />
-                  <col style={{ width: '10%' }} />
-                  <col style={{ width: '8%' }} />
-                  <col style={{ width: '10%' }} />
-                  <col style={{ width: '12%' }} />
+                  <col style={{ width: '13%' }} />
                 </colgroup>
                 <TableHeader>
                   <TableRow className="bg-muted border-b hover:bg-muted">
-                    <TableHead className="font-semibold px-4 py-3 text-center"></TableHead>
+                    <TableHead className="font-semibold px-2 py-3 text-center"></TableHead>
                     <TableHead className="font-semibold px-4 py-3 text-left">Name</TableHead>
-                    <TableHead className="font-semibold px-4 py-3 text-left">Type</TableHead>
+                    <TableHead className="font-semibold px-3 py-3 text-left">Type</TableHead>
                     <TableHead className="font-semibold px-4 py-3 text-left">Vendor</TableHead>
-                    <TableHead className="font-semibold px-4 py-3 text-left">Amount</TableHead>
-                    <TableHead className="font-semibold px-4 py-3 text-left">Document Date</TableHead>
-                    <TableHead className="font-semibold px-4 py-3 text-left">Size</TableHead>
-                    <TableHead className="font-semibold px-4 py-3 text-left">Uploaded</TableHead>
-                    <TableHead className="font-semibold px-4 py-3 text-right">Actions</TableHead>
+                    <TableHead className="font-semibold px-3 py-3 text-left">Amount</TableHead>
+                    <TableHead className="font-semibold px-3 py-3 text-left">Document Date</TableHead>
+                    <TableHead className="font-semibold px-3 py-3 text-left">Size</TableHead>
+                    <TableHead className="font-semibold px-3 py-3 text-left">Uploaded</TableHead>
+                    <TableHead className="font-semibold px-3 py-3 text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredDocuments.map((doc) => (
                     <Collapsible key={doc.id}>
                       <TableRow className="align-top">
-                        <TableCell className="px-4 py-3 text-center w-[5%]">
+                        <TableCell className="px-2 py-3 text-center w-[3%]">
                           <CollapsibleTrigger asChild>
                             <Button variant="ghost" size="sm" className="h-6 w-6 p-0 group" aria-label="Toggle document details">
                               <ChevronDown className="h-4 w-4 transition-transform group-data-[state=open]:rotate-180" />
                             </Button>
                           </CollapsibleTrigger>
                         </TableCell>
-                        <TableCell className="font-medium px-4 py-3 w-[23%]">
+                        <TableCell className="font-medium px-4 py-3 w-[22%]">
                           <div className="flex items-center space-x-2 overflow-hidden max-w-full">
                             <span 
                               className="cursor-pointer hover:text-primary transition-colors truncate block"
@@ -1047,7 +1047,7 @@ export default function DocumentStorage() {
                             )}
                           </div>
                         </TableCell>
-                        <TableCell className="text-sm px-4 py-3 text-left w-[10%]">
+                        <TableCell className="text-sm px-3 py-3 text-left w-[9%]">
                           <div className="truncate">
                             {doc.document_type ? (
                               <span className="capitalize">{doc.document_type.replace('_', ' ')}</span>
@@ -1056,32 +1056,32 @@ export default function DocumentStorage() {
                             )}
                           </div>
                         </TableCell>
-                        <TableCell className="text-sm px-4 py-3 w-[12%]">
+                        <TableCell className="text-sm px-4 py-3 w-[14%]">
                           <div className="truncate">
                             {doc.vendor_name || <span className="text-muted-foreground">-</span>}
                           </div>
                         </TableCell>
-                        <TableCell className="text-sm font-medium px-4 py-3 w-[10%]">
+                        <TableCell className="text-sm font-medium px-3 py-3 w-[9%]">
                           <div className="whitespace-nowrap overflow-hidden text-ellipsis">
                             {doc.amount ? `$${doc.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : <span className="text-muted-foreground">-</span>}
                           </div>
                         </TableCell>
-                        <TableCell className="text-sm px-4 py-3 w-[10%]">
+                        <TableCell className="text-sm px-3 py-3 w-[11%]">
                           <div className="whitespace-nowrap overflow-hidden text-ellipsis">
                             {doc.document_date ? format(new Date(doc.document_date), "MMM dd, yyyy") : <span className="text-muted-foreground">-</span>}
                           </div>
                         </TableCell>
-                        <TableCell className="px-4 py-3 w-[8%]">
-                          <div className="whitespace-nowrap overflow-hidden text-ellipsis">
+                        <TableCell className="px-3 py-3 w-[7%]">
+                          <div className="whitespace-nowrap overflow-hidden text-ellipsis text-sm">
                             {formatFileSize((doc as any).file_size || 0)}
                           </div>
                         </TableCell>
-                        <TableCell className="px-4 py-3 w-[10%]">
-                          <div className="whitespace-nowrap overflow-hidden text-ellipsis">
+                        <TableCell className="px-3 py-3 w-[12%]">
+                          <div className="whitespace-nowrap overflow-hidden text-ellipsis text-sm">
                             {formatDate(doc.created_at)}
                           </div>
                         </TableCell>
-                        <TableCell className="text-right px-4 py-3 w-[12%]">
+                        <TableCell className="text-right px-3 py-3 w-[13%]">
                           <div className="flex justify-end space-x-2">
                             {doc.document_type === 'purchase_order' && (
                               <>
