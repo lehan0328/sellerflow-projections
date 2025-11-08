@@ -1571,16 +1571,8 @@ export const CashFlowInsights = memo(({
                     <span className="text-xs font-medium text-muted-foreground">Income</span>
                   </div>
                   <span className="text-2xl font-bold text-emerald-600">
-                    ${dateSearchResults.income.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    ${(dateSearchResults.income + dateSearchResults.forecastedPayouts).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </span>
-                  {dateSearchResults.forecastedPayouts > 0 && (
-                    <div className="mt-2 pt-2 border-t border-emerald-200 dark:border-emerald-800">
-                      <span className="text-xs text-muted-foreground">+ Forecasted Payouts</span>
-                      <div className="text-lg font-semibold text-emerald-600">
-                        ${dateSearchResults.forecastedPayouts.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </div>
-                    </div>
-                  )}
                 </div>
               </div>
 
@@ -1588,12 +1580,12 @@ export const CashFlowInsights = memo(({
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium">Net Change</span>
                   <span className={`text-lg font-bold ${
-                    (dateSearchResults.income - dateSearchResults.expenses) >= 0 
+                    ((dateSearchResults.income + dateSearchResults.forecastedPayouts) - dateSearchResults.expenses) >= 0 
                       ? 'text-green-600' 
                       : 'text-red-600'
                   }`}>
-                    {(dateSearchResults.income - dateSearchResults.expenses) >= 0 ? '+' : ''}
-                    ${(dateSearchResults.income - dateSearchResults.expenses).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    {((dateSearchResults.income + dateSearchResults.forecastedPayouts) - dateSearchResults.expenses) >= 0 ? '+' : ''}
+                    ${((dateSearchResults.income + dateSearchResults.forecastedPayouts) - dateSearchResults.expenses).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </span>
                 </div>
               </div>
