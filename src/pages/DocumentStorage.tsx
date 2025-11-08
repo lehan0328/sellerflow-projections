@@ -83,20 +83,26 @@ export default function DocumentStorage() {
   const { vendors } = useVendors();
 
   // Fetch user's account_id
-  const { data: profile, refetch: refetchProfile } = useQuery({
+  const { data: profile, isLoading: isLoadingProfile, refetch: refetchProfile } = useQuery({
     queryKey: ['profile', user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
+      console.log('[DocumentStorage] Fetching profile for user:', user.id);
       const { data, error } = await supabase
         .from('profiles')
         .select('account_id')
         .eq('user_id', user.id)
         .maybeSingle();
       
-      if (error) throw error;
+      if (error) {
+        console.error('[DocumentStorage] Error fetching profile:', error);
+        throw error;
+      }
+      console.log('[DocumentStorage] Profile loaded:', data);
       return data;
     },
     enabled: !!user?.id,
+    staleTime: 30000, // Cache for 30 seconds to prevent unnecessary refetches
   });
 
   // Fetch documents with metadata
@@ -949,8 +955,28 @@ export default function DocumentStorage() {
                   Try Again
                 </Button>
               </div>
+            ) : isLoadingProfile ? (
+              <div className="text-center py-12 text-muted-foreground">
+                <Loader2 className="h-8 w-8 mx-auto mb-4 animate-spin" />
+                Loading your account...
+              </div>
+            ) : !profile?.account_id ? (
+              <div className="text-center py-12">
+                <div className="text-destructive mb-4">
+                  <FileText className="h-12 w-12 mx-auto mb-2" />
+                  <p className="font-semibold">Account Not Found</p>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Unable to load your account information. Please try refreshing the page.
+                  </p>
+                </div>
+                <Button onClick={() => refetchProfile()} variant="outline">
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Retry
+                </Button>
+              </div>
             ) : isLoading ? (
               <div className="text-center py-12 text-muted-foreground">
+                <Loader2 className="h-8 w-8 mx-auto mb-4 animate-spin" />
                 Loading documents...
               </div>
             ) : filteredDocuments.length === 0 ? (
