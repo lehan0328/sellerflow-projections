@@ -573,7 +573,19 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
           {/* Incoming $ */}
           <div>
             <div className="flex items-center justify-between mb-1">
-              <p className="text-sm font-medium text-muted-foreground">Incoming $</p>
+              <div className="flex items-center gap-2">
+                <p className="text-sm font-medium text-muted-foreground">Incoming $</p>
+                {incomingPayments.length > 0 && (
+                  <Button
+                    variant="link"
+                    size="sm"
+                    onClick={() => setShowIncomingModal(true)}
+                    className="h-6 px-0 text-xs"
+                  >
+                    View all
+                  </Button>
+                )}
+              </div>
               <Select value={incomingTimeRange} onValueChange={setIncomingTimeRange}>
                 <SelectTrigger className="w-28 h-6 text-xs">
                   <SelectValue />
@@ -588,25 +600,27 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
               </Select>
             </div>
             <p className="text-2xl font-bold text-foreground mb-1.5">{formatCurrency(incomingTotal)}</p>
-            <p className="text-sm text-muted-foreground mb-2">
+            <p className="text-sm text-muted-foreground">
               {incomingPayments.length > 0 ? `${incomingPayments.length} Amazon payouts & income` : "No income"}
             </p>
-            {incomingPayments.length > 0 && (
-              <Button
-                variant="link"
-                size="sm"
-                onClick={() => setShowIncomingModal(true)}
-                className="h-6 px-0 text-xs"
-              >
-                View all
-              </Button>
-            )}
           </div>
 
           {/* Upcoming Payments */}
           <div>
             <div className="flex items-center justify-between mb-1">
-              <p className="text-sm font-medium text-muted-foreground">Upcoming Payments</p>
+              <div className="flex items-center gap-2">
+                <p className="text-sm font-medium text-muted-foreground">Upcoming Payments</p>
+                {upcomingPayments.length > 0 && (
+                  <Button
+                    variant="link"
+                    size="sm"
+                    onClick={() => setShowUpcomingModal(true)}
+                    className="h-6 px-0 text-xs"
+                  >
+                    View all
+                  </Button>
+                )}
+              </div>
               <Select value={upcomingTimeRange} onValueChange={setUpcomingTimeRange}>
                 <SelectTrigger className="w-28 h-6 text-xs">
                   <SelectValue />
@@ -621,19 +635,9 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
               </Select>
             </div>
             <p className="text-2xl font-bold text-foreground mb-1.5">{formatCurrency(upcomingTotal)}</p>
-            <p className="text-sm text-muted-foreground mb-2">
+            <p className="text-sm text-muted-foreground">
               {upcomingPayments.length > 0 ? `${upcomingPayments.length} payments due` : "No payments"}
             </p>
-            {upcomingPayments.length > 0 && (
-              <Button
-                variant="link"
-                size="sm"
-                onClick={() => setShowUpcomingModal(true)}
-                className="h-6 px-0 text-xs"
-              >
-                View all
-              </Button>
-            )}
           </div>
         </div>
 
