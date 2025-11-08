@@ -135,9 +135,6 @@ export function DashboardHeader({
           <h1 className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent">
             {getUserDisplayName()}
           </h1>
-          <p className="text-muted-foreground mt-2">
-            Real-time insights and financial management
-          </p>
         </div>
       </div>
     </div>;
