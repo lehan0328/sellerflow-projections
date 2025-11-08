@@ -518,22 +518,29 @@ export const CashFlowInsights = memo(({
       const isForecastedPayout = payout.status === 'forecasted';
       
       if (isConfirmedPayout || isForecastedPayout) {
-        // Calculate arrival date from settlement_end_date + 1 day
-        const rawData = (payout as any).raw_settlement_data;
-        const settlementEndStr = rawData?.FinancialEventGroupEnd || rawData?.settlement_end_date;
+        let arrivalDateStr: string | null = null;
         
-        if (settlementEndStr) {
-          const arrivalDate = new Date(settlementEndStr);
-          arrivalDate.setDate(arrivalDate.getDate() + 1);
-          const arrivalDateStr = arrivalDate.toISOString().split('T')[0];
+        if (isForecastedPayout) {
+          // Forecasted payouts use payout_date directly
+          arrivalDateStr = payout.payout_date;
+        } else {
+          // Confirmed payouts calculate from settlement_end_date + 1 day
+          const rawData = (payout as any).raw_settlement_data;
+          const settlementEndStr = rawData?.FinancialEventGroupEnd || rawData?.settlement_end_date;
           
-          // Add to appropriate category based on status
-          if (arrivalDateStr === dateStr) {
-            if (isForecastedPayout) {
-              dayForecastedPayouts += Number(payout.total_amount);
-            } else {
-              dayIncome += Number(payout.total_amount);
-            }
+          if (settlementEndStr) {
+            const arrivalDate = new Date(settlementEndStr);
+            arrivalDate.setDate(arrivalDate.getDate() + 1);
+            arrivalDateStr = arrivalDate.toISOString().split('T')[0];
+          }
+        }
+        
+        // Add to appropriate category based on status
+        if (arrivalDateStr === dateStr) {
+          if (isForecastedPayout) {
+            dayForecastedPayouts += Number(payout.total_amount);
+          } else {
+            dayIncome += Number(payout.total_amount);
           }
         }
       }
