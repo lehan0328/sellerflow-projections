@@ -404,7 +404,7 @@ export default function Analytics() {
       month,
       revenue: data.revenue,
       projected: data.projected,
-      otherIncome: data.revenue + data.projected + data.otherIncome // Total of all income sources
+      otherIncome: data.otherIncome
     }));
   }, [amazonPayouts, incomeItems, dbTransactions, recurringExpenses]);
 
