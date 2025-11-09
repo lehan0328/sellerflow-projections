@@ -997,7 +997,29 @@ export default function Analytics() {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="month" />
                   <YAxis />
-                  <Tooltip formatter={value => formatCurrency(Number(value))} />
+                  <Tooltip 
+                    content={({ active, payload, label }) => {
+                      if (active && payload && payload.length) {
+                        const total = payload.reduce((sum, entry) => sum + (Number(entry.value) || 0), 0);
+                        return (
+                          <div className="bg-background border border-border rounded-lg shadow-lg p-3">
+                            <p className="font-medium text-foreground mb-2">{label}</p>
+                            {payload.map((entry, index) => (
+                              <div key={index} className="flex justify-between gap-4 text-sm">
+                                <span style={{ color: entry.color }}>{entry.name}:</span>
+                                <span className="font-medium">{formatCurrency(Number(entry.value))}</span>
+                              </div>
+                            ))}
+                            <div className="flex justify-between gap-4 text-sm mt-2 pt-2 border-t border-border">
+                              <span className="font-semibold">Total:</span>
+                              <span className="font-semibold">{formatCurrency(total)}</span>
+                            </div>
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
                   <Legend />
                   <Line type="monotone" dataKey="revenue" name="Amazon Confirmed" stroke="#10b981" strokeWidth={2} />
                   <Line type="monotone" dataKey="projected" name="Amazon Projected" stroke="#8b5cf6" strokeWidth={2} strokeDasharray="5 5" />
