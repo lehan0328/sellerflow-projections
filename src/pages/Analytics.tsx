@@ -18,6 +18,8 @@ import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Cart
 import { useMemo, useState, useEffect } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { format } from "date-fns";
 import { cn, formatCurrency } from "@/lib/utils";
 export default function Analytics() {
@@ -116,6 +118,7 @@ export default function Analytics() {
   const [incomeDateRange, setIncomeDateRange] = useState<string>("this-month");
   const [customStartDate, setCustomStartDate] = useState<Date>(defaultStartDate);
   const [customEndDate, setCustomEndDate] = useState<Date>(defaultEndDate);
+  const [includeAdditionalIncome, setIncludeAdditionalIncome] = useState<boolean>(false);
 
   // Helper to get date range
   const getDateRange = (rangeType: string) => {
@@ -313,7 +316,7 @@ export default function Analytics() {
     };
   }, [bankTransactions, dbTransactions, incomeItems, vendors, creditCards, amazonPayouts, accounts, amazonRevenue, recurringExpenses]);
 
-  // Revenue over time (last 6 months) - AMAZON PAYOUTS ONLY
+  // Revenue over time (last 6 months) - AMAZON PAYOUTS with optional additional income
   const revenueData = useMemo(() => {
     const monthlyData: Record<string, { revenue: number; projected: number }> = {};
     const now = new Date();
@@ -348,12 +351,69 @@ export default function Analytics() {
       }
     });
 
+    // Optionally include additional income and recurring income
+    if (includeAdditionalIncome) {
+      // Add non-Amazon income items
+      incomeItems.forEach(item => {
+        if (item.source?.toLowerCase() !== 'amazon') {
+          const paymentDate = new Date(item.paymentDate);
+          if (paymentDate >= sixMonthsAgo) {
+            const key = paymentDate.toLocaleDateString('en-US', {
+              month: 'short',
+              year: 'numeric'
+            });
+            if (monthlyData.hasOwnProperty(key)) {
+              monthlyData[key].revenue += item.amount;
+              monthlyData[key].projected += item.amount;
+            }
+          }
+        }
+      });
+
+      // Add completed sales orders
+      dbTransactions.forEach(tx => {
+        if ((tx.type === 'sales_order' || tx.type === 'customer_payment') && tx.status === 'completed') {
+          const date = new Date(tx.transactionDate);
+          if (date >= sixMonthsAgo) {
+            const key = date.toLocaleDateString('en-US', {
+              month: 'short',
+              year: 'numeric'
+            });
+            if (monthlyData.hasOwnProperty(key)) {
+              monthlyData[key].revenue += tx.amount;
+              monthlyData[key].projected += tx.amount;
+            }
+          }
+        }
+      });
+
+      // Add recurring income for each month
+      const startOfMonth = (year: number, month: number) => new Date(year, month, 1);
+      const endOfMonth = (year: number, month: number) => new Date(year, month + 1, 0, 23, 59, 59, 999);
+      
+      Object.keys(monthlyData).forEach(monthKey => {
+        const monthDate = new Date(monthKey);
+        const monthStart = startOfMonth(monthDate.getFullYear(), monthDate.getMonth());
+        const monthEnd = endOfMonth(monthDate.getFullYear(), monthDate.getMonth());
+        
+        const recurringIncomeForMonth = recurringExpenses
+          .filter(e => e.is_active && e.type === 'income')
+          .reduce((sum, e) => {
+            const occurrences = generateRecurringDates(e as any, monthStart, monthEnd);
+            return sum + e.amount * occurrences.length;
+          }, 0);
+        
+        monthlyData[monthKey].revenue += recurringIncomeForMonth;
+        monthlyData[monthKey].projected += recurringIncomeForMonth;
+      });
+    }
+
     return Object.entries(monthlyData).map(([month, data]) => ({
       month,
       revenue: data.revenue,
       projected: data.projected
     }));
-  }, [amazonPayouts]);
+  }, [amazonPayouts, includeAdditionalIncome, incomeItems, dbTransactions, recurringExpenses]);
 
   // Income breakdown by source (filtered by date range)
   const incomeBySource = useMemo(() => {
@@ -936,7 +996,19 @@ export default function Analytics() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Monthly Amazon Payout Trend</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle>Monthly Amazon Payout Trend</CardTitle>
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="include-additional-income" className="text-sm font-normal cursor-pointer">
+                    Include Other Income
+                  </Label>
+                  <Switch
+                    id="include-additional-income"
+                    checked={includeAdditionalIncome}
+                    onCheckedChange={setIncludeAdditionalIncome}
+                  />
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={400}>
