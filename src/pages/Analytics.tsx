@@ -311,7 +311,7 @@ export default function Analytics() {
 
   // Revenue over time (last 6 months) - includes Amazon payouts and recurring income
   const revenueData = useMemo(() => {
-    const monthlyData: Record<string, number> = {};
+    const monthlyData: Record<string, { revenue: number; projected: number }> = {};
     const now = new Date();
     const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
 
@@ -322,7 +322,7 @@ export default function Analytics() {
         month: 'short',
         year: 'numeric'
       });
-      monthlyData[key] = 0;
+      monthlyData[key] = { revenue: 0, projected: 0 };
     }
 
     // Aggregate income from last 6 months - filter by payment date
@@ -334,21 +334,27 @@ export default function Analytics() {
           year: 'numeric'
         });
         if (monthlyData.hasOwnProperty(key)) {
-          monthlyData[key] += item.amount;
+          monthlyData[key].revenue += item.amount;
+          monthlyData[key].projected += item.amount;
         }
       }
     });
 
-    // Aggregate Amazon payouts from last 6 months (confirmed only)
+    // Aggregate Amazon payouts from last 6 months (confirmed and forecasted)
     amazonPayouts.forEach(payout => {
       const date = new Date(payout.payout_date);
-      if (payout.status === 'confirmed' && date >= sixMonthsAgo) {
+      if (date >= sixMonthsAgo) {
         const key = date.toLocaleDateString('en-US', {
           month: 'short',
           year: 'numeric'
         });
         if (monthlyData.hasOwnProperty(key)) {
-          monthlyData[key] += payout.total_amount || 0;
+          if (payout.status === 'confirmed') {
+            monthlyData[key].revenue += payout.total_amount || 0;
+            monthlyData[key].projected += payout.total_amount || 0;
+          } else if (payout.status === 'forecasted') {
+            monthlyData[key].projected += payout.total_amount || 0;
+          }
         }
       }
     });
@@ -363,14 +369,16 @@ export default function Analytics() {
             year: 'numeric'
           });
           if (monthlyData.hasOwnProperty(key)) {
-            monthlyData[key] += tx.amount;
+            monthlyData[key].revenue += tx.amount;
+            monthlyData[key].projected += tx.amount;
           }
         }
       }
     });
-    return Object.entries(monthlyData).map(([month, revenue]) => ({
+    return Object.entries(monthlyData).map(([month, data]) => ({
       month,
-      revenue
+      revenue: data.revenue,
+      projected: data.projected
     }));
   }, [incomeItems, amazonPayouts, dbTransactions]);
 
@@ -964,7 +972,8 @@ export default function Analytics() {
                   <YAxis />
                   <Tooltip formatter={value => formatCurrency(Number(value))} />
                   <Legend />
-                  <Line type="monotone" dataKey="revenue" stroke="#10b981" strokeWidth={2} />
+                  <Line type="monotone" dataKey="revenue" name="Confirmed" stroke="#10b981" strokeWidth={2} />
+                  <Line type="monotone" dataKey="projected" name="Projected" stroke="#8b5cf6" strokeWidth={2} strokeDasharray="5 5" />
                 </LineChart>
               </ResponsiveContainer>
             </CardContent>
