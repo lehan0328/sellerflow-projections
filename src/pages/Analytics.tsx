@@ -1031,6 +1031,7 @@ export default function Analytics() {
           <Card>
             <CardHeader>
               <CardTitle>Payment Status Overview</CardTitle>
+              <p className="text-sm text-muted-foreground">This month only</p>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
