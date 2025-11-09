@@ -1,8 +1,6 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { CalendarIcon, Plus, Calendar as CalendarIconLucide, TrendingUp } from "lucide-react";
 import { format, subDays, addDays, eachDayOfInterval } from "date-fns";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Brush } from 'recharts';
@@ -17,6 +15,7 @@ interface CashFlowEvent {
   creditCard?: string;
   poName?: string;
   date: Date;
+  balanceImpactDate?: Date;
 }
 
 interface CashFlowChartProps {
@@ -27,10 +26,10 @@ interface CashFlowChartProps {
   reserveAmount?: number;
 }
 
-export const CashFlowChart = ({ 
-  onAddPurchaseOrder, 
-  events: propEvents, 
-  viewType, 
+export const CashFlowChart = ({
+  onAddPurchaseOrder,
+  events: propEvents,
+  viewType,
   onViewTypeChange,
   reserveAmount = 0
 }: CashFlowChartProps) => {
@@ -91,26 +90,27 @@ export const CashFlowChart = ({
     let runningTotal = totalAvailableCash;
     let cumulativeInflow = 0;
     let cumulativeOutflow = 0;
-    
+
     return days.map(day => {
-      const dayEvents = events.filter(event => 
-        format(event.date, 'yyyy-MM-dd') === format(day, 'yyyy-MM-dd')
-      );
-      
+      const dayEvents = events.filter(event => {
+        const eventDate = event.balanceImpactDate || event.date;
+        return format(eventDate, 'yyyy-MM-dd') === format(day, 'yyyy-MM-dd');
+      });
+
       const dailyInflow = dayEvents.filter(e => e.type === 'inflow').reduce((sum, e) => sum + e.amount, 0);
       const dailyOutflow = dayEvents.filter(e => e.type !== 'inflow').reduce((sum, e) => sum + e.amount, 0);
       const dailyChange = dailyInflow - dailyOutflow;
-      
+
       cumulativeInflow += dailyInflow;
       cumulativeOutflow += dailyOutflow;
       runningTotal += dailyChange;
-      
+
       // Group events by type for detailed breakdown
       const inflowEvents = dayEvents.filter(e => e.type === 'inflow');
       const purchaseOrderEvents = dayEvents.filter(e => e.type === 'purchase-order');
       const creditPaymentEvents = dayEvents.filter(e => e.type === 'credit-payment');
       const outflowEvents = dayEvents.filter(e => e.type === 'outflow');
-      
+
       return {
         date: format(day, 'MMM dd, yyyy'),
         fullDate: day,
@@ -131,7 +131,7 @@ export const CashFlowChart = ({
   };
 
   const chartData = generateChartData();
-  
+
   // Calculate max value with 20% padding for better visualization
   const maxCashFlow = Math.max(...chartData.map(d => d.cashFlow));
   const chartMaxValue = Math.ceil(maxCashFlow * 1.2);
@@ -183,7 +183,7 @@ export const CashFlowChart = ({
               </Button>
             </div>
           </div>
-          
+
           <div className="flex items-center space-x-4">
             <Button size="sm" onClick={onAddPurchaseOrder} className="bg-gradient-primary">
               <Plus className="h-4 w-4 mr-2" />
@@ -200,20 +200,20 @@ export const CashFlowChart = ({
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis 
-                    dataKey="date" 
+                  <XAxis
+                    dataKey="date"
                     tick={{ fontSize: 11 }}
                     angle={-45}
                     textAnchor="end"
                     height={80}
                     interval={Math.floor(chartData.length / 10)}
                   />
-                  <YAxis 
+                  <YAxis
                     tick={{ fontSize: 12 }}
                     tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
                     domain={[0, chartMaxValue]}
                   />
-                  <ChartTooltip 
+                  <ChartTooltip
                     content={<ChartTooltipContent />}
                     formatter={(value: number, name: string) => [
                       `$${value.toLocaleString()}`,
@@ -225,7 +225,7 @@ export const CashFlowChart = ({
                         return (
                           <div className="space-y-2 min-w-[280px]">
                             <p className="font-semibold text-base border-b pb-2">{label}</p>
-                            
+
                             {/* Balance Section */}
                             <div className="space-y-1">
                               <p className="font-bold text-base">
@@ -292,10 +292,10 @@ export const CashFlowChart = ({
                       return label;
                     }}
                   />
-                  <Line 
-                    type="monotone" 
-                    dataKey="cashFlow" 
-                    stroke="hsl(var(--primary))" 
+                  <Line
+                    type="monotone"
+                    dataKey="cashFlow"
+                    stroke="hsl(var(--primary))"
                     strokeWidth={2}
                     dot={{ r: 4 }}
                     activeDot={{ r: 6 }}
@@ -322,7 +322,7 @@ export const CashFlowChart = ({
               </ResponsiveContainer>
             </ChartContainer>
           </div>
-          
+
           <div className="flex items-center justify-between mt-6 pt-4 border-t">
             <div className="flex items-center space-x-4 text-sm">
               <div className="flex items-center space-x-2">
@@ -334,7 +334,7 @@ export const CashFlowChart = ({
                 <span>Outflows</span>
               </div>
             </div>
-            
+
             <div className="text-sm text-muted-foreground">
               Period Net: <span className="font-semibold text-foreground">
                 +${chartData.reduce((sum, day) => sum + day.dailyChange, 0).toLocaleString()}
