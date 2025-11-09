@@ -198,9 +198,13 @@ export default function Analytics() {
     }).reduce((sum, tx) => sum + tx.amount, 0);
 
     // Total inflow from income items (received) - MTD
+    // Exclude Amazon source income since it's already counted in amazonRevenueFiltered
     const incomeInflow = incomeItems.filter(i => {
       const paymentDate = new Date(i.paymentDate);
-      return i.status === 'received' && paymentDate >= startOfMonth && paymentDate <= now;
+      return i.status === 'received' && 
+             paymentDate >= startOfMonth && 
+             paymentDate <= now &&
+             i.source?.toLowerCase() !== 'amazon'; // Exclude Amazon to avoid double-counting
     }).reduce((sum, i) => sum + i.amount, 0);
 
     // Amazon payouts (confirmed only, NET after fees) - MTD
@@ -326,7 +330,11 @@ export default function Analytics() {
     }
 
     // Aggregate income from last 6 months - filter by payment date
+    // Exclude Amazon source income since it's already counted in amazon_payouts
     incomeItems.forEach(item => {
+      // Skip Amazon income to avoid double-counting with amazon_payouts
+      if (item.source?.toLowerCase() === 'amazon') return;
+      
       const paymentDate = new Date(item.paymentDate);
       if (paymentDate >= sixMonthsAgo) {
         const key = paymentDate.toLocaleDateString('en-US', {
@@ -395,13 +403,14 @@ export default function Analytics() {
     };
 
     // Income items filtered by payment date
+    // Exclude Amazon source income since it's already counted from amazon_payouts table
     incomeItems.forEach(item => {
       const paymentDate = new Date(item.paymentDate);
       if (paymentDate >= start && paymentDate <= end) {
         if (item.isRecurring) {
           sourceData['Recurring Income'] += item.amount;
-        } else if (item.source === 'Amazon') {
-          sourceData['Amazon Payouts'] += item.amount;
+        } else if (item.source?.toLowerCase() === 'amazon') {
+          // Skip Amazon - it's counted from amazon_payouts to avoid duplication
         } else if (item.category === 'Sales' || item.category === 'Sales Orders' || item.category === 'Customer Payments') {
           // Skip - these will be counted from dbTransactions to avoid duplication
         } else if (item.category) {
