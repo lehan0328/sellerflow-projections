@@ -201,10 +201,7 @@ export default function Analytics() {
     // Exclude Amazon source income since it's already counted in amazonRevenueFiltered
     const incomeInflow = incomeItems.filter(i => {
       const paymentDate = new Date(i.paymentDate);
-      return i.status === 'received' && 
-             paymentDate >= startOfMonth && 
-             paymentDate <= now &&
-             i.source?.toLowerCase() !== 'amazon'; // Exclude Amazon to avoid double-counting
+      return i.status === 'received' && paymentDate >= startOfMonth && paymentDate <= now && i.source?.toLowerCase() !== 'amazon'; // Exclude Amazon to avoid double-counting
     }).reduce((sum, i) => sum + i.amount, 0);
 
     // Amazon payouts (confirmed only, NET after fees) - MTD
@@ -315,7 +312,11 @@ export default function Analytics() {
 
   // Revenue over time (last 6 months + next 2 months) - AMAZON PAYOUTS + separate additional income line
   const revenueData = useMemo(() => {
-    const monthlyData: Record<string, { revenue: number; projected: number; otherIncome: number }> = {};
+    const monthlyData: Record<string, {
+      revenue: number;
+      projected: number;
+      otherIncome: number;
+    }> = {};
     const now = new Date();
     const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
     const twoMonthsAhead = new Date(now.getFullYear(), now.getMonth() + 2, 0);
@@ -327,7 +328,11 @@ export default function Analytics() {
         month: 'short',
         year: 'numeric'
       });
-      monthlyData[key] = { revenue: 0, projected: 0, otherIncome: 0 };
+      monthlyData[key] = {
+        revenue: 0,
+        projected: 0,
+        otherIncome: 0
+      };
     }
 
     // Aggregate Amazon payouts (confirmed and forecasted)
@@ -384,22 +389,16 @@ export default function Analytics() {
     // Add recurring income for each month to otherIncome line
     const startOfMonth = (year: number, month: number) => new Date(year, month, 1);
     const endOfMonth = (year: number, month: number) => new Date(year, month + 1, 0, 23, 59, 59, 999);
-    
     Object.keys(monthlyData).forEach(monthKey => {
       const monthDate = new Date(monthKey);
       const monthStart = startOfMonth(monthDate.getFullYear(), monthDate.getMonth());
       const monthEnd = endOfMonth(monthDate.getFullYear(), monthDate.getMonth());
-      
-      const recurringIncomeForMonth = recurringExpenses
-        .filter(e => e.is_active && e.type === 'income')
-        .reduce((sum, e) => {
-          const occurrences = generateRecurringDates(e as any, monthStart, monthEnd);
-          return sum + e.amount * occurrences.length;
-        }, 0);
-      
+      const recurringIncomeForMonth = recurringExpenses.filter(e => e.is_active && e.type === 'income').reduce((sum, e) => {
+        const occurrences = generateRecurringDates(e as any, monthStart, monthEnd);
+        return sum + e.amount * occurrences.length;
+      }, 0);
       monthlyData[monthKey].otherIncome += recurringIncomeForMonth;
     });
-
     return Object.entries(monthlyData).map(([month, data]) => ({
       month,
       revenue: data.revenue,
@@ -989,7 +988,7 @@ export default function Analytics() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Monthly Amazon Payout Trend</CardTitle>
+              <CardTitle>Monthly Income Trend</CardTitle>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={400}>
@@ -997,29 +996,29 @@ export default function Analytics() {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="month" />
                   <YAxis />
-                  <Tooltip 
-                    content={({ active, payload, label }) => {
-                      if (active && payload && payload.length) {
-                        const total = payload.reduce((sum, entry) => sum + (Number(entry.value) || 0), 0);
-                        return (
-                          <div className="bg-background border border-border rounded-lg shadow-lg p-3">
+                  <Tooltip content={({
+                active,
+                payload,
+                label
+              }) => {
+                if (active && payload && payload.length) {
+                  const total = payload.reduce((sum, entry) => sum + (Number(entry.value) || 0), 0);
+                  return <div className="bg-background border border-border rounded-lg shadow-lg p-3">
                             <p className="font-medium text-foreground mb-2">{label}</p>
-                            {payload.map((entry, index) => (
-                              <div key={index} className="flex justify-between gap-4 text-sm">
-                                <span style={{ color: entry.color }}>{entry.name}:</span>
+                            {payload.map((entry, index) => <div key={index} className="flex justify-between gap-4 text-sm">
+                                <span style={{
+                        color: entry.color
+                      }}>{entry.name}:</span>
                                 <span className="font-medium">{formatCurrency(Number(entry.value))}</span>
-                              </div>
-                            ))}
+                              </div>)}
                             <div className="flex justify-between gap-4 text-sm mt-2 pt-2 border-t border-border">
                               <span className="font-semibold">Total:</span>
                               <span className="font-semibold">{formatCurrency(total)}</span>
                             </div>
-                          </div>
-                        );
-                      }
-                      return null;
-                    }}
-                  />
+                          </div>;
+                }
+                return null;
+              }} />
                   <Legend />
                   <Line type="monotone" dataKey="revenue" name="Amazon Confirmed" stroke="#10b981" strokeWidth={2} />
                   <Line type="monotone" dataKey="projected" name="Amazon Projected" stroke="#8b5cf6" strokeWidth={2} strokeDasharray="5 5" />
