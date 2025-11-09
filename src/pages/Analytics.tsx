@@ -313,7 +313,7 @@ export default function Analytics() {
     };
   }, [bankTransactions, dbTransactions, incomeItems, vendors, creditCards, amazonPayouts, accounts, amazonRevenue, recurringExpenses]);
 
-  // Revenue over time (last 6 months) - includes Amazon payouts and recurring income
+  // Revenue over time (last 6 months) - AMAZON PAYOUTS ONLY
   const revenueData = useMemo(() => {
     const monthlyData: Record<string, { revenue: number; projected: number }> = {};
     const now = new Date();
@@ -329,26 +329,7 @@ export default function Analytics() {
       monthlyData[key] = { revenue: 0, projected: 0 };
     }
 
-    // Aggregate income from last 6 months - filter by payment date
-    // Exclude Amazon source income since it's already counted in amazon_payouts
-    incomeItems.forEach(item => {
-      // Skip Amazon income to avoid double-counting with amazon_payouts
-      if (item.source?.toLowerCase() === 'amazon') return;
-      
-      const paymentDate = new Date(item.paymentDate);
-      if (paymentDate >= sixMonthsAgo) {
-        const key = paymentDate.toLocaleDateString('en-US', {
-          month: 'short',
-          year: 'numeric'
-        });
-        if (monthlyData.hasOwnProperty(key)) {
-          monthlyData[key].revenue += item.amount;
-          monthlyData[key].projected += item.amount;
-        }
-      }
-    });
-
-    // Aggregate Amazon payouts from last 6 months (confirmed and forecasted)
+    // ONLY aggregate Amazon payouts (confirmed and forecasted)
     amazonPayouts.forEach(payout => {
       const date = new Date(payout.payout_date);
       if (date >= sixMonthsAgo) {
@@ -367,28 +348,12 @@ export default function Analytics() {
       }
     });
 
-    // Aggregate completed sales orders from last 6 months
-    dbTransactions.forEach(tx => {
-      if ((tx.type === 'sales_order' || tx.type === 'customer_payment') && tx.status === 'completed') {
-        const date = new Date(tx.transactionDate);
-        if (date >= sixMonthsAgo) {
-          const key = date.toLocaleDateString('en-US', {
-            month: 'short',
-            year: 'numeric'
-          });
-          if (monthlyData.hasOwnProperty(key)) {
-            monthlyData[key].revenue += tx.amount;
-            monthlyData[key].projected += tx.amount;
-          }
-        }
-      }
-    });
     return Object.entries(monthlyData).map(([month, data]) => ({
       month,
       revenue: data.revenue,
       projected: data.projected
     }));
-  }, [incomeItems, amazonPayouts, dbTransactions]);
+  }, [amazonPayouts]);
 
   // Income breakdown by source (filtered by date range)
   const incomeBySource = useMemo(() => {
@@ -971,7 +936,7 @@ export default function Analytics() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Monthly Payout Trend</CardTitle>
+              <CardTitle>Monthly Amazon Payout Trend</CardTitle>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={400}>
