@@ -584,8 +584,8 @@ export default function Analytics() {
     }> = {};
     const now = new Date();
 
-    // Initialize last 6 months
-    for (let i = 5; i >= 0; i--) {
+    // Initialize last 6 months + next 2 months (8 months total)
+    for (let i = 5; i >= -2; i--) {
       const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const key = date.toLocaleDateString('en-US', {
         month: 'short'
@@ -633,9 +633,9 @@ export default function Analytics() {
       }
     });
 
-    // Add recurring income for each month
-    Object.keys(monthlyData).forEach(monthKey => {
-      const monthDate = new Date(now.getFullYear(), now.getMonth() - (5 - Object.keys(monthlyData).indexOf(monthKey)), 1);
+    // Add recurring income for each month (including future months)
+    Object.keys(monthlyData).forEach((monthKey, index) => {
+      const monthDate = new Date(now.getFullYear(), now.getMonth() - (5 - index), 1);
       const monthStart = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1);
       const monthEnd = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0);
       const recurringIncome = recurringExpenses.filter(r => r.type === 'income' && r.is_active).reduce((sum, r) => {
@@ -671,9 +671,9 @@ export default function Analytics() {
       }
     });
 
-    // Add recurring expenses for each month
-    Object.keys(monthlyData).forEach(monthKey => {
-      const monthDate = new Date(now.getFullYear(), now.getMonth() - (5 - Object.keys(monthlyData).indexOf(monthKey)), 1);
+    // Add recurring expenses for each month (including future months)
+    Object.keys(monthlyData).forEach((monthKey, index) => {
+      const monthDate = new Date(now.getFullYear(), now.getMonth() - (5 - index), 1);
       const monthStart = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1);
       const monthEnd = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0);
       const recurringExpense = recurringExpenses.filter(r => r.type === 'expense' && r.is_active).reduce((sum, r) => {
@@ -1140,7 +1140,7 @@ export default function Analytics() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Income vs Expenses (Last 6 Months)</CardTitle>
+              <CardTitle>Income vs Expenses (Last 6 Months + Next 2 Months Projected)</CardTitle>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={400}>
@@ -1168,7 +1168,7 @@ export default function Analytics() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Net Cash Flow Trend</CardTitle>
+              <CardTitle>Net Cash Flow Trend (Last 6 Months + Next 2 Months Projected)</CardTitle>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>
