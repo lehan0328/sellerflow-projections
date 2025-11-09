@@ -861,7 +861,16 @@ export default function Analytics() {
                 }) => `${name} ${(percent * 100).toFixed(0)}%`} outerRadius={80} fill="#8884d8" dataKey="value">
                       {incomeBySource.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
                     </Pie>
-                    <Tooltip formatter={value => formatCurrency(Number(value))} />
+                    <Tooltip 
+                      formatter={value => formatCurrency(Number(value))}
+                      contentStyle={{
+                        backgroundColor: 'hsl(var(--background))',
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '0.5rem',
+                        color: 'hsl(var(--foreground))'
+                      }}
+                      labelStyle={{ color: 'hsl(var(--foreground))' }}
+                    />
                   </PieChart>
                 </ResponsiveContainer>
                 
@@ -910,7 +919,16 @@ export default function Analytics() {
                 }) => `${name} ${(percent * 100).toFixed(0)}%`} outerRadius={80} fill="#8884d8" dataKey="value">
                       {vendorCategoryData.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
                     </Pie>
-                    <Tooltip formatter={value => formatCurrency(Number(value))} />
+                    <Tooltip 
+                      formatter={value => formatCurrency(Number(value))}
+                      contentStyle={{
+                        backgroundColor: 'hsl(var(--background))',
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '0.5rem',
+                        color: 'hsl(var(--foreground))'
+                      }}
+                      labelStyle={{ color: 'hsl(var(--foreground))' }}
+                    />
                   </PieChart>
                 </ResponsiveContainer>
                 
@@ -966,7 +984,16 @@ export default function Analytics() {
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis type="number" />
                     <YAxis dataKey="name" type="category" width={150} />
-                    <Tooltip formatter={value => formatCurrency(Number(value))} />
+                    <Tooltip 
+                      formatter={value => formatCurrency(Number(value))}
+                      contentStyle={{
+                        backgroundColor: 'hsl(var(--background))',
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '0.5rem',
+                        color: 'hsl(var(--foreground))'
+                      }}
+                      labelStyle={{ color: 'hsl(var(--foreground))' }}
+                    />
                     <Bar dataKey="amount" fill="#8b5cf6" />
                   </BarChart>
                 </ResponsiveContainer> : <div className="space-y-2">
@@ -1097,7 +1124,16 @@ export default function Analytics() {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="month" />
                   <YAxis />
-                  <Tooltip formatter={value => formatCurrency(Number(value))} />
+                  <Tooltip 
+                    formatter={value => formatCurrency(Number(value))}
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--background))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '0.5rem',
+                      color: 'hsl(var(--foreground))'
+                    }}
+                    labelStyle={{ color: 'hsl(var(--foreground))' }}
+                  />
                   <Legend />
                   <Area type="monotone" dataKey="income" stackId="1" stroke="#10b981" fill="#10b981" fillOpacity={0.6} />
                   <Area type="monotone" dataKey="expenses" stackId="2" stroke="#ef4444" fill="#ef4444" fillOpacity={0.6} />
@@ -1116,7 +1152,16 @@ export default function Analytics() {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="month" />
                   <YAxis />
-                  <Tooltip formatter={value => formatCurrency(Number(value))} />
+                  <Tooltip 
+                    formatter={value => formatCurrency(Number(value))}
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--background))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '0.5rem',
+                      color: 'hsl(var(--foreground))'
+                    }}
+                    labelStyle={{ color: 'hsl(var(--foreground))' }}
+                  />
                   <Bar dataKey="net" fill="#8b5cf6">
                     {cashFlowData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.net >= 0 ? '#10b981' : '#ef4444'} />)}
                   </Bar>
