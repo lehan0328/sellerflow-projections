@@ -200,9 +200,6 @@ export const CashFlowCalendar = ({
     setForecastColor(chartPreferences.forecastColor);
   }, [chartPreferences]);
 
-  // Total available cash baseline comes from Overview (displayCash)
-  const totalAvailableCash = totalCash;
-
   // Account start date (inclusive)
   const accountStartDate = new Date('2025-09-29');
   accountStartDate.setHours(0, 0, 0, 0);
@@ -263,172 +260,7 @@ export const CashFlowCalendar = ({
   const is6Rows = weeksInView > 5;
   const gridRowsClass = is6Rows ? 'grid-rows-6' : 'grid-rows-5';
   const cellHeightClass = is6Rows ? 'h-[70px]' : 'h-[85px]';
-  const getEventsForDay = (date: Date) => {
-    return events.filter(event => {
-      // Use balanceImpactDate if available (for forecasted payouts), otherwise use date
-      const impactDate = event.balanceImpactDate || event.date;
-      return format(impactDate, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd');
-    });
-  };
-  const getDayBalance = (date: Date) => {
-    const dayEvents = getEventsForDay(date);
-    return dayEvents.reduce((total, event) => {
-      return total + (event.type === 'inflow' ? event.amount : -event.amount);
-    }, 0);
-  };
 
-  // Get pending income - only show on TODAY if not yet received
-  const getPendingIncomeForToday = (date: Date) => {
-    const checkDate = startOfDay(new Date(date));
-    const today = startOfDay(new Date());
-
-    // Only show pending on today
-    if (checkDate.getTime() !== today.getTime()) return 0;
-
-    // Get pending from regular income items
-    const regularPending = incomeItems.filter(income => {
-      if (income.status === 'received') return false;
-      const incomeDate = startOfDay(new Date(income.paymentDate));
-      // Only show pending if due date is today or earlier (past/current, not future)
-      return incomeDate <= today;
-    }).reduce((sum, income) => sum + income.amount, 0);
-
-    // Get recurring income events that are due today or earlier
-    const recurringPending = events.filter(event => {
-      if (!event.id.startsWith('recurring-')) return false;
-      if (event.type !== 'inflow') return false;
-      const eventDate = startOfDay(new Date(event.date));
-      // Only include if due date is today or earlier
-      return eventDate <= today;
-    }).reduce((sum, event) => sum + event.amount, 0);
-    return regularPending + recurringPending;
-  };
-
-  // Get overdue income - only show on TODAY
-  const getOverdueIncomeForToday = (date: Date) => {
-    const checkDate = startOfDay(new Date(date));
-    const today = startOfDay(new Date());
-
-    // Only show overdue on today
-    if (checkDate.getTime() !== today.getTime()) return 0;
-
-    // Get overdue from regular income items
-    const regularOverdue = incomeItems.filter(income => {
-      if (income.status === 'received') return false;
-      const incomeDate = startOfDay(new Date(income.paymentDate));
-      // Overdue if payment date is before today
-      return incomeDate < today;
-    }).reduce((sum, income) => sum + income.amount, 0);
-
-    // Get overdue from recurring income events
-    const recurringOverdue = events.filter(event => {
-      if (!event.id.startsWith('recurring-')) return false;
-      if (event.type !== 'inflow') return false;
-      const eventDate = startOfDay(new Date(event.date));
-      // Overdue if payment date is before today
-      return eventDate < today;
-    }).reduce((sum, event) => sum + event.amount, 0);
-    return regularOverdue + recurringOverdue;
-  };
-
-  // Get overdue vendor payments - only show on TODAY
-  const getOverdueVendorsForToday = (date: Date) => {
-    const checkDate = startOfDay(new Date(date));
-    const today = startOfDay(new Date());
-
-    // Only show overdue on today
-    if (checkDate.getTime() !== today.getTime()) return 0;
-    return vendors.filter(vendor => {
-      if (vendor.status === 'paid' || vendor.totalOwed <= 0) return false;
-      const paymentDate = startOfDay(new Date(vendor.nextPaymentDate));
-      // Overdue if payment date is before today
-      return paymentDate < today;
-    }).reduce((sum, vendor) => sum + vendor.nextPaymentAmount, 0);
-  };
-
-  // Calculate Net Amount for future dates (projected balance)
-  const getNetAmountForFutureDate = (date: Date) => {
-    const checkDate = startOfDay(new Date(date));
-    const today = startOfDay(new Date());
-
-    // Only calculate for future dates
-    if (checkDate <= today) return null;
-
-    // Start with current bank balance
-    let netAmount = bankAccountBalance;
-
-    // Add ALL pending/overdue income (not yet received)
-    incomeItems.forEach(income => {
-      if (income.status === 'received') return;
-      const incomeDate = startOfDay(new Date(income.paymentDate));
-      // Include if it's today, overdue, or future up to target date
-      if (incomeDate <= checkDate) {
-        netAmount += income.amount;
-      }
-    });
-
-    // Add recurring income events up to target date
-    events.forEach(event => {
-      if (!event.id.startsWith('recurring-')) return;
-      if (event.type !== 'inflow') return;
-      const eventDate = startOfDay(new Date(event.date));
-      if (eventDate <= checkDate) {
-        netAmount += event.amount;
-      }
-    });
-
-    // Subtract ALL pending/overdue vendor payments (not yet paid)
-    vendors.forEach(vendor => {
-      if (vendor.status === 'paid' || vendor.totalOwed <= 0) return;
-      const paymentDate = startOfDay(new Date(vendor.nextPaymentDate));
-      // Include if it's today, overdue, or future up to target date
-      if (paymentDate <= checkDate) {
-        netAmount -= vendor.nextPaymentAmount;
-      }
-    });
-
-    // Subtract recurring expense events up to target date
-    events.forEach(event => {
-      if (!event.id.startsWith('recurring-')) return;
-      if (event.type !== 'outflow') return;
-      const eventDate = startOfDay(new Date(event.date));
-      if (eventDate <= checkDate) {
-        netAmount -= event.amount;
-      }
-    });
-
-    // Add all other events (excluding ones already counted via incomeItems/vendors/recurring)
-    events.forEach(event => {
-      const eventDate = startOfDay(new Date(event.date));
-      if (eventDate > today && eventDate <= checkDate) {
-        // Skip recurring events (already counted above)
-        if (event.id.startsWith('recurring-')) return;
-        // Skip income events; handled by incomeItems
-        if (event.type === 'inflow') return;
-        // Skip vendor-related events; handled by vendors list
-        if (event.type === 'purchase-order' || !!event.vendor) return;
-        // Count remaining event types (e.g., credit payments, manual outflows)
-        const delta = event.type === 'outflow' || event.type === 'credit-payment' ? -event.amount : event.amount;
-        netAmount += delta;
-      }
-    });
-    return netAmount;
-  };
-  const getTotalCashForDay = (date: Date) => {
-    const target = new Date(date);
-    target.setHours(0, 0, 0, 0);
-
-    // Calculate cumulative net change from all events up to and including target day
-    const eventsUpToDay = events.filter(event => {
-      const ed = new Date(event.date);
-      ed.setHours(0, 0, 0, 0);
-      return ed <= target;
-    });
-    const netChange = eventsUpToDay.reduce((total, event) => total + (event.type === 'inflow' ? event.amount : -event.amount), 0);
-
-    // Start with bank account balance (or totalCash baseline) and apply net change from transactions
-    return bankAccountBalance + netChange;
-  };
   const getAvailableCreditForDay = (date: Date) => {
     const target = new Date(date);
     target.setHours(0, 0, 0, 0);
@@ -463,72 +295,9 @@ export const CashFlowCalendar = ({
     });
     return Math.max(0, availableCredit);
   };
-  const getEventIcon = (event: CashFlowEvent) => {
-    if (event.source === 'Amazon-Forecasted') return <ShoppingBag className="h-3 w-3 text-purple-600" />;
-    if (event.source === 'Amazon') return <ShoppingBag className="h-3 w-3" />;
-    if (event.type === 'credit-payment') return <CreditCard className="h-3 w-3" />;
-    if (event.type === 'purchase-order' || event.vendor) return <Building2 className="h-3 w-3" />;
-    return <Wallet className="h-3 w-3" />;
-  };
-  const getEventColor = (event: CashFlowEvent) => {
-    // Forecasted Amazon payouts get special purple/dashed styling
-    if (event.source === 'Amazon-Forecasted' && event.type === 'inflow') {
-      return 'bg-purple-100 text-purple-700 border-purple-300 dark:bg-purple-900/20 dark:text-purple-400 dark:border-purple-700/30 border-dashed';
-    }
-    // Amazon payouts get special orange color
-    if (event.source === 'Amazon' && event.type === 'inflow') {
-      return 'bg-orange-100 text-orange-700 border-orange-300 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-700/30';
-    }
-    if (event.type === 'inflow') {
-      return 'bg-finance-positive/20 text-finance-positive border-finance-positive/30';
-    }
-    if (event.type === 'credit-payment') {
-      return 'bg-warning/20 text-warning-foreground border-warning/30';
-    }
-    if (event.type === 'purchase-order') {
-      return 'bg-primary/20 text-primary border-primary/30';
-    }
-    return 'bg-finance-negative/20 text-finance-negative border-finance-negative/30';
-  };
-  const navigateMonth = (direction: 'prev' | 'next') => {
-    setCurrentDate(prev => {
-      const tentative = direction === 'prev' ? subMonths(prev, 1) : addMonths(prev, 1);
-      const minMonth = startOfMonth(accountStartDate);
-      const next = tentative < minMonth ? minMonth : tentative;
-      console.log('[Calendar] navigateMonth', direction, 'from', prev, 'to', next);
-      return next;
-    });
-  };
-  const handleDragStart = (e: React.DragEvent, transaction: CashFlowEvent) => {
-    e.stopPropagation();
-    setDraggedTransaction(transaction);
-    e.dataTransfer.effectAllowed = 'move';
-  };
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-  };
-  const handleDrop = async (e: React.DragEvent, targetDate: Date) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!draggedTransaction || !onUpdateTransactionDate) {
-      setDraggedTransaction(null);
-      return;
-    }
 
-    // Determine if it's a vendor transaction or income transaction
-    const eventType = draggedTransaction.type === 'purchase-order' || draggedTransaction.vendor ? 'vendor' : 'income';
-    try {
-      await onUpdateTransactionDate(draggedTransaction.id, targetDate, eventType);
-      toast.success("Transaction date updated successfully");
-    } catch (error) {
-      console.error('Error updating transaction date:', error);
-      toast.error("Failed to update transaction date");
-    }
-    setDraggedTransaction(null);
-  };
 
-  // Calculate average Amazon payout from historical confirmed payouts  
+  // Calculate average Amazon payout from historical confirmed payouts
   const averageAmazonPayout = (() => {
     const confirmedPayouts = events.filter(e => e.source === 'Amazon' && e.type === 'inflow');
     if (confirmedPayouts.length === 0) return 0;
@@ -552,7 +321,7 @@ export const CashFlowCalendar = ({
 
     // CRITICAL: Always calculate projected balances cumulatively from bank balance
     // Day 0 (today) = bank balance
-    // Day 1 = Day 0 + Day 1 net cash flow  
+    // Day 1 = Day 0 + Day 1 net cash flow
     // Day 2 = Day 1 + Day 2 net cash flow, etc.
 
     let runningTotal = bankAccountBalance; // Start with actual bank balance today
@@ -562,6 +331,11 @@ export const CashFlowCalendar = ({
       const dayEvents = events.filter(event => {
         // Use balanceImpactDate if available (for forecasted payouts), otherwise use date
         const impactDate = event.balanceImpactDate || event.date;
+        const checkDate = new Date(day);
+        const bcheckDate = new Date(impactDate);
+        // if(checkDate.getFullYear() === 2025 && checkDate.getMonth() === 10 && bcheckDate.getFullYear() === 2025 && bcheckDate.getMonth() === 10 && format(impactDate, 'yyyy-MM-dd') === format(day, 'yyyy-MM-dd')){
+        // console.log(event, "impact_date", impactDate, "day", day)
+        // }
         return format(impactDate, 'yyyy-MM-dd') === format(day, 'yyyy-MM-dd');
       });
       const dailyInflow = dayEvents.filter(e => e.type === 'inflow').reduce((sum, e) => sum + e.amount, 0);
@@ -664,10 +438,6 @@ export const CashFlowCalendar = ({
   // Use the safe spending limit directly from the safe spending calculation
   // This ensures the calendar shows the exact same "Available to Spend" as the stats box
   const lowestProjectedBalance = safeSpendingLimit;
-  console.log('📊 [Calendar] Available to Spend from safe spending:', {
-    safeSpendingLimit,
-    reserveAmount
-  });
 
   // Memoize Y-axis domain calculation
   const yDomain = useMemo((): [number, number] => {
@@ -919,7 +689,7 @@ export const CashFlowCalendar = ({
     }
   };
   return <Card className="shadow-card h-[700px] flex flex-col bg-background/10 backdrop-blur-sm">
-      <div className="relative flex-shrink-0">        
+      <div className="relative flex-shrink-0">
         <CardHeader className="pb-4 flex-shrink-0">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
             <div className="flex items-center justify-between w-full">
@@ -953,7 +723,7 @@ export const CashFlowCalendar = ({
           </div>
         </CardHeader>
     </div>
-    
+
     <CardContent className="p-6">
         <div className="flex flex-col">
           <div className="relative w-full" style={{
@@ -1013,7 +783,7 @@ export const CashFlowCalendar = ({
                   const hasTransactions = data.transactions?.length > 0;
                   return <div className="space-y-2 min-w-[300px]">
                               <p className="font-semibold text-base border-b pb-2">{label}</p>
-                              
+
                               {data.hasAmazonPayout && <p className="text-orange-600 font-medium flex items-center gap-1">
                                   <ShoppingBag className="h-3 w-3" />
                                   Amazon Payout
@@ -1022,7 +792,7 @@ export const CashFlowCalendar = ({
                                   <ShoppingBag className="h-3 w-3" />
                                   Amazon Payout (Forecasted)
                                 </p>}
-                              
+
                               <div className="space-y-1">
                                 <p className="font-bold text-base">
                                   Projected Balance: <span className="text-primary">${data.cashFlow?.toLocaleString()}</span>
@@ -1149,7 +919,7 @@ export const CashFlowCalendar = ({
                   </ResponsiveContainer>
             </ChartContainer>
           </div>
-        
+
         <div className="flex flex-wrap items-center justify-between gap-4 mt-6 pt-4 border-t flex-shrink-0">
           <div className="flex items-center gap-6 text-sm">
                 <div className="flex items-center gap-2">
@@ -1258,13 +1028,13 @@ export const CashFlowCalendar = ({
                   </label>
                 </div>
           </div>
-        
+
         </div>
         </div>
       </CardContent>
-      
+
       <TransactionDetailModal transaction={selectedTransaction} open={showTransactionModal} onOpenChange={setShowTransactionModal} onEdit={onEditTransaction} />
-      
+
       <DayTransactionsModal transactions={selectedDayTransactions} date={selectedDate} open={showDayTransactionsModal} onOpenChange={setShowDayTransactionsModal} />
     </Card>;
 };
