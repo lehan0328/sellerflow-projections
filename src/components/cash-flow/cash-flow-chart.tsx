@@ -1,85 +1,102 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { CalendarIcon, Plus, Calendar as CalendarIconLucide, TrendingUp } from "lucide-react";
+import {
+  CalendarIcon,
+  Plus,
+  Calendar as CalendarIconLucide,
+  TrendingUp,
+} from "lucide-react";
 import { format, subDays, addDays, eachDayOfInterval } from "date-fns";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Brush } from 'recharts';
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Brush,
+} from "recharts";
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart";
 
 interface CashFlowEvent {
   id: string;
-  type: 'inflow' | 'outflow' | 'credit-payment' | 'purchase-order';
+  type: "inflow" | "outflow" | "credit-payment" | "purchase-order";
   amount: number;
   description: string;
   vendor?: string;
   creditCard?: string;
   poName?: string;
   date: Date;
+  status?: "forecasted" | "confirmed";
 }
 
 interface CashFlowChartProps {
   onAddPurchaseOrder: () => void;
   events?: CashFlowEvent[];
-  viewType: 'calendar' | 'chart';
-  onViewTypeChange: (type: 'calendar' | 'chart') => void;
+  viewType: "calendar" | "chart";
+  onViewTypeChange: (type: "calendar" | "chart") => void;
   reserveAmount?: number;
 }
 
-export const CashFlowChart = ({ 
-  onAddPurchaseOrder, 
-  events: propEvents, 
-  viewType, 
+export const CashFlowChart = ({
+  onAddPurchaseOrder,
+  events: propEvents,
+  viewType,
   onViewTypeChange,
-  reserveAmount = 0
+  reserveAmount = 0,
 }: CashFlowChartProps) => {
   const [dateRange, setDateRange] = useState({
     start: subDays(new Date(), 30),
-    end: addDays(new Date(), 30)
+    end: addDays(new Date(), 30),
   });
 
   // Sample cash flow events
   const defaultEvents: CashFlowEvent[] = [
     {
-      id: '1',
-      type: 'inflow',
+      id: "1",
+      type: "inflow",
       amount: 25000,
-      description: 'Amazon Payout',
-      date: new Date(2024, 0, 15)
+      description: "Amazon Payout",
+      date: new Date(2024, 0, 15),
     },
     {
-      id: '2',
-      type: 'purchase-order',
+      id: "2",
+      type: "purchase-order",
       amount: 8500,
-      description: 'Inventory Purchase',
-      vendor: 'Global Vendor Co.',
-      poName: 'Q1 Inventory Restock',
-      date: new Date(2024, 0, 18)
+      description: "Inventory Purchase",
+      vendor: "Global Vendor Co.",
+      poName: "Q1 Inventory Restock",
+      date: new Date(2024, 0, 18),
     },
     {
-      id: '3',
-      type: 'inflow',
+      id: "3",
+      type: "inflow",
       amount: 28000,
-      description: 'Amazon Payout',
-      date: new Date(2024, 0, 30)
+      description: "Amazon Payout",
+      date: new Date(2024, 0, 30),
     },
     {
-      id: '4',
-      type: 'purchase-order',
+      id: "4",
+      type: "purchase-order",
       amount: 3200,
-      description: 'PPC Campaign',
-      vendor: 'Amazon Advertising',
-      poName: 'January PPC Budget',
-      date: new Date(2024, 0, 25)
+      description: "PPC Campaign",
+      vendor: "Amazon Advertising",
+      poName: "January PPC Budget",
+      date: new Date(2024, 0, 25),
     },
     {
-      id: '5',
-      type: 'credit-payment',
+      id: "5",
+      type: "credit-payment",
       amount: 2500,
-      description: 'Chase Sapphire Payment Due',
-      creditCard: 'Chase Sapphire Business',
-      date: new Date(2024, 0, 22)
+      description: "Chase Sapphire Payment Due",
+      creditCard: "Chase Sapphire Business",
+      date: new Date(2024, 0, 22),
     },
   ];
 
@@ -87,32 +104,61 @@ export const CashFlowChart = ({
   const totalAvailableCash = 145750;
 
   const generateChartData = () => {
-    const days = eachDayOfInterval({ start: dateRange.start, end: dateRange.end });
+    const days = eachDayOfInterval({
+      start: dateRange.start,
+      end: dateRange.end,
+    });
     let runningTotal = totalAvailableCash;
     let cumulativeInflow = 0;
     let cumulativeOutflow = 0;
-    
-    return days.map(day => {
-      const dayEvents = events.filter(event => 
-        format(event.date, 'yyyy-MM-dd') === format(day, 'yyyy-MM-dd')
-      );
-      
-      const dailyInflow = dayEvents.filter(e => e.type === 'inflow').reduce((sum, e) => sum + e.amount, 0);
-      const dailyOutflow = dayEvents.filter(e => e.type !== 'inflow').reduce((sum, e) => sum + e.amount, 0);
+
+    return days.map((day) => {
+      // const dayEvents = events.filter(
+      //   (event) =>
+      //     format(event.date, "yyyy-MM-dd") === format(day, "yyyy-MM-dd")
+      // );
+      const dayStr = format(day, "yyyy-MM-dd");
+      // Calculate previous day for forecast lookup
+      const prevDayStr = format(subDays(day, 1), "yyyy-MM-dd");
+
+      const dayEvents = events.filter((event) => {
+        const eventDateStr = format(event.date, "yyyy-MM-dd");
+        const isForecast = event.status === "forecasted";
+
+        if (isForecast) {
+          // If it's forecasted, we look for events from the previous day
+          // so they appear on the current 'day' in the chart
+          return eventDateStr === prevDayStr;
+        }
+
+        // Standard events match the exact day
+        return eventDateStr === dayStr;
+      });
+
+      const dailyInflow = dayEvents
+        .filter((e) => e.type === "inflow")
+        .reduce((sum, e) => sum + e.amount, 0);
+      const dailyOutflow = dayEvents
+        .filter((e) => e.type !== "inflow")
+        .reduce((sum, e) => sum + e.amount, 0);
       const dailyChange = dailyInflow - dailyOutflow;
-      
+
       cumulativeInflow += dailyInflow;
       cumulativeOutflow += dailyOutflow;
       runningTotal += dailyChange;
-      
+
       // Group events by type for detailed breakdown
-      const inflowEvents = dayEvents.filter(e => e.type === 'inflow');
-      const purchaseOrderEvents = dayEvents.filter(e => e.type === 'purchase-order');
-      const creditPaymentEvents = dayEvents.filter(e => e.type === 'credit-payment');
-      const outflowEvents = dayEvents.filter(e => e.type === 'outflow');
-      
+      const inflowEvents = dayEvents.filter((e) => e.type === "inflow");
+      const purchaseOrderEvents = dayEvents.filter(
+        (e) => e.type === "purchase-order"
+      );
+      const creditPaymentEvents = dayEvents.filter(
+        (e) => e.type === "credit-payment"
+      );
+      const outflowEvents = dayEvents.filter((e) => e.type === "outflow");
+
       return {
-        date: format(day, 'MMM dd, yyyy'),
+        date: format(day, "MMM dd, yyyy"),
         fullDate: day,
         cashFlow: runningTotal,
         dailyChange,
@@ -125,15 +171,15 @@ export const CashFlowChart = ({
         inflowEvents,
         purchaseOrderEvents,
         creditPaymentEvents,
-        outflowEvents
+        outflowEvents,
       };
     });
   };
 
   const chartData = generateChartData();
-  
+
   // Calculate max value with 20% padding for better visualization
-  const maxCashFlow = Math.max(...chartData.map(d => d.cashFlow));
+  const maxCashFlow = Math.max(...chartData.map((d) => d.cashFlow));
   const chartMaxValue = Math.ceil(maxCashFlow * 1.2);
 
   const chartConfig = {
@@ -143,10 +189,10 @@ export const CashFlowChart = ({
     },
   };
 
-  const handleDateRangeChange = (field: 'start' | 'end', value: string) => {
-    setDateRange(prev => ({
+  const handleDateRangeChange = (field: "start" | "end", value: string) => {
+    setDateRange((prev) => ({
       ...prev,
-      [field]: new Date(value)
+      [field]: new Date(value),
     }));
   };
 
@@ -159,23 +205,25 @@ export const CashFlowChart = ({
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-1">
                 <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span className="text-sm text-green-600 font-medium">Healthy</span>
+                <span className="text-sm text-green-600 font-medium">
+                  Healthy
+                </span>
               </div>
             </div>
             <div className="flex items-center space-x-2 bg-muted rounded-lg p-1">
               <Button
-                variant={viewType === 'calendar' ? 'default' : 'ghost'}
+                variant={viewType === "calendar" ? "default" : "ghost"}
                 size="sm"
-                onClick={() => onViewTypeChange('calendar')}
+                onClick={() => onViewTypeChange("calendar")}
                 className="px-3"
               >
                 <CalendarIconLucide className="h-4 w-4 mr-1" />
                 Calendar
               </Button>
               <Button
-                variant={viewType === 'chart' ? 'default' : 'ghost'}
+                variant={viewType === "chart" ? "default" : "ghost"}
                 size="sm"
-                onClick={() => onViewTypeChange('chart')}
+                onClick={() => onViewTypeChange("chart")}
                 className="px-3"
               >
                 <TrendingUp className="h-4 w-4 mr-1" />
@@ -183,9 +231,13 @@ export const CashFlowChart = ({
               </Button>
             </div>
           </div>
-          
+
           <div className="flex items-center space-x-4">
-            <Button size="sm" onClick={onAddPurchaseOrder} className="bg-gradient-primary">
+            <Button
+              size="sm"
+              onClick={onAddPurchaseOrder}
+              className="bg-gradient-primary"
+            >
               <Plus className="h-4 w-4 mr-2" />
               Add Purchase Order
             </Button>
@@ -193,47 +245,59 @@ export const CashFlowChart = ({
         </div>
       </CardHeader>
 
-      {viewType === 'chart' && (
+      {viewType === "chart" && (
         <CardContent>
           <div className="h-[400px]">
             <ChartContainer config={chartConfig}>
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis 
-                    dataKey="date" 
+                  <XAxis
+                    dataKey="date"
                     tick={{ fontSize: 11 }}
                     angle={-45}
                     textAnchor="end"
                     height={80}
                     interval={Math.floor(chartData.length / 10)}
                   />
-                  <YAxis 
+                  <YAxis
                     tick={{ fontSize: 12 }}
                     tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
                     domain={[0, chartMaxValue]}
                   />
-                  <ChartTooltip 
+                  <ChartTooltip
                     content={<ChartTooltipContent />}
                     formatter={(value: number, name: string) => [
                       `$${value.toLocaleString()}`,
-                      'Cash Balance'
+                      "Cash Balance",
                     ]}
                     labelFormatter={(label, payload) => {
                       if (payload && payload[0]) {
                         const data = payload[0].payload;
                         return (
                           <div className="space-y-2 min-w-[280px]">
-                            <p className="font-semibold text-base border-b pb-2">{label}</p>
-                            
+                            <p className="font-semibold text-base border-b pb-2">
+                              {label}
+                            </p>
+
                             {/* Balance Section */}
                             <div className="space-y-1">
                               <p className="font-bold text-base">
-                                Projected Balance: <span className="text-primary">${data.cashFlow.toLocaleString()}</span>
+                                Projected Balance:{" "}
+                                <span className="text-primary">
+                                  ${data.cashFlow.toLocaleString()}
+                                </span>
                               </p>
                               {data.dailyChange !== 0 && (
-                                <p className={`font-medium ${data.dailyChange > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                  Daily Net: {data.dailyChange > 0 ? '+' : ''}${Math.abs(data.dailyChange).toLocaleString()}
+                                <p
+                                  className={`font-medium ${
+                                    data.dailyChange > 0
+                                      ? "text-green-600"
+                                      : "text-red-600"
+                                  }`}
+                                >
+                                  Daily Net: {data.dailyChange > 0 ? "+" : ""}$
+                                  {Math.abs(data.dailyChange).toLocaleString()}
                                 </p>
                               )}
                             </div>
@@ -241,27 +305,67 @@ export const CashFlowChart = ({
                             {/* Daily Transactions */}
                             {data.eventCount > 0 && (
                               <div className="space-y-1.5 border-t pt-2">
-                                <p className="font-semibold text-xs uppercase text-muted-foreground">Daily Activity</p>
+                                <p className="font-semibold text-xs uppercase text-muted-foreground">
+                                  Daily Activity
+                                </p>
                                 {data.inflow > 0 && (
                                   <div>
-                                    <p className="text-green-600 font-medium">↑ Inflows: +${data.inflow.toLocaleString()}</p>
-                                    {data.inflowEvents?.map((evt: CashFlowEvent, idx: number) => (
-                                      <p key={idx} className="text-xs text-muted-foreground ml-3">• {evt.description}: ${evt.amount.toLocaleString()}</p>
-                                    ))}
+                                    <p className="text-green-600 font-medium">
+                                      ↑ Inflows: +$
+                                      {data.inflow.toLocaleString()}
+                                    </p>
+                                    {data.inflowEvents?.map(
+                                      (evt: CashFlowEvent, idx: number) => (
+                                        <p
+                                          key={idx}
+                                          className="text-xs text-muted-foreground ml-3"
+                                        >
+                                          • {evt.description}: $
+                                          {evt.amount.toLocaleString()}
+                                        </p>
+                                      )
+                                    )}
                                   </div>
                                 )}
                                 {data.outflow > 0 && (
                                   <div>
-                                    <p className="text-red-600 font-medium">↓ Outflows: -${data.outflow.toLocaleString()}</p>
-                                    {data.purchaseOrderEvents?.map((evt: CashFlowEvent, idx: number) => (
-                                      <p key={idx} className="text-xs text-muted-foreground ml-3">• {evt.description}: ${evt.amount.toLocaleString()}</p>
-                                    ))}
-                                    {data.creditPaymentEvents?.map((evt: CashFlowEvent, idx: number) => (
-                                      <p key={idx} className="text-xs text-muted-foreground ml-3">• {evt.description}: ${evt.amount.toLocaleString()}</p>
-                                    ))}
-                                    {data.outflowEvents?.map((evt: CashFlowEvent, idx: number) => (
-                                      <p key={idx} className="text-xs text-muted-foreground ml-3">• {evt.description}: ${evt.amount.toLocaleString()}</p>
-                                    ))}
+                                    <p className="text-red-600 font-medium">
+                                      ↓ Outflows: -$
+                                      {data.outflow.toLocaleString()}
+                                    </p>
+                                    {data.purchaseOrderEvents?.map(
+                                      (evt: CashFlowEvent, idx: number) => (
+                                        <p
+                                          key={idx}
+                                          className="text-xs text-muted-foreground ml-3"
+                                        >
+                                          • {evt.description}: $
+                                          {evt.amount.toLocaleString()}
+                                        </p>
+                                      )
+                                    )}
+                                    {data.creditPaymentEvents?.map(
+                                      (evt: CashFlowEvent, idx: number) => (
+                                        <p
+                                          key={idx}
+                                          className="text-xs text-muted-foreground ml-3"
+                                        >
+                                          • {evt.description}: $
+                                          {evt.amount.toLocaleString()}
+                                        </p>
+                                      )
+                                    )}
+                                    {data.outflowEvents?.map(
+                                      (evt: CashFlowEvent, idx: number) => (
+                                        <p
+                                          key={idx}
+                                          className="text-xs text-muted-foreground ml-3"
+                                        >
+                                          • {evt.description}: $
+                                          {evt.amount.toLocaleString()}
+                                        </p>
+                                      )
+                                    )}
                                   </div>
                                 )}
                               </div>
@@ -269,20 +373,48 @@ export const CashFlowChart = ({
 
                             {/* Cumulative Totals */}
                             <div className="space-y-1 border-t pt-2">
-                              <p className="font-semibold text-xs uppercase text-muted-foreground">Period Totals</p>
+                              <p className="font-semibold text-xs uppercase text-muted-foreground">
+                                Period Totals
+                              </p>
                               <div className="grid grid-cols-2 gap-2 text-xs">
                                 <div>
-                                  <p className="text-muted-foreground">Total Inflows:</p>
-                                  <p className="font-semibold text-green-600">${data.cumulativeInflow.toLocaleString()}</p>
+                                  <p className="text-muted-foreground">
+                                    Total Inflows:
+                                  </p>
+                                  <p className="font-semibold text-green-600">
+                                    ${data.cumulativeInflow.toLocaleString()}
+                                  </p>
                                 </div>
                                 <div>
-                                  <p className="text-muted-foreground">Total Outflows:</p>
-                                  <p className="font-semibold text-red-600">${data.cumulativeOutflow.toLocaleString()}</p>
+                                  <p className="text-muted-foreground">
+                                    Total Outflows:
+                                  </p>
+                                  <p className="font-semibold text-red-600">
+                                    ${data.cumulativeOutflow.toLocaleString()}
+                                  </p>
                                 </div>
                               </div>
                               <p className="text-xs font-medium pt-1">
-                                Net: <span className={data.cumulativeInflow - data.cumulativeOutflow > 0 ? 'text-green-600' : 'text-red-600'}>
-                                  {data.cumulativeInflow - data.cumulativeOutflow > 0 ? '+' : ''}${(data.cumulativeInflow - data.cumulativeOutflow).toLocaleString()}
+                                Net:{" "}
+                                <span
+                                  className={
+                                    data.cumulativeInflow -
+                                      data.cumulativeOutflow >
+                                    0
+                                      ? "text-green-600"
+                                      : "text-red-600"
+                                  }
+                                >
+                                  {data.cumulativeInflow -
+                                    data.cumulativeOutflow >
+                                  0
+                                    ? "+"
+                                    : ""}
+                                  $
+                                  {(
+                                    data.cumulativeInflow -
+                                    data.cumulativeOutflow
+                                  ).toLocaleString()}
                                 </span>
                               </p>
                             </div>
@@ -292,10 +424,10 @@ export const CashFlowChart = ({
                       return label;
                     }}
                   />
-                  <Line 
-                    type="monotone" 
-                    dataKey="cashFlow" 
-                    stroke="hsl(var(--primary))" 
+                  <Line
+                    type="monotone"
+                    dataKey="cashFlow"
+                    stroke="hsl(var(--primary))"
                     strokeWidth={2}
                     dot={{ r: 4 }}
                     activeDot={{ r: 6 }}
@@ -322,7 +454,7 @@ export const CashFlowChart = ({
               </ResponsiveContainer>
             </ChartContainer>
           </div>
-          
+
           <div className="flex items-center justify-between mt-6 pt-4 border-t">
             <div className="flex items-center space-x-4 text-sm">
               <div className="flex items-center space-x-2">
@@ -334,10 +466,14 @@ export const CashFlowChart = ({
                 <span>Outflows</span>
               </div>
             </div>
-            
+
             <div className="text-sm text-muted-foreground">
-              Period Net: <span className="font-semibold text-foreground">
-                +${chartData.reduce((sum, day) => sum + day.dailyChange, 0).toLocaleString()}
+              Period Net:{" "}
+              <span className="font-semibold text-foreground">
+                +$
+                {chartData
+                  .reduce((sum, day) => sum + day.dailyChange, 0)
+                  .toLocaleString()}
               </span>
             </div>
           </div>
