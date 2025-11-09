@@ -18,8 +18,6 @@ import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Cart
 import { useMemo, useState, useEffect } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import { format } from "date-fns";
 import { cn, formatCurrency } from "@/lib/utils";
 export default function Analytics() {
@@ -118,7 +116,6 @@ export default function Analytics() {
   const [incomeDateRange, setIncomeDateRange] = useState<string>("this-month");
   const [customStartDate, setCustomStartDate] = useState<Date>(defaultStartDate);
   const [customEndDate, setCustomEndDate] = useState<Date>(defaultEndDate);
-  const [includeAdditionalIncome, setIncludeAdditionalIncome] = useState<boolean>(false);
 
   // Helper to get date range
   const getDateRange = (rangeType: string) => {
@@ -316,26 +313,27 @@ export default function Analytics() {
     };
   }, [bankTransactions, dbTransactions, incomeItems, vendors, creditCards, amazonPayouts, accounts, amazonRevenue, recurringExpenses]);
 
-  // Revenue over time (last 6 months) - AMAZON PAYOUTS with optional additional income
+  // Revenue over time (last 6 months + next 2 months) - AMAZON PAYOUTS + separate additional income line
   const revenueData = useMemo(() => {
-    const monthlyData: Record<string, { revenue: number; projected: number }> = {};
+    const monthlyData: Record<string, { revenue: number; projected: number; otherIncome: number }> = {};
     const now = new Date();
     const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+    const twoMonthsAhead = new Date(now.getFullYear(), now.getMonth() + 2, 0);
 
-    // Initialize last 6 months
-    for (let i = 5; i >= 0; i--) {
+    // Initialize last 6 months + next 2 months (8 months total)
+    for (let i = 5; i >= -2; i--) {
       const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const key = date.toLocaleDateString('en-US', {
         month: 'short',
         year: 'numeric'
       });
-      monthlyData[key] = { revenue: 0, projected: 0 };
+      monthlyData[key] = { revenue: 0, projected: 0, otherIncome: 0 };
     }
 
-    // ONLY aggregate Amazon payouts (confirmed and forecasted)
+    // Aggregate Amazon payouts (confirmed and forecasted)
     amazonPayouts.forEach(payout => {
       const date = new Date(payout.payout_date);
-      if (date >= sixMonthsAgo) {
+      if (date >= sixMonthsAgo && date <= twoMonthsAhead) {
         const key = date.toLocaleDateString('en-US', {
           month: 'short',
           year: 'numeric'
@@ -351,69 +349,64 @@ export default function Analytics() {
       }
     });
 
-    // Optionally include additional income and recurring income
-    if (includeAdditionalIncome) {
-      // Add non-Amazon income items
-      incomeItems.forEach(item => {
-        if (item.source?.toLowerCase() !== 'amazon') {
-          const paymentDate = new Date(item.paymentDate);
-          if (paymentDate >= sixMonthsAgo) {
-            const key = paymentDate.toLocaleDateString('en-US', {
-              month: 'short',
-              year: 'numeric'
-            });
-            if (monthlyData.hasOwnProperty(key)) {
-              monthlyData[key].revenue += item.amount;
-              monthlyData[key].projected += item.amount;
-            }
+    // Add non-Amazon income items to otherIncome line
+    incomeItems.forEach(item => {
+      if (item.source?.toLowerCase() !== 'amazon') {
+        const paymentDate = new Date(item.paymentDate);
+        if (paymentDate >= sixMonthsAgo && paymentDate <= twoMonthsAhead) {
+          const key = paymentDate.toLocaleDateString('en-US', {
+            month: 'short',
+            year: 'numeric'
+          });
+          if (monthlyData.hasOwnProperty(key)) {
+            monthlyData[key].otherIncome += item.amount;
           }
         }
-      });
+      }
+    });
 
-      // Add completed sales orders
-      dbTransactions.forEach(tx => {
-        if ((tx.type === 'sales_order' || tx.type === 'customer_payment') && tx.status === 'completed') {
-          const date = new Date(tx.transactionDate);
-          if (date >= sixMonthsAgo) {
-            const key = date.toLocaleDateString('en-US', {
-              month: 'short',
-              year: 'numeric'
-            });
-            if (monthlyData.hasOwnProperty(key)) {
-              monthlyData[key].revenue += tx.amount;
-              monthlyData[key].projected += tx.amount;
-            }
+    // Add completed sales orders to otherIncome line
+    dbTransactions.forEach(tx => {
+      if ((tx.type === 'sales_order' || tx.type === 'customer_payment') && tx.status === 'completed') {
+        const date = new Date(tx.transactionDate);
+        if (date >= sixMonthsAgo && date <= twoMonthsAhead) {
+          const key = date.toLocaleDateString('en-US', {
+            month: 'short',
+            year: 'numeric'
+          });
+          if (monthlyData.hasOwnProperty(key)) {
+            monthlyData[key].otherIncome += tx.amount;
           }
         }
-      });
+      }
+    });
 
-      // Add recurring income for each month
-      const startOfMonth = (year: number, month: number) => new Date(year, month, 1);
-      const endOfMonth = (year: number, month: number) => new Date(year, month + 1, 0, 23, 59, 59, 999);
+    // Add recurring income for each month to otherIncome line
+    const startOfMonth = (year: number, month: number) => new Date(year, month, 1);
+    const endOfMonth = (year: number, month: number) => new Date(year, month + 1, 0, 23, 59, 59, 999);
+    
+    Object.keys(monthlyData).forEach(monthKey => {
+      const monthDate = new Date(monthKey);
+      const monthStart = startOfMonth(monthDate.getFullYear(), monthDate.getMonth());
+      const monthEnd = endOfMonth(monthDate.getFullYear(), monthDate.getMonth());
       
-      Object.keys(monthlyData).forEach(monthKey => {
-        const monthDate = new Date(monthKey);
-        const monthStart = startOfMonth(monthDate.getFullYear(), monthDate.getMonth());
-        const monthEnd = endOfMonth(monthDate.getFullYear(), monthDate.getMonth());
-        
-        const recurringIncomeForMonth = recurringExpenses
-          .filter(e => e.is_active && e.type === 'income')
-          .reduce((sum, e) => {
-            const occurrences = generateRecurringDates(e as any, monthStart, monthEnd);
-            return sum + e.amount * occurrences.length;
-          }, 0);
-        
-        monthlyData[monthKey].revenue += recurringIncomeForMonth;
-        monthlyData[monthKey].projected += recurringIncomeForMonth;
-      });
-    }
+      const recurringIncomeForMonth = recurringExpenses
+        .filter(e => e.is_active && e.type === 'income')
+        .reduce((sum, e) => {
+          const occurrences = generateRecurringDates(e as any, monthStart, monthEnd);
+          return sum + e.amount * occurrences.length;
+        }, 0);
+      
+      monthlyData[monthKey].otherIncome += recurringIncomeForMonth;
+    });
 
     return Object.entries(monthlyData).map(([month, data]) => ({
       month,
       revenue: data.revenue,
-      projected: data.projected
+      projected: data.projected,
+      otherIncome: data.otherIncome
     }));
-  }, [amazonPayouts, includeAdditionalIncome, incomeItems, dbTransactions, recurringExpenses]);
+  }, [amazonPayouts, incomeItems, dbTransactions, recurringExpenses]);
 
   // Income breakdown by source (filtered by date range)
   const incomeBySource = useMemo(() => {
@@ -996,19 +989,7 @@ export default function Analytics() {
 
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>Monthly Amazon Payout Trend</CardTitle>
-                <div className="flex items-center gap-2">
-                  <Label htmlFor="include-additional-income" className="text-sm font-normal cursor-pointer">
-                    Include Other Income
-                  </Label>
-                  <Switch
-                    id="include-additional-income"
-                    checked={includeAdditionalIncome}
-                    onCheckedChange={setIncludeAdditionalIncome}
-                  />
-                </div>
-              </div>
+              <CardTitle>Monthly Amazon Payout Trend</CardTitle>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={400}>
@@ -1018,8 +999,9 @@ export default function Analytics() {
                   <YAxis />
                   <Tooltip formatter={value => formatCurrency(Number(value))} />
                   <Legend />
-                  <Line type="monotone" dataKey="revenue" name="Confirmed" stroke="#10b981" strokeWidth={2} />
-                  <Line type="monotone" dataKey="projected" name="Projected" stroke="#8b5cf6" strokeWidth={2} strokeDasharray="5 5" />
+                  <Line type="monotone" dataKey="revenue" name="Amazon Confirmed" stroke="#10b981" strokeWidth={2} />
+                  <Line type="monotone" dataKey="projected" name="Amazon Projected" stroke="#8b5cf6" strokeWidth={2} strokeDasharray="5 5" />
+                  <Line type="monotone" dataKey="otherIncome" name="Other Income" stroke="#f59e0b" strokeWidth={2} />
                 </LineChart>
               </ResponsiveContainer>
             </CardContent>
