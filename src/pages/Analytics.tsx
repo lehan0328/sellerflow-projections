@@ -633,6 +633,18 @@ export default function Analytics() {
       }
     });
 
+    // Add recurring income for each month
+    Object.keys(monthlyData).forEach(monthKey => {
+      const monthDate = new Date(now.getFullYear(), now.getMonth() - (5 - Object.keys(monthlyData).indexOf(monthKey)), 1);
+      const monthStart = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1);
+      const monthEnd = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0);
+      const recurringIncome = recurringExpenses.filter(r => r.type === 'income' && r.is_active).reduce((sum, r) => {
+        const occurrences = generateRecurringDates(r, monthStart, monthEnd);
+        return sum + occurrences.length * r.amount;
+      }, 0);
+      monthlyData[monthKey].income += recurringIncome;
+    });
+
     // Aggregate expenses from bank transactions (debit)
     bankTransactions.forEach(tx => {
       if (tx.transactionType === 'debit') {
@@ -657,6 +669,18 @@ export default function Analytics() {
           monthlyData[key].expenses += tx.amount;
         }
       }
+    });
+
+    // Add recurring expenses for each month
+    Object.keys(monthlyData).forEach(monthKey => {
+      const monthDate = new Date(now.getFullYear(), now.getMonth() - (5 - Object.keys(monthlyData).indexOf(monthKey)), 1);
+      const monthStart = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1);
+      const monthEnd = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0);
+      const recurringExpense = recurringExpenses.filter(r => r.type === 'expense' && r.is_active).reduce((sum, r) => {
+        const occurrences = generateRecurringDates(r, monthStart, monthEnd);
+        return sum + occurrences.length * r.amount;
+      }, 0);
+      monthlyData[monthKey].expenses += recurringExpense;
     });
     return Object.entries(monthlyData).map(([month, data]) => ({
       month,
