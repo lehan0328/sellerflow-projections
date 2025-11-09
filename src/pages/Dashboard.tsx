@@ -2,14 +2,49 @@ import React, { useState, useMemo, useEffect } from "react";
 import { addDays, isToday, isBefore, startOfDay, format } from "date-fns";
 import { calculateCalendarBalances } from "@/lib/calendarBalances";
 import { useNavigate, useLocation } from "react-router-dom";
-import { RefreshCw, Building2, CreditCard as CreditCardIcon, TrendingUp, TrendingDown, Calendar, CheckCircle, User, Database, Trash2, AlertTriangle, Shield, Users, Palette, Sun, Moon, Monitor, DollarSign } from "lucide-react";
+import {
+  RefreshCw,
+  Building2,
+  CreditCard as CreditCardIcon,
+  TrendingUp,
+  TrendingDown,
+  Calendar,
+  CheckCircle,
+  User,
+  Database,
+  Trash2,
+  AlertTriangle,
+  Shield,
+  Users,
+  Palette,
+  Sun,
+  Moon,
+  Monitor,
+  DollarSign,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { useTheme } from "next-themes";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
@@ -22,7 +57,10 @@ import { OverviewStats } from "@/components/cash-flow/overview-stats";
 import { CashFlowCalendar } from "@/components/cash-flow/cash-flow-calendar";
 import { CashFlowInsights } from "@/components/cash-flow/cash-flow-insights";
 import { BankAccounts } from "@/components/cash-flow/bank-accounts";
-import { CreditCards, getCreditCardDueDates } from "@/components/cash-flow/credit-cards";
+import {
+  CreditCards,
+  getCreditCardDueDates,
+} from "@/components/cash-flow/credit-cards";
 import { AmazonPayouts } from "@/components/cash-flow/amazon-payouts";
 import { PurchaseOrderForm } from "@/components/cash-flow/purchase-order-form";
 import { VendorOrderEditModal } from "@/components/cash-flow/vendor-order-edit-modal";
@@ -80,12 +118,13 @@ import { MatchReviewDialog } from "@/components/cash-flow/match-review-dialog";
 import { TransactionMatch } from "@/hooks/useTransactionMatching";
 import { ManualMatchDialog } from "@/components/cash-flow/manual-match-dialog";
 import { AmazonSyncBanner } from "@/components/cash-flow/amazon-sync-banner";
+import { date } from "zod";
 
 // ========== Type Definitions ==========
 
 interface CashFlowEvent {
   id: string;
-  type: 'inflow' | 'outflow' | 'credit-payment' | 'purchase-order';
+  type: "inflow" | "outflow" | "credit-payment" | "purchase-order";
   amount: number;
   description: string;
   vendor?: string;
@@ -107,41 +146,43 @@ const Dashboard = () => {
     return state?.activeSection || "overview";
   });
   const [settingsSection, setSettingsSection] = useState("profile");
-  const [profilesTab, setProfilesTab] = useState<'vendors' | 'customers'>('vendors');
+  const [profilesTab, setProfilesTab] = useState<"vendors" | "customers">(
+    "vendors"
+  );
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const [companyName, setCompanyName] = useState('');
-  const [selectedCurrency, setSelectedCurrency] = useState<string>('USD');
+  const [companyName, setCompanyName] = useState("");
+  const [selectedCurrency, setSelectedCurrency] = useState<string>("USD");
   const [clearDataConfirmation, setClearDataConfirmation] = useState(false);
   const { theme, setTheme } = useTheme();
-  
+
   // Handle URL params for settings navigation
   useEffect(() => {
     const params = new URLSearchParams(location.search);
-    const view = params.get('view');
-    const section = params.get('section');
-    
-    if (view === 'settings') {
-      setActiveSection('settings');
+    const view = params.get("view");
+    const section = params.get("section");
+
+    if (view === "settings") {
+      setActiveSection("settings");
       if (section) {
         setSettingsSection(section);
       }
     }
   }, [location.search]);
-  
+
   // Fetch user profile
   const { data: profile, isLoading: profileLoading } = useQuery({
-    queryKey: ['profile', user?.id],
+    queryKey: ["profile", user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
       const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('user_id', user.id)
+        .from("profiles")
+        .select("*")
+        .eq("user_id", user.id)
         .maybeSingle();
-      
+
       if (error) {
-        console.error('Error fetching profile:', error);
+        console.error("Error fetching profile:", error);
         return null;
       }
       return data;
@@ -151,25 +192,30 @@ const Dashboard = () => {
 
   // Update profile mutation
   const updateProfileMutation = useMutation({
-    mutationFn: async (profileData: { first_name?: string; last_name?: string; company?: string; currency?: string }) => {
-      if (!user?.id) throw new Error('No user ID');
-      
+    mutationFn: async (profileData: {
+      first_name?: string;
+      last_name?: string;
+      company?: string;
+      currency?: string;
+    }) => {
+      if (!user?.id) throw new Error("No user ID");
+
       const { error } = await supabase
-        .from('profiles')
+        .from("profiles")
         .update(profileData)
-        .eq('user_id', user.id);
-      
+        .eq("user_id", user.id);
+
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['profile', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ["profile", user?.id] });
       toast({
         title: "Success",
         description: "Settings updated successfully",
       });
     },
     onError: (error) => {
-      console.error('Error updating profile:', error);
+      console.error("Error updating profile:", error);
       toast({
         title: "Error",
         description: "Failed to update settings",
@@ -180,12 +226,12 @@ const Dashboard = () => {
 
   // Check if user is website admin
   const { data: isWebsiteAdmin = false } = useQuery({
-    queryKey: ['is-website-admin', user?.id],
+    queryKey: ["is-website-admin", user?.id],
     queryFn: async () => {
       if (!user?.id) return false;
-      const { data, error } = await supabase.rpc('is_website_admin');
+      const { data, error } = await supabase.rpc("is_website_admin");
       if (error) {
-        console.error('Error checking website admin status:', error);
+        console.error("Error checking website admin status:", error);
         return false;
       }
       return data || false;
@@ -203,7 +249,6 @@ const Dashboard = () => {
     }
   }, [profile]);
 
-
   // Handle profile field changes
   const handleProfileChange = (field: string, value: string) => {
     updateProfileMutation.mutate({ [field]: value });
@@ -211,30 +256,33 @@ const Dashboard = () => {
 
   const handleClearAllData = async () => {
     try {
-      console.log('🗑️ Dashboard - calling resetAccount');
+      console.log("🗑️ Dashboard - calling resetAccount");
       toast({
         title: "Clearing data...",
         description: "This may take a moment",
       });
       await resetAccount();
     } catch (error) {
-      console.error('Error clearing data:', error);
+      console.error("Error clearing data:", error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to clear account data. Please try again or contact support.",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to clear account data. Please try again or contact support.",
         variant: "destructive",
       });
     }
   };
 
-
-
   const handleRestoreAdminAccess = async () => {
     try {
-      const { data, error } = await supabase.functions.invoke('restore-admin-access');
-      
+      const { data, error } = await supabase.functions.invoke(
+        "restore-admin-access"
+      );
+
       if (error) throw error;
-      
+
       if (data?.success) {
         toast({
           title: "Success",
@@ -250,7 +298,10 @@ const Dashboard = () => {
       console.error("Error restoring admin access:", error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to restore admin access",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to restore admin access",
         variant: "destructive",
       });
     }
@@ -262,10 +313,12 @@ const Dashboard = () => {
         title: "Generating test data...",
         description: "This may take a moment",
       });
-      const { data, error } = await supabase.functions.invoke('generate-admin-test-data');
-      
+      const { data, error } = await supabase.functions.invoke(
+        "generate-admin-test-data"
+      );
+
       if (error) throw error;
-      
+
       if (data?.success) {
         toast({
           title: "Success",
@@ -278,7 +331,10 @@ const Dashboard = () => {
       console.error("Error generating test data:", error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to generate test data",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to generate test data",
         variant: "destructive",
       });
     }
@@ -286,15 +342,15 @@ const Dashboard = () => {
 
   const getThemeIcon = (themeType: string) => {
     switch (themeType) {
-      case 'light':
+      case "light":
         return <Sun className="h-4 w-4" />;
-      case 'dark':
+      case "dark":
         return <Moon className="h-4 w-4" />;
       default:
         return <Monitor className="h-4 w-4" />;
     }
   };
-  
+
   // Handle section change with special logic for team-management
   const handleSectionChange = (section: string) => {
     if (section === "team-management") {
@@ -307,7 +363,9 @@ const Dashboard = () => {
       }
     }
   };
-  const [financialsView, setFinancialsView] = useState<"bank-accounts" | "credit-cards" | "amazon-payouts">("bank-accounts");
+  const [financialsView, setFinancialsView] = useState<
+    "bank-accounts" | "credit-cards" | "amazon-payouts"
+  >("bank-accounts");
   const [showPurchaseOrderForm, setShowPurchaseOrderForm] = useState(false);
   const [showIncomeForm, setShowIncomeForm] = useState(false);
   const [showRecurringIncomeForm, setShowRecurringIncomeForm] = useState(false);
@@ -326,104 +384,143 @@ const Dashboard = () => {
     open: boolean;
     transaction: BankTransaction | null;
   }>({ open: false, transaction: null });
-  const [selectedBankAccountId, setSelectedBankAccountId] = useState<string>("all");
+  const [selectedBankAccountId, setSelectedBankAccountId] =
+    useState<string>("all");
   const [useAvailableBalance, setUseAvailableBalance] = useState(() => {
-    const saved = localStorage.getItem('useAvailableBalance');
-    return saved !== null ? saved === 'true' : true; // Default to true (available balance)
+    const saved = localStorage.getItem("useAvailableBalance");
+    return saved !== null ? saved === "true" : true; // Default to true (available balance)
   });
-  
+
   // Use database hooks
-  const { vendors, addVendor, updateVendor, deleteVendor, deleteAllVendors, cleanupOrphanedVendors, refetch: refetchVendors } = useVendors();
-  const { transactions, addTransaction, deleteTransaction, refetch: refetchTransactions } = useTransactions();
-  const { transactions: vendorTransactions, markAsPaid, refetch: refetchVendorTransactions } = useVendorTransactions();
-  const { totalBalance: bankAccountBalance, accounts, refetch: refetchBankAccounts } = useBankAccounts();
-  
+  const {
+    vendors,
+    addVendor,
+    updateVendor,
+    deleteVendor,
+    deleteAllVendors,
+    cleanupOrphanedVendors,
+    refetch: refetchVendors,
+  } = useVendors();
+  const {
+    transactions,
+    addTransaction,
+    deleteTransaction,
+    refetch: refetchTransactions,
+  } = useTransactions();
+  const {
+    transactions: vendorTransactions,
+    markAsPaid,
+    refetch: refetchVendorTransactions,
+  } = useVendorTransactions();
+  const {
+    totalBalance: bankAccountBalance,
+    accounts,
+    refetch: refetchBankAccounts,
+  } = useBankAccounts();
+
   // Calculate available balance total
   const totalAvailableBalance = accounts.reduce((sum, account) => {
     return sum + (account.available_balance ?? account.balance);
   }, 0);
-  
+
   // Use selected balance type
-  const displayBankBalance = useAvailableBalance ? totalAvailableBalance : bankAccountBalance;
-  
+  const displayBankBalance = useAvailableBalance
+    ? totalAvailableBalance
+    : bankAccountBalance;
+
   // Save preference to localStorage
   useEffect(() => {
-    localStorage.setItem('useAvailableBalance', String(useAvailableBalance));
+    localStorage.setItem("useAvailableBalance", String(useAvailableBalance));
   }, [useAvailableBalance]);
-  const { transactions: bankTransactionsData, isLoading: isBankTransactionsLoading, refetch: refetchBankTransactions } = useBankTransactions();
+  const {
+    transactions: bankTransactionsData,
+    isLoading: isBankTransactionsLoading,
+    refetch: refetchBankTransactions,
+  } = useBankTransactions();
   const { creditCards, refetch: refetchCreditCards } = useCreditCards();
   const { recurringExpenses, createRecurringExpense } = useRecurringExpenses();
   const { reserveAmount, updateReserveAmount } = useReserveAmount();
   const { excludeToday } = useExcludeToday();
-  const { data: safeSpendingData, refetch: refetchSafeSpending } = useSafeSpending(reserveAmount, excludeToday, useAvailableBalance);
-  const { isOverBankLimit, isOverAmazonLimit, isOverTeamLimit, currentUsage, planLimits } = usePlanLimits();
+  const { data: safeSpendingData, refetch: refetchSafeSpending } =
+    useSafeSpending(reserveAmount, excludeToday, useAvailableBalance);
+  const {
+    isOverBankLimit,
+    isOverAmazonLimit,
+    isOverTeamLimit,
+    currentUsage,
+    planLimits,
+  } = usePlanLimits();
   const [showLimitModal, setShowLimitModal] = useState<{
     open: boolean;
-    type: 'bank_connection' | 'amazon_connection' | 'user';
-  }>({ open: false, type: 'bank_connection' });
+    type: "bank_connection" | "amazon_connection" | "user";
+  }>({ open: false, type: "bank_connection" });
 
   // Refetch safe spending whenever reserve amount changes
   useEffect(() => {
-    console.log('💰 [DASHBOARD] Reserve amount changed to:', reserveAmount, '- refetching safe spending');
     refetchSafeSpending();
   }, [reserveAmount, refetchSafeSpending]);
-  
+
   // Refetch safe spending whenever exclude today changes
   useEffect(() => {
-    console.log('🔄 [DASHBOARD] Exclude today changed to:', excludeToday, '- refetching safe spending');
     refetchSafeSpending();
   }, [excludeToday, refetchSafeSpending]);
-  
+
   // Refetch safe spending whenever balance toggle changes
   useEffect(() => {
-    console.log('💳 [DASHBOARD] Balance type changed to:', useAvailableBalance ? 'Available' : 'Current', '- Current balance:', bankAccountBalance, 'Available balance:', totalAvailableBalance, '- TRIGGERING REFETCH');
     refetchSafeSpending();
-  }, [useAvailableBalance, refetchSafeSpending, bankAccountBalance, totalAvailableBalance]);
-  
+  }, [
+    useAvailableBalance,
+    refetchSafeSpending,
+    bankAccountBalance,
+    totalAvailableBalance,
+  ]);
+
   // Refetch safe spending whenever bank accounts change (added, removed, or balance updated)
   useEffect(() => {
-    console.log('🏦 [DASHBOARD] Bank accounts changed (count:', accounts.length, ') - refetching safe spending');
     refetchSafeSpending();
   }, [accounts.length, displayBankBalance, refetchSafeSpending]);
-  
+
   // Invalidate Amazon payout forecasts when bank balance changes to ensure fresh data
   useEffect(() => {
-    console.log('💰 [DASHBOARD] Bank balance changed to $', displayBankBalance, '- invalidating Amazon payout cache');
-    queryClient.invalidateQueries({ queryKey: ['amazon-payouts'] });
+    queryClient.invalidateQueries({ queryKey: ["amazon-payouts"] });
   }, [displayBankBalance, queryClient]);
-  
+
   // Check for limit violations and show modal
   useEffect(() => {
     if (isOverBankLimit) {
-      setShowLimitModal({ open: true, type: 'bank_connection' });
+      setShowLimitModal({ open: true, type: "bank_connection" });
     } else if (isOverAmazonLimit) {
-      setShowLimitModal({ open: true, type: 'amazon_connection' });
+      setShowLimitModal({ open: true, type: "amazon_connection" });
     } else if (isOverTeamLimit) {
-      setShowLimitModal({ open: true, type: 'user' });
+      setShowLimitModal({ open: true, type: "user" });
     } else {
       // Close modal when all limits are satisfied
-      setShowLimitModal({ open: false, type: 'bank_connection' });
+      setShowLimitModal({ open: false, type: "bank_connection" });
     }
   }, [isOverBankLimit, isOverAmazonLimit, isOverTeamLimit]);
-  
+
   const { amazonPayouts, advancedModelingEnabled } = useAmazonPayouts();
-  
-  console.log('Dashboard - bankAccountBalance:', bankAccountBalance, 'accounts connected:', accounts?.length || 0);
-  const { totalCash: userSettingsCash, updateTotalCash, setStartingBalance, resetAccount, forecastsEnabled } = useUserSettings();
+
+  const {
+    totalCash: userSettingsCash,
+    updateTotalCash,
+    setStartingBalance,
+    resetAccount,
+    forecastsEnabled,
+  } = useUserSettings();
 
   // Real-time updates for bank account balance changes
   useEffect(() => {
     const channel = supabase
-      .channel('bank-accounts-changes')
+      .channel("bank-accounts-changes")
       .on(
-        'postgres_changes',
+        "postgres_changes",
         {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'bank_accounts'
+          event: "UPDATE",
+          schema: "public",
+          table: "bank_accounts",
         },
         (payload) => {
-          console.log('Bank account updated:', payload);
           refetchBankAccounts();
           refetchSafeSpending();
         }
@@ -437,9 +534,9 @@ const Dashboard = () => {
 
   // Only show bank accounts (credit cards removed as they have no transactions)
   const allFinancialAccounts = useMemo(() => {
-    return accounts.map(acc => ({
+    return accounts.map((acc) => ({
       id: acc.id,
-      type: 'bank' as const,
+      type: "bank" as const,
       institution_name: acc.institution_name,
       account_name: acc.account_name,
       last_sync: acc.last_sync,
@@ -449,29 +546,37 @@ const Dashboard = () => {
   // Map real bank transactions to BankTransaction format
   const allBankTransactions: BankTransaction[] = useMemo(() => {
     if (!bankTransactionsData) return [];
-    
-    return bankTransactionsData.map(tx => {
+
+    return bankTransactionsData.map((tx) => {
       // Check both bank accounts and credit cards
-      const account = accounts?.find(acc => acc.id === tx.bankAccountId);
-      const creditCard = creditCards?.find(card => card.id === tx.creditCardId);
-      
+      const account = accounts?.find((acc) => acc.id === tx.bankAccountId);
+      const creditCard = creditCards?.find(
+        (card) => card.id === tx.creditCardId
+      );
+
       // Flip: Negative amount = credit, Positive = debit
-      const txType = tx.amount < 0 ? 'credit' : 'debit';
+      const txType = tx.amount < 0 ? "credit" : "debit";
       const txAmount = Math.abs(tx.amount);
-      
+
       return {
         id: tx.id,
         accountId: tx.bankAccountId || tx.creditCardId,
-        accountName: account?.account_name || creditCard?.account_name || 'Unknown Account',
-        institutionName: account?.institution_name || creditCard?.institution_name || 'Unknown',
+        accountName:
+          account?.account_name ||
+          creditCard?.account_name ||
+          "Unknown Account",
+        institutionName:
+          account?.institution_name ||
+          creditCard?.institution_name ||
+          "Unknown",
         date: tx.date,
         description: tx.name,
         merchantName: tx.merchantName,
         amount: txAmount,
         type: txType,
-        category: tx.category?.[0] || 'Uncategorized',
-        status: tx.pending ? 'pending' : 'posted',
-        matchScore: 0
+        category: tx.category?.[0] || "Uncategorized",
+        status: tx.pending ? "pending" : "posted",
+        matchScore: 0,
       } as BankTransaction;
     });
   }, [bankTransactionsData, accounts, creditCards]);
@@ -479,13 +584,15 @@ const Dashboard = () => {
   // Filter bank transactions by selected account
   const bankTransactions = useMemo(() => {
     if (selectedBankAccountId === "all") return allBankTransactions;
-    return allBankTransactions.filter(tx => tx.accountId === selectedBankAccountId);
+    return allBankTransactions.filter(
+      (tx) => tx.accountId === selectedBankAccountId
+    );
   }, [allBankTransactions, selectedBankAccountId]);
 
   // Group transactions by bank account
   const transactionsByAccount = useMemo(() => {
     const grouped = new Map<string, BankTransaction[]>();
-    bankTransactions.forEach(tx => {
+    bankTransactions.forEach((tx) => {
       const key = `${tx.institutionName} - ${tx.accountName}`;
       if (!grouped.has(key)) {
         grouped.set(key, []);
@@ -494,83 +601,90 @@ const Dashboard = () => {
     });
     return Array.from(grouped.entries()).map(([accountName, txs]) => ({
       accountName,
-      transactions: txs.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      transactions: txs.sort(
+        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+      ),
     }));
   }, [bankTransactions]);
-  
+
   // Ensure starting balance is 0 for a fresh start (so 9/29 shows only the $60k inflow)
   React.useEffect(() => {
-    const fixed = localStorage.getItem('balance_start_0');
+    const fixed = localStorage.getItem("balance_start_0");
     if (!fixed && userSettingsCash !== 0) {
       setStartingBalance(0);
-      localStorage.setItem('balance_start_0', 'true');
+      localStorage.setItem("balance_start_0", "true");
     }
   }, [userSettingsCash, setStartingBalance]);
 
   // Cleanup orphaned vendors on mount
   React.useEffect(() => {
-    const cleaned = localStorage.getItem('vendors_cleaned');
+    const cleaned = localStorage.getItem("vendors_cleaned");
     if (!cleaned) {
       cleanupOrphanedVendors?.();
-      localStorage.setItem('vendors_cleaned', 'true');
+      localStorage.setItem("vendors_cleaned", "true");
     }
   }, [cleanupOrphanedVendors]);
 
   // Cleanup orphaned transactions on mount (one-time)
   React.useEffect(() => {
     const cleanupOrphanedTransactions = async () => {
-      const cleaned = localStorage.getItem('transactions_cleaned_v2');
+      const cleaned = localStorage.getItem("transactions_cleaned_v2");
       if (!cleaned) {
         try {
-          const { data: { session } } = await supabase.auth.getSession();
+          const {
+            data: { session },
+          } = await supabase.auth.getSession();
           if (session) {
-            const { data } = await supabase.functions.invoke('cleanup-orphaned-transactions', {
-              headers: { Authorization: `Bearer ${session.access_token}` }
-            });
-            console.log('🧹 Orphaned transactions cleanup:', data);
-            localStorage.setItem('transactions_cleaned_v2', 'true');
+            const { data } = await supabase.functions.invoke(
+              "cleanup-orphaned-transactions",
+              {
+                headers: { Authorization: `Bearer ${session.access_token}` },
+              }
+            );
+            localStorage.setItem("transactions_cleaned_v2", "true");
             // Refresh calculations after cleanup
             setTimeout(() => {
               refetchSafeSpending();
             }, 1000);
           }
         } catch (error) {
-          console.error('Error cleaning up orphaned transactions:', error);
+          console.error("Error cleaning up orphaned transactions:", error);
         }
       }
     };
     cleanupOrphanedTransactions();
   }, [refetchSafeSpending]);
 
-
   const { customers, addCustomer } = useCustomers();
-  
+
   // State for vendors used in forms (derived from database vendors) - always fresh data
   const formVendors = useMemo(() => {
-    console.log('Dashboard - Creating formVendors from vendors:', vendors);
-    
+
     // Filter to only include management vendors (matching Vendor Management page)
     // and get unique vendors by name and sort alphabetically
     const uniqueVendors = vendors
-      .filter(vendor => vendor.source === 'management')
-      .filter((vendor, index, self) => 
-        index === self.findIndex(v => v.name.toLowerCase() === vendor.name.toLowerCase())
+      .filter((vendor) => vendor.source === "management")
+      .filter(
+        (vendor, index, self) =>
+          index ===
+          self.findIndex(
+            (v) => v.name.toLowerCase() === vendor.name.toLowerCase()
+          )
       )
       .sort((a, b) => a.name.localeCompare(b.name))
-      .map(v => ({ 
-        id: v.id, 
-        name: v.name, 
-        paymentType: v.paymentType || 'total',
-        paymentMethod: v.paymentMethod || 'bank-transfer',
-        netTermsDays: (v.netTermsDays ?? '30') as any,
+      .map((v) => ({
+        id: v.id,
+        name: v.name,
+        paymentType: v.paymentType || "total",
+        paymentMethod: v.paymentMethod || "bank-transfer",
+        netTermsDays: (v.netTermsDays ?? "30") as any,
         category: v.category || "",
-        source: v.source || 'management'
+        source: v.source || "management",
       }));
-    
-    console.log('Dashboard - formVendors result (unique):', uniqueVendors);
+
     return uniqueVendors;
   }, [vendors]); // Recompute when vendors change
-  
+
   // Force refresh vendors when opening Purchase Order form to ensure fresh data
   const handleOpenPurchaseOrderForm = () => {
     refetchVendors(); // Ensure we have the latest vendor data
@@ -578,23 +692,29 @@ const Dashboard = () => {
   };
 
   const [cashFlowEvents, setCashFlowEvents] = useState<CashFlowEvent[]>([]);
-  
+
   // Sample income data - replaced with database hook
-  const { incomeItems, addIncome, updateIncome, deleteIncome, refetch: refetchIncome } = useIncome();
+  const {
+    incomeItems,
+    addIncome,
+    updateIncome,
+    deleteIncome,
+    refetch: refetchIncome,
+  } = useIncome();
 
   // Transaction matching for bank transactions
   const { matches, getMatchesForIncome } = useTransactionMatching(
-    bankTransactions, 
+    bankTransactions,
     vendorTransactions || [],
-    incomeItems.filter(item => item.status !== 'received')
+    incomeItems.filter((item) => item.status !== "received")
   );
-  
+
   // Calculate unique PO/vendor transactions with matches (not total match count)
   const uniquePoMatchCount = matches.reduce((acc, match) => {
     let txId: string;
-    if (match.type === 'vendor' && match.matchedVendorTransaction) {
+    if (match.type === "vendor" && match.matchedVendorTransaction) {
       txId = match.matchedVendorTransaction.id;
-    } else if (match.type === 'income' && match.matchedIncome) {
+    } else if (match.type === "income" && match.matchedIncome) {
       txId = match.matchedIncome.id;
     } else {
       return acc;
@@ -602,27 +722,30 @@ const Dashboard = () => {
     acc.add(txId);
     return acc;
   }, new Set<string>()).size;
-  
+
   // Keep this for the notification component
   const unmatchedTransactionsCount = matches.length;
 
   // Calculate pending income due today that's not matched
   const todayDate = new Date();
   todayDate.setHours(0, 0, 0, 0);
-  
+
   const pendingIncomeToday = incomeItems
-    .filter(income => {
+    .filter((income) => {
       const paymentDate = new Date(income.paymentDate);
       paymentDate.setHours(0, 0, 0, 0);
       const isDueOrOverdue = paymentDate.getTime() <= todayDate.getTime();
-      const isPending = income.status === 'pending';
+      const isPending = income.status === "pending";
       const isNotMatched = getMatchesForIncome(income.id).length === 0;
       return isDueOrOverdue && isPending && isNotMatched;
     })
-    .reduce((acc, income) => ({
-      amount: acc.amount + income.amount,
-      count: acc.count + 1
-    }), { amount: 0, count: 0 });
+    .reduce(
+      (acc, income) => ({
+        amount: acc.amount + income.amount,
+        count: acc.count + 1,
+      }),
+      { amount: 0, count: 0 }
+    );
 
   // No sample data for new users
 
@@ -634,33 +757,37 @@ const Dashboard = () => {
   // ========== Event Handlers ==========
 
   const handleBankSync = async () => {
-    if (selectedBankAccountId === 'all') {
+    if (selectedBankAccountId === "all") {
       toast({
         title: "Select Account",
         description: "Please select a specific account to sync",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
 
     // All accounts are bank accounts now (credit cards removed)
-    const accountType = 'bank';
+    const accountType = "bank";
 
     setIsBankSyncing(true);
     try {
-      const { data, error } = await supabase.functions.invoke('sync-plaid-transactions', {
-        body: { 
-          accountId: selectedBankAccountId,
-          accountType: accountType,
-          isInitialSync: false
+      const { data, error } = await supabase.functions.invoke(
+        "sync-plaid-transactions",
+        {
+          body: {
+            accountId: selectedBankAccountId,
+            accountType: accountType,
+            isInitialSync: false,
+          },
         }
-      });
+      );
 
       if (error) throw error;
 
       toast({
         title: "Sync Started",
-        description: "Bank transactions are being synced. This may take a moment.",
+        description:
+          "Bank transactions are being synced. This may take a moment.",
       });
 
       // Refresh bank transactions after a short delay
@@ -669,11 +796,11 @@ const Dashboard = () => {
         setIsBankSyncing(false);
       }, 2000);
     } catch (error: any) {
-      console.error('Error syncing bank transactions:', error);
+      console.error("Error syncing bank transactions:", error);
       toast({
         title: "Sync Failed",
         description: error.message || "Failed to sync bank transactions",
-        variant: "destructive"
+        variant: "destructive",
       });
       setIsBankSyncing(false);
     }
@@ -681,107 +808,125 @@ const Dashboard = () => {
 
   const handlePayToday = async (vendor: Vendor, amount?: number) => {
     const paymentAmount = amount || vendor.nextPaymentAmount;
-    
-    console.info("Processing payment:", paymentAmount, "Bank balance:", bankAccountBalance);
-    
+
+    console.info(
+      "Processing payment:",
+      paymentAmount,
+      "Bank balance:",
+      bankAccountBalance
+    );
+
     // Note: In a real Plaid integration, this would trigger an actual bank transaction
     // For now, we just update the vendor status
 
     // Update vendor
-    await updateVendor(vendor.id, { 
-      totalOwed: Math.max(0, vendor.totalOwed - paymentAmount) 
+    await updateVendor(vendor.id, {
+      totalOwed: Math.max(0, vendor.totalOwed - paymentAmount),
     });
 
     // Add transaction
     await addTransaction({
-      type: 'vendor_payment',
+      type: "vendor_payment",
       amount: paymentAmount,
       description: `Payment to ${vendor.name}`,
       vendorId: vendor.id,
       transactionDate: new Date(),
-      status: 'completed'
+      status: "completed",
     });
 
     // Add cash flow event
     const newEvent: CashFlowEvent = {
       id: Date.now().toString(),
-      type: 'outflow',
+      type: "outflow",
       amount: paymentAmount,
       description: `Payment to ${vendor.name}`,
       vendor: vendor.name,
-      date: new Date()
+      date: new Date(),
     };
-    setCashFlowEvents(prev => [newEvent, ...prev]);
+    setCashFlowEvents((prev) => [newEvent, ...prev]);
   };
 
   const handleUndoTransaction = async (transactionId: string) => {
-    const transaction = transactions.find(t => t.id === transactionId);
+    const transaction = transactions.find((t) => t.id === transactionId);
     if (!transaction) return;
 
     // Note: In a real Plaid integration, this would reverse the bank transaction
-    
+
     // If this was a vendor payment, restore vendor balance
-    if (transaction.type === 'vendor_payment' && transaction.vendorId) {
-      const vendor = vendors.find(v => v.id === transaction.vendorId);
+    if (transaction.type === "vendor_payment" && transaction.vendorId) {
+      const vendor = vendors.find((v) => v.id === transaction.vendorId);
       if (vendor) {
         await updateVendor(transaction.vendorId, {
-          totalOwed: vendor.totalOwed + transaction.amount
+          totalOwed: vendor.totalOwed + transaction.amount,
         });
       }
     }
 
     // Remove transaction from database
     await deleteTransaction(transactionId);
-    
+
     // Refresh vendors to show updated data
     refetchVendors();
-    
+
     // Remove corresponding cash flow event from calendar
-    setCashFlowEvents(prev => prev.filter(e => 
-      !(e.description === transaction.description && 
-        e.amount === transaction.amount &&
-        Math.abs(e.date.getTime() - transaction.transactionDate.getTime()) < 86400000) // Within 24 hours
-    ));
+    setCashFlowEvents((prev) =>
+      prev.filter(
+        (e) =>
+          !(
+            e.description === transaction.description &&
+            e.amount === transaction.amount &&
+            Math.abs(e.date.getTime() - transaction.transactionDate.getTime()) <
+              86400000
+          ) // Within 24 hours
+      )
+    );
   };
 
   const handlePurchaseOrderSubmit = async (orderData: any) => {
     console.info("Purchase order received in Dashboard:", orderData);
-    console.info("🔍 Debug PO - dueDate:", orderData.dueDate, "paymentType:", orderData.paymentType);
-    
-    const amount = typeof orderData.amount === 'string' ? 
-      parseFloat(orderData.amount) : orderData.amount;
-    
+    console.info(
+      "🔍 Debug PO - dueDate:",
+      orderData.dueDate,
+      "paymentType:",
+      orderData.paymentType
+    );
+
+    const amount =
+      typeof orderData.amount === "string"
+        ? parseFloat(orderData.amount)
+        : orderData.amount;
+
     const dueDate = orderData.dueDate || new Date();
     const today = startOfDay(new Date());
     const dueDateStartOfDay = startOfDay(dueDate);
-    
+
     console.info("🔍 Debug PO - calculated status:", {
       dueDate: dueDate.toISOString(),
-      today: today.toISOString(), 
+      today: today.toISOString(),
       dueDateStartOfDay: dueDateStartOfDay.toISOString(),
-      willBePending: dueDateStartOfDay > today
+      willBePending: dueDateStartOfDay > today,
     });
-    
+
     // Check if vendor already exists (selected from dropdown)
     let vendorId = orderData.vendorId;
-    
+
     if (!vendorId) {
       // Create new vendor profile if it doesn't exist
       console.info("Creating new vendor profile");
-      
+
       // Map form payment types to database payment types
-      let dbPaymentType: 'total' | 'preorder' | 'net-terms' = 'total';
+      let dbPaymentType: "total" | "preorder" | "net-terms" = "total";
       switch (orderData.paymentType) {
-        case 'net-terms':
-          dbPaymentType = 'net-terms';
+        case "net-terms":
+          dbPaymentType = "net-terms";
           break;
-        case 'preorder':
-          dbPaymentType = 'preorder';
+        case "preorder":
+          dbPaymentType = "preorder";
           break;
-        case 'due-upon-order':
-        case 'due-upon-delivery':
+        case "due-upon-order":
+        case "due-upon-delivery":
         default:
-          dbPaymentType = 'total';
+          dbPaymentType = "total";
           break;
       }
 
@@ -790,77 +935,111 @@ const Dashboard = () => {
         totalOwed: 0, // Don't store aggregate data here
         nextPaymentDate: new Date(),
         nextPaymentAmount: 0,
-        status: 'upcoming',
-        category: orderData.category || '',
+        status: "upcoming",
+        category: orderData.category || "",
         paymentType: dbPaymentType,
         netTermsDays: orderData.netTermsDays,
-        source: 'management',
-        poName: '',
-        description: '',
-        notes: ''
+        source: "management",
+        poName: "",
+        description: "",
+        notes: "",
       });
-      
+
       vendorId = newVendor?.id;
     }
 
     // If payment method is credit card, deduct from that card's available credit
-    if (orderData.paymentMethod === 'credit-card' && orderData.selectedCreditCard) {
-      const selectedCard = creditCards.find(card => card.id === orderData.selectedCreditCard);
+    if (
+      orderData.paymentMethod === "credit-card" &&
+      orderData.selectedCreditCard
+    ) {
+      const selectedCard = creditCards.find(
+        (card) => card.id === orderData.selectedCreditCard
+      );
       if (selectedCard) {
         const newBalance = selectedCard.balance + amount;
         const newAvailableCredit = selectedCard.available_credit - amount;
-        
+
         await supabase
-          .from('credit_cards')
+          .from("credit_cards")
           .update({
             balance: newBalance,
             available_credit: newAvailableCredit,
-            updated_at: new Date().toISOString()
+            updated_at: new Date().toISOString(),
           })
-          .eq('id', orderData.selectedCreditCard);
-        
-        console.info(`Credit card ${selectedCard.account_name} charged: $${amount}`);
+          .eq("id", orderData.selectedCreditCard);
+
+        console.info(
+          `Credit card ${selectedCard.account_name} charged: $${amount}`
+        );
       }
     }
 
     // Handle preorder payment schedule - create multiple transactions
-    if (orderData.paymentType === 'preorder' && orderData.paymentSchedule && orderData.paymentSchedule.length > 0) {
-      console.info("Creating preorder transactions with payment schedule:", orderData.paymentSchedule);
-      
+    if (
+      orderData.paymentType === "preorder" &&
+      orderData.paymentSchedule &&
+      orderData.paymentSchedule.length > 0
+    ) {
+      console.info(
+        "Creating preorder transactions with payment schedule:",
+        orderData.paymentSchedule
+      );
+
       // Create a transaction for each payment in the schedule
       for (let i = 0; i < orderData.paymentSchedule.length; i++) {
         const payment = orderData.paymentSchedule[i];
-        const paymentAmount = typeof payment.amount === 'string' ? parseFloat(payment.amount) : payment.amount;
+        const paymentAmount =
+          typeof payment.amount === "string"
+            ? parseFloat(payment.amount)
+            : payment.amount;
         const paymentDueDate = payment.dueDate || new Date();
         const paymentDueDateStartOfDay = startOfDay(paymentDueDate);
-        
+
         const transactionData = {
-          type: 'purchase_order' as const,
+          type: "purchase_order" as const,
           amount: paymentAmount,
-          description: `${orderData.poName || `PO - ${orderData.vendor}`} - ${payment.description || `Payment ${i + 1}`}`,
+          description: `${orderData.poName || `PO - ${orderData.vendor}`} - ${
+            payment.description || `Payment ${i + 1}`
+          }`,
           vendorId: vendorId,
           transactionDate: orderData.poDate || new Date(),
           dueDate: paymentDueDate,
-          status: (paymentDueDateStartOfDay <= today ? 'completed' : 'pending') as 'completed' | 'pending',
-          creditCardId: orderData.paymentMethod === 'credit-card' ? orderData.selectedCreditCard : null
+          status: (paymentDueDateStartOfDay <= today
+            ? "completed"
+            : "pending") as "completed" | "pending",
+          creditCardId:
+            orderData.paymentMethod === "credit-card"
+              ? orderData.selectedCreditCard
+              : null,
         };
-        
-        console.info(`🔍 Creating preorder transaction ${i + 1}/${orderData.paymentSchedule.length}:`, transactionData);
+
+        console.info(
+          `🔍 Creating preorder transaction ${i + 1}/${
+            orderData.paymentSchedule.length
+          }:`,
+          transactionData
+        );
         await addTransaction(transactionData);
       }
     } else {
       // Create single transaction for non-preorder POs
       const transactionData = {
-        type: 'purchase_order' as const,
+        type: "purchase_order" as const,
         amount: amount,
         description: orderData.poName || `PO - ${orderData.vendor}`, // Use PO name/number, not line item description
         vendorId: vendorId,
         transactionDate: orderData.poDate || new Date(),
         dueDate: dueDate,
-        status: (dueDateStartOfDay <= today ? 'completed' : 'pending') as 'completed' | 'pending',
-        creditCardId: orderData.paymentMethod === 'credit-card' ? orderData.selectedCreditCard : null
+        status: (dueDateStartOfDay <= today ? "completed" : "pending") as
+          | "completed"
+          | "pending",
+        creditCardId:
+          orderData.paymentMethod === "credit-card"
+            ? orderData.selectedCreditCard
+            : null,
       };
-      
+
       console.info("🔍 Creating transaction:", transactionData);
       const newTransaction = await addTransaction(transactionData);
       console.info("🔍 Transaction created:", newTransaction);
@@ -868,34 +1047,52 @@ const Dashboard = () => {
       // Create line items from extracted data or description
       if (newTransaction) {
         try {
-          const { data: { user } } = await supabase.auth.getUser();
+          const {
+            data: { user },
+          } = await supabase.auth.getUser();
           if (user) {
             const { data: profile } = await supabase
-              .from('profiles')
-              .select('account_id')
-              .eq('user_id', user.id)
+              .from("profiles")
+              .select("account_id")
+              .eq("user_id", user.id)
               .single();
 
             if (profile?.account_id) {
               // Check if we have extracted line items
-              if (orderData.extractedLineItems && Array.isArray(orderData.extractedLineItems) && orderData.extractedLineItems.length > 0) {
-                console.info("🔍 Raw extracted line items:", orderData.extractedLineItems);
-                
+              if (
+                orderData.extractedLineItems &&
+                Array.isArray(orderData.extractedLineItems) &&
+                orderData.extractedLineItems.length > 0
+              ) {
+                console.info(
+                  "🔍 Raw extracted line items:",
+                  orderData.extractedLineItems
+                );
+
                 // Insert all extracted line items with flexible field mapping
                 const lineItemsToInsert = orderData.extractedLineItems
                   .map((item: any) => {
                     // Handle various field name possibilities from AI extraction
-                    const productName = item.productName || item.product_name || item.description || item.item_description || null;
-                    
+                    const productName =
+                      item.productName ||
+                      item.product_name ||
+                      item.description ||
+                      item.item_description ||
+                      null;
+
                     if (!productName) {
-                      console.warn("⚠️ Skipping line item without product name:", item);
+                      console.warn(
+                        "⚠️ Skipping line item without product name:",
+                        item
+                      );
                       return null;
                     }
-                    
+
                     const unitPrice = item.unitPrice || item.unit_price || null;
                     const quantity = item.quantity || 1;
-                    const totalPrice = unitPrice && quantity ? unitPrice * quantity : null;
-                    
+                    const totalPrice =
+                      unitPrice && quantity ? unitPrice * quantity : null;
+
                     return {
                       transaction_id: newTransaction.id,
                       account_id: profile.account_id,
@@ -903,21 +1100,29 @@ const Dashboard = () => {
                       sku: item.sku || item.SKU || null,
                       quantity: quantity,
                       unit_price: unitPrice,
-                      total_price: totalPrice
+                      total_price: totalPrice,
                     };
                   })
                   .filter((item: any) => item !== null); // Remove null items
-                
+
                 if (lineItemsToInsert.length > 0) {
                   console.info("📝 Inserting line items:", lineItemsToInsert);
                   await supabase
-                    .from('purchase_order_line_items')
+                    .from("purchase_order_line_items")
                     .insert(lineItemsToInsert);
-                  console.info("✅ Line items created from extracted data:", lineItemsToInsert.length);
+                  console.info(
+                    "✅ Line items created from extracted data:",
+                    lineItemsToInsert.length
+                  );
                 } else {
-                  console.warn("⚠️ No valid line items to insert after filtering");
+                  console.warn(
+                    "⚠️ No valid line items to insert after filtering"
+                  );
                 }
-              } else if (orderData.lineItemDescription && orderData.lineItemDescription.trim()) {
+              } else if (
+                orderData.lineItemDescription &&
+                orderData.lineItemDescription.trim()
+              ) {
                 // Fallback: split description into multiple line items (one row per described item)
                 const raw = orderData.lineItemDescription.trim();
                 const parts = raw
@@ -930,7 +1135,7 @@ const Dashboard = () => {
                   const qtyPatterns = [
                     /(?:qty|quantity)\s*[:\-]?\s*(\d+(?:\.\d+)?)/i,
                     /(\d+(?:\.\d+)?)\s*(?:x|ea|pcs?)/i,
-                    /x\s*(\d+(?:\.\d+)?)/i
+                    /x\s*(\d+(?:\.\d+)?)/i,
                   ];
                   for (const r of qtyPatterns) {
                     const m = text.match(r);
@@ -941,40 +1146,63 @@ const Dashboard = () => {
 
                 const parseUnit = (text: string) => {
                   // Try to find a unit price like $12.34 or 12.34 preceded by 'unit', '/ea', etc.
-                  const money = text.match(/\$\s*(\d{1,3}(?:,\d{3})*(?:\.\d{2})?|\d+(?:\.\d{2}))/);
-                  if (money && money[1]) return Number(money[1].replace(/,/g, ''));
-                  const unitAfter = text.match(/(?:unit|each|ea|price)\s*[:\-]?\s*\$?\s*(\d+(?:\.\d{2})?)/i);
+                  const money = text.match(
+                    /\$\s*(\d{1,3}(?:,\d{3})*(?:\.\d{2})?|\d+(?:\.\d{2}))/
+                  );
+                  if (money && money[1])
+                    return Number(money[1].replace(/,/g, ""));
+                  const unitAfter = text.match(
+                    /(?:unit|each|ea|price)\s*[:\-]?\s*\$?\s*(\d+(?:\.\d{2})?)/i
+                  );
                   if (unitAfter && unitAfter[1]) return Number(unitAfter[1]);
                   return null;
                 };
 
-                const lineItemsToInsert = (parts.length ? parts : [raw]).map((line: string) => {
-                  const quantity = parseQty(line);
-                  const unitPrice = parseUnit(line);
-                  const totalPrice = unitPrice != null ? Number((unitPrice * quantity).toFixed(2)) : null;
+                const lineItemsToInsert = (parts.length ? parts : [raw]).map(
+                  (line: string) => {
+                    const quantity = parseQty(line);
+                    const unitPrice = parseUnit(line);
+                    const totalPrice =
+                      unitPrice != null
+                        ? Number((unitPrice * quantity).toFixed(2))
+                        : null;
 
-                  // Clean product name by removing obvious qty/price tokens
-                  const cleaned = line
-                    .replace(/(?:qty|quantity)\s*[:\-]?\s*\d+(?:\.\d+)?/ig, '')
-                    .replace(/\b\d+(?:\.\d+)?\s*(?:x|ea|pcs?)\b/ig, '')
-                    .replace(/\$\s*\d{1,3}(?:,\d{3})*(?:\.\d{2})?|\b(?:unit|each|ea|price)\s*[:\-]?\s*\$?\s*\d+(?:\.\d{2})?/ig, '')
-                    .replace(/\s{2,}/g, ' ')
-                    .trim();
+                    // Clean product name by removing obvious qty/price tokens
+                    const cleaned = line
+                      .replace(
+                        /(?:qty|quantity)\s*[:\-]?\s*\d+(?:\.\d+)?/gi,
+                        ""
+                      )
+                      .replace(/\b\d+(?:\.\d+)?\s*(?:x|ea|pcs?)\b/gi, "")
+                      .replace(
+                        /\$\s*\d{1,3}(?:,\d{3})*(?:\.\d{2})?|\b(?:unit|each|ea|price)\s*[:\-]?\s*\$?\s*\d+(?:\.\d{2})?/gi,
+                        ""
+                      )
+                      .replace(/\s{2,}/g, " ")
+                      .trim();
 
-                  return {
-                    transaction_id: newTransaction.id,
-                    account_id: profile.account_id,
-                    product_name: cleaned || line, // ensure not empty
-                    sku: null,
-                    quantity,
-                    unit_price: unitPrice,
-                    total_price: totalPrice
-                  };
-                });
+                    return {
+                      transaction_id: newTransaction.id,
+                      account_id: profile.account_id,
+                      product_name: cleaned || line, // ensure not empty
+                      sku: null,
+                      quantity,
+                      unit_price: unitPrice,
+                      total_price: totalPrice,
+                    };
+                  }
+                );
 
-                console.info("📝 Inserting fallback line items from description:", lineItemsToInsert);
-                await supabase.from('purchase_order_line_items').insert(lineItemsToInsert);
-                console.info(`✅ Created ${lineItemsToInsert.length} line item(s) from description fallback`);
+                console.info(
+                  "📝 Inserting fallback line items from description:",
+                  lineItemsToInsert
+                );
+                await supabase
+                  .from("purchase_order_line_items")
+                  .insert(lineItemsToInsert);
+                console.info(
+                  `✅ Created ${lineItemsToInsert.length} line item(s) from description fallback`
+                );
               }
             }
           }
@@ -986,90 +1214,106 @@ const Dashboard = () => {
 
     console.info("Transaction(s) created, refreshing data");
     await Promise.all([refetchVendors(), refetchTransactions()]);
-    
+
     setShowPurchaseOrderForm(false);
   };
 
   const handleDeleteIncome = async (income: any) => {
     console.info("Deleting income:", income.description);
-    
+
     // Delete income from database
     await deleteIncome(income.id);
-    
+
     // Remove corresponding cash flow events from calendar
-    setCashFlowEvents(prev => prev.filter(event => 
-      !(event.type === 'inflow' && 
-        event.description === income.description && 
-        Math.abs(event.amount - income.amount) < 0.01)
-    ));
-    
+    setCashFlowEvents((prev) =>
+      prev.filter(
+        (event) =>
+          !(
+            event.type === "inflow" &&
+            event.description === income.description &&
+            Math.abs(event.amount - income.amount) < 0.01
+          )
+      )
+    );
+
     // Clean up any orphaned transactions
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (session) {
-        await supabase.functions.invoke('cleanup-orphaned-transactions', {
-          headers: { Authorization: `Bearer ${session.access_token}` }
+        await supabase.functions.invoke("cleanup-orphaned-transactions", {
+          headers: { Authorization: `Bearer ${session.access_token}` },
         });
       }
     } catch (error) {
-      console.error('Error cleaning up orphaned transactions:', error);
+      console.error("Error cleaning up orphaned transactions:", error);
     }
-    
+
     // Refresh safe spending calculations with a delay to ensure DB changes propagate
     setTimeout(() => {
-      console.log('🔄 Manually refreshing safe spending after income deletion');
+      console.log("🔄 Manually refreshing safe spending after income deletion");
       refetchSafeSpending();
     }, 500);
   };
 
   const handleEditIncome = (income: any) => {
     // Find the customer name if customerId exists
-    const customer = income.customerId 
-      ? customers.find(c => c.id === income.customerId)
+    const customer = income.customerId
+      ? customers.find((c) => c.id === income.customerId)
       : null;
-    
+
     setEditingIncome({
       ...income,
       customer: customer?.name || income.source,
-      customerId: income.customerId
+      customerId: income.customerId,
     });
     setShowEditIncomeForm(true);
   };
 
   const handleUpdateIncome = async (updatedIncomeData: any) => {
-    const amount = typeof updatedIncomeData.amount === 'string' ? 
-      parseFloat(updatedIncomeData.amount) : updatedIncomeData.amount;
-    
+    const amount =
+      typeof updatedIncomeData.amount === "string"
+        ? parseFloat(updatedIncomeData.amount)
+        : updatedIncomeData.amount;
+
     const paymentDate = updatedIncomeData.paymentDate || new Date();
     const today = startOfDay(new Date());
     const paymentDateStartOfDay = startOfDay(paymentDate);
-    
+
     // Find the original income item to compare dates
-    const originalIncome = incomeItems.find(item => item.id === updatedIncomeData.id);
-    
+    const originalIncome = incomeItems.find(
+      (item) => item.id === updatedIncomeData.id
+    );
+
     // Note: In a real Plaid integration, this would update connected account balances
     const success = await updateIncome(updatedIncomeData.id, {
       description: updatedIncomeData.description,
       amount,
       paymentDate,
-      source: updatedIncomeData.customer || updatedIncomeData.source || 'Manual Entry',
-      status: updatedIncomeData.status || 'pending' as const,
+      source:
+        updatedIncomeData.customer ||
+        updatedIncomeData.source ||
+        "Manual Entry",
+      status: updatedIncomeData.status || ("pending" as const),
       category: updatedIncomeData.category,
       isRecurring: updatedIncomeData.isRecurring || false,
       recurringFrequency: updatedIncomeData.recurringFrequency,
       notes: updatedIncomeData.notes,
-      customerId: updatedIncomeData.customerId
+      customerId: updatedIncomeData.customerId,
     });
 
     // Remove any legacy inflow events for this income to prevent duplicates in the calendar
     if (success && originalIncome) {
-      setCashFlowEvents(prev =>
-        prev.filter(event => {
-          if (event.type !== 'inflow') return true;
+      setCashFlowEvents((prev) =>
+        prev.filter((event) => {
+          if (event.type !== "inflow") return true;
           const sameDesc = event.description === originalIncome.description;
-          const sameAmount = Math.abs(event.amount - originalIncome.amount) < 0.01;
+          const sameAmount =
+            Math.abs(event.amount - originalIncome.amount) < 0.01;
           const sameDay =
-            startOfDay(event.date).getTime() === startOfDay(originalIncome.paymentDate).getTime();
+            startOfDay(event.date).getTime() ===
+            startOfDay(originalIncome.paymentDate).getTime();
           return !(sameDesc && sameAmount && sameDay);
         })
       );
@@ -1082,34 +1326,44 @@ const Dashboard = () => {
   };
 
   const handleIncomeSubmit = async (incomeData: any) => {
-    const amount = typeof incomeData.amount === 'string' ? 
-      parseFloat(incomeData.amount) : incomeData.amount;
-    
+    const amount =
+      typeof incomeData.amount === "string"
+        ? parseFloat(incomeData.amount)
+        : incomeData.amount;
+
     const paymentDate = incomeData.paymentDate || new Date();
     const today = startOfDay(new Date());
     const paymentDateStartOfDay = startOfDay(paymentDate);
-    
+
     console.info("Adding income amount:", amount);
     console.info("Payment date:", paymentDate);
     console.info("Current bank balance:", bankAccountBalance);
-    
+
     // Check if this is a recurring transaction
     if (incomeData.isRecurring) {
       const frequency = incomeData.recurringFrequency;
 
       // Save to recurring_expenses table
       await createRecurringExpense({
-        name: incomeData.transactionName || incomeData.description || 'Recurring Income',
-        transaction_name: incomeData.transactionName || incomeData.description || 'Recurring Income',
+        name:
+          incomeData.transactionName ||
+          incomeData.description ||
+          "Recurring Income",
+        transaction_name:
+          incomeData.transactionName ||
+          incomeData.description ||
+          "Recurring Income",
         amount: amount,
         frequency: frequency,
-        start_date: format(paymentDate, 'yyyy-MM-dd'),
-        end_date: incomeData.endDate ? format(incomeData.endDate, 'yyyy-MM-dd') : null,
+        start_date: format(paymentDate, "yyyy-MM-dd"),
+        end_date: incomeData.endDate
+          ? format(incomeData.endDate, "yyyy-MM-dd")
+          : null,
         is_active: true,
-        type: 'income',
+        type: "income",
         category: null,
         notes: incomeData.description || incomeData.notes || null,
-        credit_card_id: null
+        credit_card_id: null,
       });
 
       toast({
@@ -1121,24 +1375,26 @@ const Dashboard = () => {
       setShowRecurringIncomeForm(false);
       return;
     }
-    
+
     // Note: In a real Plaid integration, this would add funds to connected account
 
     // Add to database - check if it succeeds
     // Handle temporary customer IDs - set to null if temp ID is detected
-    const customerId = incomeData.customerId?.startsWith?.('temp-') ? null : incomeData.customerId;
-    
+    const customerId = incomeData.customerId?.startsWith?.("temp-")
+      ? null
+      : incomeData.customerId;
+
     const newIncome = await addIncome({
-      description: incomeData.description || 'Income',
+      description: incomeData.description || "Income",
       amount: amount,
       paymentDate: paymentDate,
-      source: incomeData.customer || incomeData.source || 'Manual Entry',
-      status: 'pending' as const,
-      category: incomeData.category || '',
+      source: incomeData.customer || incomeData.source || "Manual Entry",
+      status: "pending" as const,
+      category: incomeData.category || "",
       isRecurring: false,
       recurringFrequency: incomeData.recurringFrequency,
       notes: incomeData.notes,
-      customerId: customerId
+      customerId: customerId,
     });
 
     // Only continue if income was added successfully
@@ -1148,12 +1404,12 @@ const Dashboard = () => {
 
     // Create transaction
     await addTransaction({
-      type: 'sales_order',
+      type: "sales_order",
       amount: amount,
-      description: incomeData.description || 'Income',
+      description: incomeData.description || "Income",
       transactionDate: paymentDate,
       category: incomeData.category,
-      status: paymentDateStartOfDay <= today ? 'completed' : 'pending'
+      status: paymentDateStartOfDay <= today ? "completed" : "pending",
     });
 
     // Refetch income to update calendar
@@ -1167,29 +1423,39 @@ const Dashboard = () => {
   };
 
   const handleExpenseSubmit = async (expenseData: any) => {
-    const amount = typeof expenseData.amount === 'string' ? 
-      parseFloat(expenseData.amount) : expenseData.amount;
-    
+    const amount =
+      typeof expenseData.amount === "string"
+        ? parseFloat(expenseData.amount)
+        : expenseData.amount;
+
     console.info("Adding expense amount:", amount);
     console.info("Current bank balance:", bankAccountBalance);
-    
+
     // Check if this is a recurring transaction
     if (expenseData.isRecurring) {
       const frequency = expenseData.recurringFrequency;
 
       // Save to recurring_expenses table
       await createRecurringExpense({
-        name: expenseData.transactionName || expenseData.description || 'Recurring Expense',
-        transaction_name: expenseData.transactionName || expenseData.description || 'Recurring Expense',
+        name:
+          expenseData.transactionName ||
+          expenseData.description ||
+          "Recurring Expense",
+        transaction_name:
+          expenseData.transactionName ||
+          expenseData.description ||
+          "Recurring Expense",
         amount: amount,
         frequency: frequency,
-        start_date: format(expenseData.paymentDate || new Date(), 'yyyy-MM-dd'),
-        end_date: expenseData.endDate ? format(expenseData.endDate, 'yyyy-MM-dd') : null,
+        start_date: format(expenseData.paymentDate || new Date(), "yyyy-MM-dd"),
+        end_date: expenseData.endDate
+          ? format(expenseData.endDate, "yyyy-MM-dd")
+          : null,
         is_active: true,
-        type: 'expense',
+        type: "expense",
         category: null,
         notes: expenseData.description || expenseData.notes || null,
-        credit_card_id: expenseData.creditCardId || null
+        credit_card_id: expenseData.creditCardId || null,
       });
 
       toast({
@@ -1201,7 +1467,7 @@ const Dashboard = () => {
       setShowRecurringIncomeForm(false);
       return;
     }
-    
+
     // Note: In a real Plaid integration, this would deduct from connected account
 
     // Create vendor for expense
@@ -1210,32 +1476,32 @@ const Dashboard = () => {
       totalOwed: amount,
       nextPaymentDate: expenseData.paymentDate || new Date(),
       nextPaymentAmount: amount,
-      status: 'upcoming',
-      category: expenseData.category || 'Other',
-      paymentType: 'total',
+      status: "upcoming",
+      category: expenseData.category || "Other",
+      paymentType: "total",
       description: expenseData.description,
-      notes: expenseData.notes
+      notes: expenseData.notes,
     });
 
     // Create transaction (link to the created vendor)
     await addTransaction({
-      type: 'purchase_order',
+      type: "purchase_order",
       amount: amount,
-      description: expenseData.description || 'Expense',
+      description: expenseData.description || "Expense",
       vendorId: newVendor?.id,
       transactionDate: expenseData.paymentDate || new Date(),
-      status: 'completed'
+      status: "completed",
     });
 
     // Create cash flow event
     const newEvent: CashFlowEvent = {
       id: Date.now().toString(),
-      type: 'outflow',
+      type: "outflow",
       amount: amount,
-      description: expenseData.description || 'Expense',
-      date: expenseData.paymentDate || new Date()
+      description: expenseData.description || "Expense",
+      date: expenseData.paymentDate || new Date(),
     };
-    setCashFlowEvents(prev => [newEvent, ...prev]);
+    setCashFlowEvents((prev) => [newEvent, ...prev]);
 
     setShowIncomeForm(false);
     setShowRecurringIncomeForm(false);
@@ -1243,31 +1509,31 @@ const Dashboard = () => {
 
   const handleCollectIncome = async (income: any) => {
     console.info("Collecting income amount:", income.amount);
-    
+
     // Note: In a real Plaid integration, this would add funds to connected account
 
     // Create transaction for the transaction log (no need to update total_cash separately)
     await addTransaction({
-      type: 'sales_order',
+      type: "sales_order",
       amount: income.amount,
       description: income.description,
       transactionDate: new Date(),
-      status: 'completed'
+      status: "completed",
     });
 
     // Create cash flow event for calendar
     const newEvent: CashFlowEvent = {
       id: Date.now().toString(),
-      type: 'inflow',
+      type: "inflow",
       amount: income.amount,
       description: income.description,
       source: income.source,
-      date: new Date()
+      date: new Date(),
     };
-    setCashFlowEvents(prev => [newEvent, ...prev]);
+    setCashFlowEvents((prev) => [newEvent, ...prev]);
 
     // Mark income as received instead of deleting
-    await updateIncome(income.id, { status: 'received' });
+    await updateIncome(income.id, { status: "received" });
   };
 
   const handleEditVendorOrder = (vendor: Vendor) => {
@@ -1275,64 +1541,77 @@ const Dashboard = () => {
   };
 
   const handleSaveVendorOrder = async (updatedVendor: Vendor) => {
-    const originalVendor = vendors.find(v => v.id === updatedVendor.id);
-    
+    const originalVendor = vendors.find((v) => v.id === updatedVendor.id);
+
     // Update the vendor in database - this will trigger realtime subscription
     await updateVendor(updatedVendor.id, updatedVendor);
-    
+
     // Update cash flow events if payment date changed
-    if (originalVendor && originalVendor.nextPaymentDate.getTime() !== updatedVendor.nextPaymentDate.getTime()) {
-      setCashFlowEvents(prev => prev.map(event => {
-        // Find and update the cash flow event for this vendor
-        if (event.type === 'outflow' && 
-            (event.vendor === updatedVendor.name || 
-             event.description?.includes(updatedVendor.name) ||
-             (updatedVendor.poName && event.description?.includes(updatedVendor.poName)))) {
-          return {
-            ...event,
-            date: updatedVendor.nextPaymentDate
-          };
-        }
-        return event;
-      }));
+    if (
+      originalVendor &&
+      originalVendor.nextPaymentDate.getTime() !==
+        updatedVendor.nextPaymentDate.getTime()
+    ) {
+      setCashFlowEvents((prev) =>
+        prev.map((event) => {
+          // Find and update the cash flow event for this vendor
+          if (
+            event.type === "outflow" &&
+            (event.vendor === updatedVendor.name ||
+              event.description?.includes(updatedVendor.name) ||
+              (updatedVendor.poName &&
+                event.description?.includes(updatedVendor.poName)))
+          ) {
+            return {
+              ...event,
+              date: updatedVendor.nextPaymentDate,
+            };
+          }
+          return event;
+        })
+      );
     }
-    
+
     // Refetch vendors to ensure we have the latest data
     await refetchVendors();
-    
+
     setEditingVendor(null);
   };
 
-  const handleUpdateTransactionDate = async (transactionId: string, newDate: Date, eventType: 'vendor' | 'income') => {
-    if (eventType === 'vendor') {
+  const handleUpdateTransactionDate = async (
+    transactionId: string,
+    newDate: Date,
+    eventType: "vendor" | "income"
+  ) => {
+    if (eventType === "vendor") {
       // Strip the "vendor-tx-" prefix to get the actual transaction ID
-      const txId = transactionId.replace('vendor-tx-', '');
-      
+      const txId = transactionId.replace("vendor-tx-", "");
+
       // Format date for database (YYYY-MM-DD)
       const formatDateForDB = (date: Date) => {
         const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const day = String(date.getDate()).padStart(2, "0");
         return `${year}-${month}-${day}`;
       };
-      
+
       // Update ONLY the transaction's due_date
       const { error: txError } = await supabase
-        .from('transactions')
+        .from("transactions")
         .update({ due_date: formatDateForDB(newDate) })
-        .eq('id', txId);
-      
+        .eq("id", txId);
+
       if (txError) {
-        console.error('Error updating transaction date:', txError);
+        console.error("Error updating transaction date:", txError);
         throw txError;
       }
-      
+
       // Refetch transactions to update UI and signal VendorsOverview
       await refetchTransactions();
       setVendorTxRefresh((v) => v + 1);
-    } else if (eventType === 'income') {
+    } else if (eventType === "income") {
       // Strip the "income-" prefix to get the actual income ID
-      const incomeId = transactionId.replace('income-', '');
+      const incomeId = transactionId.replace("income-", "");
       await updateIncome(incomeId, { paymentDate: newDate });
     }
   };
@@ -1340,52 +1619,69 @@ const Dashboard = () => {
   const handleDeleteVendorOrder = async (vendor: Vendor) => {
     // Archive to deleted_transactions first
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (user) {
-        const paymentDate = vendor.nextPaymentDate ? new Date(vendor.nextPaymentDate) : undefined;
+        const paymentDate = vendor.nextPaymentDate
+          ? new Date(vendor.nextPaymentDate)
+          : undefined;
         const amount = vendor.totalOwed || 0;
         const payload: any = {
           user_id: user.id,
-          transaction_type: 'vendor',
+          transaction_type: "vendor",
           original_id: vendor.id,
           name: vendor.name,
           amount,
-          description: vendor.poName || vendor.description || 'PO deleted',
-          payment_date: paymentDate ? `${paymentDate.getFullYear()}-${String(paymentDate.getMonth()+1).padStart(2,'0')}-${String(paymentDate.getDate()).padStart(2,'0')}` : null,
-          status: vendor.status || 'pending',
+          description: vendor.poName || vendor.description || "PO deleted",
+          payment_date: paymentDate
+            ? `${paymentDate.getFullYear()}-${String(
+                paymentDate.getMonth() + 1
+              ).padStart(2, "0")}-${String(paymentDate.getDate()).padStart(
+                2,
+                "0"
+              )}`
+            : null,
+          status: vendor.status || "pending",
           category: vendor.category || null,
           metadata: {
-            context: 'vendor_delete',
+            context: "vendor_delete",
             vendorId: vendor.id,
             poName: vendor.poName,
             totalOwed: vendor.totalOwed,
             nextPaymentDate: vendor.nextPaymentDate,
-          }
+          },
         };
         const { error: archiveError } = await supabase
-          .from('deleted_transactions')
+          .from("deleted_transactions")
           .insert(payload as any);
         if (archiveError) {
-          console.error('Failed to archive deleted vendor:', archiveError);
+          console.error("Failed to archive deleted vendor:", archiveError);
         }
       }
     } catch (e) {
-      console.error('Archive step failed:', e);
+      console.error("Archive step failed:", e);
     }
 
     // Delete the vendor completely from the database
     await deleteVendor(vendor.id);
 
     // Remove any cash flow events associated with this vendor
-    setCashFlowEvents(prev => prev.filter(event => 
-      !(event.vendor === vendor.name || 
-        event.description?.includes(vendor.name) ||
-        (vendor.poName && event.description?.includes(vendor.poName)))
-    ));
+    setCashFlowEvents((prev) =>
+      prev.filter(
+        (event) =>
+          !(
+            event.vendor === vendor.name ||
+            event.description?.includes(vendor.name) ||
+            (vendor.poName && event.description?.includes(vendor.poName))
+          )
+      )
+    );
 
     toast({
-      title: 'Vendor transaction deleted',
-      description: 'The vendor has been removed and archived to deleted transactions.',
+      title: "Vendor transaction deleted",
+      description:
+        "The vendor has been removed and archived to deleted transactions.",
     });
 
     setEditingVendor(null);
@@ -1393,105 +1689,133 @@ const Dashboard = () => {
 
   const handleEditTransaction = (transaction: any) => {
     console.log("Editing transaction:", transaction);
-    
+
     // Route to appropriate edit form based on transaction type
-    if (transaction.type === 'inflow') {
+    if (transaction.type === "inflow") {
       // For income transactions, we need to find the corresponding income item
-      const incomeItem = incomeItems.find(item => 
-        item.description === transaction.description && 
-        Math.abs(item.amount - transaction.amount) < 0.01
+      const incomeItem = incomeItems.find(
+        (item) =>
+          item.description === transaction.description &&
+          Math.abs(item.amount - transaction.amount) < 0.01
       );
-      
+
       if (incomeItem) {
         // TODO: Open income edit form - for now, show alert
         handleEditIncome(incomeItem);
       } else {
-        alert(`Income item not found for transaction: ${transaction.description}`);
+        alert(
+          `Income item not found for transaction: ${transaction.description}`
+        );
       }
-    } else if (transaction.type === 'purchase-order' || transaction.type === 'outflow' || transaction.vendor) {
+    } else if (
+      transaction.type === "purchase-order" ||
+      transaction.type === "outflow" ||
+      transaction.vendor
+    ) {
       // For vendor transactions, find the corresponding vendor
-      const vendor = vendors.find(v => 
-        v.name === transaction.vendor || 
-        transaction.description.includes(v.name) ||
-        v.poName === transaction.poName
+      const vendor = vendors.find(
+        (v) =>
+          v.name === transaction.vendor ||
+          transaction.description.includes(v.name) ||
+          v.poName === transaction.poName
       );
-      
+
       if (vendor) {
         setEditingVendor(vendor);
       } else {
         alert(`Vendor not found for transaction: ${transaction.description}`);
       }
     } else {
-      alert(`Unknown transaction type: ${transaction.type}\nTransaction: ${transaction.description}`);
+      alert(
+        `Unknown transaction type: ${transaction.type}\nTransaction: ${transaction.description}`
+      );
     }
   };
 
-
   const handleUpdateCashBalance = async () => {
     // This function syncs with real bank account balance from connected accounts
-    console.log("Syncing cash balance - Bank account balance:", bankAccountBalance);
+    console.log(
+      "Syncing cash balance - Bank account balance:",
+      bankAccountBalance
+    );
     console.log("Cash balance is now managed through Plaid integration");
   };
 
-  const handleManualMatchConfirm = async (matchId: string, matchType: 'income' | 'vendor') => {
+  const handleManualMatchConfirm = async (
+    matchId: string,
+    matchType: "income" | "vendor"
+  ) => {
     if (!manualMatchDialog.transaction) return;
-    
+
     try {
       // Archive the bank transaction
       const { error: archiveError } = await supabase
-        .from('bank_transactions')
+        .from("bank_transactions")
         .update({
           archived: true,
           matched_transaction_id: matchId,
           matched_type: matchType,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
-        .eq('id', manualMatchDialog.transaction.id);
+        .eq("id", manualMatchDialog.transaction.id);
 
       if (archiveError) throw archiveError;
 
       // Update income or vendor
-      if (matchType === 'income') {
-        await updateIncome(matchId, { status: 'received' });
+      if (matchType === "income") {
+        await updateIncome(matchId, { status: "received" });
       } else {
-        const vendor = vendors.find(v => v.id === matchId);
+        const vendor = vendors.find((v) => v.id === matchId);
         if (vendor) {
           await updateVendor(matchId, {
-            totalOwed: Math.max(0, vendor.totalOwed - Math.abs(manualMatchDialog.transaction.amount))
+            totalOwed: Math.max(
+              0,
+              vendor.totalOwed - Math.abs(manualMatchDialog.transaction.amount)
+            ),
           });
         }
       }
 
       toast({
-        title: 'Transaction matched',
-        description: 'Bank transaction has been matched and archived.',
+        title: "Transaction matched",
+        description: "Bank transaction has been matched and archived.",
       });
 
-      await Promise.all([refetchIncome(), refetchVendors(), refetchSafeSpending()]);
+      await Promise.all([
+        refetchIncome(),
+        refetchVendors(),
+        refetchSafeSpending(),
+      ]);
     } catch (error) {
-      console.error('Failed to match transaction:', error);
+      console.error("Failed to match transaction:", error);
       toast({
-        title: 'Error',
-        description: 'Failed to match transaction. Please try again.',
-        variant: 'destructive',
+        title: "Error",
+        description: "Failed to match transaction. Please try again.",
+        variant: "destructive",
       });
     }
   };
 
   // Convert database transactions to component format
-  const formattedTransactions = transactions.map(t => ({
+  const formattedTransactions = transactions.map((t) => ({
     id: t.id,
-    type: t.type === 'vendor_payment' ? 'payment' as const : 
-          t.type === 'purchase_order' ? 'purchase' as const : 'adjustment' as const,
+    type:
+      t.type === "vendor_payment"
+        ? ("payment" as const)
+        : t.type === "purchase_order"
+        ? ("purchase" as const)
+        : ("adjustment" as const),
     amount: t.amount,
     description: t.description,
     date: t.transactionDate,
     status: t.status,
-    vendor: t.vendorId ? vendors.find(v => v.id === t.vendorId)?.name : undefined
+    vendor: t.vendorId
+      ? vendors.find((v) => v.id === t.vendorId)?.name
+      : undefined,
   }));
 
   // Filter vendors to exclude 'paid' status for VendorsOverview component
-  const activeVendors = vendors.filter(v => v.status !== 'paid');
+  const activeVendors = vendors.filter((v) => v.status !== "paid");
 
   // No sample events for new users
   const sampleEvents: any[] = [];
@@ -1501,73 +1825,64 @@ const Dashboard = () => {
 
   // Convert vendor transactions to calendar events (only show POs with vendors assigned)
   const vendorEvents: CashFlowEvent[] = transactions
-    .filter(tx => {
+    .filter((tx) => {
       // Only show purchase orders with vendor IDs
-      if (tx.type !== 'purchase_order' || !tx.vendorId) {
+      if (tx.type !== "purchase_order" || !tx.vendorId) {
         return false;
       }
       // Exclude completed transactions
-      if (tx.status === 'completed') {
+      if (tx.status === "completed") {
         return false;
       }
       // Exclude .1 transactions (paid portion of partial payments)
-      if (tx.description?.endsWith('.1')) return false;
+      if (tx.description?.endsWith(".1")) return false;
       // Exclude partially_paid parent transactions (they're replaced by .2 transactions)
       const dbStatus = (tx as any).status;
-      if (dbStatus === 'partially_paid') return false;
+      if (dbStatus === "partially_paid") return false;
       // Allow .2 transactions (remaining balance with new due date) to show
       return true;
     })
-    .map(tx => {
-      const vendor = vendors.find(v => v.id === tx.vendorId);
+    .map((tx) => {
+      const vendor = vendors.find((v) => v.id === tx.vendorId);
       // Use dueDate if available (for net terms), otherwise use transactionDate
       const eventDate = tx.dueDate || tx.transactionDate;
-      
-      console.log('🔍 Creating vendor event:', {
-        txId: tx.id,
-        description: tx.description,
-        dueDate: tx.dueDate,
-        transactionDate: tx.transactionDate,
-        eventDate: eventDate,
-        status: tx.status,
-        creditCardId: tx.creditCardId
-      });
-      
+
       return {
         id: `vendor-tx-${tx.id}`,
-        type: 'outflow' as const,
+        type: "outflow" as const,
         amount: tx.amount,
-        description: tx.description || `${vendor?.name || 'Vendor'} - Payment Due`,
+        description:
+          tx.description || `${vendor?.name || "Vendor"} - Payment Due`,
         vendor: vendor?.name,
         creditCardId: tx.creditCardId,
-        date: eventDate
+        date: eventDate,
       };
     });
-  
-  console.log('🔍 Total vendor events for calendar:', vendorEvents.length, vendorEvents);
 
   // Convert income items to calendar events (exclude received income)
   const incomeEvents: CashFlowEvent[] = incomeItems
-    .filter(income => income.status !== 'received')
-    .map(income => ({
+    .filter((income) => income.status !== "received")
+    .map((income) => ({
       id: `income-${income.id}`,
-      type: 'inflow' as const,
+      type: "inflow" as const,
       amount: income.amount,
       description: income.description,
       source: income.source,
-      date: income.paymentDate
+      date: income.paymentDate,
     }));
 
   // Prevent duplicate inflows: remove any legacy cashFlowEvents that mirror existing income items
   useEffect(() => {
-    setCashFlowEvents(prev =>
-      prev.filter(e => {
-        if (e.type !== 'inflow') return true;
+    setCashFlowEvents((prev) =>
+      prev.filter((e) => {
+        if (e.type !== "inflow") return true;
         // Drop inflow events that match an income item on the same day with same desc and amount
-        return !incomeItems.some(inc =>
-          inc.description === e.description &&
-          Math.abs(inc.amount - e.amount) < 0.01 &&
-          startOfDay(inc.paymentDate).getTime() === startOfDay(e.date).getTime()
+        return !incomeItems.some(
+          (inc) =>
+            inc.description === e.description &&
+            Math.abs(inc.amount - e.amount) < 0.01 &&
+            startOfDay(inc.paymentDate).getTime() ===
+              startOfDay(e.date).getTime()
         );
       })
     );
@@ -1575,20 +1890,23 @@ const Dashboard = () => {
 
   // Clean up stale cash flow events when vendors change
   React.useEffect(() => {
-    setCashFlowEvents(prev =>
-      prev.filter(e => {
+    setCashFlowEvents((prev) =>
+      prev.filter((e) => {
         if (!e.vendor) return true;
-        
+
         // Check if vendor still exists by name
-        const vendorExists = vendors.some(v => v.name === e.vendor);
+        const vendorExists = vendors.some((v) => v.name === e.vendor);
         if (!vendorExists) return false; // vendor deleted
-        
+
         // Check if vendor is fully paid
-        const vendor = vendors.find(v => v.name === e.vendor);
-        if (vendor && ((vendor.totalOwed ?? 0) <= 0 || vendor.status === 'paid')) {
+        const vendor = vendors.find((v) => v.name === e.vendor);
+        if (
+          vendor &&
+          ((vendor.totalOwed ?? 0) <= 0 || vendor.status === "paid")
+        ) {
           return false; // fully paid
         }
-        
+
         return true;
       })
     );
@@ -1596,68 +1914,81 @@ const Dashboard = () => {
 
   // Clear all cash flow events when all data is deleted
   React.useEffect(() => {
-    if (vendors.length === 0 && incomeItems.length === 0 && transactions.length === 0) {
+    if (
+      vendors.length === 0 &&
+      incomeItems.length === 0 &&
+      transactions.length === 0
+    ) {
       setCashFlowEvents([]);
     }
   }, [vendors.length, incomeItems.length, transactions.length]);
 
   // Get credit card due date events - show statement balance as expense on due date
-  const creditCardEvents: CashFlowEvent[] = creditCards.length > 0
-    ? creditCards
-        .filter(card => card.payment_due_date && card.balance > 0)
-        .map(card => {
-          // If pay_minimum is enabled, show minimum payment; otherwise show statement balance
-          const paymentAmount = card.pay_minimum 
-            ? card.minimum_payment 
-            : (card.statement_balance || card.balance);
-          
-          return {
-            id: `credit-payment-${card.id}`,
-            type: 'credit-payment' as const,
-            amount: paymentAmount,
-            description: `${card.institution_name} - ${card.account_name} Payment${card.pay_minimum ? ' (Min Only)' : ''}`,
-            creditCard: card.institution_name,
-            date: new Date(card.payment_due_date!)
-          };
-        })
-    : [];
+  const creditCardEvents: CashFlowEvent[] =
+    creditCards.length > 0
+      ? creditCards
+          .filter((card) => card.payment_due_date && card.balance > 0)
+          .map((card) => {
+            // If pay_minimum is enabled, show minimum payment; otherwise show statement balance
+            const paymentAmount = card.pay_minimum
+              ? card.minimum_payment
+              : card.statement_balance || card.balance;
+
+            return {
+              id: `credit-payment-${card.id}`,
+              type: "credit-payment" as const,
+              amount: paymentAmount,
+              description: `${card.institution_name} - ${
+                card.account_name
+              } Payment${card.pay_minimum ? " (Min Only)" : ""}`,
+              creditCard: card.institution_name,
+              date: new Date(card.payment_due_date!),
+            };
+          })
+      : [];
 
   // Add forecasted next month payments for cards with forecast enabled
-  const forecastedCreditCardEvents: CashFlowEvent[] = creditCards.length > 0
-    ? creditCards
-        .filter(card => card.forecast_next_month && card.payment_due_date)
-        .map(card => {
-          // Calculate projected usage: limit - available - statement balance
-          const projectedAmount = card.credit_limit - card.available_credit - (card.statement_balance || card.balance);
-          
-          if (projectedAmount <= 0) return null;
-          
-          // Add one month to the current due date
-          const nextDueDate = new Date(card.payment_due_date!);
-          nextDueDate.setMonth(nextDueDate.getMonth() + 1);
-          
-          return {
-            id: `credit-forecast-${card.id}`,
-            type: 'credit-payment' as const,
-            amount: projectedAmount,
-            description: `${card.institution_name} - ${card.account_name} (Forecasted)`,
-            creditCard: card.institution_name,
-            date: nextDueDate
-          };
-        })
-        .filter(Boolean) as CashFlowEvent[]
-    : [];
+  const forecastedCreditCardEvents: CashFlowEvent[] =
+    creditCards.length > 0
+      ? (creditCards
+          .filter((card) => card.forecast_next_month && card.payment_due_date)
+          .map((card) => {
+            // Calculate projected usage: limit - available - statement balance
+            const projectedAmount =
+              card.credit_limit -
+              card.available_credit -
+              (card.statement_balance || card.balance);
+
+            if (projectedAmount <= 0) return null;
+
+            // Add one month to the current due date
+            const nextDueDate = new Date(card.payment_due_date!);
+            nextDueDate.setMonth(nextDueDate.getMonth() + 1);
+
+            return {
+              id: `credit-forecast-${card.id}`,
+              type: "credit-payment" as const,
+              amount: projectedAmount,
+              description: `${card.institution_name} - ${card.account_name} (Forecasted)`,
+              creditCard: card.institution_name,
+              date: nextDueDate,
+            };
+          })
+          .filter(Boolean) as CashFlowEvent[])
+      : [];
 
   // Convert vendor payments (actual cash outflows) to calendar events
   const vendorPaymentEvents: CashFlowEvent[] = transactions
-    .filter(t => t.type === 'vendor_payment')
-    .map(t => ({
+    .filter((t) => t.type === "vendor_payment")
+    .map((t) => ({
       id: `vendor-payment-${t.id}`,
-      type: 'outflow' as const,
+      type: "outflow" as const,
       amount: t.amount,
       description: t.description,
-      vendor: t.vendorId ? vendors.find(v => v.id === t.vendorId)?.name : undefined,
-      date: t.transactionDate
+      vendor: t.vendorId
+        ? vendors.find((v) => v.id === t.vendorId)?.name
+        : undefined,
+      date: t.transactionDate,
     }));
 
   // Generate recurring transaction events for calendar (show next 12 months)
@@ -1666,18 +1997,18 @@ const Dashboard = () => {
     const rangeStart = startOfDay(new Date());
     const rangeEnd = addDays(rangeStart, 365); // Next 12 months
 
-    recurringExpenses.forEach(recurring => {
+    recurringExpenses.forEach((recurring) => {
       const dates = generateRecurringDates(recurring, rangeStart, rangeEnd);
-      
-      dates.forEach(date => {
+
+      dates.forEach((date) => {
         events.push({
           id: `recurring-${recurring.id}-${date.getTime()}`,
-          type: recurring.type === 'income' ? 'inflow' : 'outflow',
+          type: recurring.type === "income" ? "inflow" : "outflow",
           amount: Number(recurring.amount),
           description: `${recurring.transaction_name || recurring.name}`, // Full description stored here
           date: date,
-          source: recurring.type === 'income' ? 'Recurring' : undefined,
-          vendor: recurring.type === 'expense' ? 'Recurring' : undefined, // Show "Recurring" as vendor name
+          source: recurring.type === "income" ? "Recurring" : undefined,
+          vendor: recurring.type === "expense" ? "Recurring" : undefined, // Show "Recurring" as vendor name
         });
       });
     });
@@ -1685,89 +2016,74 @@ const Dashboard = () => {
     return events;
   }, [recurringExpenses]);
 
-  // Convert Amazon payouts to calendar events (filter out forecasts if disabled)
-  console.log('[Dashboard] Converting Amazon payouts to calendar events. Total payouts:', amazonPayouts.length, 'Forecasts enabled:', forecastsEnabled);
-  
   // Track event creation for Oct 31 to Dec 12
   const eventCreationLog: any = {
     vendorEvents: [],
     incomeEvents: [],
     creditCardEvents: [],
     recurringEvents: [],
-    amazonEvents: []
+    amazonEvents: [],
   };
-  
+
   const amazonPayoutEvents: CashFlowEvent[] = amazonPayouts
-    .filter(payout => {
+    .filter((payout) => {
       // Always include forecasted payouts in calendar events for chart display
       // (The forecast toggle only affects safe spending calculations, not chart visibility)
-      
+
       // Exclude forecasted payouts in the past - forecasts should start from today
-      if ((payout.status as string) === 'forecasted') {
-        const payoutDate = new Date(payout.payout_date);
+      if ((payout.status as string) === "forecasted") {
+        const payoutDate = new Date(`${payout.payout_date}T00:00:00`);
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         payoutDate.setHours(0, 0, 0, 0);
-        
+
         if (payoutDate < today) {
-          console.log('[Dashboard] Excluding past forecasted payout:', payout.payout_date);
           return false;
         }
       }
-      
+
       // Allow rolled_over forecasts to display even if they're in the past
       // This shows users the rollover history on the chart
-      if ((payout.status as string) === 'rolled_over') {
-        console.log('[Dashboard] Including rolled_over forecast (shows rollover history):', payout.payout_date);
+      if ((payout.status as string) === "rolled_over") {
         return true; // Don't filter out rolled_over forecasts
       }
-      
+
       // Exclude open settlements ONLY for daily settlement accounts
       // (Daily forecasts replace the open settlement calculation)
       // Keep open settlements for bi-weekly accounts (they're the actual payout)
-      if ((payout.status as string) === 'estimated') {
+      if ((payout.status as string) === "estimated") {
         const accountFrequency = payout.amazon_accounts?.payout_frequency;
         const rawData = (payout as any).raw_settlement_data;
-        const hasEndDate = !!(rawData?.FinancialEventGroupEnd || rawData?.settlement_end_date);
-        
-        if (accountFrequency === 'daily') {
+        const hasEndDate = !!(
+          rawData?.FinancialEventGroupEnd || rawData?.settlement_end_date
+        );
+
+        if (accountFrequency === "daily") {
           // For daily accounts, ONLY exclude open settlements (no end date)
           // Closed estimated settlements (with end date) should be included
           if (!hasEndDate) {
-            console.log('[Dashboard] ❌ EXCLUDING daily account open settlement from ALL calculations:', {
-              settlementId: payout.settlement_id,
-              amount: payout.total_amount,
-              payoutDate: payout.payout_date,
-              reason: 'Daily account open settlements are excluded - forecasts used instead'
-            });
             return false;
           }
-          
-          // If it has an end date, it's a closed estimated settlement - include it
-          console.log('[Dashboard] ✅ INCLUDING daily account closed estimated settlement:', {
-            settlementId: payout.settlement_id,
-            amount: payout.total_amount,
-            hasEndDate: hasEndDate
-          });
         }
       }
-      
+
       return true;
     })
-    .map(payout => {
+    .map((payout) => {
       // Open settlements (status='estimated') are in-progress and will update daily
-      const isOpenSettlement = (payout.status as string) === 'estimated';
-      const isForecastedPayout = (payout.status as string) === 'forecasted';
-      const isConfirmedPayout = (payout.status as string) === 'confirmed';
-      const isRolledOverForecast = (payout.status as string) === 'rolled_over';
-      
+      const isOpenSettlement = (payout.status as string) === "estimated";
+      const isForecastedPayout = (payout.status as string) === "forecasted";
+      const isConfirmedPayout = (payout.status as string) === "confirmed";
+      const isRolledOverForecast = (payout.status as string) === "rolled_over";
+
       let displayDate: Date;
-      
+
       if (isConfirmedPayout) {
         // For confirmed payouts, calculate from settlement end date + 1 day
         const rawData = (payout as any).raw_settlement_data;
-        const settlementEndStr = rawData?.FinancialEventGroupEnd || rawData?.settlement_end_date;
-        
+        const settlementEndStr =
+          rawData?.FinancialEventGroupEnd || rawData?.settlement_end_date;
+
         if (settlementEndStr) {
           displayDate = new Date(settlementEndStr);
           displayDate.setDate(displayDate.getDate() + 1);
@@ -1775,276 +2091,172 @@ const Dashboard = () => {
           // Fallback to payout_date if no settlement data
           displayDate = new Date(payout.payout_date);
         }
-        
-        console.log('[Calendar] Using settlement_end_date + 1 for confirmed payout:', {
-          status: payout.status,
-          settlement_end_date: settlementEndStr,
-          displayDate: displayDate.toISOString().split('T')[0],
-          amount: payout.total_amount
-        });
+
       } else if (isOpenSettlement) {
         // For estimated payouts (open settlements), calculate from settlement end date + 1 day
         const rawData = (payout as any).raw_settlement_data;
-        const settlementEndStr = rawData?.FinancialEventGroupEnd || rawData?.settlement_end_date;
-        const settlementStartStr = rawData?.settlement_start_date || rawData?.FinancialEventGroupStart;
-        
+        const settlementEndStr =
+          rawData?.FinancialEventGroupEnd || rawData?.settlement_end_date;
+        const settlementStartStr =
+          rawData?.settlement_start_date || rawData?.FinancialEventGroupStart;
+
         if (settlementEndStr) {
           displayDate = new Date(settlementEndStr);
-          console.log('[Calendar] Using settlement end date for estimated payout:', {
-            status: payout.status,
-            settlementEndDate: settlementEndStr,
-            amount: payout.total_amount
-          });
         } else if (settlementStartStr) {
           const settlementStartDate = new Date(settlementStartStr);
           const settlementCloseDate = new Date(settlementStartDate);
           settlementCloseDate.setDate(settlementCloseDate.getDate() + 14);
           displayDate = settlementCloseDate;
-          
-          console.log('[Calendar] Open settlement - calculated close date:', {
-            settlementId: payout.settlement_id,
-            startDate: settlementStartStr,
-            closeDate: displayDate.toISOString().split('T')[0],
-            amount: payout.total_amount
-          });
+
         } else {
-          displayDate = new Date(payout.payout_date);
-          console.log('[Calendar] No settlement dates found, using payout_date:', payout.payout_date);
+          displayDate = new Date(`${payout.payout_date}T00:00:00`);
         }
-        
+
         // Add +1 day for bank transfer for estimated payouts
         displayDate = new Date(displayDate);
         displayDate.setDate(displayDate.getDate() + 1);
-        console.log('[Calendar] Estimated payout - added 1 day for bank transfer:', {
-          status: payout.status,
-          fundsArrivalDate: displayDate.toISOString().split('T')[0],
-          amount: payout.total_amount
-        });
       } else {
         // For forecasted payouts, use date as-is (forecast engine already calculates correct dates)
-        displayDate = new Date(payout.payout_date);
+        displayDate = new Date(`${payout.payout_date}T00:00:00`);
       }
-      
-      const description = (payout.status as string) === 'forecasted' 
-        ? `Amazon Payout (Forecasted) - ${payout.marketplace_name}`
-        : isOpenSettlement
+
+      const description =
+        (payout.status as string) === "forecasted"
+          ? `Amazon Payout (Forecasted) - ${payout.marketplace_name}`
+          : isOpenSettlement
           ? `Amazon Settlement (In Progress) - ${payout.marketplace_name}`
           : `Amazon Payout - ${payout.marketplace_name}`;
-      
+
       // Track event creation for logging
-      const eventDateStr = displayDate.toISOString().split('T')[0];
-      if (eventDateStr >= '2024-10-31' && eventDateStr <= '2025-12-12') {
+      const eventDateStr = displayDate.toISOString().split("T")[0];
+      if (eventDateStr >= "2024-10-31" && eventDateStr <= "2025-12-12") {
         eventCreationLog.amazonEvents.push({
           date: eventDateStr,
           amount: payout.total_amount,
           status: payout.status,
-          settlementId: payout.settlement_id
+          settlementId: payout.settlement_id,
         });
       }
-      
+
       // For forecasted payouts, add +1 day for balance impact (bank transfer time)
-      const balanceImpactDate = (payout.status as string) === 'forecasted' 
-        ? new Date(new Date(displayDate).setDate(displayDate.getDate() + 1))
-        : displayDate;
-      
+      const balanceImpactDate =
+        (payout.status as string) === "forecasted"
+          ? new Date(new Date(displayDate).setDate(displayDate.getDate() + 1))
+          : displayDate;
+      const checkDate = new Date(displayDate);
+      console.log("displayDate", displayDate, "amount", payout.total_amount)
       return {
         id: `amazon-payout-${payout.id}`,
-        type: 'inflow' as const,
+        type: "inflow" as const,
         amount: payout.total_amount,
         description,
-        source: (payout.status as string) === 'forecasted' ? 'Amazon-Forecasted' : 'Amazon',
+        source:
+          (payout.status as string) === "forecasted"
+            ? "Amazon-Forecasted"
+            : "Amazon",
         date: displayDate,
-        balanceImpactDate
+        balanceImpactDate,
       };
     });
-  
-  console.log('[Dashboard] Amazon payout events created:', amazonPayoutEvents.length);
-  
-  // Log all event creation for target date range
-  vendorEvents.forEach(e => {
-    const dateStr = e.date.toISOString().split('T')[0];
-    if (dateStr >= '2024-10-31' && dateStr <= '2025-12-12') {
-      eventCreationLog.vendorEvents.push({ date: dateStr, amount: -e.amount, desc: e.description });
-    }
-  });
-  
-  incomeEvents.forEach(e => {
-    const dateStr = e.date.toISOString().split('T')[0];
-    if (dateStr >= '2024-10-31' && dateStr <= '2025-12-12') {
-      eventCreationLog.incomeEvents.push({ date: dateStr, amount: e.amount, desc: e.description });
-    }
-  });
-  
-  creditCardEvents.forEach(e => {
-    const dateStr = e.date.toISOString().split('T')[0];
-    if (dateStr >= '2024-10-31' && dateStr <= '2025-12-12') {
-      eventCreationLog.creditCardEvents.push({ date: dateStr, amount: -e.amount, desc: e.description });
-    }
-  });
-  
-  recurringEvents.forEach(e => {
-    const dateStr = e.date.toISOString().split('T')[0];
-    if (dateStr >= '2024-10-31' && dateStr <= '2025-12-12') {
-      eventCreationLog.recurringEvents.push({ 
-        date: dateStr, 
-        amount: e.type === 'inflow' ? e.amount : -e.amount, 
-        desc: e.description 
-      });
-    }
-  });
-  
-  console.log('📅 [Dashboard] Event Creation Summary (Oct 31 - Dec 12):', {
-    vendorEvents: eventCreationLog.vendorEvents.length,
-    incomeEvents: eventCreationLog.incomeEvents.length,
-    creditCardEvents: eventCreationLog.creditCardEvents.length,
-    recurringEvents: eventCreationLog.recurringEvents.length,
-    amazonEvents: eventCreationLog.amazonEvents.length,
-    totalEvents: eventCreationLog.vendorEvents.length + eventCreationLog.incomeEvents.length + 
-                 eventCreationLog.creditCardEvents.length + eventCreationLog.recurringEvents.length + 
-                 eventCreationLog.amazonEvents.length
-  });
+
 
   // Combine all events for calendar - only include real user data
-  const allCalendarEvents = [...calendarEvents, ...vendorPaymentEvents, ...vendorEvents, ...incomeEvents, ...creditCardEvents, ...forecastedCreditCardEvents, ...recurringEvents, ...amazonPayoutEvents];
+  const allCalendarEvents = [
+    ...calendarEvents,
+    ...vendorPaymentEvents,
+    ...vendorEvents,
+    ...incomeEvents,
+    ...creditCardEvents,
+    ...forecastedCreditCardEvents,
+    ...recurringEvents,
+    ...amazonPayoutEvents,
+  ];
 
   // Trigger safe spending recalculation when any financial data changes
   useEffect(() => {
-    console.log('📊 Calendar events changed, triggering safe spending recalculation');
     refetchSafeSpending();
-  }, [transactions.length, incomeItems.length, vendors.length, recurringExpenses.length, creditCards.length, refetchSafeSpending]);
+  }, [
+    transactions.length,
+    incomeItems.length,
+    vendors.length,
+    recurringExpenses.length,
+    creditCards.length,
+    refetchSafeSpending,
+  ]);
 
-  // Debug: Log all calendar events to check for duplicates
-  console.log("📅 All Calendar Events:", {
-    total: allCalendarEvents.length,
-    cashFlowEvents: calendarEvents.length,
-    vendorEvents: vendorEvents.length,
-    incomeEvents: incomeEvents.length,
-    creditCardEvents: creditCardEvents.length,
-    recurringEvents: recurringEvents.length,
-    allEvents: allCalendarEvents.map(e => ({ 
-      id: e.id, 
-      type: e.type, 
-      amount: e.amount, 
-      desc: e.description, 
-      date: format(e.date, 'MMM dd')
-    }))
-  });
-
-  // Log cash values for debugging
-  console.log("Dashboard - bankAccountBalance:", bankAccountBalance, "accounts connected:", accounts.length);
-  
   // Calculate total transactions (income - expenses) - only count transactions on or before today
   const today = startOfDay(new Date());
   const transactionTotal = transactions.reduce((total, transaction) => {
     const amount = Number(transaction.amount);
     const transactionDate = startOfDay(transaction.transactionDate);
-    
+
     // Only count transactions on or before today and that are completed
-    if (transactionDate > today || transaction.status !== 'completed') {
+    if (transactionDate > today || transaction.status !== "completed") {
       return total;
     }
-    
+
     // Income: customer_payment, sales_order
     // Expenses: purchase_order, vendor_payment
-    const isIncome = transaction.type === 'customer_payment' || transaction.type === 'sales_order';
+    const isIncome =
+      transaction.type === "customer_payment" ||
+      transaction.type === "sales_order";
     return isIncome ? total + amount : total - amount;
   }, 0);
-  
-  console.log('Balance Debug:', {
-    userSettingsCash,
-    transactionTotal,
-    transactionCount: transactions.length,
-    transactions: transactions.map(t => ({ type: t.type, amount: t.amount, date: t.transactionDate }))
-  });
-  
+
   // Use bank account balance if connected, otherwise calculate from user settings + transactions
-  const displayCash = accounts.length > 0 ? displayBankBalance : userSettingsCash + transactionTotal;
+  const displayCash =
+    accounts.length > 0
+      ? displayBankBalance
+      : userSettingsCash + transactionTotal;
 
   // Calculate today's activity for insights
   const todayInflow = transactions
-    .filter(t => startOfDay(t.transactionDate).getTime() === today.getTime() && 
-                 (t.type === 'customer_payment' || t.type === 'sales_order') &&
-                 t.status === 'completed')
+    .filter(
+      (t) =>
+        startOfDay(t.transactionDate).getTime() === today.getTime() &&
+        (t.type === "customer_payment" || t.type === "sales_order") &&
+        t.status === "completed"
+    )
     .reduce((sum, t) => sum + Number(t.amount), 0);
-  
+
   const todayOutflow = transactions
-    .filter(t => startOfDay(t.transactionDate).getTime() === today.getTime() && 
-                 (t.type === 'purchase_order' || t.type === 'vendor_payment') &&
-                 t.status === 'completed')
+    .filter(
+      (t) =>
+        startOfDay(t.transactionDate).getTime() === today.getTime() &&
+        (t.type === "purchase_order" || t.type === "vendor_payment") &&
+        t.status === "completed"
+    )
     .reduce((sum, t) => sum + Number(t.amount), 0);
 
   const upcomingExpenses = allCalendarEvents
-    .filter(event => {
+    .filter((event) => {
       const eventDate = new Date(event.date);
       eventDate.setHours(0, 0, 0, 0);
       const sevenDaysOut = addDays(today, 7);
-      return eventDate > today && eventDate <= sevenDaysOut &&
-             event.type === 'outflow';
+      return (
+        eventDate > today &&
+        eventDate <= sevenDaysOut &&
+        event.type === "outflow"
+      );
     })
     .reduce((sum, event) => sum + event.amount, 0);
 
   // Calculate projected balances using the same logic as the calendar
   // This ensures the insights panel shows the ACTUAL minimum from the calendar
   const calculateCalendarMinimum = () => {
-    console.log('📊 [Calendar] Starting minimum calculation:', {
-      startingBalance: displayBankBalance,
-      useAvailableBalance,
-      bankAccountBalance,
-      totalAvailableBalance,
-      totalEvents: allCalendarEvents.length
-    });
-    
-    const { dailyBalances, minimumBalance, minimumDate } = calculateCalendarBalances(
-      displayBankBalance,
-      allCalendarEvents,
-      90
-    );
-    
-    // Log specific dates in target range for debugging
-    dailyBalances.forEach(day => {
-      if (day.date >= '2024-10-31' && day.date <= '2025-12-12' && (day.dailyChange !== 0 || day.date === '2024-10-31' || day.date === '2025-12-12')) {
-        console.log(`📊 [Calendar] ${day.date}:`, {
-          events: day.events,
-          eventBreakdown: {
-            vendor: allCalendarEvents.filter(e => {
-              const impactDate = e.balanceImpactDate || e.date;
-              return format(impactDate, 'yyyy-MM-dd') === day.date && e.vendor;
-            }).length,
-            income: allCalendarEvents.filter(e => {
-              const impactDate = e.balanceImpactDate || e.date;
-              return format(impactDate, 'yyyy-MM-dd') === day.date && e.type === 'inflow' && !e.source?.includes('Amazon');
-            }).length,
-            amazon: allCalendarEvents.filter(e => {
-              const impactDate = e.balanceImpactDate || e.date;
-              return format(impactDate, 'yyyy-MM-dd') === day.date && e.source?.includes('Amazon');
-            }).length,
-            creditCard: allCalendarEvents.filter(e => {
-              const impactDate = e.balanceImpactDate || e.date;
-              return format(impactDate, 'yyyy-MM-dd') === day.date && e.type === 'credit-payment';
-            }).length,
-            recurring: allCalendarEvents.filter(e => {
-              const impactDate = e.balanceImpactDate || e.date;
-              return format(impactDate, 'yyyy-MM-dd') === day.date && (e.source === 'Recurring' || e.vendor === 'Recurring');
-            }).length
-          },
-          dailyInflow: day.dailyInflow.toFixed(2),
-          dailyOutflow: day.dailyOutflow.toFixed(2),
-          dailyChange: day.dailyChange.toFixed(2),
-          runningBalance: day.runningBalance.toFixed(2),
-          previousBalance: (day.runningBalance - day.dailyChange).toFixed(2)
-        });
-      }
-    });
-    
+
+    const { dailyBalances, minimumBalance, minimumDate } =
+      calculateCalendarBalances(displayBankBalance, allCalendarEvents, 90);
+
     return {
       balance: minimumBalance,
-      date: minimumDate
+      date: minimumDate,
     };
   };
 
   const renderSettingsContent = () => {
     switch (settingsSection) {
-      case 'profile':
+      case "profile":
         return (
           <Card>
             <CardHeader>
@@ -2068,29 +2280,33 @@ const Dashboard = () => {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="first-name">First Name</Label>
-                      <Input 
-                        id="first-name" 
-                        defaultValue={profile?.first_name || ""} 
+                      <Input
+                        id="first-name"
+                        defaultValue={profile?.first_name || ""}
                         placeholder="Enter your first name"
-                        onBlur={(e) => handleProfileChange('first_name', e.target.value)}
+                        onBlur={(e) =>
+                          handleProfileChange("first_name", e.target.value)
+                        }
                       />
                     </div>
                     <div>
                       <Label htmlFor="last-name">Last Name</Label>
-                      <Input 
-                        id="last-name" 
-                        defaultValue={profile?.last_name || ""} 
+                      <Input
+                        id="last-name"
+                        defaultValue={profile?.last_name || ""}
                         placeholder="Enter your last name"
-                        onBlur={(e) => handleProfileChange('last_name', e.target.value)}
+                        onBlur={(e) =>
+                          handleProfileChange("last_name", e.target.value)
+                        }
                       />
                     </div>
                   </div>
                   <div>
                     <Label htmlFor="email">Email Address</Label>
-                    <Input 
-                      id="email" 
-                      type="email" 
-                      value={user?.email || ""} 
+                    <Input
+                      id="email"
+                      type="email"
+                      value={user?.email || ""}
                       disabled
                       className="bg-muted"
                     />
@@ -2100,15 +2316,15 @@ const Dashboard = () => {
                   </div>
                   <div>
                     <Label htmlFor="company">Company Name</Label>
-                    <Input 
-                      id="company" 
+                    <Input
+                      id="company"
                       value={companyName}
                       onChange={(e) => setCompanyName(e.target.value)}
                       placeholder="Enter your company name"
                       onBlur={(e) => {
                         const trimmed = e.target.value.trim();
                         if (trimmed !== profile?.company) {
-                          handleProfileChange('company', trimmed);
+                          handleProfileChange("company", trimmed);
                         }
                       }}
                       maxLength={255}
@@ -2119,27 +2335,46 @@ const Dashboard = () => {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="default-currency">Default Currency</Label>
-                    <Select 
-                      value={selectedCurrency} 
+                    <Select
+                      value={selectedCurrency}
                       onValueChange={(value) => {
                         setSelectedCurrency(value);
                         updateProfileMutation.mutate({ currency: value });
                       }}
                     >
-                      <SelectTrigger id="default-currency" className="bg-background">
+                      <SelectTrigger
+                        id="default-currency"
+                        className="bg-background"
+                      >
                         <SelectValue placeholder="Select currency" />
                       </SelectTrigger>
                       <SelectContent className="bg-popover z-50">
                         <SelectItem value="USD">USD - US Dollar ($)</SelectItem>
                         <SelectItem value="EUR">EUR - Euro (€)</SelectItem>
-                        <SelectItem value="GBP">GBP - British Pound (£)</SelectItem>
-                        <SelectItem value="CAD">CAD - Canadian Dollar (C$)</SelectItem>
-                        <SelectItem value="AUD">AUD - Australian Dollar (A$)</SelectItem>
-                        <SelectItem value="JPY">JPY - Japanese Yen (¥)</SelectItem>
-                        <SelectItem value="CNY">CNY - Chinese Yuan (¥)</SelectItem>
-                        <SelectItem value="INR">INR - Indian Rupee (₹)</SelectItem>
-                        <SelectItem value="MXN">MXN - Mexican Peso ($)</SelectItem>
-                        <SelectItem value="BRL">BRL - Brazilian Real (R$)</SelectItem>
+                        <SelectItem value="GBP">
+                          GBP - British Pound (£)
+                        </SelectItem>
+                        <SelectItem value="CAD">
+                          CAD - Canadian Dollar (C$)
+                        </SelectItem>
+                        <SelectItem value="AUD">
+                          AUD - Australian Dollar (A$)
+                        </SelectItem>
+                        <SelectItem value="JPY">
+                          JPY - Japanese Yen (¥)
+                        </SelectItem>
+                        <SelectItem value="CNY">
+                          CNY - Chinese Yuan (¥)
+                        </SelectItem>
+                        <SelectItem value="INR">
+                          INR - Indian Rupee (₹)
+                        </SelectItem>
+                        <SelectItem value="MXN">
+                          MXN - Mexican Peso ($)
+                        </SelectItem>
+                        <SelectItem value="BRL">
+                          BRL - Brazilian Real (R$)
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -2148,31 +2383,31 @@ const Dashboard = () => {
             </CardContent>
           </Card>
         );
-      case 'team':
+      case "team":
         return <TeamManagement />;
-      case 'bank-accounts':
+      case "bank-accounts":
         return <BankAccountManagement />;
-      case 'vendors':
+      case "vendors":
         return <VendorManagement />;
-      case 'customers':
+      case "customers":
         return <CustomerManagement />;
-      case 'recurring-expenses':
+      case "recurring-expenses":
         return <RecurringExpenseManagement />;
-      case 'categories':
+      case "categories":
         return <CategoryManagement />;
-      case 'amazon':
+      case "amazon":
         return <AmazonManagement />;
-      case 'credit-cards':
+      case "credit-cards":
         return <CreditCardManagement />;
-      case 'invoices':
+      case "invoices":
         return <BillingInvoices />;
-      case 'forecast-settings':
+      case "forecast-settings":
         return <ForecastSettings />;
-      case 'feature-request':
+      case "feature-request":
         return <FeatureRequest />;
-      case 'export':
+      case "export":
         return <DataExport />;
-      case 'appearance':
+      case "appearance":
         return (
           <Card>
             <CardHeader>
@@ -2191,30 +2426,30 @@ const Dashboard = () => {
                 </div>
                 <div className="flex gap-3">
                   <Button
-                    variant={theme === 'light' ? 'default' : 'outline'}
+                    variant={theme === "light" ? "default" : "outline"}
                     size="sm"
-                    onClick={() => setTheme('light')}
+                    onClick={() => setTheme("light")}
                     className="justify-start"
                   >
-                    {getThemeIcon('light')}
+                    {getThemeIcon("light")}
                     <span className="ml-2">Light</span>
                   </Button>
                   <Button
-                    variant={theme === 'dark' ? 'default' : 'outline'}
+                    variant={theme === "dark" ? "default" : "outline"}
                     size="sm"
-                    onClick={() => setTheme('dark')}
+                    onClick={() => setTheme("dark")}
                     className="justify-start"
                   >
-                    {getThemeIcon('dark')}
+                    {getThemeIcon("dark")}
                     <span className="ml-2">Dark</span>
                   </Button>
                   <Button
-                    variant={theme === 'system' ? 'default' : 'outline'}
+                    variant={theme === "system" ? "default" : "outline"}
                     size="sm"
-                    onClick={() => setTheme('system')}
+                    onClick={() => setTheme("system")}
                     className="justify-start"
                   >
-                    {getThemeIcon('system')}
+                    {getThemeIcon("system")}
                     <span className="ml-2">System</span>
                   </Button>
                 </div>
@@ -2222,7 +2457,7 @@ const Dashboard = () => {
             </CardContent>
           </Card>
         );
-      case 'data-management':
+      case "data-management":
         return (
           <Card>
             <CardHeader>
@@ -2237,12 +2472,15 @@ const Dashboard = () => {
                   <div className="flex items-start space-x-3">
                     <Shield className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" />
                     <div className="flex-1">
-                      <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-1">Restore Admin Access</h4>
+                      <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-1">
+                        Restore Admin Access
+                      </h4>
                       <p className="text-sm text-muted-foreground mb-3">
-                        If you lost admin access after clearing data, use this to restore your admin and owner roles.
+                        If you lost admin access after clearing data, use this
+                        to restore your admin and owner roles.
                       </p>
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         size="sm"
                         onClick={handleRestoreAdminAccess}
                         className="border-blue-300 dark:border-blue-700"
@@ -2259,12 +2497,16 @@ const Dashboard = () => {
                   <div className="flex items-start space-x-3">
                     <Database className="h-5 w-5 text-green-600 dark:text-green-400 mt-0.5" />
                     <div className="flex-1">
-                      <h4 className="font-semibold text-green-900 dark:text-green-100 mb-1">Generate Admin Test Data</h4>
+                      <h4 className="font-semibold text-green-900 dark:text-green-100 mb-1">
+                        Generate Admin Test Data
+                      </h4>
                       <p className="text-sm text-muted-foreground mb-3">
-                        Create sample users, support tickets, and referrals for testing the admin dashboard. This data persists after clearing your own account.
+                        Create sample users, support tickets, and referrals for
+                        testing the admin dashboard. This data persists after
+                        clearing your own account.
                       </p>
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         size="sm"
                         onClick={handleGenerateAdminTestData}
                         className="border-green-300 dark:border-green-700"
@@ -2280,9 +2522,12 @@ const Dashboard = () => {
                 <div className="flex items-start space-x-3">
                   <AlertTriangle className="h-5 w-5 text-destructive mt-0.5" />
                   <div className="flex-1">
-                    <h4 className="font-semibold text-destructive mb-1">Danger Zone</h4>
+                    <h4 className="font-semibold text-destructive mb-1">
+                      Danger Zone
+                    </h4>
                     <p className="text-sm text-muted-foreground mb-3">
-                      Clear all your financial data including vendors, income, and transactions. This action cannot be undone.
+                      Clear all your financial data including vendors, income,
+                      and transactions. This action cannot be undone.
                     </p>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
@@ -2293,38 +2538,54 @@ const Dashboard = () => {
                       </AlertDialogTrigger>
                       <AlertDialogContent>
                         <AlertDialogHeader>
-                          <AlertDialogTitle>⚠️ Are you absolutely sure?</AlertDialogTitle>
+                          <AlertDialogTitle>
+                            ⚠️ Are you absolutely sure?
+                          </AlertDialogTitle>
                           <AlertDialogDescription asChild>
                             <div className="space-y-4">
-                              <p className="text-destructive font-semibold">This action cannot be undone!</p>
+                              <p className="text-destructive font-semibold">
+                                This action cannot be undone!
+                              </p>
                               <div>
-                                <p className="mb-2">This will permanently delete all of your:</p>
+                                <p className="mb-2">
+                                  This will permanently delete all of your:
+                                </p>
                                 <ul className="list-disc list-inside mt-2 space-y-1 mb-3">
                                   <li>Vendor purchase orders</li>
                                   <li>Income transactions</li>
                                   <li>Transaction history</li>
                                   <li>All financial data</li>
                                 </ul>
-                                <p className="font-semibold">You will start from zero balance with no records.</p>
+                                <p className="font-semibold">
+                                  You will start from zero balance with no
+                                  records.
+                                </p>
                               </div>
                               <div className="flex items-center space-x-2">
                                 <Checkbox
                                   id="confirm-clear"
                                   checked={clearDataConfirmation}
-                                  onCheckedChange={(checked) => setClearDataConfirmation(checked === true)}
+                                  onCheckedChange={(checked) =>
+                                    setClearDataConfirmation(checked === true)
+                                  }
                                 />
                                 <Label
                                   htmlFor="confirm-clear"
                                   className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
                                 >
-                                  I understand this action cannot be undone and will delete all my data
+                                  I understand this action cannot be undone and
+                                  will delete all my data
                                 </Label>
                               </div>
                             </div>
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
-                          <AlertDialogCancel onClick={() => setClearDataConfirmation(false)}>Cancel</AlertDialogCancel>
+                          <AlertDialogCancel
+                            onClick={() => setClearDataConfirmation(false)}
+                          >
+                            Cancel
+                          </AlertDialogCancel>
                           <AlertDialogAction
                             onClick={() => {
                               handleClearAllData();
@@ -2351,7 +2612,9 @@ const Dashboard = () => {
               <CardTitle>Profile Settings</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-muted-foreground">Profile settings will be shown here.</p>
+              <p className="text-muted-foreground">
+                Profile settings will be shown here.
+              </p>
             </CardContent>
           </Card>
         );
@@ -2359,12 +2622,6 @@ const Dashboard = () => {
   };
 
   const calendarMinimum = calculateCalendarMinimum();
-  
-  console.log('📊 Calendar-based Minimum Balance:', {
-    amount: calendarMinimum.balance,
-    date: calendarMinimum.date,
-    comparedTo: safeSpendingData?.calculation?.lowest_projected_balance
-  });
 
   const renderSection = () => {
     switch (activeSection) {
@@ -2373,19 +2630,19 @@ const Dashboard = () => {
           <>
             {/* Amazon Sync Progress Banner */}
             <AmazonSyncBanner />
-            
+
             {/* Transaction Match Notification */}
-            <TransactionMatchNotification 
-              unmatchedCount={unmatchedTransactionsCount} 
+            <TransactionMatchNotification
+              unmatchedCount={unmatchedTransactionsCount}
               onNavigate={() => handleSectionChange("match-transactions")}
             />
-            
+
             {/* Main Layout: Stats Sidebar + Cash Flow Visualization */}
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-3 lg:h-[620px]">
               {/* Left Sidebar: Combined Stats */}
               <div className="lg:col-span-1">
                 <OverviewStats
-                  totalCash={displayCash} 
+                  totalCash={displayCash}
                   events={allCalendarEvents}
                   onUpdateCashBalance={handleUpdateCashBalance}
                   onTransactionUpdate={() => {
@@ -2396,111 +2653,150 @@ const Dashboard = () => {
                   useAvailableBalance={useAvailableBalance}
                 />
               </div>
-              
+
               {/* Right Side: Cash Flow Calendar and Insights */}
               <div className="lg:col-span-3 grid grid-cols-1 lg:grid-cols-3 gap-3 h-full">
                 <div className="lg:col-span-2 h-full">
                   <CashFlowCalendar
-                  events={allCalendarEvents} 
-                  totalCash={displayCash}
-                  onEditTransaction={handleEditTransaction}
-                  onUpdateTransactionDate={handleUpdateTransactionDate}
-                  todayInflow={todayInflow}
-                  todayOutflow={todayOutflow}
-                  upcomingExpenses={upcomingExpenses}
-                  incomeItems={incomeItems}
-                  bankAccountBalance={displayBankBalance}
-                  projectedDailyBalances={(safeSpendingData?.calculation?.daily_balances || []).map(d => ({ 
-                    date: new Date(d.date), 
-                    balance: d.balance 
-                  }))}
-                  vendors={vendors}
-                  onVendorClick={handleEditVendorOrder}
-                  onIncomeClick={handleEditIncome}
-                  reserveAmount={reserveAmount}
-                  excludeToday={excludeToday}
-                  safeSpendingLimit={safeSpendingData?.safe_spending_limit || 0}
-                  allBuyingOpportunities={safeSpendingData?.calculation?.all_buying_opportunities || []}
-                  dailyBalances={safeSpendingData?.calculation?.daily_balances || []}
+                    events={allCalendarEvents}
+                    totalCash={displayCash}
+                    onEditTransaction={handleEditTransaction}
+                    onUpdateTransactionDate={handleUpdateTransactionDate}
+                    todayInflow={todayInflow}
+                    todayOutflow={todayOutflow}
+                    upcomingExpenses={upcomingExpenses}
+                    incomeItems={incomeItems}
+                    bankAccountBalance={displayBankBalance}
+                    projectedDailyBalances={(
+                      safeSpendingData?.calculation?.daily_balances || []
+                    ).map((d) => ({
+                      date: new Date(d.date),
+                      balance: d.balance,
+                    }))}
+                    vendors={vendors}
+                    onVendorClick={handleEditVendorOrder}
+                    onIncomeClick={handleEditIncome}
+                    reserveAmount={reserveAmount}
+                    excludeToday={excludeToday}
+                    safeSpendingLimit={
+                      safeSpendingData?.safe_spending_limit || 0
+                    }
+                    allBuyingOpportunities={
+                      safeSpendingData?.calculation?.all_buying_opportunities ||
+                      []
+                    }
+                    dailyBalances={
+                      safeSpendingData?.calculation?.daily_balances || []
+                    }
                   />
                 </div>
                 <div className="lg:col-span-1 h-full">
                   <CashFlowInsights
-                  currentBalance={displayCash}
-                  dailyInflow={todayInflow}
-                  dailyOutflow={todayOutflow}
-                  upcomingExpenses={upcomingExpenses}
-                  events={allCalendarEvents}
-                  vendors={vendors}
-                  income={incomeItems}
-                  safeSpendingLimit={safeSpendingData?.safe_spending_limit || 0}
-                  reserveAmount={reserveAmount}
-                  projectedLowestBalance={safeSpendingData?.calculation?.lowest_projected_balance || calendarMinimum.balance}
-                  lowestBalanceDate={calendarMinimum.date}
-                  safeSpendingAvailableDate={safeSpendingData?.calculation?.safe_spending_available_date}
-                  nextBuyingOpportunityBalance={safeSpendingData?.calculation?.next_buying_opportunity_balance}
-                  nextBuyingOpportunityDate={safeSpendingData?.calculation?.next_buying_opportunity_date}
-                  nextBuyingOpportunityAvailableDate={safeSpendingData?.calculation?.next_buying_opportunity_available_date}
-                  allBuyingOpportunities={safeSpendingData?.calculation?.all_buying_opportunities || []}
-                  dailyBalances={safeSpendingData?.calculation?.daily_balances || []}
-                  onUpdateReserveAmount={updateReserveAmount}
-                  transactionMatchButton={
-                    <TransactionMatchButton 
-                      matches={matches}
-                      onMatchAll={async () => {
-                        // Match all transactions instantly
-                        for (const match of matches) {
-                          if (match.type === 'income' && match.matchedIncome) {
-                            await updateIncome(match.matchedIncome.id, { status: 'received' });
-                            await addTransaction({
-                              type: 'customer_payment',
-                              amount: match.matchedIncome.amount,
-                              description: `Auto-matched: ${match.matchedIncome.source} - ${match.matchedIncome.description}`,
-                              customerId: match.matchedIncome.customerId,
-                              transactionDate: new Date(),
-                              status: 'completed'
-                            });
-                          } else if (match.type === 'vendor' && match.matchedVendorTransaction) {
-                            // Mark the vendor transaction as paid and archive
-                            await supabase
-                              .from('transactions')
-                              .update({ status: 'completed', archived: true })
-                              .eq('id', match.matchedVendorTransaction.id);
-                              
-                            await addTransaction({
-                              type: 'vendor_payment',
-                              amount: Math.abs(match.bankTransaction.amount),
-                              description: `Auto-matched: Payment to ${match.matchedVendorTransaction.vendorName} - ${match.matchedVendorTransaction.description}`,
-                              transactionDate: new Date(),
-                              status: 'completed'
-                            });
+                    currentBalance={displayCash}
+                    dailyInflow={todayInflow}
+                    dailyOutflow={todayOutflow}
+                    upcomingExpenses={upcomingExpenses}
+                    events={allCalendarEvents}
+                    vendors={vendors}
+                    income={incomeItems}
+                    safeSpendingLimit={
+                      safeSpendingData?.safe_spending_limit || 0
+                    }
+                    reserveAmount={reserveAmount}
+                    projectedLowestBalance={
+                      safeSpendingData?.calculation?.lowest_projected_balance ||
+                      calendarMinimum.balance
+                    }
+                    lowestBalanceDate={calendarMinimum.date}
+                    safeSpendingAvailableDate={
+                      safeSpendingData?.calculation
+                        ?.safe_spending_available_date
+                    }
+                    nextBuyingOpportunityBalance={
+                      safeSpendingData?.calculation
+                        ?.next_buying_opportunity_balance
+                    }
+                    nextBuyingOpportunityDate={
+                      safeSpendingData?.calculation
+                        ?.next_buying_opportunity_date
+                    }
+                    nextBuyingOpportunityAvailableDate={
+                      safeSpendingData?.calculation
+                        ?.next_buying_opportunity_available_date
+                    }
+                    allBuyingOpportunities={
+                      safeSpendingData?.calculation?.all_buying_opportunities ||
+                      []
+                    }
+                    dailyBalances={
+                      safeSpendingData?.calculation?.daily_balances || []
+                    }
+                    onUpdateReserveAmount={updateReserveAmount}
+                    transactionMatchButton={
+                      <TransactionMatchButton
+                        matches={matches}
+                        onMatchAll={async () => {
+                          // Match all transactions instantly
+                          for (const match of matches) {
+                            if (
+                              match.type === "income" &&
+                              match.matchedIncome
+                            ) {
+                              await updateIncome(match.matchedIncome.id, {
+                                status: "received",
+                              });
+                              await addTransaction({
+                                type: "customer_payment",
+                                amount: match.matchedIncome.amount,
+                                description: `Auto-matched: ${match.matchedIncome.source} - ${match.matchedIncome.description}`,
+                                customerId: match.matchedIncome.customerId,
+                                transactionDate: new Date(),
+                                status: "completed",
+                              });
+                            } else if (
+                              match.type === "vendor" &&
+                              match.matchedVendorTransaction
+                            ) {
+                              // Mark the vendor transaction as paid and archive
+                              await supabase
+                                .from("transactions")
+                                .update({ status: "completed", archived: true })
+                                .eq("id", match.matchedVendorTransaction.id);
+
+                              await addTransaction({
+                                type: "vendor_payment",
+                                amount: Math.abs(match.bankTransaction.amount),
+                                description: `Auto-matched: Payment to ${match.matchedVendorTransaction.vendorName} - ${match.matchedVendorTransaction.description}`,
+                                transactionDate: new Date(),
+                                status: "completed",
+                              });
+                            }
                           }
-                        }
-                        
-                        toast({
-                          title: 'All matches completed',
-                          description: `${matches.length} transactions have been automatically matched.`,
-                        });
-                        
-                        refetchIncome();
-                        refetchVendors();
-                      }}
-                      onReviewMatches={() => navigate("/bank-transactions")}
-                    />
-                  }
-                />
+
+                          toast({
+                            title: "All matches completed",
+                            description: `${matches.length} transactions have been automatically matched.`,
+                          });
+
+                          refetchIncome();
+                          refetchVendors();
+                        }}
+                        onReviewMatches={() => navigate("/bank-transactions")}
+                      />
+                    }
+                  />
+                </div>
               </div>
-            </div>
             </div>
           </>
         );
-      
+
       case "notifications":
         return <Notifications />;
-      
+
       case "match-transactions":
         return <WeightedForecasts />;
-      
+
       case "transactions":
         return (
           <TransactionsView
@@ -2522,33 +2818,33 @@ const Dashboard = () => {
             onDeleteIncome={handleDeleteIncome}
             onMatchTransaction={async (income) => {
               await addTransaction({
-                type: 'customer_payment',
+                type: "customer_payment",
                 amount: income.amount,
                 description: `Matched: ${income.source} - ${income.description}`,
                 customerId: income.customerId,
                 transactionDate: new Date(),
-                status: 'completed'
+                status: "completed",
               });
             }}
           />
         );
-      
+
       case "bank-transactions":
         const handleSyncAllTransactions = async () => {
           setSyncingTransactions(true);
           try {
-            const syncPromises = allFinancialAccounts.map(account =>
-              supabase.functions.invoke('sync-plaid-transactions', {
-                body: { 
-                  accountId: account.id, 
+            const syncPromises = allFinancialAccounts.map((account) =>
+              supabase.functions.invoke("sync-plaid-transactions", {
+                body: {
+                  accountId: account.id,
                   isInitialSync: false,
-                  accountType: 'bank'  // All accounts are bank accounts now
+                  accountType: "bank", // All accounts are bank accounts now
                 },
               })
             );
 
             const results = await Promise.all(syncPromises);
-            const hasErrors = results.some(r => r.error);
+            const hasErrors = results.some((r) => r.error);
 
             if (hasErrors) {
               toast({
@@ -2577,38 +2873,43 @@ const Dashboard = () => {
           setMatchingAll(true);
           try {
             for (const match of matches) {
-              if (match.type === 'income' && match.matchedIncome) {
-                await updateIncome(match.matchedIncome.id, { status: 'received' });
+              if (match.type === "income" && match.matchedIncome) {
+                await updateIncome(match.matchedIncome.id, {
+                  status: "received",
+                });
                 await addTransaction({
-                  type: 'customer_payment',
+                  type: "customer_payment",
                   amount: match.matchedIncome.amount,
                   description: `Auto-matched: ${match.matchedIncome.source} - ${match.matchedIncome.description}`,
                   customerId: match.matchedIncome.customerId,
                   transactionDate: new Date(),
-                  status: 'completed'
+                  status: "completed",
                 });
-                } else if (match.type === 'vendor' && match.matchedVendorTransaction) {
-                  // Mark the vendor transaction as paid and archive
-                  await supabase
-                    .from('transactions')
-                    .update({ status: 'completed', archived: true })
-                    .eq('id', match.matchedVendorTransaction.id);
-                  
+              } else if (
+                match.type === "vendor" &&
+                match.matchedVendorTransaction
+              ) {
+                // Mark the vendor transaction as paid and archive
+                await supabase
+                  .from("transactions")
+                  .update({ status: "completed", archived: true })
+                  .eq("id", match.matchedVendorTransaction.id);
+
                 await addTransaction({
-                  type: 'vendor_payment',
+                  type: "vendor_payment",
                   amount: Math.abs(match.bankTransaction.amount),
                   description: `Auto-matched: Payment to ${match.matchedVendorTransaction.vendorName} - ${match.matchedVendorTransaction.description}`,
                   transactionDate: new Date(),
-                  status: 'completed'
+                  status: "completed",
                 });
               }
             }
-            
+
             toast({
-              title: 'All matches completed',
+              title: "All matches completed",
               description: `${matches.length} transactions have been automatically matched.`,
             });
-            
+
             refetchIncome();
             refetchVendors();
           } finally {
@@ -2617,7 +2918,9 @@ const Dashboard = () => {
         };
 
         const handleBankManualMatch = (transaction: BankTransaction) => {
-          const txMatches = matches.filter(m => m.bankTransaction.id === transaction.id);
+          const txMatches = matches.filter(
+            (m) => m.bankTransaction.id === transaction.id
+          );
           if (txMatches.length > 0) {
             setMatchReviewDialog({ open: true, match: txMatches[0] });
           }
@@ -2628,7 +2931,7 @@ const Dashboard = () => {
         };
 
         const getMatchesForBankTransaction = (txId: string) => {
-          return matches.filter(m => m.bankTransaction.id === txId);
+          return matches.filter((m) => m.bankTransaction.id === txId);
         };
 
         return (
@@ -2637,14 +2940,25 @@ const Dashboard = () => {
               <div className="flex flex-col gap-1">
                 <h2 className="text-2xl font-bold">Bank Transactions</h2>
                 <p className="text-sm text-muted-foreground">
-                  Last synced: {accounts[0]?.last_sync ? format(new Date(accounts[0].last_sync), 'MMM dd, yyyy h:mm a') : 'Never'} • Syncs every 3 hours
+                  Last synced:{" "}
+                  {accounts[0]?.last_sync
+                    ? format(
+                        new Date(accounts[0].last_sync),
+                        "MMM dd, yyyy h:mm a"
+                      )
+                    : "Never"}{" "}
+                  • Syncs every 3 hours
                 </p>
                 <p className="text-xs text-muted-foreground/70">
-                  Transaction history retained for 45 days • Pending transactions included in balance
+                  Transaction history retained for 45 days • Pending
+                  transactions included in balance
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                <Select value={selectedBankAccountId} onValueChange={setSelectedBankAccountId}>
+                <Select
+                  value={selectedBankAccountId}
+                  onValueChange={setSelectedBankAccountId}
+                >
                   <SelectTrigger className="w-[240px]">
                     <SelectValue placeholder="Filter by account" />
                   </SelectTrigger>
@@ -2653,47 +2967,64 @@ const Dashboard = () => {
                       All Accounts ({allBankTransactions.length})
                     </SelectItem>
                     {allFinancialAccounts.map((account) => {
-                      const accountTxCount = allBankTransactions.filter(tx => tx.accountId === account.id).length;
+                      const accountTxCount = allBankTransactions.filter(
+                        (tx) => tx.accountId === account.id
+                      ).length;
                       return (
-                        <SelectItem key={account.id} value={account.id} className="cursor-pointer">
+                        <SelectItem
+                          key={account.id}
+                          value={account.id}
+                          className="cursor-pointer"
+                        >
                           <div className="flex items-center gap-2">
                             <Building2 className="h-4 w-4" />
-                            <span>{account.institution_name} - {account.account_name}</span>
-                            <Badge variant="secondary" className="ml-auto">{accountTxCount}</Badge>
+                            <span>
+                              {account.institution_name} -{" "}
+                              {account.account_name}
+                            </span>
+                            <Badge variant="secondary" className="ml-auto">
+                              {accountTxCount}
+                            </Badge>
                           </div>
                         </SelectItem>
                       );
                     })}
                   </SelectContent>
                 </Select>
-                {selectedBankAccountId === 'all' ? (
+                {selectedBankAccountId === "all" ? (
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={async () => {
                       setSyncingTransactions(true);
                       try {
-                        const syncPromises = allFinancialAccounts.map(account =>
-                          supabase.functions.invoke('sync-plaid-transactions', {
-                            body: { 
-                              accountId: account.id, 
-                              isInitialSync: false,
-                              accountType: 'bank'  // All accounts are bank accounts now
-                            },
-                          })
+                        const syncPromises = allFinancialAccounts.map(
+                          (account) =>
+                            supabase.functions.invoke(
+                              "sync-plaid-transactions",
+                              {
+                                body: {
+                                  accountId: account.id,
+                                  isInitialSync: false,
+                                  accountType: "bank", // All accounts are bank accounts now
+                                },
+                              }
+                            )
                         );
                         const results = await Promise.all(syncPromises);
-                        const hasErrors = results.some(r => r.error);
+                        const hasErrors = results.some((r) => r.error);
                         if (hasErrors) {
                           toast({
                             title: "Sync completed with errors",
-                            description: "Some accounts failed to sync. Please try again.",
+                            description:
+                              "Some accounts failed to sync. Please try again.",
                             variant: "destructive",
                           });
                         } else {
                           toast({
                             title: "Transactions synced",
-                            description: "All bank transactions have been updated.",
+                            description:
+                              "All bank transactions have been updated.",
                           });
                         }
                         setTimeout(() => {
@@ -2701,19 +3032,28 @@ const Dashboard = () => {
                           setSyncingTransactions(false);
                         }, 2000);
                       } catch (error) {
-                        console.error('Error syncing all transactions:', error);
+                        console.error("Error syncing all transactions:", error);
                         toast({
                           title: "Sync failed",
-                          description: "Failed to sync transactions. Please try again.",
+                          description:
+                            "Failed to sync transactions. Please try again.",
                           variant: "destructive",
                         });
                         setSyncingTransactions(false);
                       }
                     }}
-                    disabled={syncingTransactions || allFinancialAccounts.length === 0}
+                    disabled={
+                      syncingTransactions || allFinancialAccounts.length === 0
+                    }
                   >
-                    <RefreshCw className={`h-4 w-4 mr-2 ${syncingTransactions ? 'animate-spin' : ''}`} />
-                    {syncingTransactions ? 'Syncing All...' : 'Sync All Accounts'}
+                    <RefreshCw
+                      className={`h-4 w-4 mr-2 ${
+                        syncingTransactions ? "animate-spin" : ""
+                      }`}
+                    />
+                    {syncingTransactions
+                      ? "Syncing All..."
+                      : "Sync All Accounts"}
                   </Button>
                 ) : (
                   <Button
@@ -2722,12 +3062,16 @@ const Dashboard = () => {
                     onClick={handleBankSync}
                     disabled={isBankSyncing}
                   >
-                    <RefreshCw className={`h-4 w-4 mr-2 ${isBankSyncing ? 'animate-spin' : ''}`} />
-                    {isBankSyncing ? 'Syncing...' : 'Sync Account'}
+                    <RefreshCw
+                      className={`h-4 w-4 mr-2 ${
+                        isBankSyncing ? "animate-spin" : ""
+                      }`}
+                    />
+                    {isBankSyncing ? "Syncing..." : "Sync Account"}
                   </Button>
                 )}
                 {matches.length > 0 && (
-                  <TransactionMatchButton 
+                  <TransactionMatchButton
                     matches={matches}
                     onMatchAll={handleBankMatchAll}
                     onReviewMatches={() => {}}
@@ -2736,11 +3080,20 @@ const Dashboard = () => {
               </div>
             </div>
             {isBankTransactionsLoading ? (
-              <div className="text-center py-8 text-muted-foreground">Loading transactions...</div>
+              <div className="text-center py-8 text-muted-foreground">
+                Loading transactions...
+              </div>
             ) : accounts.length === 0 ? (
               <div className="text-center py-8">
-                <p className="text-muted-foreground mb-4">No bank accounts connected yet.</p>
-                <button onClick={() => navigate('/dashboard?view=settings&section=bank-accounts')} className="btn btn-primary">
+                <p className="text-muted-foreground mb-4">
+                  No bank accounts connected yet.
+                </p>
+                <button
+                  onClick={() =>
+                    navigate("/dashboard?view=settings&section=bank-accounts")
+                  }
+                  className="btn btn-primary"
+                >
                   Connect Bank Account
                 </button>
               </div>
@@ -2754,75 +3107,147 @@ const Dashboard = () => {
                   <div key={accountName} className="space-y-3">
                     <div className="flex items-center gap-2 px-2">
                       <Building2 className="h-5 w-5 text-primary" />
-                      <h3 className="text-lg font-semibold text-foreground">{accountName}</h3>
-                      <Badge variant="secondary" className="ml-2">{transactions.length} transactions</Badge>
+                      <h3 className="text-lg font-semibold text-foreground">
+                        {accountName}
+                      </h3>
+                      <Badge variant="secondary" className="ml-2">
+                        {transactions.length} transactions
+                      </Badge>
                     </div>
                     {transactions.map((tx) => {
-                  const txMatches = getMatchesForBankTransaction(tx.id);
-                  const hasMatch = txMatches.length > 0;
-                  const topMatch = txMatches[0];
-                  
-                  return (
-                    <div
-                      key={tx.id}
-                      className={`group relative overflow-hidden rounded-xl border transition-all duration-200 ${
-                        hasMatch 
-                          ? 'border-green-500/40 bg-gradient-to-r from-green-50/50 to-green-100/30 dark:from-green-950/20 dark:to-green-900/10 hover:shadow-lg hover:shadow-green-500/10' 
-                          : 'border-border bg-card hover:shadow-md hover:border-primary/30'
-                      }`}
-                    >
-                      <div className="flex items-center p-5">
-                        <div className="flex items-center gap-4 flex-1 min-w-0">
-                          <div className={`flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center ${
-                            tx.type === 'credit' ? 'bg-green-100 dark:bg-green-900/30' : 'bg-red-100 dark:bg-red-900/30'
-                          }`}>
-                            {tx.type === 'credit' ? (
-                              <TrendingUp className="h-6 w-6 text-green-600 dark:text-green-400" />
-                            ) : (
-                              <TrendingDown className="h-6 w-6 text-red-600 dark:text-red-400" />
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <p className="font-semibold text-base truncate">
-                                {tx.merchantName || tx.description?.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ') || 'Unknown'}
-                              </p>
-                              {tx.status === 'pending' && <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-300">Pending</Badge>}
-                              {hasMatch && <Badge variant="outline" className="bg-green-50 text-green-700 border-green-300">{Math.round(topMatch.matchScore * 100)}% Match</Badge>}
-                            </div>
-                            <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                              <span className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5" />{format(tx.date, 'MMM dd, yyyy')}</span>
-                              {tx.category && tx.category !== 'Uncategorized' && <Badge variant="secondary" className="text-xs">{tx.category}</Badge>}
-                            </div>
-                            {hasMatch && topMatch && (
-                              <div className="flex items-center gap-2 mt-2 px-3 py-1.5 bg-green-50 dark:bg-green-900/20 border border-green-200 rounded-lg">
-                                <CheckCircle className="h-4 w-4 text-green-600" />
-                                <span className="text-sm text-muted-foreground">Matched with:</span>
-                                <span className="font-medium text-sm text-green-700 truncate">
-                                  {topMatch.type === 'income' ? `${topMatch.matchedIncome?.source} - ${topMatch.matchedIncome?.description}` : `${topMatch.matchedVendorTransaction?.vendorName} - ${topMatch.matchedVendorTransaction?.description}`}
-                                </span>
+                      const txMatches = getMatchesForBankTransaction(tx.id);
+                      const hasMatch = txMatches.length > 0;
+                      const topMatch = txMatches[0];
+
+                      return (
+                        <div
+                          key={tx.id}
+                          className={`group relative overflow-hidden rounded-xl border transition-all duration-200 ${
+                            hasMatch
+                              ? "border-green-500/40 bg-gradient-to-r from-green-50/50 to-green-100/30 dark:from-green-950/20 dark:to-green-900/10 hover:shadow-lg hover:shadow-green-500/10"
+                              : "border-border bg-card hover:shadow-md hover:border-primary/30"
+                          }`}
+                        >
+                          <div className="flex items-center p-5">
+                            <div className="flex items-center gap-4 flex-1 min-w-0">
+                              <div
+                                className={`flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center ${
+                                  tx.type === "credit"
+                                    ? "bg-green-100 dark:bg-green-900/30"
+                                    : "bg-red-100 dark:bg-red-900/30"
+                                }`}
+                              >
+                                {tx.type === "credit" ? (
+                                  <TrendingUp className="h-6 w-6 text-green-600 dark:text-green-400" />
+                                ) : (
+                                  <TrendingDown className="h-6 w-6 text-red-600 dark:text-red-400" />
+                                )}
                               </div>
-                            )}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <p className="font-semibold text-base truncate">
+                                    {tx.merchantName ||
+                                      tx.description
+                                        ?.split(" ")
+                                        .map(
+                                          (w) =>
+                                            w.charAt(0).toUpperCase() +
+                                            w.slice(1).toLowerCase()
+                                        )
+                                        .join(" ") ||
+                                      "Unknown"}
+                                  </p>
+                                  {tx.status === "pending" && (
+                                    <Badge
+                                      variant="outline"
+                                      className="bg-yellow-50 text-yellow-700 border-yellow-300"
+                                    >
+                                      Pending
+                                    </Badge>
+                                  )}
+                                  {hasMatch && (
+                                    <Badge
+                                      variant="outline"
+                                      className="bg-green-50 text-green-700 border-green-300"
+                                    >
+                                      {Math.round(topMatch.matchScore * 100)}%
+                                      Match
+                                    </Badge>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                                  <span className="flex items-center gap-1">
+                                    <Calendar className="h-3.5 w-3.5" />
+                                    {format(tx.date, "MMM dd, yyyy")}
+                                  </span>
+                                  {tx.category &&
+                                    tx.category !== "Uncategorized" && (
+                                      <Badge
+                                        variant="secondary"
+                                        className="text-xs"
+                                      >
+                                        {tx.category}
+                                      </Badge>
+                                    )}
+                                </div>
+                                {hasMatch && topMatch && (
+                                  <div className="flex items-center gap-2 mt-2 px-3 py-1.5 bg-green-50 dark:bg-green-900/20 border border-green-200 rounded-lg">
+                                    <CheckCircle className="h-4 w-4 text-green-600" />
+                                    <span className="text-sm text-muted-foreground">
+                                      Matched with:
+                                    </span>
+                                    <span className="font-medium text-sm text-green-700 truncate">
+                                      {topMatch.type === "income"
+                                        ? `${topMatch.matchedIncome?.source} - ${topMatch.matchedIncome?.description}`
+                                        : `${topMatch.matchedVendorTransaction?.vendorName} - ${topMatch.matchedVendorTransaction?.description}`}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-4 flex-shrink-0 ml-4">
+                              <div className="text-right">
+                                <p
+                                  className={`text-2xl font-bold ${
+                                    tx.type === "credit"
+                                      ? "text-green-600"
+                                      : "text-red-600"
+                                  }`}
+                                >
+                                  {tx.type === "debit" ? "-" : "+"}$
+                                  {tx.amount.toLocaleString("en-US", {
+                                    minimumFractionDigits: 2,
+                                    maximumFractionDigits: 2,
+                                  })}
+                                </p>
+                                <p className="text-xs text-muted-foreground uppercase tracking-wide mt-0.5">
+                                  {tx.type === "debit" ? "Debit" : "Credit"}
+                                </p>
+                              </div>
+                              <div className="flex flex-col gap-2">
+                                {hasMatch ? (
+                                  <Button
+                                    size="sm"
+                                    onClick={() => handleBankManualMatch(tx)}
+                                    className="bg-green-600 hover:bg-green-700 text-white shadow-sm"
+                                  >
+                                    Review Match
+                                  </Button>
+                                ) : (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleOpenManualMatch(tx)}
+                                    className="border-primary/50 hover:bg-primary hover:text-primary-foreground"
+                                  >
+                                    Manual Match
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
                           </div>
                         </div>
-                        <div className="flex items-center gap-4 flex-shrink-0 ml-4">
-                          <div className="text-right">
-                            <p className={`text-2xl font-bold ${tx.type === 'credit' ? 'text-green-600' : 'text-red-600'}`}>
-                              {tx.type === 'debit' ? '-' : '+'}${tx.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                            </p>
-                            <p className="text-xs text-muted-foreground uppercase tracking-wide mt-0.5">{tx.type === 'debit' ? 'Debit' : 'Credit'}</p>
-                          </div>
-                          <div className="flex flex-col gap-2">
-                            {hasMatch ? (
-                              <Button size="sm" onClick={() => handleBankManualMatch(tx)} className="bg-green-600 hover:bg-green-700 text-white shadow-sm">Review Match</Button>
-                            ) : (
-                              <Button size="sm" variant="outline" onClick={() => handleOpenManualMatch(tx)} className="border-primary/50 hover:bg-primary hover:text-primary-foreground">Manual Match</Button>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
+                      );
                     })}
                   </div>
                 ))}
@@ -2830,7 +3255,7 @@ const Dashboard = () => {
             )}
           </div>
         );
-      
+
       case "financials":
         return (
           <div className="space-y-4">
@@ -2859,35 +3284,40 @@ const Dashboard = () => {
                 </button>
               </div>
             </div>
-            {financialsView === "bank-accounts" && <BankAccounts useAvailableBalance={useAvailableBalance} onToggleBalance={setUseAvailableBalance} />}
+            {financialsView === "bank-accounts" && (
+              <BankAccounts
+                useAvailableBalance={useAvailableBalance}
+                onToggleBalance={setUseAvailableBalance}
+              />
+            )}
             {financialsView === "credit-cards" && <CreditCards />}
           </div>
         );
-      
+
       case "recurring":
         return <RecurringExpensesOverview />;
-      
+
       case "scenario-planning":
         return <ScenarioPlanner />;
-      
+
       case "analytics":
         return <Analytics />;
-      
+
       case "ai-forecast":
         return <AmazonForecast />;
-      
+
       case "amazon-payouts":
         return <AmazonPayouts />;
-      
+
       case "document-storage":
         return <DocumentStorage />;
-      
+
       case "support":
         return <Support />;
-      
+
       case "referrals":
         return <ReferralDashboardContent />;
-      
+
       case "settings":
         return (
           <div className="grid gap-6 lg:grid-cols-4 relative z-10">
@@ -2895,10 +3325,12 @@ const Dashboard = () => {
             <div className="lg:col-span-1">
               <Card className="relative z-10">
                 <CardHeader>
-                  <CardTitle className="text-sm font-medium">Settings</CardTitle>
+                  <CardTitle className="text-sm font-medium">
+                    Settings
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <SidebarNavigation 
+                  <SidebarNavigation
                     activeSection={settingsSection}
                     onSectionChange={setSettingsSection}
                     isAdmin={true}
@@ -2913,14 +3345,19 @@ const Dashboard = () => {
             </div>
           </div>
         );
-      
+
       case "team-management":
         return <TeamManagement />;
-      
+
       case "profiles":
         return (
           <div className="space-y-6">
-            <Tabs value={profilesTab} onValueChange={(value) => setProfilesTab(value as 'vendors' | 'customers')}>
+            <Tabs
+              value={profilesTab}
+              onValueChange={(value) =>
+                setProfilesTab(value as "vendors" | "customers")
+              }
+            >
               <TabsList className="grid w-full max-w-md grid-cols-2">
                 <TabsTrigger value="vendors" className="gap-2">
                   <TrendingDown className="h-4 w-4" />
@@ -2931,27 +3368,27 @@ const Dashboard = () => {
                   Customers
                 </TabsTrigger>
               </TabsList>
-              
+
               <TabsContent value="vendors" className="mt-6">
                 <VendorManagement />
               </TabsContent>
-              
+
               <TabsContent value="customers" className="mt-6">
                 <CustomerManagement />
               </TabsContent>
             </Tabs>
           </div>
         );
-      
+
       case "vendors":
         return <VendorManagement />;
-      
+
       case "customers":
         return <CustomerManagement />;
-      
+
       case "guides":
         return <GuidesContent />;
-      
+
       default:
         return null;
     }
@@ -2963,21 +3400,21 @@ const Dashboard = () => {
         {/* Floating watermark behind everything */}
         <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-0">
           <div className="absolute inset-0 flex items-center justify-center opacity-[0.10]">
-            <img 
-              src="/auren-icon-blue.png" 
-              alt="" 
+            <img
+              src="/auren-icon-blue.png"
+              alt=""
               className="w-[800px] h-auto"
             />
           </div>
         </div>
 
-        <AppSidebar 
-          activeSection={activeSection} 
+        <AppSidebar
+          activeSection={activeSection}
           onSectionChange={handleSectionChange}
-          onFlexReportClick={() => navigate('/flex-report')}
+          onFlexReportClick={() => navigate("/flex-report")}
           matchCount={uniquePoMatchCount}
         />
-        
+
         <div className="flex-1 overflow-y-auto relative z-10">
           {/* Header with sidebar trigger */}
           <div className="sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
@@ -2986,12 +3423,10 @@ const Dashboard = () => {
               <DashboardHeader />
             </div>
           </div>
-          
+
           <div className="p-6 space-y-6 relative">
             {/* Content on top of watermark */}
-            <div className="relative z-10">
-              {renderSection()}
-            </div>
+            <div className="relative z-10">{renderSection()}</div>
           </div>
 
           <FloatingMenu
@@ -3008,10 +3443,11 @@ const Dashboard = () => {
               onSubmitOrder={handlePurchaseOrderSubmit}
               onDeleteAllVendors={deleteAllVendors}
               onAddVendor={addVendor}
-              allBuyingOpportunities={safeSpendingData?.calculation?.all_buying_opportunities}
+              allBuyingOpportunities={
+                safeSpendingData?.calculation?.all_buying_opportunities
+              }
             />
           )}
-
 
           {showIncomeForm && (
             <IncomeForm
@@ -3065,37 +3501,43 @@ const Dashboard = () => {
             match={matchReviewDialog.match}
             onAccept={async () => {
               if (!matchReviewDialog.match) return;
-              
+
               const match = matchReviewDialog.match;
-              
-              if (match.type === 'income' && match.matchedIncome) {
+
+              if (match.type === "income" && match.matchedIncome) {
                 // Mark income as received
-                await updateIncome(match.matchedIncome.id, { status: 'received' });
-                
+                await updateIncome(match.matchedIncome.id, {
+                  status: "received",
+                });
+
                 // Create completed transaction
                 await addTransaction({
-                  type: 'customer_payment',
+                  type: "customer_payment",
                   amount: match.matchedIncome.amount,
                   description: `Matched: ${match.matchedIncome.source} - ${match.matchedIncome.description}`,
                   customerId: match.matchedIncome.customerId,
                   transactionDate: new Date(),
-                  status: 'completed'
+                  status: "completed",
                 });
-                
+
                 toast({
-                  title: 'Match accepted',
-                  description: 'Income has been matched with bank transaction.',
+                  title: "Match accepted",
+                  description: "Income has been matched with bank transaction.",
                 });
-              } else if (match.type === 'vendor' && match.matchedVendorTransaction) {
+              } else if (
+                match.type === "vendor" &&
+                match.matchedVendorTransaction
+              ) {
                 // Mark vendor transaction as paid
                 await markAsPaid(match.matchedVendorTransaction.id);
-                
+
                 toast({
-                  title: 'Match accepted',
-                  description: 'Vendor payment has been matched with bank transaction.',
+                  title: "Match accepted",
+                  description:
+                    "Vendor payment has been matched with bank transaction.",
                 });
               }
-              
+
               setMatchReviewDialog({ open: false, match: null });
               refetchIncome();
               refetchVendors();
@@ -3108,24 +3550,34 @@ const Dashboard = () => {
           {/* Manual Match Dialog */}
           <ManualMatchDialog
             open={manualMatchDialog.open}
-            onOpenChange={(open) => setManualMatchDialog({ open, transaction: null })}
-            transaction={manualMatchDialog.transaction ? {
-              id: manualMatchDialog.transaction.id,
-              description: manualMatchDialog.transaction.description,
-              merchantName: manualMatchDialog.transaction.merchantName,
-              amount: manualMatchDialog.transaction.amount,
-              date: manualMatchDialog.transaction.date,
-              type: manualMatchDialog.transaction.type,
-            } : null}
-            vendorTransactions={vendorTransactions?.filter(tx => tx.status === 'pending').map(tx => ({
-              id: tx.id,
-              vendorName: tx.vendorName,
-              description: tx.description,
-              amount: tx.amount,
-              dueDate: tx.dueDate,
-              category: tx.category,
-            })) || []}
-            incomeItems={incomeItems.map(i => ({
+            onOpenChange={(open) =>
+              setManualMatchDialog({ open, transaction: null })
+            }
+            transaction={
+              manualMatchDialog.transaction
+                ? {
+                    id: manualMatchDialog.transaction.id,
+                    description: manualMatchDialog.transaction.description,
+                    merchantName: manualMatchDialog.transaction.merchantName,
+                    amount: manualMatchDialog.transaction.amount,
+                    date: manualMatchDialog.transaction.date,
+                    type: manualMatchDialog.transaction.type,
+                  }
+                : null
+            }
+            vendorTransactions={
+              vendorTransactions
+                ?.filter((tx) => tx.status === "pending")
+                .map((tx) => ({
+                  id: tx.id,
+                  vendorName: tx.vendorName,
+                  description: tx.description,
+                  amount: tx.amount,
+                  dueDate: tx.dueDate,
+                  category: tx.category,
+                })) || []
+            }
+            incomeItems={incomeItems.map((i) => ({
               id: i.id,
               description: i.description,
               source: i.source || i.description,
@@ -3135,26 +3587,35 @@ const Dashboard = () => {
             }))}
             onMatch={handleManualMatchConfirm}
           />
-          
+
           {/* Limit Enforcement Modal */}
           <LimitEnforcementModal
             open={showLimitModal.open}
-            onClose={() => setShowLimitModal({ ...showLimitModal, open: false })}
+            onClose={() =>
+              setShowLimitModal({ ...showLimitModal, open: false })
+            }
             limitType={showLimitModal.type}
             currentUsage={
-              showLimitModal.type === 'bank_connection' ? currentUsage.bankConnections :
-              showLimitModal.type === 'amazon_connection' ? currentUsage.amazonConnections :
-              currentUsage.teamMembers
+              showLimitModal.type === "bank_connection"
+                ? currentUsage.bankConnections
+                : showLimitModal.type === "amazon_connection"
+                ? currentUsage.amazonConnections
+                : currentUsage.teamMembers
             }
             limit={
-              showLimitModal.type === 'bank_connection' ? planLimits.bankConnections :
-              showLimitModal.type === 'amazon_connection' ? planLimits.amazonConnections :
-              planLimits.teamMembers
+              showLimitModal.type === "bank_connection"
+                ? planLimits.bankConnections
+                : showLimitModal.type === "amazon_connection"
+                ? planLimits.amazonConnections
+                : planLimits.teamMembers
             }
           />
-          
+
           {/* Subtle gradient orbs */}
-          <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-gradient-to-tl from-accent/5 to-transparent rounded-full blur-3xl opacity-20 animate-pulse" style={{ animationDelay: '1s' }} />
+          <div
+            className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-gradient-to-tl from-accent/5 to-transparent rounded-full blur-3xl opacity-20 animate-pulse"
+            style={{ animationDelay: "1s" }}
+          />
         </div>
       </div>
     </SidebarProvider>
