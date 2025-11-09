@@ -962,25 +962,25 @@ export default function Analytics() {
                 <div className="flex justify-between items-center p-3 bg-red-50 dark:bg-red-950/20 rounded-lg">
                   <span className="font-medium">Overdue</span>
                   <span className="text-red-600 font-bold">
-                    {vendors.filter(v => v.status === 'overdue').length} vendors
+                    {vendorTransactions.filter(tx => tx.status === 'overdue').length} purchase orders
                   </span>
                 </div>
                 <div className="flex justify-between items-center p-3 bg-amber-50 dark:bg-amber-950/20 rounded-lg">
-                  <span className="font-medium">Current</span>
+                  <span className="font-medium">Pending</span>
                   <span className="text-amber-600 font-bold">
-                    {vendors.filter(v => v.status === 'current').length} vendors
+                    {vendorTransactions.filter(tx => tx.status === 'pending').length} purchase orders
                   </span>
                 </div>
                 <div className="flex justify-between items-center p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
-                  <span className="font-medium">Upcoming</span>
+                  <span className="font-medium">Scheduled</span>
                   <span className="text-blue-600 font-bold">
-                    {vendors.filter(v => v.status === 'upcoming').length} vendors
+                    {vendorTransactions.filter(tx => tx.status === 'scheduled').length} purchase orders
                   </span>
                 </div>
                 <div className="flex justify-between items-center p-3 bg-green-50 dark:bg-green-950/20 rounded-lg">
-                  <span className="font-medium">Paid</span>
+                  <span className="font-medium">Completed</span>
                   <span className="text-green-600 font-bold">
-                    {vendors.filter(v => v.status === 'paid').length} vendors
+                    {vendorTransactions.filter(tx => tx.status === 'completed').length} purchase orders
                   </span>
                 </div>
               </div>
