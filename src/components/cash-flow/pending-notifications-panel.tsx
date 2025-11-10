@@ -74,6 +74,22 @@ export const PendingNotificationsPanel = ({
     switch (type) {
       case 'urgent':
       case 'security':
+        return 'bg-red-500/10 border-red-500/30 text-red-600 dark:text-red-400';
+      case 'maintenance':
+      case 'reminder':
+        return 'bg-yellow-500/10 border-yellow-500/30 text-yellow-600 dark:text-yellow-400';
+      case 'new_feature':
+      case 'bug_fix':
+        return 'bg-green-500/10 border-green-500/30 text-green-600 dark:text-green-400';
+      default:
+        return 'bg-blue-500/10 border-blue-500/30 text-blue-600 dark:text-blue-400';
+    }
+  };
+
+  const getBadgeTypeColor = (type: string) => {
+    switch (type) {
+      case 'urgent':
+      case 'security':
         return 'bg-red-500 text-white border-red-600';
       case 'maintenance':
       case 'reminder':
@@ -195,7 +211,7 @@ export const PendingNotificationsPanel = ({
 
                     <div className="pr-8">
                       <div className="flex items-center gap-2 mb-2">
-                        <Badge className={cn("text-xs font-medium border", getTypeColor(notification.type))}>
+                        <Badge className={cn("text-xs font-medium border", getBadgeTypeColor(notification.type))}>
                           {getTypeLabel(notification.type)}
                         </Badge>
                         {notification.category && (
