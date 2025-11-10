@@ -2,19 +2,14 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useSupportTickets } from "@/hooks/useSupportTickets";
-import { CheckCircle, Clock, AlertCircle, XCircle, MessageSquare, RefreshCw } from "lucide-react";
+import { MessageSquare, RefreshCw } from "lucide-react";
 import { TicketMessagesDialog } from "./TicketMessagesDialog";
 import { supabase } from "@/integrations/supabase/client";
-
-const statusIcons = {
-  open: <Clock className="h-4 w-4" />,
-  in_progress: <AlertCircle className="h-4 w-4" />,
-  needs_response: <AlertCircle className="h-4 w-4 text-orange-500" />,
-  resolved: <CheckCircle className="h-4 w-4" />,
-  closed: <XCircle className="h-4 w-4" />
-};
+import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, closestCorners } from "@dnd-kit/core";
+import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 const priorityColors = {
   low: "bg-gray-500/10 text-gray-600",
@@ -23,13 +18,94 @@ const priorityColors = {
   urgent: "bg-red-500/10 text-red-600"
 };
 
+type ColumnId = 'open' | 'needs_response' | 'closed';
+
+const columns: { id: ColumnId; title: string; statuses: string[] }[] = [
+  { id: 'open', title: 'Open', statuses: ['open', 'in_progress'] },
+  { id: 'needs_response', title: 'Needs Response', statuses: ['needs_response'] },
+  { id: 'closed', title: 'Closed', statuses: ['resolved', 'closed'] },
+];
+
+interface SortableTicketProps {
+  ticket: any;
+  messageCounts: Record<string, number>;
+  onViewMessages: (ticket: any) => void;
+}
+
+const SortableTicket = ({ ticket, messageCounts, onViewMessages }: SortableTicketProps) => {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: ticket.id,
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+      <Card className="mb-3 cursor-move hover:shadow-md transition-shadow">
+        <CardContent className="p-4">
+          <div className="space-y-3">
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex-1 min-w-0">
+                <h3 className="font-semibold text-sm mb-2 truncate">{ticket.subject}</h3>
+                <div className="flex flex-wrap items-center gap-2 mb-2">
+                  <Badge className={priorityColors[ticket.priority]}>
+                    {ticket.priority}
+                  </Badge>
+                  {ticket.category && (
+                    <Badge variant="outline" className="text-xs">{ticket.category}</Badge>
+                  )}
+                </div>
+                
+                {ticket.user_email && (
+                  <div className="text-xs text-muted-foreground mb-1 truncate">
+                    {ticket.user_email}
+                  </div>
+                )}
+                
+                <p className="text-xs text-muted-foreground line-clamp-2 mb-2">{ticket.message}</p>
+                <div className="text-xs text-muted-foreground">
+                  {new Date(ticket.created_at).toLocaleDateString()}
+                </div>
+              </div>
+              
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onViewMessages(ticket);
+                }}
+                className="relative flex-shrink-0"
+              >
+                <MessageSquare className="h-4 w-4" />
+                {messageCounts[ticket.id] > 0 && (
+                  <Badge 
+                    variant="destructive" 
+                    className="absolute -top-1 -right-1 h-5 min-w-5 px-1 text-xs"
+                  >
+                    {messageCounts[ticket.id]}
+                  </Badge>
+                )}
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
 export const AdminSupportTickets = () => {
   const { tickets, isLoading, updateTicket, refetch } = useSupportTickets(true);
   const [selectedTicket, setSelectedTicket] = useState<any>(null);
   const [showMessagesDialog, setShowMessagesDialog] = useState(false);
   const [messageCounts, setMessageCounts] = useState<Record<string, number>>({});
-  const [ticketView, setTicketView] = useState<'open' | 'needs_response' | 'closed'>('needs_response');
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [activeId, setActiveId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchMessageCounts = async () => {
@@ -65,11 +141,41 @@ export const AdminSupportTickets = () => {
     fetchMessageCounts();
   }, [tickets]);
 
-  const handleStatusChange = async (ticketId: string, newStatus: string) => {
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(event.active.id as string);
+  };
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    setActiveId(null);
+
+    if (!over) return;
+
+    const ticketId = active.id as string;
+    const newColumnId = over.id as ColumnId;
+    
+    const ticket = tickets.find(t => t.id === ticketId);
+    if (!ticket) return;
+
+    // Determine new status based on column
+    let newStatus: string;
+    if (newColumnId === 'open') {
+      newStatus = 'open';
+    } else if (newColumnId === 'needs_response') {
+      newStatus = 'needs_response';
+    } else {
+      newStatus = 'closed';
+    }
+
+    // Skip if status hasn't changed
+    const column = columns.find(c => c.statuses.includes(ticket.status));
+    if (column?.id === newColumnId) return;
+
     const updates: any = { status: newStatus };
     if (newStatus === 'resolved' || newStatus === 'closed') {
       updates.resolved_at = new Date().toISOString();
     }
+    
     await updateTicket(ticketId, updates);
     await refetch();
   };
@@ -95,6 +201,12 @@ export const AdminSupportTickets = () => {
   };
 
 
+  const getTicketsForColumn = (columnId: ColumnId) => {
+    const column = columns.find(c => c.id === columnId);
+    if (!column) return [];
+    return tickets.filter(t => column.statuses.includes(t.status));
+  };
+
   if (isLoading) {
     return (
       <Card>
@@ -105,42 +217,13 @@ export const AdminSupportTickets = () => {
     );
   }
 
-  const openTickets = tickets.filter(t => t.status === 'open' || t.status === 'in_progress');
-  const needsResponseTickets = tickets.filter(t => t.status === 'needs_response');
-  const closedTickets = tickets.filter(t => t.status === 'resolved' || t.status === 'closed');
-  
-  const displayedTickets = 
-    ticketView === 'open' ? openTickets :
-    ticketView === 'needs_response' ? needsResponseTickets :
-    closedTickets;
+  const activeTicket = activeId ? tickets.find(t => t.id === activeId) : null;
 
   return (
     <>
       <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-        <CardTitle>Support Tickets</CardTitle>
-        <div className="flex gap-2 items-center">
-          <Button
-            variant={ticketView === 'open' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setTicketView('open')}
-          >
-            Open ({openTickets.length})
-          </Button>
-          <Button
-            variant={ticketView === 'needs_response' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setTicketView('needs_response')}
-          >
-            Need Response ({needsResponseTickets.length})
-          </Button>
-          <Button
-            variant={ticketView === 'closed' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setTicketView('closed')}
-          >
-            Closed ({closedTickets.length})
-          </Button>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+          <CardTitle>Support Tickets</CardTitle>
           <Button
             variant="ghost"
             size="sm"
@@ -149,106 +232,75 @@ export const AdminSupportTickets = () => {
           >
             <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
           </Button>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          {displayedTickets.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              No {ticketView === 'open' ? 'open' : ticketView === 'needs_response' ? 'tickets needing response' : 'closed'} tickets
+        </CardHeader>
+        <CardContent>
+          <DndContext
+            collisionDetection={closestCorners}
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+          >
+            <div className="grid grid-cols-3 gap-4">
+              {columns.map((column) => {
+                const columnTickets = getTicketsForColumn(column.id);
+                return (
+                  <SortableContext
+                    key={column.id}
+                    id={column.id}
+                    items={columnTickets.map(t => t.id)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    <div className="flex flex-col">
+                      <div className="mb-4 pb-2 border-b">
+                        <h3 className="font-semibold text-sm flex items-center justify-between">
+                          {column.title}
+                          <Badge variant="secondary">{columnTickets.length}</Badge>
+                        </h3>
+                      </div>
+                      <div className="flex-1 min-h-[500px] bg-muted/20 rounded-lg p-3">
+                        {columnTickets.length === 0 ? (
+                          <div className="text-center py-8 text-sm text-muted-foreground">
+                            No tickets
+                          </div>
+                        ) : (
+                          columnTickets.map((ticket) => (
+                            <SortableTicket
+                              key={ticket.id}
+                              ticket={ticket}
+                              messageCounts={messageCounts}
+                              onViewMessages={handleViewMessages}
+                            />
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  </SortableContext>
+                );
+              })}
             </div>
-          ) : (
-            displayedTickets.map((ticket) => (
-              <Card key={ticket.id} className="p-4">
-                <div className="space-y-3">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="font-semibold">{ticket.subject}</h3>
-                        <Badge className={priorityColors[ticket.priority]}>
-                          {ticket.priority}
-                        </Badge>
-                        {ticket.category && (
-                          <Badge variant="outline">{ticket.category}</Badge>
-                        )}
-                      </div>
-                      
-                      {/* User information */}
-                      <div className="flex items-center gap-3 mb-2 text-xs text-muted-foreground">
-                        {ticket.user_email && (
-                          <span className="flex items-center gap-1">
-                            <strong>Email:</strong> {ticket.user_email}
-                          </span>
-                        )}
-                        {ticket.user_role && (
-                          <Badge variant="secondary" className="text-xs">
-                            {ticket.user_role}
-                          </Badge>
-                        )}
-                        {ticket.user_company && (
-                          <span className="flex items-center gap-1">
-                            <strong>Company:</strong> {ticket.user_company}
-                          </span>
-                        )}
-                      </div>
-                      
-                      <p className="text-sm text-muted-foreground mb-3">{ticket.message}</p>
-                      <div className="text-xs text-muted-foreground">
-                        Created: {new Date(ticket.created_at).toLocaleString()}
-                        {ticket.resolved_at && ticketView === 'closed' && (
-                          <> • Resolved: {new Date(ticket.resolved_at).toLocaleString()}</>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleViewMessages(ticket)}
-                        className="relative"
-                      >
-                        <MessageSquare className="h-4 w-4 mr-2" />
-                        View Messages
-                        {messageCounts[ticket.id] > 0 && (
-                          <Badge 
-                            variant="destructive" 
-                            className="ml-2 h-5 min-w-5 px-1.5"
-                          >
-                            {messageCounts[ticket.id]}
-                          </Badge>
-                        )}
-                      </Button>
-                      {statusIcons[ticket.status]}
-                      <Select 
-                        value={ticket.status} 
-                        onValueChange={(value) => handleStatusChange(ticket.id, value)}
-                      >
-                        <SelectTrigger className="w-[140px]">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="open">Open</SelectItem>
-                          <SelectItem value="needs_response">Needs Response</SelectItem>
-                          <SelectItem value="closed">Closed</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </div>
-              </Card>
-            ))
-          )}
-        </div>
-      </CardContent>
-    </Card>
 
-    {selectedTicket && (
-      <TicketMessagesDialog
-        ticket={selectedTicket}
-        open={showMessagesDialog}
-        onOpenChange={setShowMessagesDialog}
-      />
-    )}
+            <DragOverlay>
+              {activeTicket ? (
+                <Card className="cursor-grabbing opacity-90 shadow-lg">
+                  <CardContent className="p-4">
+                    <h3 className="font-semibold text-sm mb-2 truncate">{activeTicket.subject}</h3>
+                    <Badge className={priorityColors[activeTicket.priority]}>
+                      {activeTicket.priority}
+                    </Badge>
+                  </CardContent>
+                </Card>
+              ) : null}
+            </DragOverlay>
+          </DndContext>
+        </CardContent>
+      </Card>
+
+      {selectedTicket && (
+        <TicketMessagesDialog
+          ticket={selectedTicket}
+          open={showMessagesDialog}
+          onOpenChange={setShowMessagesDialog}
+        />
+      )}
     </>
   );
 };
