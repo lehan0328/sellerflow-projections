@@ -2,9 +2,11 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { UserPlus, TrendingUp, Gift, MapPin } from "lucide-react";
 import { useAdmin } from "@/hooks/useAdmin";
+import { startOfMonth, endOfMonth, format } from "date-fns";
 
 interface SignupData {
   user_id: string;
@@ -28,6 +30,7 @@ interface SignupMetrics {
 export function AdminSignupDashboard() {
   const { isAdmin } = useAdmin();
   const [signups, setSignups] = useState<SignupData[]>([]);
+  const [selectedMonth, setSelectedMonth] = useState<string>(format(new Date(), 'yyyy-MM'));
   const [metrics, setMetrics] = useState<SignupMetrics>({
     totalSignups: 0,
     referralPercentage: 0,
@@ -36,17 +39,36 @@ export function AdminSignupDashboard() {
   });
   const [isLoading, setIsLoading] = useState(true);
 
+  // Generate month options for the last 12 months
+  const getMonthOptions = () => {
+    const options = [];
+    const now = new Date();
+    for (let i = 0; i < 12; i++) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const value = format(date, 'yyyy-MM');
+      const label = format(date, 'MMMM yyyy');
+      options.push({ value, label });
+    }
+    return options;
+  };
+
   useEffect(() => {
     if (isAdmin) {
       fetchSignupData();
     }
-  }, [isAdmin]);
+  }, [isAdmin, selectedMonth]);
 
   const fetchSignupData = async () => {
     try {
+      const [year, month] = selectedMonth.split('-');
+      const startDate = startOfMonth(new Date(parseInt(year), parseInt(month) - 1));
+      const endDate = endOfMonth(new Date(parseInt(year), parseInt(month) - 1));
+
       const { data, error } = await supabase
         .from('profiles')
         .select('user_id, email, first_name, last_name, company, monthly_amazon_revenue, referral_code, hear_about_us, created_at')
+        .gte('created_at', startDate.toISOString())
+        .lte('created_at', endDate.toISOString())
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -111,6 +133,26 @@ export function AdminSignupDashboard() {
 
   return (
     <div className="space-y-6">
+      {/* Month Selector */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold">Signup Analytics</h2>
+          <p className="text-muted-foreground">Track signup metrics and acquisition sources</p>
+        </div>
+        <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+          <SelectTrigger className="w-[200px]">
+            <SelectValue placeholder="Select month" />
+          </SelectTrigger>
+          <SelectContent>
+            {getMonthOptions().map(option => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
       {/* Metrics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
@@ -120,7 +162,7 @@ export function AdminSignupDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{metrics.totalSignups}</div>
-            <p className="text-xs text-muted-foreground">All time registrations</p>
+            <p className="text-xs text-muted-foreground">Signups in {format(new Date(selectedMonth), 'MMMM yyyy')}</p>
           </CardContent>
         </Card>
 
