@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, User, Shield, Lock } from "lucide-react";
+import { Send, User, Shield, Lock, CheckCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -122,6 +122,26 @@ export function TicketDetailDialog({ ticket, open, onOpenChange }: TicketDetailD
     }
   };
 
+  const handleCloseTicket = async () => {
+    try {
+      const { error } = await supabase
+        .from('support_tickets')
+        .update({ 
+          status: 'closed',
+          resolved_at: new Date().toISOString()
+        })
+        .eq('id', ticket.id);
+
+      if (error) throw error;
+
+      toast.success('Ticket closed successfully');
+      onOpenChange(false);
+    } catch (error: any) {
+      console.error('Error closing ticket:', error);
+      toast.error('Failed to close ticket');
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col">
@@ -221,20 +241,30 @@ export function TicketDetailDialog({ ticket, open, onOpenChange }: TicketDetailD
                 className="resize-none text-sm"
                 disabled={isTicketClosed}
               />
-              <div className="flex justify-end gap-2">
+              <div className="flex justify-between gap-2">
                 <Button
                   variant="outline"
-                  onClick={() => onOpenChange(false)}
+                  onClick={handleCloseTicket}
+                  className="text-muted-foreground"
                 >
-                  Close
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Close Ticket
                 </Button>
-                <Button
-                  onClick={handleSendMessage}
-                  disabled={isSubmitting || !newMessage.trim() || isTicketClosed}
-                >
-                  <Send className="h-4 w-4 mr-2" />
-                  Send Message
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => onOpenChange(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleSendMessage}
+                    disabled={isSubmitting || !newMessage.trim() || isTicketClosed}
+                  >
+                    <Send className="h-4 w-4 mr-2" />
+                    Send Message
+                  </Button>
+                </div>
               </div>
             </div>
           )}
