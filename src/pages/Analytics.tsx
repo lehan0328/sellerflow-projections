@@ -1127,51 +1127,95 @@ export default function Analytics() {
               <div className="space-y-4">
                 <div className="flex justify-between items-center p-3 bg-red-50 dark:bg-red-950/20 rounded-lg">
                   <span className="font-medium">Overdue</span>
-                  <span className="text-red-600 font-bold">
-                    {vendorTransactions.filter(tx => {
-                      const txDate = new Date(tx.dueDate);
-                      const now = new Date();
-                      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-                      const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
-                      return tx.status === 'overdue' && txDate >= startOfMonth && txDate <= endOfMonth;
-                    }).length} purchase orders
-                  </span>
+                  <div className="text-right">
+                    <div className="text-red-600 font-bold">
+                      {vendorTransactions.filter(tx => {
+                        const txDate = new Date(tx.dueDate);
+                        const now = new Date();
+                        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+                        const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+                        return tx.status === 'overdue' && txDate >= startOfMonth && txDate <= endOfMonth;
+                      }).length} purchase orders
+                    </div>
+                    <div className="text-sm text-red-600 font-semibold">
+                      {formatCurrency(vendorTransactions.filter(tx => {
+                        const txDate = new Date(tx.dueDate);
+                        const now = new Date();
+                        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+                        const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+                        return tx.status === 'overdue' && txDate >= startOfMonth && txDate <= endOfMonth;
+                      }).reduce((sum, tx) => sum + Number(tx.amount || 0), 0))}
+                    </div>
+                  </div>
                 </div>
                 <div className="flex justify-between items-center p-3 bg-amber-50 dark:bg-amber-950/20 rounded-lg">
                   <span className="font-medium">Pending</span>
-                  <span className="text-amber-600 font-bold">
-                    {vendorTransactions.filter(tx => {
-                      const txDate = new Date(tx.dueDate);
-                      const now = new Date();
-                      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-                      const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
-                      return tx.status === 'pending' && txDate >= startOfMonth && txDate <= endOfMonth;
-                    }).length} purchase orders
-                  </span>
+                  <div className="text-right">
+                    <div className="text-amber-600 font-bold">
+                      {vendorTransactions.filter(tx => {
+                        const txDate = new Date(tx.dueDate);
+                        const now = new Date();
+                        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+                        const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+                        return tx.status === 'pending' && txDate >= startOfMonth && txDate <= endOfMonth;
+                      }).length} purchase orders
+                    </div>
+                    <div className="text-sm text-amber-600 font-semibold">
+                      {formatCurrency(vendorTransactions.filter(tx => {
+                        const txDate = new Date(tx.dueDate);
+                        const now = new Date();
+                        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+                        const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+                        return tx.status === 'pending' && txDate >= startOfMonth && txDate <= endOfMonth;
+                      }).reduce((sum, tx) => sum + Number(tx.amount || 0), 0))}
+                    </div>
+                  </div>
                 </div>
                 <div className="flex justify-between items-center p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
                   <span className="font-medium">Scheduled</span>
-                  <span className="text-blue-600 font-bold">
-                    {vendorTransactions.filter(tx => {
-                      const txDate = new Date(tx.dueDate);
-                      const now = new Date();
-                      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-                      const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
-                      return tx.status === 'scheduled' && txDate >= startOfMonth && txDate <= endOfMonth;
-                    }).length} purchase orders
-                  </span>
+                  <div className="text-right">
+                    <div className="text-blue-600 font-bold">
+                      {vendorTransactions.filter(tx => {
+                        const txDate = new Date(tx.dueDate);
+                        const now = new Date();
+                        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+                        const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+                        return tx.status === 'scheduled' && txDate >= startOfMonth && txDate <= endOfMonth;
+                      }).length} purchase orders
+                    </div>
+                    <div className="text-sm text-blue-600 font-semibold">
+                      {formatCurrency(vendorTransactions.filter(tx => {
+                        const txDate = new Date(tx.dueDate);
+                        const now = new Date();
+                        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+                        const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+                        return tx.status === 'scheduled' && txDate >= startOfMonth && txDate <= endOfMonth;
+                      }).reduce((sum, tx) => sum + Number(tx.amount || 0), 0))}
+                    </div>
+                  </div>
                 </div>
                 <div className="flex justify-between items-center p-3 bg-green-50 dark:bg-green-950/20 rounded-lg">
                   <span className="font-medium">Completed</span>
-                  <span className="text-green-600 font-bold">
-                    {vendorTransactions.filter(tx => {
-                      const txDate = new Date(tx.dueDate);
-                      const now = new Date();
-                      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-                      const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
-                      return tx.status === 'completed' && txDate >= startOfMonth && txDate <= endOfMonth;
-                    }).length} purchase orders
-                  </span>
+                  <div className="text-right">
+                    <div className="text-green-600 font-bold">
+                      {vendorTransactions.filter(tx => {
+                        const txDate = new Date(tx.dueDate);
+                        const now = new Date();
+                        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+                        const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+                        return tx.status === 'completed' && txDate >= startOfMonth && txDate <= endOfMonth;
+                      }).length} purchase orders
+                    </div>
+                    <div className="text-sm text-green-600 font-semibold">
+                      {formatCurrency(vendorTransactions.filter(tx => {
+                        const txDate = new Date(tx.dueDate);
+                        const now = new Date();
+                        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+                        const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+                        return tx.status === 'completed' && txDate >= startOfMonth && txDate <= endOfMonth;
+                      }).reduce((sum, tx) => sum + Number(tx.amount || 0), 0))}
+                    </div>
+                  </div>
                 </div>
               </div>
             </CardContent>
