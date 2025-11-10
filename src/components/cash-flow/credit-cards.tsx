@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { format } from "date-fns";
+import { format, addMonths, isBefore, startOfDay } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -63,6 +63,10 @@ export function CreditCards() {
   const [cardForDueDate, setCardForDueDate] = useState<any>(null);
   const [newDueDate, setNewDueDate] = useState('');
   const [newStatementBalance, setNewStatementBalance] = useState('');
+  const [showStatementUpdateModal, setShowStatementUpdateModal] = useState(false);
+  const [cardForStatementUpdate, setCardForStatementUpdate] = useState<any>(null);
+  const [updateStatementBalance, setUpdateStatementBalance] = useState('');
+  const [updateDueDate, setUpdateDueDate] = useState('');
   const [formData, setFormData] = useState<CreditCardFormData>({
     nickname: '',
     annual_fee: 0,
@@ -254,6 +258,93 @@ export function CreditCards() {
       setCardForDueDate(null);
       setNewDueDate('');
       setNewStatementBalance('');
+    }
+  };
+
+  // Check for overdue payment due dates and prompt user to update
+  useEffect(() => {
+    if (!creditCards || creditCards.length === 0) return;
+
+    const today = startOfDay(new Date());
+    
+    // Find cards with due dates that have passed
+    const overdueCard = creditCards.find(card => {
+      if (!card.payment_due_date) return false;
+      const dueDate = startOfDay(new Date(card.payment_due_date));
+      return isBefore(dueDate, today) || dueDate.getTime() === today.getTime();
+    });
+
+    if (overdueCard && !showStatementUpdateModal) {
+      // Calculate next month's due date
+      const currentDueDate = new Date(overdueCard.payment_due_date);
+      const nextDueDate = addMonths(currentDueDate, 1);
+      
+      setCardForStatementUpdate(overdueCard);
+      setUpdateStatementBalance('');
+      setUpdateDueDate(format(nextDueDate, 'yyyy-MM-dd'));
+      setShowStatementUpdateModal(true);
+    }
+  }, [creditCards, showStatementUpdateModal]);
+
+  const handleUpdateStatement = async () => {
+    if (!cardForStatementUpdate || !updateStatementBalance || !updateDueDate) {
+      toast.error("Please fill in all fields");
+      return;
+    }
+
+    const statementBalanceNum = parseFloat(updateStatementBalance);
+    if (isNaN(statementBalanceNum) || statementBalanceNum < 0) {
+      toast.error("Please enter a valid statement balance");
+      return;
+    }
+
+    const success = await updateCreditCard(cardForStatementUpdate.id, {
+      payment_due_date: updateDueDate,
+      statement_balance: statementBalanceNum
+    });
+
+    if (success) {
+      toast.success("Statement balance updated successfully");
+      setShowStatementUpdateModal(false);
+      setCardForStatementUpdate(null);
+      setUpdateStatementBalance('');
+      setUpdateDueDate('');
+    }
+  };
+
+  const handleMaybeLater = async () => {
+    if (!cardForStatementUpdate || !user) {
+      setShowStatementUpdateModal(false);
+      return;
+    }
+
+    try {
+      // Create a notification for later
+      const { error } = await supabase
+        .from('notification_history')
+        .insert({
+          user_id: user.id,
+          category: 'credit',
+          notification_type: 'reminder',
+          title: 'Update Credit Card Statement',
+          message: `Please update the statement balance for ${cardForStatementUpdate.nickname || cardForStatementUpdate.account_name}`,
+          priority: 'medium',
+          actionable: true,
+          action_label: 'Update Now',
+          read: false,
+          sent_at: new Date().toISOString(),
+        });
+
+      if (error) throw error;
+
+      toast.info("Reminder added to notifications");
+      setShowStatementUpdateModal(false);
+      setCardForStatementUpdate(null);
+      setUpdateStatementBalance('');
+      setUpdateDueDate('');
+    } catch (error) {
+      console.error('Error creating notification:', error);
+      toast.error("Failed to create reminder");
     }
   };
 
@@ -764,6 +855,91 @@ export function CreditCards() {
             window.location.reload();
           }}
         />
+
+        {/* Statement Balance Update Modal */}
+        <Dialog open={showStatementUpdateModal} onOpenChange={setShowStatementUpdateModal}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Update Statement Balance</DialogTitle>
+              <DialogDescription>
+                The payment due date for {cardForStatementUpdate?.nickname || cardForStatementUpdate?.account_name} has passed. Please update the statement balance for the next billing period.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="update_statement_balance">New Statement Balance <span className="text-destructive">*</span></Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+                  <Input
+                    id="update_statement_balance"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="0.00"
+                    value={updateStatementBalance}
+                    onChange={(e) => setUpdateStatementBalance(e.target.value)}
+                    className="pl-7"
+                    required
+                  />
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="update_due_date">Next Payment Due Date <span className="text-destructive">*</span></Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start text-left font-normal"
+                    >
+                      <Calendar className="mr-2 h-4 w-4" />
+                      {updateDueDate ? format(new Date(updateDueDate), "PPP") : <span>Pick a date</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <CalendarComponent
+                      mode="single"
+                      selected={updateDueDate ? new Date(updateDueDate) : undefined}
+                      onSelect={(date) => {
+                        if (date) {
+                          setUpdateDueDate(format(date, "yyyy-MM-dd"));
+                        }
+                      }}
+                      disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                      initialFocus
+                      className="pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
+                <p className="text-xs text-muted-foreground">
+                  Automatically set to one month from previous due date
+                </p>
+              </div>
+            </div>
+            <div className="flex justify-between gap-2">
+              <Button
+                variant="outline"
+                onClick={handleMaybeLater}
+              >
+                Maybe Later
+              </Button>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowStatementUpdateModal(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleUpdateStatement}
+                  disabled={!updateStatementBalance || !updateDueDate}
+                >
+                  Update Statement
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   );
