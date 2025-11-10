@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
@@ -39,10 +39,7 @@ export function ManualCreditCardDialog({
     account_name: card?.account_name || "",
     balance: card?.balance?.toString() || "0",
     credit_limit: card?.credit_limit?.toString() || "0",
-    minimum_payment: card?.minimum_payment?.toString() || "0",
-    payment_due_date: card?.payment_due_date || "",
-    statement_close_date: card?.statement_close_date || "",
-    currency_code: card?.currency_code || "USD"
+    payment_due_date: card?.payment_due_date || ""
   });
 
   useEffect(() => {
@@ -52,10 +49,7 @@ export function ManualCreditCardDialog({
         account_name: card.account_name,
         balance: card.balance.toString(),
         credit_limit: card.credit_limit.toString(),
-        minimum_payment: card.minimum_payment.toString(),
-        payment_due_date: card.payment_due_date || "",
-        statement_close_date: card.statement_close_date || "",
-        currency_code: card.currency_code
+        payment_due_date: card.payment_due_date || ""
       });
     } else {
       setFormData({
@@ -63,10 +57,7 @@ export function ManualCreditCardDialog({
         account_name: "",
         balance: "0",
         credit_limit: "0",
-        minimum_payment: "0",
-        payment_due_date: "",
-        statement_close_date: "",
-        currency_code: "USD"
+        payment_due_date: ""
       });
     }
   }, [card, open]);
@@ -96,10 +87,8 @@ export function ManualCreditCardDialog({
         balance: parseFloat(formData.balance),
         credit_limit: parseFloat(formData.credit_limit),
         available_credit: parseFloat(formData.credit_limit) - parseFloat(formData.balance),
-        minimum_payment: parseFloat(formData.minimum_payment),
         payment_due_date: formData.payment_due_date || null,
-        statement_close_date: formData.statement_close_date || null,
-        currency_code: formData.currency_code,
+        currency_code: 'USD',
         account_id: profile.account_id
       };
 
@@ -196,55 +185,13 @@ export function ManualCreditCardDialog({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="minimum_payment">Minimum Payment</Label>
+            <Label htmlFor="payment_due_date">Payment Due Date</Label>
             <Input
-              id="minimum_payment"
-              type="number"
-              step="0.01"
-              value={formData.minimum_payment}
-              onChange={(e) => setFormData({ ...formData, minimum_payment: e.target.value })}
-              placeholder="0.00"
+              id="payment_due_date"
+              type="date"
+              value={formData.payment_due_date}
+              onChange={(e) => setFormData({ ...formData, payment_due_date: e.target.value })}
             />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="payment_due_date">Payment Due Date</Label>
-              <Input
-                id="payment_due_date"
-                type="date"
-                value={formData.payment_due_date}
-                onChange={(e) => setFormData({ ...formData, payment_due_date: e.target.value })}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="statement_close_date">Statement Close Date</Label>
-              <Input
-                id="statement_close_date"
-                type="date"
-                value={formData.statement_close_date}
-                onChange={(e) => setFormData({ ...formData, statement_close_date: e.target.value })}
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="currency_code">Currency</Label>
-            <Select 
-              value={formData.currency_code} 
-              onValueChange={(value) => setFormData({ ...formData, currency_code: value })}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="USD">USD - US Dollar</SelectItem>
-                <SelectItem value="EUR">EUR - Euro</SelectItem>
-                <SelectItem value="GBP">GBP - British Pound</SelectItem>
-                <SelectItem value="CAD">CAD - Canadian Dollar</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
 
           <div className="flex justify-end gap-2">
