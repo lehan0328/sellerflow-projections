@@ -33,9 +33,9 @@ const Admin = () => {
   const tabs = [
     { value: "signups", label: "Signup Analytics", icon: UserPlus },
     { value: "customers", label: "Customers", icon: Users },
+    { value: "subscriptions", label: "Subscriptions", icon: CreditCard },
     { value: "support-dashboard", label: "Support Dashboard", icon: MessageSquare },
     { value: "support", label: "Support Tickets", icon: LifeBuoy },
-    { value: "subscriptions", label: "Subscriptions", icon: CreditCard },
     { value: "referrals", label: "Referrals", icon: Gift },
     { value: "affiliates", label: "Affiliates", icon: UserCog },
     { value: "features", label: "Feature Requests", icon: MessageSquare },
