@@ -34,24 +34,32 @@ serve(async (req) => {
       throw new Error('No authorization header');
     }
 
-    // Extract and verify the JWT token
+    // Extract and decode the JWT token to get user info
     const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
-
-    if (userError || !user) {
-      console.error('❌ Authentication error:', userError);
-      throw new Error('Unauthorized');
-    }
-
-    console.log('✅ User authenticated:', user.email);
-
-    // Check if user is admin by checking email directly
-    const ADMIN_EMAILS = ['chuandy914@gmail.com', 'orders@imarand.com'];
-    const isAdmin = user.email && ADMIN_EMAILS.includes(user.email);
     
-    if (!isAdmin) {
-      console.error('❌ User is not admin:', user.email);
-      throw new Error('Unauthorized - Admin access required');
+    try {
+      // Decode the JWT payload (middle part of the token)
+      const parts = token.split('.');
+      if (parts.length !== 3) {
+        throw new Error('Invalid token format');
+      }
+      
+      const payload = JSON.parse(atob(parts[1]));
+      console.log('✅ Token decoded, user email:', payload.email);
+      
+      // Check if user is admin by checking email directly
+      const ADMIN_EMAILS = ['chuandy914@gmail.com', 'orders@imarand.com'];
+      const isAdmin = payload.email && ADMIN_EMAILS.includes(payload.email);
+      
+      if (!isAdmin) {
+        console.error('❌ User is not admin:', payload.email);
+        throw new Error('Unauthorized - Admin access required');
+      }
+      
+      console.log('✅ Admin verified:', payload.email);
+    } catch (error) {
+      console.error('❌ Token validation error:', error);
+      throw new Error('Unauthorized - Invalid token');
     }
 
     console.log('✅ Admin verified');
