@@ -13,7 +13,8 @@ import {
   UserCog,
   Target,
   Settings,
-  UserPlus
+  UserPlus,
+  Megaphone
 } from "lucide-react";
 import { AdminCustomers } from "@/components/admin/AdminCustomers";
 import { AdminSupportTickets } from "@/components/admin/AdminSupportTickets";
@@ -25,6 +26,7 @@ import { AdminForecastAccuracy } from "@/components/admin/AdminForecastAccuracy"
 import { SetPlanOverride } from "@/components/admin/SetPlanOverride";
 import { AdminSupportDashboard } from "@/components/admin/AdminSupportDashboard";
 import { AdminSignupDashboard } from "@/components/admin/AdminSignupDashboard";
+import { AdminSendUpdate } from "@/components/admin/AdminSendUpdate";
 
 const Admin = () => {
   const navigate = useNavigate();
@@ -34,6 +36,7 @@ const Admin = () => {
     { value: "signups", label: "Signup Analytics", icon: UserPlus },
     { value: "customers", label: "Customers", icon: Users },
     { value: "subscriptions", label: "Subscriptions", icon: CreditCard },
+    { value: "send-update", label: "Send Update", icon: Megaphone },
     { value: "support-dashboard", label: "Support Dashboard", icon: MessageSquare },
     { value: "support", label: "Support Tickets", icon: LifeBuoy },
     { value: "referrals", label: "Referrals", icon: Gift },
@@ -115,6 +118,10 @@ const Admin = () => {
 
             <TabsContent value="subscriptions" className="m-0">
               <AdminSubscriptions />
+            </TabsContent>
+
+            <TabsContent value="send-update" className="m-0">
+              <AdminSendUpdate />
             </TabsContent>
 
             <TabsContent value="referrals" className="m-0">
