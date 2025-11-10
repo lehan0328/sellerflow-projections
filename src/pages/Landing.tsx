@@ -784,7 +784,7 @@ const Landing = () => {
               </div>
 
               {/* Dashboard Preview */}
-              <div className="relative scale-105">
+              <div className="relative scale-110">
                 {/* Glow effect */}
                 <div className="absolute -inset-8 bg-gradient-to-r from-primary/20 via-accent/20 to-primary/20 rounded-3xl blur-3xl" />
                 
@@ -793,8 +793,13 @@ const Landing = () => {
                   <img 
                     src={dashboardPreview} 
                     alt="Auren Dashboard Preview - Cash Flow Visualization and Safe Spending Power" 
-                    className="w-full h-auto transition-transform duration-700 ease-out group-hover:scale-125 origin-center"
-                    style={{ imageRendering: '-webkit-optimize-contrast' }}
+                    className="w-full h-auto transition-transform duration-700 ease-out group-hover:scale-125 origin-center will-change-transform"
+                    style={{ 
+                      imageRendering: '-webkit-optimize-contrast',
+                      transform: 'translateZ(0)',
+                      backfaceVisibility: 'hidden',
+                      WebkitFontSmoothing: 'subpixel-antialiased'
+                    }}
                   />
                 </div>
               </div>
