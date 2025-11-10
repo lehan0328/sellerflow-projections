@@ -886,10 +886,17 @@ export function CreditCards() {
             <DialogHeader>
               <DialogTitle>Update Statement Balance</DialogTitle>
               <DialogDescription>
-                The payment due date for {cardForStatementUpdate?.nickname || cardForStatementUpdate?.account_name} has passed. Please update the statement balance for the next billing period.
+                The payment due date has passed. Please update the statement balance for the next billing period.
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
+              <div className="rounded-lg border bg-muted/50 p-4 mb-4">
+                <p className="text-sm text-muted-foreground mb-1">Credit Card</p>
+                <p className="font-semibold text-lg">
+                  {cardForStatementUpdate?.nickname || `${cardForStatementUpdate?.institution_name} - ${cardForStatementUpdate?.account_name}`}
+                </p>
+              </div>
+              
               <div className="space-y-2">
                 <Label htmlFor="update_statement_balance">New Statement Balance <span className="text-destructive">*</span></Label>
                 <div className="relative">
@@ -947,20 +954,12 @@ export function CreditCards() {
               >
                 Maybe Later
               </Button>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowStatementUpdateModal(false)}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleUpdateStatement}
-                  disabled={!updateStatementBalance || !updateDueDate}
-                >
-                  Update Statement
-                </Button>
-              </div>
+              <Button
+                onClick={handleUpdateStatement}
+                disabled={!updateStatementBalance || !updateDueDate}
+              >
+                Update Statement
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
