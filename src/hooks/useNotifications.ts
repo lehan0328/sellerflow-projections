@@ -4,7 +4,7 @@ import { useAuth } from './useAuth';
 
 export interface Notification {
   id: string;
-  type: 'warning' | 'info' | 'success' | 'critical';
+  type: 'warning' | 'info' | 'success' | 'critical' | 'update' | 'announcement' | 'maintenance' | 'new_feature' | 'bug_fix' | 'urgent' | 'legal_policy' | 'reminder' | 'security';
   category: 'payment' | 'income' | 'cash-flow' | 'amazon' | 'bank' | 'credit';
   title: string;
   message: string;
@@ -42,7 +42,7 @@ export const useNotifications = () => {
 
       const mappedNotifications: Notification[] = (data || []).map(n => ({
         id: n.id,
-        type: (n.priority === 'high' ? 'critical' : n.priority === 'medium' ? 'warning' : 'info') as 'critical' | 'warning' | 'info',
+        type: (n.notification_type || 'info') as Notification['type'],
         category: n.category as 'payment' | 'income' | 'cash-flow' | 'amazon' | 'bank' | 'credit',
         title: n.title,
         message: n.message,
