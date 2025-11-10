@@ -90,35 +90,35 @@ export const PendingNotificationsPanel = ({
     switch (type) {
       case 'urgent':
       case 'security':
-        return 'bg-red-400 text-white border-red-500';
+        return 'bg-red-300 text-white border-red-400';
       case 'maintenance':
       case 'reminder':
-        return 'bg-amber-400 text-white border-amber-500';
+        return 'bg-amber-300 text-white border-amber-400';
       case 'new_feature':
-        return 'bg-emerald-400 text-white border-emerald-500';
+        return 'bg-emerald-300 text-white border-emerald-400';
       case 'bug_fix':
-        return 'bg-green-400 text-white border-green-500';
+        return 'bg-green-300 text-white border-green-400';
       case 'announcement':
-        return 'bg-purple-400 text-white border-purple-500';
+        return 'bg-purple-300 text-white border-purple-400';
       case 'legal_policy':
-        return 'bg-slate-400 text-white border-slate-500';
+        return 'bg-slate-300 text-white border-slate-400';
       case 'info':
-        return 'bg-sky-400 text-white border-sky-500';
+        return 'bg-sky-300 text-white border-sky-400';
       default:
-        return 'bg-blue-400 text-white border-blue-500';
+        return 'bg-blue-300 text-white border-blue-400';
     }
   };
 
   const getCategoryColor = (category: string) => {
     switch (category) {
       case 'credit':
-        return 'bg-orange-400 text-white border-orange-500';
+        return 'bg-orange-300 text-white border-orange-400';
       case 'payment':
-        return 'bg-teal-400 text-white border-teal-500';
+        return 'bg-teal-300 text-white border-teal-400';
       case 'account':
-        return 'bg-indigo-400 text-white border-indigo-500';
+        return 'bg-indigo-300 text-white border-indigo-400';
       default:
-        return 'bg-pink-400 text-white border-pink-500';
+        return 'bg-pink-300 text-white border-pink-400';
     }
   };
 
@@ -227,12 +227,12 @@ export const PendingNotificationsPanel = ({
                     </Button>
 
                     <div className="pr-8">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Badge className={cn("text-xs font-medium border", getBadgeTypeColor(notification.type))}>
+                      <div className="flex items-center gap-2 mb-2 flex-nowrap">
+                        <Badge className={cn("text-xs font-medium border whitespace-nowrap", getBadgeTypeColor(notification.type))}>
                           {getTypeLabel(notification.type)}
                         </Badge>
                         {notification.category && (
-                          <Badge className={cn("text-xs font-medium border capitalize", getCategoryColor(notification.category))}>
+                          <Badge className={cn("text-xs font-medium border capitalize whitespace-nowrap", getCategoryColor(notification.category))}>
                             {notification.category}
                           </Badge>
                         )}
