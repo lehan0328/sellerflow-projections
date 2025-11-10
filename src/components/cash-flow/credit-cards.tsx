@@ -58,6 +58,9 @@ export function CreditCards() {
   const [pendingPlaidData, setPendingPlaidData] = useState<{ publicToken: string; metadata: any } | null>(null);
   const [showManualDialog, setShowManualDialog] = useState(false);
   const [manualEditingCard, setManualEditingCard] = useState<any>(null);
+  const [showSetDueDateDialog, setShowSetDueDateDialog] = useState(false);
+  const [cardForDueDate, setCardForDueDate] = useState<any>(null);
+  const [newDueDate, setNewDueDate] = useState('');
   const [formData, setFormData] = useState<CreditCardFormData>({
     nickname: '',
     annual_fee: 0,
@@ -229,6 +232,21 @@ export function CreditCards() {
     setCardToDelete(null);
   };
 
+  const handleSetDueDate = async () => {
+    if (!cardForDueDate || !newDueDate) return;
+
+    const success = await updateCreditCard(cardForDueDate.id, {
+      payment_due_date: newDueDate
+    });
+
+    if (success) {
+      toast.success("Payment due date set successfully");
+      setShowSetDueDateDialog(false);
+      setCardForDueDate(null);
+      setNewDueDate('');
+    }
+  };
+
   if (isLoading) {
     return (
       <Card className="shadow-card">
@@ -372,10 +390,17 @@ export function CreditCards() {
                             );
                           })()
                         ) : (
-                          <span className="flex items-center text-muted-foreground/60">
+                          <button
+                            onClick={() => {
+                              setCardForDueDate(card);
+                              setNewDueDate('');
+                              setShowSetDueDateDialog(true);
+                            }}
+                            className="flex items-center text-blue-600 hover:text-blue-700 hover:underline"
+                          >
                             <Calendar className="mr-1 h-3 w-3" />
-                            No due date from bank
-                          </span>
+                            Set payment due date
+                          </button>
                         )}
                       </div>
                     </div>
@@ -663,6 +688,48 @@ export function CreditCards() {
             onConfirm={handleConfirmAccounts}
           />
         )}
+
+        {/* Set Due Date Dialog */}
+        <Dialog open={showSetDueDateDialog} onOpenChange={setShowSetDueDateDialog}>
+          <DialogContent className="sm:max-w-[400px]">
+            <DialogHeader>
+              <DialogTitle>Set Payment Due Date</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <p className="text-sm text-muted-foreground">
+                Set a payment due date for {cardForDueDate?.nickname || `${cardForDueDate?.institution_name} - ${cardForDueDate?.account_name}`}
+              </p>
+              <div className="space-y-2">
+                <Label htmlFor="due_date">Payment Due Date</Label>
+                <Input
+                  id="due_date"
+                  type="date"
+                  value={newDueDate}
+                  onChange={(e) => setNewDueDate(e.target.value)}
+                  min={new Date().toISOString().split('T')[0]}
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowSetDueDateDialog(false);
+                  setCardForDueDate(null);
+                  setNewDueDate('');
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSetDueDate}
+                disabled={!newDueDate}
+              >
+                Set Due Date
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* Manual Credit Card Dialog */}
         <ManualCreditCardDialog
