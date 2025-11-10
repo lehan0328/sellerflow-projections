@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ArrowLeft, Eye, EyeOff, Check, X, Loader2 } from "lucide-react";
 import aurenIcon from "@/assets/auren-icon-blue.png";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,6 +16,7 @@ export const SignUp = () => {
   const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [signUpData, setSignUpData] = useState({
     email: '',
     password: '',
@@ -108,6 +110,11 @@ export const SignUp = () => {
 
     if (signUpData.password.length < 6) {
       toast.error('Password must be at least 6 characters');
+      return;
+    }
+
+    if (!acceptedTerms) {
+      toast.error('Please accept the Terms of Service and Privacy Policy');
       return;
     }
 
@@ -348,6 +355,37 @@ export const SignUp = () => {
                     Invalid referral code. You can still sign up without it.
                   </p>
                 )}
+
+                <div className="flex items-start space-x-3 py-2">
+                  <Checkbox
+                    id="terms"
+                    checked={acceptedTerms}
+                    onCheckedChange={(checked) => setAcceptedTerms(checked as boolean)}
+                    disabled={loading}
+                    className="mt-1"
+                  />
+                  <Label
+                    htmlFor="terms"
+                    className="text-sm text-muted-foreground leading-relaxed cursor-pointer"
+                  >
+                    I agree to the{' '}
+                    <Link
+                      to="/terms-of-service"
+                      target="_blank"
+                      className="text-primary hover:underline font-medium"
+                    >
+                      Terms of Service
+                    </Link>
+                    {' '}and{' '}
+                    <Link
+                      to="/privacy-policy"
+                      target="_blank"
+                      className="text-primary hover:underline font-medium"
+                    >
+                      Privacy Policy
+                    </Link>
+                  </Label>
+                </div>
 
                 <Button
                   type="submit"
