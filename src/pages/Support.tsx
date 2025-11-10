@@ -32,7 +32,7 @@ const Support = () => {
     subject: "",
     message: "",
     priority: "medium" as "low" | "medium" | "high",
-    category: ""
+    category: "technical"
   });
 
   // AI Chat state
@@ -173,7 +173,7 @@ const Support = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.subject.trim() || !formData.message.trim()) {
+    if (!formData.subject.trim() || !formData.message.trim() || !formData.category) {
       toast.error("Please fill in all required fields");
       return;
     }
@@ -201,7 +201,7 @@ const Support = () => {
         subject: "",
         message: "",
         priority: "medium",
-        category: ""
+        category: "technical"
       });
       setShowNewTicket(false);
       
@@ -499,13 +499,24 @@ const Support = () => {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="category">Category (Optional)</Label>
-                      <Input
-                        id="category"
+                      <Label htmlFor="category">Category *</Label>
+                      <Select
                         value={formData.category}
-                        onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                        placeholder="e.g., Billing, Technical, Feature Request"
-                      />
+                        onValueChange={(value) => setFormData({ ...formData, category: value })}
+                        required
+                      >
+                        <SelectTrigger className="bg-background">
+                          <SelectValue placeholder="Select a category" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-background z-50">
+                          <SelectItem value="technical">Technical</SelectItem>
+                          <SelectItem value="billing">Billing</SelectItem>
+                          <SelectItem value="bug">Report a Bug</SelectItem>
+                          <SelectItem value="feedback">Feedback</SelectItem>
+                          <SelectItem value="connection">Amazon/Plaid Connection Issues</SelectItem>
+                          <SelectItem value="other">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
 
