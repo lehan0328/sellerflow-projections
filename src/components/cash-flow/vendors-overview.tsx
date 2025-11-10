@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Building2, Calendar, DollarSign, AlertTriangle, Edit, CreditCard, Search, ArrowUpDown, Filter, Trash2, Link2, ExternalLink, Banknote, ChevronRight, ChevronDown, Landmark } from "lucide-react";
+import { Building2, Calendar, DollarSign, AlertTriangle, Edit, CreditCard, Search, ArrowUpDown, Filter, Trash2, Link2, ExternalLink, Banknote, Landmark } from "lucide-react";
 import { format } from "date-fns";
 import { cn, formatCurrency } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
@@ -597,7 +597,6 @@ export const VendorsOverview = ({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[30px]"></TableHead>
                 <TableHead>Vendor</TableHead>
                 <TableHead>PO# / Ref#</TableHead>
                 <TableHead>Amount</TableHead>
@@ -609,24 +608,11 @@ export const VendorsOverview = ({
             </TableHeader>
             <TableBody>
               {filteredAndSortedTransactions.length === 0 ? <TableRow>
-                  <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                     {selectedVendor ? `No purchase orders found for ${vendorSearchOptions.find(v => v.value === selectedVendor)?.label || selectedVendor}.` : searchTerm ? 'No transactions found matching your search.' : 'No vendor purchase orders.'}
                   </TableCell>
                 </TableRow> : filteredAndSortedTransactions.map(tx => <React.Fragment key={tx.id}>
-                  <TableRow className="cursor-pointer hover:bg-muted/50" onClick={(e) => {
-                    // Prevent toggling when clicking on buttons or interactive elements
-                    if ((e.target as HTMLElement).closest('button, select, a')) {
-                      return;
-                    }
-                    toggleRow(tx.id);
-                  }}>
-                    <TableCell className="w-[30px]">
-                      {expandedRows[tx.id] ? (
-                        <ChevronDown className="h-4 w-4" />
-                      ) : (
-                        <ChevronRight className="h-4 w-4" />
-                      )}
-                    </TableCell>
+                  <TableRow className="hover:bg-muted/50">
                     <TableCell className="font-medium">{tx.vendorName}</TableCell>
                     <TableCell>{tx.description || 'N/A'}</TableCell>
                     <TableCell>
