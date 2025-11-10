@@ -215,6 +215,9 @@ export const PendingNotificationsPanel = ({
                             className="text-xs gap-2"
                             onClick={(e) => {
                               e.stopPropagation();
+                              if (!notification.read) {
+                                markAsRead(notification.id);
+                              }
                               window.open(notification.actionUrl, '_blank', 'noopener,noreferrer');
                             }}
                           >
