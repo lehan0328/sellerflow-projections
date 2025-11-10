@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, TrendingUp, TrendingDown, Clock, CheckCircle2, AlertCircle, MessageSquare } from "lucide-react";
-import { startOfMonth, endOfMonth, subMonths, differenceInDays } from "date-fns";
+import { Loader2, TrendingUp, TrendingDown, Clock, CheckCircle2, AlertCircle, MessageSquare, BarChart3 } from "lucide-react";
+import { startOfMonth, endOfMonth, subMonths, differenceInDays, format } from "date-fns";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface DashboardStats {
   totalOpen: number;
@@ -13,15 +14,26 @@ interface DashboardStats {
   closedThisMonth: number;
   closedLastMonth: number;
   avgResolutionDays: number;
+  categoryBreakdown: { category: string; count: number }[];
 }
 
 export const AdminSupportDashboard = () => {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedMonth, setSelectedMonth] = useState<string>(format(new Date(), 'yyyy-MM'));
+
+  // Generate last 12 months for dropdown
+  const monthOptions = Array.from({ length: 12 }, (_, i) => {
+    const date = subMonths(new Date(), i);
+    return {
+      value: format(date, 'yyyy-MM'),
+      label: format(date, 'MMMM yyyy')
+    };
+  });
 
   useEffect(() => {
     fetchDashboardStats();
-  }, []);
+  }, [selectedMonth]);
 
   const fetchDashboardStats = async () => {
     try {
@@ -35,11 +47,14 @@ export const AdminSupportDashboard = () => {
 
       if (error) throw error;
 
-      const now = new Date();
-      const thisMonthStart = startOfMonth(now);
-      const thisMonthEnd = endOfMonth(now);
-      const lastMonthStart = startOfMonth(subMonths(now, 1));
-      const lastMonthEnd = endOfMonth(subMonths(now, 1));
+      // Parse selected month
+      const [year, month] = selectedMonth.split('-').map(Number);
+      const selectedDate = new Date(year, month - 1);
+      
+      const thisMonthStart = startOfMonth(selectedDate);
+      const thisMonthEnd = endOfMonth(selectedDate);
+      const lastMonthStart = startOfMonth(subMonths(selectedDate, 1));
+      const lastMonthEnd = endOfMonth(subMonths(selectedDate, 1));
 
       // Calculate stats
       const totalOpen = tickets?.filter(t => t.status === 'open').length || 0;
@@ -75,6 +90,16 @@ export const AdminSupportDashboard = () => {
       }, 0);
       const avgResolutionDays = closedTickets.length > 0 ? Math.round(totalResolutionDays / closedTickets.length) : 0;
 
+      // Calculate category breakdown
+      const categoryMap = new Map<string, number>();
+      tickets?.forEach(ticket => {
+        const category = ticket.category || 'Uncategorized';
+        categoryMap.set(category, (categoryMap.get(category) || 0) + 1);
+      });
+      const categoryBreakdown = Array.from(categoryMap.entries())
+        .map(([category, count]) => ({ category, count }))
+        .sort((a, b) => b.count - a.count);
+
       setStats({
         totalOpen,
         needsResponse,
@@ -83,7 +108,8 @@ export const AdminSupportDashboard = () => {
         openedLastMonth,
         closedThisMonth,
         closedLastMonth,
-        avgResolutionDays
+        avgResolutionDays,
+        categoryBreakdown
       });
     } catch (error) {
       console.error('Error fetching dashboard stats:', error);
@@ -118,9 +144,23 @@ export const AdminSupportDashboard = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold mb-2">Support Ticket Dashboard</h2>
-        <p className="text-muted-foreground">Overview of support ticket metrics and performance</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold mb-2">Support Ticket Dashboard</h2>
+          <p className="text-muted-foreground">Overview of support ticket metrics and performance</p>
+        </div>
+        <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+          <SelectTrigger className="w-[200px]">
+            <SelectValue placeholder="Select month" />
+          </SelectTrigger>
+          <SelectContent>
+            {monthOptions.map(option => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Status Overview */}
@@ -226,6 +266,43 @@ export const AdminSupportDashboard = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Category Breakdown */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Cases by Category</CardTitle>
+          <BarChart3 className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            {stats.categoryBreakdown.length > 0 ? (
+              stats.categoryBreakdown.map((item, index) => (
+                <div key={item.category} className="flex items-center justify-between">
+                  <div className="flex items-center gap-3 flex-1">
+                    <span className="text-sm font-medium text-muted-foreground">#{index + 1}</span>
+                    <span className="text-sm font-medium">{item.category}</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-32 bg-muted rounded-full h-2 overflow-hidden">
+                      <div 
+                        className="bg-primary h-full rounded-full transition-all"
+                        style={{ 
+                          width: `${(item.count / stats.categoryBreakdown[0].count) * 100}%` 
+                        }}
+                      />
+                    </div>
+                    <span className="text-sm font-bold min-w-[2rem] text-right">{item.count}</span>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                No tickets found
+              </p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
