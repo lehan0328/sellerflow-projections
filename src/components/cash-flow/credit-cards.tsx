@@ -37,7 +37,6 @@ interface CreditCardFormData {
   annual_fee: number;
   cash_back: number;
   priority: number;
-  forecast_next_month: boolean;
   payment_due_date: string;
   statement_balance: number;
   credit_limit_override: number | null;
@@ -69,7 +68,6 @@ export function CreditCards() {
     annual_fee: 0,
     cash_back: 0,
     priority: 3,
-    forecast_next_month: false,
     payment_due_date: '',
     statement_balance: 0,
     credit_limit_override: null,
@@ -98,7 +96,6 @@ export function CreditCards() {
       annual_fee: 0,
       cash_back: 0,
       priority: 3,
-      forecast_next_month: false,
       payment_due_date: '',
       statement_balance: 0,
       credit_limit_override: null,
@@ -201,7 +198,6 @@ export function CreditCards() {
       annual_fee: card.annual_fee || 0,
       cash_back: card.cash_back || 0,
       priority: card.priority || 3,
-      forecast_next_month: card.forecast_next_month || false,
       payment_due_date: card.payment_due_date || '',
       statement_balance: card.statement_balance || 0,
       credit_limit_override: card.credit_limit_override || null,
@@ -634,22 +630,6 @@ export function CreditCards() {
                     <SelectItem value="5">5 - Lowest Priority</SelectItem>
                   </SelectContent>
               </Select>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <div className="flex items-center gap-2">
-                    <Label htmlFor="edit_forecast_next_month">Forecast Next Month</Label>
-                    <Badge variant="secondary" className="text-xs">Recommended</Badge>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Project next month's payment based on current spending pattern
-                  </p>
-                </div>
-                <Switch
-                  id="edit_forecast_next_month"
-                  checked={formData.forecast_next_month}
-                  onCheckedChange={(checked) => setFormData({...formData, forecast_next_month: checked})}
-                />
               </div>
               <div className="flex justify-end space-x-2">
                 <Button variant="outline" onClick={() => setShowEditDialog(false)}>
