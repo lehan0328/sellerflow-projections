@@ -71,13 +71,22 @@ export default function PrivacyPolicy() {
               </ul>
 
               <h3 className="font-semibold text-lg mt-6">What We Do With Your Bank Data</h3>
+              <p className="mb-3">
+                Your bank data is used <strong>exclusively for your benefit</strong> to help you plan and manage your cash flow with the most accurate and up-to-date information from your accounts. All processing happens securely within your account, and <strong>our team cannot see, access, or view your bank data</strong>.
+              </p>
+              <p className="mb-3">
+                The platform uses your encrypted bank data to:
+              </p>
               <ul className="list-disc pl-6 space-y-2">
-                <li>Automatically sync and categorize your transactions</li>
-                <li>Calculate your current and projected cash flow</li>
-                <li>Provide financial insights and forecasting</li>
-                <li>Match bank transactions with your purchase orders and sales records</li>
-                <li>Generate reports and analytics for your business</li>
+                <li>Display your account balances and transaction history in your dashboard</li>
+                <li>Calculate your current and projected cash flow based on your actual financial data</li>
+                <li>Provide personalized financial insights and forecasting for your business</li>
+                <li>Allow you to match and reconcile bank transactions with your purchase orders and sales records</li>
+                <li>Generate reports and analytics that help you make informed business decisions</li>
               </ul>
+              <p className="mt-3 text-sm text-muted-foreground">
+                <strong>Important:</strong> Your bank data remains private and encrypted. Only you can view your financial information through your secure account. Our team does not have access to decrypt or view your individual bank transactions or balances.
+              </p>
 
               <h3 className="font-semibold text-lg mt-6">Your Bank Data Rights</h3>
               <p>
