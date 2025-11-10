@@ -792,7 +792,7 @@ export const CashFlowInsights = memo(({
                 <div className="flex justify-between items-center p-2 bg-muted/50 rounded">
                   <span className="text-muted-foreground">Lowest Projected Amount</span>
                   <span className="font-semibold text-blue-600">
-                    ${(currentBalance - safeSpendingLimit - reserveAmount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    ${projectedLowestBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </span>
                 </div>
                   
