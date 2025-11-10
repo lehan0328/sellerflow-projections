@@ -900,6 +900,19 @@ export function CreditCards() {
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
+              <div className="rounded-lg border-2 border-destructive bg-destructive/10 p-4 mb-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <AlertTriangle className="h-5 w-5 text-destructive" />
+                  <p className="font-semibold text-destructive text-lg">Payment Due TODAY</p>
+                </div>
+                <p className="text-2xl font-bold text-destructive">
+                  {formatCurrency(cardForStatementUpdate?.statement_balance || 0)}
+                </p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Please pay this amount to avoid late fees
+                </p>
+              </div>
+              
               <div className="rounded-lg border bg-muted/50 p-4 mb-4">
                 <p className="text-sm text-muted-foreground mb-1">Credit Card</p>
                 <p className="font-semibold text-lg">
