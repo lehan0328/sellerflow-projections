@@ -156,10 +156,6 @@ export const CashFlowCalendar = ({
   const [searchType, setSearchType] = useState<'amount' | 'date'>('amount');
   const [searchAmount, setSearchAmount] = useState('');
   const [searchDate, setSearchDate] = useState('');
-  const [searchResults, setSearchResults] = useState<{
-    date: string;
-    events: CashFlowEvent[];
-  }[]>([]);
 
   // Tooltip and chart state - MUST be with other hooks
   const [activeTooltipIndex, setActiveTooltipIndex] = useState<number | null>(null);
@@ -628,44 +624,6 @@ export const CashFlowCalendar = ({
       }
     }
   };
-  const handleSearch = () => {
-    const results: {
-      date: string;
-      events: CashFlowEvent[];
-    }[] = [];
-
-    // Search by amount if provided
-    if (searchAmount && !isNaN(parseFloat(searchAmount))) {
-      const targetAmount = parseFloat(searchAmount);
-      const tolerance = 0.01; // Allow for small differences
-
-      chartData.forEach((day: any) => {
-        const matchingEvents = (day.transactions || []).filter((event: CashFlowEvent) => Math.abs(event.amount - targetAmount) < tolerance);
-        if (matchingEvents.length > 0) {
-          results.push({
-            date: day.date,
-            events: matchingEvents
-          });
-        }
-      });
-    }
-
-    // Search by date if provided
-    if (searchDate) {
-      const searchDateStr = format(searchDate, 'MMM dd');
-      const matchingDay = chartData.find((day: any) => day.date === searchDateStr);
-      if (matchingDay && matchingDay.transactions?.length > 0) {
-        results.push({
-          date: matchingDay.date,
-          events: matchingDay.transactions
-        });
-      }
-    }
-    setSearchResults(results);
-    if (results.length === 0) {
-      toast.error('No transactions found matching your search criteria');
-    }
-  };
   const chartConfig = {
     cashBalance: {
       label: "Cash Balance",
@@ -1038,126 +996,248 @@ export const CashFlowCalendar = ({
       <DayTransactionsModal transactions={selectedDayTransactions} date={selectedDate} open={showDayTransactionsModal} onOpenChange={setShowDayTransactionsModal} />
       
       <Dialog open={showSearchDialog} onOpenChange={setShowSearchDialog}>
-        <DialogContent className="max-w-2xl max-h-[80vh]">
+        <DialogContent className="max-w-4xl">
           <DialogHeader>
-            <DialogTitle>Search Transactions</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <DollarSign className="h-5 w-5 text-blue-600" />
+              Search Buying Opportunities
+            </DialogTitle>
             <DialogDescription>
-              Search for transactions by amount or date
+              Search by amount to find when you can spend it, or by date to see how much you can spend on that day. All results reflect transactions within the next 3 months only.
             </DialogDescription>
           </DialogHeader>
           
-          <Tabs value={searchType} onValueChange={(value: 'amount' | 'date') => setSearchType(value)}>
+          <Tabs value={searchType} onValueChange={(v) => setSearchType(v as 'amount' | 'date')} className="w-full">
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="amount">Search by Amount</TabsTrigger>
-              <TabsTrigger value="date">Search by Date</TabsTrigger>
+              <TabsTrigger value="amount" className="flex items-center gap-2">
+                <DollarSign className="h-4 w-4" />
+                Search by Amount
+              </TabsTrigger>
+              <TabsTrigger value="date" className="flex items-center gap-2">
+                <CalendarIcon className="h-4 w-4" />
+                Search by Date
+              </TabsTrigger>
             </TabsList>
             
-            <TabsContent value="amount" className="space-y-4">
+            <TabsContent value="amount" className="space-y-4 mt-4">
               <div className="space-y-2">
-                <Label htmlFor="search-amount">Amount</Label>
-                <Input
-                  id="search-amount"
-                  type="number"
-                  placeholder="Enter amount to search"
-                  value={searchAmount}
-                  onChange={(e) => setSearchAmount(e.target.value)}
-                />
-              </div>
-              <Button onClick={() => {
-                const amount = parseFloat(searchAmount);
-                if (isNaN(amount)) {
-                  toast.error("Please enter a valid amount");
-                  return;
-                }
-                
-                const results: { date: string; events: CashFlowEvent[] }[] = [];
-                chartData.forEach((day) => {
-                  const matchingEvents = (day.transactions || []).filter(
-                    (event: CashFlowEvent) => Math.abs(event.amount) === Math.abs(amount)
-                  );
-                  if (matchingEvents.length > 0) {
-                    results.push({ date: day.date, events: matchingEvents });
-                  }
-                });
-                
-                setSearchResults(results);
-                if (results.length === 0) {
-                  toast.info("No transactions found for this amount");
-                }
-              }}>
-                <Search className="h-4 w-4 mr-2" />
-                Search
-              </Button>
-            </TabsContent>
-            
-            <TabsContent value="date" className="space-y-4">
-              <div className="space-y-2">
-                <Label>Select Date</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" className="w-full justify-start text-left font-normal">
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {searchDate ? format(new Date(searchDate), "PPP") : "Pick a date"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
-                    <Calendar
-                      mode="single"
-                      selected={searchDate ? new Date(searchDate) : undefined}
-                      onSelect={(date) => setSearchDate(date ? format(date, "yyyy-MM-dd") : "")}
-                      initialFocus
+                <Label htmlFor="search-amount">Enter amount you want to spend</Label>
+                <div className="flex gap-2">
+                  <div className="flex-1 relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+                    <Input
+                      id="search-amount"
+                      type="number"
+                      placeholder="0.00"
+                      value={searchAmount}
+                      onChange={(e) => setSearchAmount(e.target.value)}
+                      className="pl-7"
                     />
-                  </PopoverContent>
-                </Popover>
+                  </div>
+                </div>
               </div>
-              <Button onClick={() => {
-                if (!searchDate) {
-                  toast.error("Please select a date");
-                  return;
-                }
-                
-                const searchDateFormatted = format(new Date(searchDate), "MMM dd");
-                const dayData = chartData.find((day) => day.date === searchDateFormatted);
-                if (dayData && dayData.transactions && dayData.transactions.length > 0) {
-                  setSearchResults([{ date: dayData.date, events: dayData.transactions }]);
-                } else {
-                  setSearchResults([]);
-                  toast.info("No transactions found for this date");
-                }
-              }}>
-                <Search className="h-4 w-4 mr-2" />
-                Search
-              </Button>
-            </TabsContent>
-          </Tabs>
-          
-          {searchResults.length > 0 && (
-            <div className="mt-4">
-              <h3 className="font-semibold mb-2">Search Results ({searchResults.length} {searchResults.length === 1 ? "day" : "days"})</h3>
-              <ScrollArea className="h-[300px]">
-                <div className="space-y-4">
-                  {searchResults.map((result) => (
-                    <div key={result.date} className="border rounded-lg p-3">
-                      <div className="font-medium mb-2">{result.date}</div>
-                      <div className="space-y-2">
-                        {result.events.map((event) => (
-                          <div key={event.id} className="flex justify-between items-center text-sm p-2 bg-muted/50 rounded">
+              
+              <ScrollArea className="h-[400px] pr-4">
+                {searchAmount && parseFloat(searchAmount) > 0 ? (
+                  <div className="space-y-3">
+                    {(() => {
+                      const amount = parseFloat(searchAmount);
+                      // Find the earliest opportunity where balance >= amount
+                      const matchingOpp = allBuyingOpportunities.find(opp => opp.balance >= amount);
+                      
+                      if (!matchingOpp) {
+                        return (
+                          <div className="text-center p-8 text-muted-foreground">
+                            <AlertCircle className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                            <p className="font-medium">No opportunities found for ${searchAmount}</p>
+                            <p className="text-sm mt-2">Try a lower amount or check back later</p>
+                          </div>
+                        );
+                      }
+                      
+                      const [year, month, day] = matchingOpp.date.split('-').map(Number);
+                      const date = new Date(year, month - 1, day);
+                      const formattedDate = date.toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric'
+                      });
+                      
+                      let availableDate = '';
+                      if (matchingOpp.available_date) {
+                        const [aYear, aMonth, aDay] = matchingOpp.available_date.split('-').map(Number);
+                        const aDate = new Date(aYear, aMonth - 1, aDay);
+                        availableDate = aDate.toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric'
+                        });
+                      }
+                      
+                      return (
+                        <div className="p-4 rounded-lg border bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/30 dark:to-blue-950/30 border-blue-200 dark:border-blue-800">
+                          <div className="flex items-center justify-between mb-3">
                             <div>
-                              <div className="font-medium">{event.description}</div>
-                              {event.vendor && <div className="text-xs text-muted-foreground">{event.vendor}</div>}
+                              <div className="text-2xl font-bold text-blue-600">
+                                ${matchingOpp.balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              </div>
+                              <div className="text-xs text-muted-foreground">Available</div>
                             </div>
-                            <Badge variant={event.type === "inflow" ? "default" : "destructive"}>
-                              {event.type === "inflow" ? "+" : "-"}${formatCurrency(Math.abs(event.amount))}
+                            <Badge variant="outline" className="bg-blue-500/10 text-blue-600 border-blue-500/30">
+                              Can afford ${searchAmount}
                             </Badge>
                           </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                          <Separator className="my-2" />
+                          <div className="space-y-2 text-sm">
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Low Point Date:</span>
+                              <span className="font-medium">{formattedDate}</span>
+                            </div>
+                            {availableDate && (
+                              <div className="flex justify-between p-2 bg-blue-100 dark:bg-blue-900/30 rounded">
+                                <span className="text-blue-700 dark:text-blue-400 font-medium">Earliest Purchase:</span>
+                                <span className="font-bold text-blue-600">{availableDate}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                ) : (
+                  <div className="text-center p-8 text-muted-foreground">
+                    <DollarSign className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                    <p>Enter an amount to see when you can spend it</p>
+                  </div>
+                )}
               </ScrollArea>
-            </div>
-          )}
+            </TabsContent>
+            
+            <TabsContent value="date" className="space-y-4 mt-4">
+              <div className="space-y-2">
+                <Label htmlFor="search-date">Select a date</Label>
+                <Input
+                  id="search-date"
+                  type="date"
+                  value={searchDate}
+                  onChange={(e) => setSearchDate(e.target.value)}
+                />
+              </div>
+              
+              <ScrollArea className="h-[400px] pr-4">
+                {searchDate ? (
+                  <div className="space-y-3">
+                    {(() => {
+                      const searchDateObj = new Date(searchDate + 'T00:00:00');
+                      
+                      // Find the opportunity where the selected date falls within the range [earliest_purchase_date, low_point_date]
+                      let relevantOpp = null;
+                      for (const opp of allBuyingOpportunities) {
+                        const [year, month, day] = opp.date.split('-').map(Number);
+                        const lowPointDate = new Date(year, month - 1, day);
+                        
+                        let earliestPurchaseDate = lowPointDate;
+                        if (opp.available_date) {
+                          const [aYear, aMonth, aDay] = opp.available_date.split('-').map(Number);
+                          earliestPurchaseDate = new Date(aYear, aMonth - 1, aDay);
+                        }
+                        
+                        // Check if selected date is within the opportunity range
+                        if (searchDateObj >= earliestPurchaseDate && searchDateObj <= lowPointDate) {
+                          relevantOpp = opp;
+                          break;
+                        }
+                      }
+                      
+                      // If no opportunity matches, show a message
+                      if (!relevantOpp) {
+                        return (
+                          <div className="text-center p-8 text-muted-foreground">
+                            <AlertCircle className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                            <p className="font-medium">No buying opportunity available for this date</p>
+                            <p className="text-sm mt-2">The selected date doesn't fall within any opportunity range</p>
+                          </div>
+                        );
+                      }
+                      
+                      const [year, month, day] = relevantOpp.date.split('-').map(Number);
+                      const lowDate = new Date(year, month - 1, day);
+                      const formattedLowDate = lowDate.toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric'
+                      });
+                      
+                      let availableDate = '';
+                      let earliestPurchaseDate = lowDate;
+                      if (relevantOpp.available_date) {
+                        const [aYear, aMonth, aDay] = relevantOpp.available_date.split('-').map(Number);
+                        earliestPurchaseDate = new Date(aYear, aMonth - 1, aDay);
+                        availableDate = earliestPurchaseDate.toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric'
+                        });
+                      }
+                      
+                      const canPurchase = searchDateObj >= earliestPurchaseDate;
+                      
+                      return (
+                        <div className="p-6 rounded-lg border bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border-blue-200 dark:border-blue-800">
+                          <div className="text-center mb-4">
+                            <div className="text-xs text-muted-foreground mb-2">
+                              On {new Date(searchDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                            </div>
+                            <div className="text-4xl font-bold text-blue-600">
+                              ${relevantOpp.balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </div>
+                            <div className="text-sm text-muted-foreground mt-1">Available to spend</div>
+                          </div>
+                          
+                          <Separator className="my-4" />
+                          
+                          <div className="space-y-3">
+                            <div className={`p-3 rounded-lg ${canPurchase ? 'bg-green-100 dark:bg-green-900/30' : 'bg-amber-100 dark:bg-amber-900/30'}`}>
+                              <div className="flex items-center gap-2 mb-2">
+                                {canPurchase ? (
+                                  <Check className="h-4 w-4 text-green-600" />
+                                ) : (
+                                  <AlertCircle className="h-4 w-4 text-amber-600" />
+                                )}
+                                <span className={`text-sm font-semibold ${canPurchase ? 'text-green-700 dark:text-green-400' : 'text-amber-700 dark:text-amber-400'}`}>
+                                  {canPurchase ? 'Ready to Purchase' : 'Not Yet Available'}
+                                </span>
+                              </div>
+                              {!canPurchase && availableDate && (
+                                <p className="text-xs text-amber-700 dark:text-amber-400">
+                                  Earliest purchase date: {availableDate}
+                                </p>
+                              )}
+                            </div>
+                            
+                            <div className="text-xs space-y-2 p-3 bg-muted/50 rounded-lg">
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Based on low point:</span>
+                                <span className="font-medium">{formattedLowDate}</span>
+                              </div>
+                              <p className="text-muted-foreground italic">
+                                Assumes $0 spending between now and the selected date
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                ) : (
+                  <div className="text-center p-8 text-muted-foreground">
+                    <CalendarIcon className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                    <p>Select a date to see available spending amount</p>
+                  </div>
+                )}
+              </ScrollArea>
+            </TabsContent>
+          </Tabs>
         </DialogContent>
       </Dialog>
     </Card>;
