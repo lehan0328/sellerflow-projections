@@ -735,19 +735,60 @@ export default function Analytics() {
     const now = new Date();
     const currentBalance = accounts.reduce((sum, acc) => sum + (acc.balance || 0), 0);
     
-    const monthlyBalances: Record<string, { income: number; expenses: number }> = {};
+    // Get all transaction dates to find earliest data
+    const allDates: Date[] = [];
     
-    // Initialize last 6 months
-    for (let i = 5; i >= 0; i--) {
-      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const key = date.toLocaleDateString('en-US', {
+    incomeItems.forEach(item => {
+      if (item.status === 'received') allDates.push(new Date(item.paymentDate));
+    });
+    
+    amazonPayouts.forEach(payout => {
+      if (payout.status === 'confirmed') allDates.push(new Date(payout.payout_date));
+    });
+    
+    dbTransactions.forEach(tx => {
+      if ((tx.type === 'sales_order' || tx.type === 'customer_payment') && tx.status === 'completed') {
+        allDates.push(new Date(tx.transactionDate));
+      }
+    });
+    
+    vendorTransactions.forEach(tx => {
+      if (tx.status === 'completed' || tx.status === 'paid') {
+        allDates.push(new Date(tx.transactionDate));
+      }
+    });
+    
+    bankTransactions.forEach(tx => {
+      allDates.push(new Date(tx.date));
+    });
+    
+    // If no data, return empty
+    if (allDates.length === 0) {
+      return [];
+    }
+    
+    // Find earliest transaction month
+    const earliestDate = new Date(Math.min(...allDates.map(d => d.getTime())));
+    const earliestMonth = new Date(earliestDate.getFullYear(), earliestDate.getMonth(), 1);
+    
+    // Calculate months from earliest to now
+    const monthlyBalances: Record<string, { income: number; expenses: number }> = {};
+    const months: string[] = [];
+    
+    let currentMonth = new Date(earliestMonth);
+    const nowMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    
+    while (currentMonth <= nowMonth) {
+      const key = currentMonth.toLocaleDateString('en-US', {
         month: 'short',
         year: 'numeric'
       });
       monthlyBalances[key] = { income: 0, expenses: 0 };
+      months.push(key);
+      currentMonth.setMonth(currentMonth.getMonth() + 1);
     }
     
-    // Add income from all sources
+    // Collect monthly income and expenses
     incomeItems.forEach(item => {
       if (item.status === 'received') {
         const date = new Date(item.paymentDate);
@@ -758,7 +799,6 @@ export default function Analytics() {
       }
     });
     
-    // Add Amazon payouts
     amazonPayouts.forEach(payout => {
       if (payout.status === 'confirmed') {
         const date = new Date(payout.payout_date);
@@ -769,7 +809,6 @@ export default function Analytics() {
       }
     });
     
-    // Add completed sales orders
     dbTransactions.forEach(tx => {
       if ((tx.type === 'sales_order' || tx.type === 'customer_payment') && tx.status === 'completed') {
         const date = new Date(tx.transactionDate);
@@ -780,7 +819,6 @@ export default function Analytics() {
       }
     });
     
-    // Add expenses from vendor transactions
     vendorTransactions.forEach(tx => {
       if (tx.status === 'completed' || tx.status === 'paid') {
         const date = new Date(tx.transactionDate);
@@ -791,7 +829,6 @@ export default function Analytics() {
       }
     });
     
-    // Add bank transactions
     bankTransactions.forEach(tx => {
       const date = new Date(tx.date);
       const key = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
@@ -804,15 +841,21 @@ export default function Analytics() {
       }
     });
     
-    // Calculate running balance (work backwards from current balance)
-    const entries = Object.entries(monthlyBalances).reverse();
-    let runningBalance = currentBalance;
+    // Calculate running balance forward from earliest month
+    // We work backwards: current balance - (current month net) = last month ending
     const results: { month: string; balance: number }[] = [];
     
-    entries.forEach(([month, data]) => {
-      results.unshift({ month, balance: runningBalance });
-      runningBalance = runningBalance - data.income + data.expenses;
-    });
+    // Work backwards from current balance
+    let balance = currentBalance;
+    
+    for (let i = months.length - 1; i >= 0; i--) {
+      const month = months[i];
+      const data = monthlyBalances[month];
+      const netChange = data.income - data.expenses;
+      
+      results.unshift({ month, balance });
+      balance = balance - netChange;
+    }
     
     return results;
   }, [accounts, incomeItems, amazonPayouts, dbTransactions, vendorTransactions, bankTransactions]);
@@ -1107,45 +1150,60 @@ export default function Analytics() {
               <CardTitle>End of Month Bank Balances</CardTitle>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <AreaChart data={endOfMonthBalances}>
-                  <defs>
-                    <linearGradient id="balanceGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis 
-                    dataKey="month" 
-                    stroke="hsl(var(--muted-foreground))"
-                    fontSize={12}
-                  />
-                  <YAxis 
-                    stroke="hsl(var(--muted-foreground))"
-                    fontSize={12}
-                    tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
-                  />
-                  <Tooltip 
-                    formatter={(value) => [formatCurrency(Number(value)), 'Balance']}
-                    contentStyle={{
-                      backgroundColor: 'hsl(var(--background))',
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '0.5rem',
-                      color: 'hsl(var(--foreground))'
-                    }}
-                    labelStyle={{ color: 'hsl(var(--foreground))' }}
-                  />
-                  <Area 
-                    type="monotone" 
-                    dataKey="balance" 
-                    stroke="hsl(var(--primary))" 
-                    strokeWidth={2}
-                    fillOpacity={1} 
-                    fill="url(#balanceGradient)" 
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
+              {endOfMonthBalances.length === 0 ? (
+                <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+                  <div className="text-center">
+                    <p className="text-lg font-medium mb-2">Not enough data</p>
+                    <p className="text-sm">Complete transactions are needed to display balance history</p>
+                  </div>
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height={300}>
+                  <AreaChart data={endOfMonthBalances}>
+                    <defs>
+                      <linearGradient id="balanceGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis 
+                      dataKey="month" 
+                      stroke="hsl(var(--muted-foreground))"
+                      fontSize={12}
+                    />
+                    <YAxis 
+                      stroke="hsl(var(--muted-foreground))"
+                      fontSize={12}
+                      tickFormatter={(value) => {
+                        const absValue = Math.abs(value);
+                        if (absValue >= 1000) {
+                          return `$${(value / 1000).toFixed(0)}k`;
+                        }
+                        return `$${value.toFixed(0)}`;
+                      }}
+                    />
+                    <Tooltip 
+                      formatter={(value) => [formatCurrency(Number(value)), 'Balance']}
+                      contentStyle={{
+                        backgroundColor: 'hsl(var(--background))',
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '0.5rem',
+                        color: 'hsl(var(--foreground))'
+                      }}
+                      labelStyle={{ color: 'hsl(var(--foreground))' }}
+                    />
+                    <Area 
+                      type="monotone" 
+                      dataKey="balance" 
+                      stroke="hsl(var(--primary))" 
+                      strokeWidth={2}
+                      fillOpacity={1} 
+                      fill="url(#balanceGradient)" 
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              )}
             </CardContent>
           </Card>
 
