@@ -842,163 +842,89 @@ export default function Analytics() {
   const COLORS = ['#8b5cf6', '#06b6d4', '#f59e0b', '#10b981', '#ef4444', '#ec4899'];
   
   const handleDownloadPDF = async () => {
+    const element = document.querySelector('.container.mx-auto.p-6.space-y-6') as HTMLElement;
+    if (!element) return;
+    
+    // Hide the download button temporarily
+    const downloadButton = document.querySelector('[data-download-button]') as HTMLElement;
+    if (downloadButton) {
+      downloadButton.style.display = 'none';
+    }
+    
+    // Capture the page
+    const canvas = await html2canvas(element, {
+      scale: 2,
+      useCORS: true,
+      logging: false,
+      backgroundColor: '#ffffff'
+    });
+    
+    // Show the download button again
+    if (downloadButton) {
+      downloadButton.style.display = '';
+    }
+    
+    const imgData = canvas.toDataURL('image/png');
     const pdf = new jsPDF('p', 'mm', 'a4');
     const pageWidth = pdf.internal.pageSize.getWidth();
     const pageHeight = pdf.internal.pageSize.getHeight();
     
     // Add branding header - Page 1
-    pdf.setFillColor(139, 92, 246); // Primary purple color
-    pdf.rect(0, 0, pageWidth, 25, 'F');
+    pdf.setFillColor(139, 92, 246);
+    pdf.rect(0, 0, pageWidth, 15, 'F');
     pdf.setTextColor(255, 255, 255);
-    pdf.setFontSize(20);
-    pdf.setFont('helvetica', 'bold');
-    pdf.text('Auren Analytics Report', pageWidth / 2, 15, { align: 'center' });
-    
-    // Add date
-    pdf.setFontSize(10);
-    pdf.setFont('helvetica', 'normal');
-    const currentDate = format(new Date(), 'MMMM dd, yyyy');
-    pdf.text(`Generated: ${currentDate}`, pageWidth / 2, 21, { align: 'center' });
-    
-    // Reset text color for content
-    pdf.setTextColor(0, 0, 0);
-    let yPosition = 35;
-    
-    // Page 1: Key Metrics Summary
-    pdf.setFontSize(16);
-    pdf.setFont('helvetica', 'bold');
-    pdf.text('Financial Summary (Month to Date)', 15, yPosition);
-    yPosition += 10;
-    
-    // Key metrics in a table format
-    pdf.setFontSize(11);
-    pdf.setFont('helvetica', 'normal');
-    const metricsData = [
-      ['Total Inflow', formatCurrency(metrics.totalInflow)],
-      ['Total Outflow', formatCurrency(metrics.totalOutflow)],
-      ['Amazon Payouts', formatCurrency(metrics.amazonRevenueFiltered)],
-      ['Net Cash Flow', `${metrics.netCashFlow >= 0 ? '+' : ''}${formatCurrency(metrics.netCashFlow)}`],
-      ['Current Balance', formatCurrency(metrics.currentBalance)],
-      ['Credit Utilization', `${metrics.creditUtilization.toFixed(1)}%`]
-    ];
-    
-    metricsData.forEach(([label, value]) => {
-      pdf.setFont('helvetica', 'bold');
-      pdf.text(label + ':', 20, yPosition);
-      pdf.setFont('helvetica', 'normal');
-      pdf.text(value, 120, yPosition);
-      yPosition += 8;
-    });
-    
-    yPosition += 5;
-    
-    // Income breakdown
     pdf.setFontSize(14);
     pdf.setFont('helvetica', 'bold');
-    pdf.text('Income Sources', 15, yPosition);
-    yPosition += 8;
+    pdf.text('Auren Analytics Report', pageWidth / 2, 10, { align: 'center' });
     
-    pdf.setFontSize(10);
-    incomeBySource.slice(0, 5).forEach(item => {
-      pdf.setFont('helvetica', 'normal');
-      pdf.text(`• ${item.name}`, 20, yPosition);
-      pdf.text(formatCurrency(item.value), 120, yPosition);
-      yPosition += 6;
-    });
+    // Calculate dimensions
+    const imgWidth = pageWidth - 20; // 10mm margin on each side
+    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+    const maxContentHeight = pageHeight - 30; // Leave space for header and footer
     
-    yPosition += 5;
+    // First page content
+    const firstPageHeight = Math.min(imgHeight / 2, maxContentHeight);
+    pdf.addImage(imgData, 'PNG', 10, 20, imgWidth, firstPageHeight, undefined, 'FAST');
     
-    // Expense breakdown
-    pdf.setFontSize(14);
-    pdf.setFont('helvetica', 'bold');
-    pdf.text('Top Expense Categories', 15, yPosition);
-    yPosition += 8;
-    
-    pdf.setFontSize(10);
-    vendorCategoryData.slice(0, 5).forEach(item => {
-      pdf.setFont('helvetica', 'normal');
-      pdf.text(`• ${item.name}`, 20, yPosition);
-      pdf.text(formatCurrency(item.value), 120, yPosition);
-      yPosition += 6;
-    });
-    
-    // Add footer - Page 1
+    // Footer - Page 1
     pdf.setFontSize(8);
     pdf.setTextColor(128, 128, 128);
-    pdf.text('Auren - Cash Flow Management', pageWidth / 2, pageHeight - 10, { align: 'center' });
-    pdf.text('Page 1 of 2', pageWidth - 20, pageHeight - 10, { align: 'right' });
+    pdf.text('Auren - Cash Flow Management', pageWidth / 2, pageHeight - 5, { align: 'center' });
+    pdf.text('Page 1 of 2', pageWidth - 15, pageHeight - 5, { align: 'right' });
     
-    // Page 2: Trends and Analysis
-    pdf.addPage();
-    
-    // Add branding header - Page 2
-    pdf.setFillColor(139, 92, 246);
-    pdf.rect(0, 0, pageWidth, 25, 'F');
-    pdf.setTextColor(255, 255, 255);
-    pdf.setFontSize(20);
-    pdf.setFont('helvetica', 'bold');
-    pdf.text('Auren Analytics Report', pageWidth / 2, 15, { align: 'center' });
-    pdf.setFontSize(10);
-    pdf.setFont('helvetica', 'normal');
-    pdf.text(`Generated: ${currentDate}`, pageWidth / 2, 21, { align: 'center' });
-    
-    pdf.setTextColor(0, 0, 0);
-    yPosition = 35;
-    
-    // Cash Flow Trends
-    pdf.setFontSize(16);
-    pdf.setFont('helvetica', 'bold');
-    pdf.text('Cash Flow Trends', 15, yPosition);
-    yPosition += 10;
-    
-    pdf.setFontSize(10);
-    pdf.setFont('helvetica', 'normal');
-    cashFlowData.slice(-6).forEach(month => {
-      pdf.text(`${month.month}:`, 20, yPosition);
-      pdf.text(`Income: ${formatCurrency(month.income)}`, 60, yPosition);
-      pdf.text(`Expenses: ${formatCurrency(month.expenses)}`, 120, yPosition);
-      yPosition += 6;
-    });
-    
-    yPosition += 10;
-    
-    // Top Vendors
-    pdf.setFontSize(14);
-    pdf.setFont('helvetica', 'bold');
-    pdf.text('Top Vendors by Spending', 15, yPosition);
-    yPosition += 8;
-    
-    pdf.setFontSize(10);
-    topVendors.slice(0, 10).forEach((vendor, idx) => {
-      pdf.setFont('helvetica', 'normal');
-      pdf.text(`${idx + 1}. ${vendor.name}`, 20, yPosition);
-      pdf.text(formatCurrency(vendor.amount), 120, yPosition);
-      yPosition += 6;
-    });
-    
-    yPosition += 10;
-    
-    // End of Month Balances
-    if (endOfMonthBalances.length > 0) {
+    // Second page
+    if (imgHeight > maxContentHeight) {
+      pdf.addPage();
+      
+      // Header - Page 2
+      pdf.setFillColor(139, 92, 246);
+      pdf.rect(0, 0, pageWidth, 15, 'F');
+      pdf.setTextColor(255, 255, 255);
       pdf.setFontSize(14);
       pdf.setFont('helvetica', 'bold');
-      pdf.text('End of Month Balances', 15, yPosition);
-      yPosition += 8;
+      pdf.text('Auren Analytics Report', pageWidth / 2, 10, { align: 'center' });
       
-      pdf.setFontSize(10);
-      endOfMonthBalances.slice(-6).forEach(month => {
-        pdf.setFont('helvetica', 'normal');
-        pdf.text(`${month.month}:`, 20, yPosition);
-        pdf.text(formatCurrency(month.balance), 120, yPosition);
-        yPosition += 6;
-      });
+      // Second half of content
+      const secondPageHeight = imgHeight - firstPageHeight;
+      const sourceY = (firstPageHeight * canvas.width) / imgWidth;
+      
+      // Create a second canvas for the bottom half
+      const canvas2 = document.createElement('canvas');
+      canvas2.width = canvas.width;
+      canvas2.height = canvas.height - sourceY;
+      const ctx = canvas2.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(canvas, 0, sourceY, canvas.width, canvas.height - sourceY, 0, 0, canvas.width, canvas.height - sourceY);
+        const imgData2 = canvas2.toDataURL('image/png');
+        pdf.addImage(imgData2, 'PNG', 10, 20, imgWidth, Math.min(secondPageHeight, maxContentHeight), undefined, 'FAST');
+      }
+      
+      // Footer - Page 2
+      pdf.setFontSize(8);
+      pdf.setTextColor(128, 128, 128);
+      pdf.text('Auren - Cash Flow Management', pageWidth / 2, pageHeight - 5, { align: 'center' });
+      pdf.text('Page 2 of 2', pageWidth - 15, pageHeight - 5, { align: 'right' });
     }
-    
-    // Add footer - Page 2
-    pdf.setFontSize(8);
-    pdf.setTextColor(128, 128, 128);
-    pdf.text('Auren - Cash Flow Management', pageWidth / 2, pageHeight - 10, { align: 'center' });
-    pdf.text('Page 2 of 2', pageWidth - 20, pageHeight - 10, { align: 'right' });
     
     // Save the PDF
     pdf.save(`Auren-Analytics-Report-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
@@ -1010,7 +936,7 @@ export default function Analytics() {
           <h1 className="text-3xl font-bold">Business Analytics</h1>
           <p className="text-muted-foreground">Comprehensive insights into your financial performance</p>
         </div>
-        <Button onClick={handleDownloadPDF} className="gap-2">
+        <Button onClick={handleDownloadPDF} className="gap-2" data-download-button>
           <Download className="h-4 w-4" />
           Download PDF Report
         </Button>
