@@ -784,16 +784,16 @@ const Landing = () => {
               </div>
 
               {/* Dashboard Preview */}
-              <div className="relative scale-110">
+              <div className="relative scale-110 transition-transform duration-700 ease-out hover:scale-[1.15]">
                 {/* Glow effect */}
                 <div className="absolute -inset-8 bg-gradient-to-r from-primary/20 via-accent/20 to-primary/20 rounded-3xl blur-3xl" />
                 
-                {/* Image card with smooth zoom */}
-                <div className="relative rounded-2xl border-2 border-primary/20 bg-card/80 backdrop-blur-xl shadow-2xl overflow-hidden group">
+                {/* Image card */}
+                <div className="relative rounded-2xl border-2 border-primary/20 bg-card/80 backdrop-blur-xl shadow-2xl overflow-hidden">
                   <img 
                     src={dashboardPreview} 
                     alt="Auren Dashboard Preview - Cash Flow Visualization and Safe Spending Power" 
-                    className="w-full h-auto transition-transform duration-700 ease-out group-hover:scale-125 origin-center will-change-transform"
+                    className="w-full h-auto will-change-transform"
                     style={{ 
                       imageRendering: '-webkit-optimize-contrast',
                       transform: 'translateZ(0)',
