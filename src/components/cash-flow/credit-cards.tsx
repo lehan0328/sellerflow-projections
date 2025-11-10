@@ -236,16 +236,12 @@ export function CreditCards() {
   };
 
   const handleSetDueDate = async () => {
-    if (!cardForDueDate || !newDueDate) return;
+    if (!cardForDueDate || !newDueDate || !newStatementBalance) return;
 
     const updateData: any = {
-      payment_due_date: newDueDate
+      payment_due_date: newDueDate,
+      statement_balance: parseFloat(newStatementBalance)
     };
-
-    // Only include statement_balance if provided
-    if (newStatementBalance && parseFloat(newStatementBalance) >= 0) {
-      updateData.statement_balance = parseFloat(newStatementBalance);
-    }
 
     const success = await updateCreditCard(cardForDueDate.id, updateData);
 
@@ -711,7 +707,7 @@ export function CreditCards() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="statement_balance">Statement Balance (Optional)</Label>
+                <Label htmlFor="statement_balance">Statement Balance <span className="text-destructive">*</span></Label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
                   <Input
@@ -726,7 +722,7 @@ export function CreditCards() {
                   />
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Leave blank if you don't want to set a statement balance
+                  Required to accurately forecast your credit card bills
                 </p>
               </div>
             </div>
@@ -744,7 +740,7 @@ export function CreditCards() {
               </Button>
               <Button
                 onClick={handleSetDueDate}
-                disabled={!newDueDate}
+                disabled={!newDueDate || !newStatementBalance}
               >
                 Save Details
               </Button>
