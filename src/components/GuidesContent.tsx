@@ -59,7 +59,7 @@ export const GuidesContent = () => {
           path: "/guides/partial-payment"
         },
         {
-          title: "early payment received",
+          title: "Early Payment Received",
           path: "/guides/early-payment-received"
         },
         "90-Day Forecast"
