@@ -93,12 +93,12 @@ export const useBankAccounts = () => {
     return Array.from(uniqueAccounts.values()) as BankAccount[];
   };
 
-  // Use React Query with 60-minute staleTime (bank accounts rarely change)
+  // Use React Query with 10-minute staleTime (accounts change ~once per hour)
   const { data: accounts = [], isLoading, refetch } = useQuery({
     queryKey: ['bank-accounts', user?.id],
     queryFn: fetchAccounts,
     enabled: !!user,
-    staleTime: 60 * 60 * 1000, // 60 minutes
+    staleTime: 10 * 60 * 1000, // 10 minutes - balanced for hourly changes
   });
 
   const addAccount = async (accountData: Omit<BankAccount, "id" | "created_at" | "updated_at" | "user_id" | "masked_account_number">) => {
@@ -242,13 +242,13 @@ export const useBankAccounts = () => {
         clearTimeout(debounceTimerRef.current);
       }
       
-      // Wait 2 seconds before refetching to batch multiple changes
+      // Wait 500ms before refetching to batch multiple changes
       debounceTimerRef.current = setTimeout(() => {
         queryClient.invalidateQueries({ 
           queryKey: ['bank-accounts', user.id],
           exact: true 
         });
-      }, 2000);
+      }, 500); // 500ms debounce - more responsive
     };
 
     const channel = supabase

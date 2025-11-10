@@ -40,12 +40,21 @@ export const useTransactions = () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return [];
 
+    // Get user's account_id
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('account_id')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (!profile?.account_id) return [];
+
     const { data, error } = await supabase
       .from('transactions')
       .select('*')
+      .eq('account_id', profile.account_id)
       .eq('archived', false)
-      .order('created_at', { ascending: false })
-      .limit(200); // Limit initial fetch to 200 most recent
+      .order('created_at', { ascending: false }); // No limit - fetch all
 
     if (error) {
       console.error('Error fetching transactions:', error);
@@ -72,11 +81,11 @@ export const useTransactions = () => {
     })) || [];
   };
 
-  // Use React Query with 15-minute staleTime (transactions change ~5 times/day)
+  // Use React Query with 5-minute staleTime (transactions change ~5 times/day)
   const { data: transactions = [], isLoading: loading, refetch } = useQuery({
     queryKey: ['transactions'],
     queryFn: fetchTransactions,
-    staleTime: 15 * 60 * 1000, // 15 minutes
+    staleTime: 5 * 60 * 1000, // 5 minutes - more frequent for transaction changes
   });
 
   const addTransaction = async (transactionData: Omit<Transaction, 'id'>) => {
@@ -211,13 +220,13 @@ export const useTransactions = () => {
           clearTimeout(debounceTimerRef.current);
         }
         
-        // Wait 1.5 seconds before refetching
+        // Wait 500ms before refetching
         debounceTimerRef.current = setTimeout(() => {
           queryClient.invalidateQueries({ 
             queryKey: ['transactions'],
             exact: true 
           });
-        }, 1500);
+        }, 500); // 500ms debounce - more responsive
       };
 
       channel = supabase

@@ -3,6 +3,8 @@ import { useSubscription, PRICING_PLANS } from './useSubscription';
 import { useTrialAddonUsage } from './useTrialAddonUsage';
 import { usePurchasedAddons } from './usePurchasedAddons';
 import { supabase } from '@/integrations/supabase/client';
+import { useProfile } from './useProfile';
+import { useAuth } from './useAuth';
 
 export type PlanType = 'starter' | 'growing' | 'professional' | 'enterprise';
 
@@ -65,15 +67,16 @@ const PLAN_LIMITS: Record<PlanType, PlanLimits> = {
 };
 
 export const usePlanLimits = () => {
+  const { user } = useAuth();
   const subscription = useSubscription();
   const { updateTrialUsage } = useTrialAddonUsage();
   const { purchasedAddons } = usePurchasedAddons();
+  const { data: profile } = useProfile(user?.id); // Use shared profile hook
   const [currentUsage, setCurrentUsage] = useState<CurrentUsage>({
     bankConnections: 0,
     amazonConnections: 0,
     teamMembers: 0
   });
-  const [profileMaxTeamMembers, setProfileMaxTeamMembers] = useState<number | null>(null);
 
   // Map subscription plan to plan type - default to starter for free users
   const mapPlanTier = (tier: string | null): PlanType => {
@@ -94,29 +97,22 @@ export const usePlanLimits = () => {
     ...basePlanLimits,
     bankConnections: basePlanLimits.bankConnections + purchasedAddons.bank_connections,
     amazonConnections: basePlanLimits.amazonConnections + purchasedAddons.amazon_connections,
-    teamMembers: profileMaxTeamMembers !== null 
-      ? profileMaxTeamMembers 
+    teamMembers: profile?.max_team_members !== undefined && profile?.max_team_members !== null
+      ? profile.max_team_members 
       : basePlanLimits.teamMembers + purchasedAddons.team_members,
   };
 
   // Fetch actual usage from database (bank accounts + credit cards counted together)
   useEffect(() => {
     const fetchUsage = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const [bankAccounts, creditCards, amazonAccounts, userRoles, profile] = await Promise.all([
+      const [bankAccounts, creditCards, amazonAccounts, userRoles] = await Promise.all([
         supabase.from('bank_accounts').select('id', { count: 'exact' }).eq('user_id', user.id).eq('is_active', true),
         supabase.from('credit_cards').select('id', { count: 'exact' }).eq('user_id', user.id).eq('is_active', true),
         supabase.from('amazon_accounts').select('id', { count: 'exact' }).eq('user_id', user.id).eq('is_active', true),
         supabase.from('user_roles').select('user_id', { count: 'exact' }).neq('user_id', user.id),
-        supabase.from('profiles').select('max_team_members').eq('user_id', user.id).single()
       ]);
-      
-      // Set profile max team members if available
-      if (profile.data?.max_team_members) {
-        setProfileMaxTeamMembers(profile.data.max_team_members);
-      }
       
       console.log('[usePlanLimits] Usage counts:', {
         bankAccounts: bankAccounts.count,

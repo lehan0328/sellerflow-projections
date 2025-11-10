@@ -48,6 +48,7 @@ import {
 import { useTheme } from "next-themes";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
+import { useProfile } from "@/hooks/useProfile";
 import { Badge } from "@/components/ui/badge";
 import { DashboardHeader } from "@/components/cash-flow/dashboard-header";
 import { FloatingMenu } from "@/components/cash-flow/floating-menu";
@@ -176,25 +177,8 @@ const Dashboard = () => {
     }
   }, [location.search]);
 
-  // Fetch user profile
-  const { data: profile, isLoading: profileLoading } = useQuery({
-    queryKey: ["profile", user?.id],
-    queryFn: async () => {
-      if (!user?.id) return null;
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      if (error) {
-        console.error("Error fetching profile:", error);
-        return null;
-      }
-      return data;
-    },
-    enabled: !!user?.id,
-  });
+  // Use shared profile hook
+  const { data: profile, isLoading: profileLoading } = useProfile(user?.id);
 
   // Update profile mutation
   const updateProfileMutation = useMutation({

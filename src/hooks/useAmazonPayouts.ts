@@ -216,12 +216,12 @@ export const useAmazonPayouts = () => {
     });
   };
 
-  // Use React Query with 24-hour staleTime (Amazon payouts change once per day)
+  // Use React Query with 6-hour staleTime (payouts change daily, but needs fresher data)
   const { data: amazonPayouts = [], isLoading, refetch } = useQuery({
     queryKey: ['amazon-payouts', user?.id],
     queryFn: fetchAmazonPayouts,
     enabled: !!user,
-    staleTime: 24 * 60 * 60 * 1000, // 24 hours
+    staleTime: 6 * 60 * 60 * 1000, // 6 hours - balanced for daily changes
   });
 
   // Fetch forecasts_enabled and advanced_modeling_enabled settings
@@ -247,13 +247,13 @@ export const useAmazonPayouts = () => {
         clearTimeout(debounceTimerRef.current);
       }
       
-      // Wait 5 seconds before refetching (payouts rarely change)
+      // Wait 500ms before refetching (more responsive)
       debounceTimerRef.current = setTimeout(() => {
         queryClient.invalidateQueries({ 
           queryKey: ['amazon-payouts', user.id],
           exact: true 
         });
-      }, 5000);
+      }, 500); // 500ms debounce - more responsive
     };
 
     const channel = supabase
