@@ -12,6 +12,7 @@ import avatar1 from "@/assets/avatar-1.jpg";
 import avatar2 from "@/assets/avatar-2.jpg";
 import avatar3 from "@/assets/avatar-3.jpg";
 import avatar4 from "@/assets/avatar-4.jpg";
+import dashboardPreview from "@/assets/dashboard-preview.png";
 import { useNavigate, Link } from "react-router-dom";
 import { FloatingChatWidget } from "@/components/floating-chat-widget";
 import { LineChart, Line, ResponsiveContainer } from 'recharts';
@@ -782,31 +783,14 @@ const Landing = () => {
                 </div>
               </div>
 
-              {/* Video Frame */}
+              {/* Dashboard Preview */}
               <div className="relative">
                 {/* Glow effect */}
                 <div className="absolute -inset-8 bg-gradient-to-r from-primary/20 via-accent/20 to-primary/20 rounded-3xl blur-3xl" />
                 
-                {/* Video card */}
+                {/* Image card */}
                 <div className="relative rounded-2xl border-2 border-primary/20 bg-card/80 backdrop-blur-xl shadow-2xl overflow-hidden group">
-                  <video id="demo-video" src="/Budget_Planning_and_Spending_Projections.mp4" className="w-full h-auto" title="Dashboard Demo Video" controls muted loop onLoadedMetadata={e => {
-                  e.currentTarget.playbackRate = 1.5;
-                }} onPlay={e => {
-                  const playBtn = e.currentTarget.parentElement?.querySelector('.play-overlay');
-                  if (playBtn) playBtn.classList.add('hidden');
-                }} />
-                  
-                  {/* Large Play Button Overlay */}
-                  <div className="play-overlay absolute inset-0 flex items-center justify-center bg-black/30 backdrop-blur-sm cursor-pointer transition-opacity hover:bg-black/40" onClick={() => {
-                  const video = document.getElementById('demo-video') as HTMLVideoElement;
-                  if (video) {
-                    video.play();
-                  }
-                }}>
-                    <div className="w-24 h-24 rounded-full bg-primary/90 flex items-center justify-center shadow-2xl hover:scale-110 transition-transform">
-                      <div className="w-0 h-0 border-t-[16px] border-t-transparent border-l-[28px] border-l-white border-b-[16px] border-b-transparent ml-2" />
-                    </div>
-                  </div>
+                  <img src={dashboardPreview} alt="Auren Dashboard Preview - Cash Flow Visualization and Safe Spending Power" className="w-full h-auto" />
                 </div>
               </div>
               
