@@ -783,60 +783,18 @@ const Landing = () => {
                 </div>
               </div>
 
-              {/* Dashboard Preview with Interactive Zoom */}
+              {/* Dashboard Preview */}
               <div className="relative scale-105">
                 {/* Glow effect */}
                 <div className="absolute -inset-8 bg-gradient-to-r from-primary/20 via-accent/20 to-primary/20 rounded-3xl blur-3xl" />
                 
-                {/* Image card with zoom lens */}
-                <div 
-                  className="relative rounded-2xl border-2 border-primary/20 bg-card/80 backdrop-blur-xl shadow-2xl overflow-hidden group cursor-crosshair"
-                  onMouseMove={(e) => {
-                    const rect = e.currentTarget.getBoundingClientRect();
-                    const x = e.clientX - rect.left;
-                    const y = e.clientY - rect.top;
-                    const lens = e.currentTarget.querySelector('.zoom-lens') as HTMLElement;
-                    const result = e.currentTarget.querySelector('.zoom-result') as HTMLElement;
-                    
-                    if (lens && result) {
-                      // Position lens
-                      const lensWidth = lens.offsetWidth / 2;
-                      const lensHeight = lens.offsetHeight / 2;
-                      lens.style.left = `${x - lensWidth}px`;
-                      lens.style.top = `${y - lensHeight}px`;
-                      
-                      // Calculate zoom position with 2x magnification
-                      const zoomLevel = 2;
-                      result.style.backgroundPosition = `-${x * zoomLevel - lensWidth * zoomLevel}px -${y * zoomLevel - lensHeight * zoomLevel}px`;
-                      
-                      // Show lens and result
-                      lens.style.opacity = '1';
-                      result.style.opacity = '1';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    const lens = e.currentTarget.querySelector('.zoom-lens') as HTMLElement;
-                    const result = e.currentTarget.querySelector('.zoom-result') as HTMLElement;
-                    if (lens && result) {
-                      lens.style.opacity = '0';
-                      result.style.opacity = '0';
-                    }
-                  }}
-                >
-                  <img src={dashboardPreview} alt="Auren Dashboard Preview - Cash Flow Visualization and Safe Spending Power" className="w-full h-auto" style={{ imageRendering: 'crisp-edges' }} />
-                  
-                  {/* Zoom lens overlay */}
-                  <div className="zoom-lens absolute w-40 h-40 border-2 border-primary rounded-full pointer-events-none opacity-0 transition-opacity duration-200 bg-white/10 backdrop-blur-sm" />
-                  
-                  {/* Zoomed result */}
-                  <div 
-                    className="zoom-result absolute top-4 right-4 w-80 h-80 border-2 border-primary rounded-xl pointer-events-none opacity-0 transition-opacity duration-200 shadow-2xl bg-background"
-                    style={{
-                      backgroundImage: `url(${dashboardPreview})`,
-                      backgroundRepeat: 'no-repeat',
-                      backgroundSize: '200% 200%',
-                      imageRendering: 'crisp-edges'
-                    }}
+                {/* Image card with smooth zoom */}
+                <div className="relative rounded-2xl border-2 border-primary/20 bg-card/80 backdrop-blur-xl shadow-2xl overflow-hidden group">
+                  <img 
+                    src={dashboardPreview} 
+                    alt="Auren Dashboard Preview - Cash Flow Visualization and Safe Spending Power" 
+                    className="w-full h-auto transition-transform duration-700 ease-out group-hover:scale-125 origin-center"
+                    style={{ imageRendering: '-webkit-optimize-contrast' }}
                   />
                 </div>
               </div>
