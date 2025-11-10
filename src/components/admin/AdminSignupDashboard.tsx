@@ -53,13 +53,21 @@ export function AdminSignupDashboard() {
     return options;
   };
 
+  // Fetch all-time data once
   useEffect(() => {
     if (isAdmin) {
-      fetchSignupData();
+      fetchAllTimeData();
     }
-  }, [isAdmin, selectedMonth]);
+  }, [isAdmin]);
 
-  const fetchSignupData = async () => {
+  // Calculate monthly count when month changes
+  useEffect(() => {
+    if (allSignups.length > 0) {
+      calculateMonthlyCount();
+    }
+  }, [selectedMonth, allSignups]);
+
+  const fetchAllTimeData = async () => {
     try {
       // Fetch all-time signups
       const { data: allData, error: allError } = await supabase
@@ -71,21 +79,6 @@ export function AdminSignupDashboard() {
 
       const allSignupsData = allData || [];
       setAllSignups(allSignupsData);
-
-      // Fetch monthly signups count
-      const [year, month] = selectedMonth.split('-');
-      const startDate = startOfMonth(new Date(parseInt(year), parseInt(month) - 1));
-      const endDate = endOfMonth(new Date(parseInt(year), parseInt(month) - 1));
-
-      const { count, error: countError } = await supabase
-        .from('profiles')
-        .select('*', { count: 'exact', head: true })
-        .gte('created_at', startDate.toISOString())
-        .lte('created_at', endDate.toISOString());
-
-      if (countError) throw countError;
-
-      setMonthlySignupsCount(count || 0);
 
       // Calculate all-time metrics
       const totalSignups = allSignupsData.length;
@@ -117,6 +110,20 @@ export function AdminSignupDashboard() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const calculateMonthlyCount = () => {
+    const [year, month] = selectedMonth.split('-');
+    const startDate = startOfMonth(new Date(parseInt(year), parseInt(month) - 1));
+    const endDate = endOfMonth(new Date(parseInt(year), parseInt(month) - 1));
+
+    // Filter all signups to count only those in the selected month
+    const monthlySignups = allSignups.filter(signup => {
+      const signupDate = new Date(signup.created_at);
+      return signupDate >= startDate && signupDate <= endDate;
+    });
+
+    setMonthlySignupsCount(monthlySignups.length);
   };
 
   const formatSource = (source: string | null) => {
