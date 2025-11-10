@@ -12,7 +12,8 @@ import {
   MessageSquare,
   UserCog,
   Target,
-  Settings
+  Settings,
+  UserPlus
 } from "lucide-react";
 import { AdminCustomers } from "@/components/admin/AdminCustomers";
 import { AdminSupportTickets } from "@/components/admin/AdminSupportTickets";
@@ -23,12 +24,14 @@ import { AdminFeatureRequests } from "@/components/admin/AdminFeatureRequests";
 import { AdminForecastAccuracy } from "@/components/admin/AdminForecastAccuracy";
 import { SetPlanOverride } from "@/components/admin/SetPlanOverride";
 import { AdminSupportDashboard } from "@/components/admin/AdminSupportDashboard";
+import { AdminSignupDashboard } from "@/components/admin/AdminSignupDashboard";
 
 const Admin = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("customers");
+  const [activeTab, setActiveTab] = useState("signups");
 
   const tabs = [
+    { value: "signups", label: "Signup Analytics", icon: UserPlus },
     { value: "customers", label: "Customers", icon: Users },
     { value: "support-dashboard", label: "Support Dashboard", icon: MessageSquare },
     { value: "support", label: "Support Tickets", icon: LifeBuoy },
@@ -94,6 +97,10 @@ const Admin = () => {
 
           {/* Content Area */}
           <div className="flex-1 min-w-0">
+            <TabsContent value="signups" className="m-0">
+              <AdminSignupDashboard />
+            </TabsContent>
+
             <TabsContent value="customers" className="m-0">
               <AdminCustomers />
             </TabsContent>

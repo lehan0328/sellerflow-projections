@@ -1673,6 +1673,7 @@ export type Database = {
           email: string | null
           first_name: string | null
           forecast_settings: Json | null
+          hear_about_us: string | null
           id: string
           is_account_owner: boolean
           last_amazon_connection: string | null
@@ -1683,6 +1684,7 @@ export type Database = {
           payment_failure_date: string | null
           plan_override: string | null
           plan_override_reason: string | null
+          referral_code: string | null
           stripe_customer_id: string | null
           trial_end: string | null
           trial_start: string | null
@@ -1701,6 +1703,7 @@ export type Database = {
           email?: string | null
           first_name?: string | null
           forecast_settings?: Json | null
+          hear_about_us?: string | null
           id?: string
           is_account_owner?: boolean
           last_amazon_connection?: string | null
@@ -1711,6 +1714,7 @@ export type Database = {
           payment_failure_date?: string | null
           plan_override?: string | null
           plan_override_reason?: string | null
+          referral_code?: string | null
           stripe_customer_id?: string | null
           trial_end?: string | null
           trial_start?: string | null
@@ -1729,6 +1733,7 @@ export type Database = {
           email?: string | null
           first_name?: string | null
           forecast_settings?: Json | null
+          hear_about_us?: string | null
           id?: string
           is_account_owner?: boolean
           last_amazon_connection?: string | null
@@ -1739,6 +1744,7 @@ export type Database = {
           payment_failure_date?: string | null
           plan_override?: string | null
           plan_override_reason?: string | null
+          referral_code?: string | null
           stripe_customer_id?: string | null
           trial_end?: string | null
           trial_start?: string | null
