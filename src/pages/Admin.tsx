@@ -22,6 +22,7 @@ import AdminAffiliates from "@/components/admin/AdminAffiliates";
 import { AdminFeatureRequests } from "@/components/admin/AdminFeatureRequests";
 import { AdminForecastAccuracy } from "@/components/admin/AdminForecastAccuracy";
 import { SetPlanOverride } from "@/components/admin/SetPlanOverride";
+import { AdminSupportDashboard } from "@/components/admin/AdminSupportDashboard";
 
 const Admin = () => {
   const navigate = useNavigate();
@@ -29,6 +30,7 @@ const Admin = () => {
 
   const tabs = [
     { value: "customers", label: "Customers", icon: Users },
+    { value: "support-dashboard", label: "Support Dashboard", icon: MessageSquare },
     { value: "support", label: "Support Tickets", icon: LifeBuoy },
     { value: "subscriptions", label: "Subscriptions", icon: CreditCard },
     { value: "referrals", label: "Referrals", icon: Gift },
@@ -94,6 +96,10 @@ const Admin = () => {
           <div className="flex-1 min-w-0">
             <TabsContent value="customers" className="m-0">
               <AdminCustomers />
+            </TabsContent>
+
+            <TabsContent value="support-dashboard" className="m-0">
+              <AdminSupportDashboard />
             </TabsContent>
 
             <TabsContent value="support" className="m-0">
