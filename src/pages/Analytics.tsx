@@ -730,48 +730,21 @@ export default function Analytics() {
     }));
   }, [incomeItems, bankTransactions, dbTransactions, amazonPayouts]);
 
-  // End of month balances calculation (last 6 months)
+  // End of month balances calculation - REAL historical data
   const endOfMonthBalances = useMemo(() => {
     const now = new Date();
     const currentBalance = accounts.reduce((sum, acc) => sum + (acc.balance || 0), 0);
     
-    // Get all transaction dates to find earliest data
-    const allDates: Date[] = [];
-    
-    incomeItems.forEach(item => {
-      if (item.status === 'received') allDates.push(new Date(item.paymentDate));
-    });
-    
-    amazonPayouts.forEach(payout => {
-      if (payout.status === 'confirmed') allDates.push(new Date(payout.payout_date));
-    });
-    
-    dbTransactions.forEach(tx => {
-      if ((tx.type === 'sales_order' || tx.type === 'customer_payment') && tx.status === 'completed') {
-        allDates.push(new Date(tx.transactionDate));
-      }
-    });
-    
-    vendorTransactions.forEach(tx => {
-      if (tx.status === 'completed' || tx.status === 'paid') {
-        allDates.push(new Date(tx.transactionDate));
-      }
-    });
-    
-    bankTransactions.forEach(tx => {
-      allDates.push(new Date(tx.date));
-    });
-    
-    // If no data, return empty
-    if (allDates.length === 0) {
-      return [];
+    // Find earliest bank transaction date (bank transactions are the source of truth)
+    const bankDates = bankTransactions.map(tx => new Date(tx.date));
+    if (bankDates.length === 0) {
+      return []; // No bank transaction data
     }
     
-    // Find earliest transaction month
-    const earliestDate = new Date(Math.min(...allDates.map(d => d.getTime())));
+    const earliestDate = new Date(Math.min(...bankDates.map(d => d.getTime())));
     const earliestMonth = new Date(earliestDate.getFullYear(), earliestDate.getMonth(), 1);
     
-    // Calculate months from earliest to now
+    // Build months from earliest to current
     const monthlyBalances: Record<string, { income: number; expenses: number }> = {};
     const months: string[] = [];
     
@@ -788,7 +761,7 @@ export default function Analytics() {
       currentMonth.setMonth(currentMonth.getMonth() + 1);
     }
     
-    // Collect monthly income and expenses
+    // Aggregate all income sources by month
     incomeItems.forEach(item => {
       if (item.status === 'received') {
         const date = new Date(item.paymentDate);
@@ -819,6 +792,7 @@ export default function Analytics() {
       }
     });
     
+    // Aggregate all expense sources by month
     vendorTransactions.forEach(tx => {
       if (tx.status === 'completed' || tx.status === 'paid') {
         const date = new Date(tx.transactionDate);
@@ -841,23 +815,26 @@ export default function Analytics() {
       }
     });
     
-    // Calculate running balance forward from earliest month
-    // We work backwards: current balance - (current month net) = last month ending
+    // Calculate forward from earliest month
+    // Start with 0 and build up the running balance
     const results: { month: string; balance: number }[] = [];
+    let runningBalance = 0;
     
-    // Work backwards from current balance
-    let balance = currentBalance;
-    
-    for (let i = months.length - 1; i >= 0; i--) {
-      const month = months[i];
+    months.forEach(month => {
       const data = monthlyBalances[month];
       const netChange = data.income - data.expenses;
-      
-      results.unshift({ month, balance });
-      balance = balance - netChange;
-    }
+      runningBalance += netChange;
+      results.push({ month, balance: runningBalance });
+    });
     
-    return results;
+    // Adjust all balances so current month matches actual current balance
+    const lastCalculatedBalance = results[results.length - 1]?.balance || 0;
+    const adjustment = currentBalance - lastCalculatedBalance;
+    
+    return results.map(r => ({
+      month: r.month,
+      balance: r.balance + adjustment
+    }));
   }, [accounts, incomeItems, amazonPayouts, dbTransactions, vendorTransactions, bankTransactions]);
 
   const COLORS = ['#8b5cf6', '#06b6d4', '#f59e0b', '#10b981', '#ef4444', '#ec4899'];
