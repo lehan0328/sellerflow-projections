@@ -11,6 +11,7 @@ interface UpdateNotificationRequest {
   message: string;
   type: 'info' | 'warning' | 'success' | 'critical';
   category?: string;
+  actionLink?: string;
 }
 
 serve(async (req) => {
@@ -53,7 +54,7 @@ serve(async (req) => {
     console.log('✅ Admin verified');
 
     // Parse request body
-    const { title, message, type, category }: UpdateNotificationRequest = await req.json();
+    const { title, message, type, category, actionLink }: UpdateNotificationRequest = await req.json();
 
     if (!title || !message) {
       throw new Error('Title and message are required');
@@ -93,7 +94,9 @@ serve(async (req) => {
       title,
       message,
       priority: type === 'critical' ? 'high' : type === 'warning' ? 'medium' : 'low',
-      actionable: false,
+      actionable: !!actionLink,
+      action_label: actionLink ? 'View Details' : null,
+      action_url: actionLink || null,
       read: false,
       sent_at: new Date().toISOString(),
     }));

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Bell, X, CheckCheck } from "lucide-react";
+import { Bell, X, CheckCheck, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -171,6 +171,23 @@ export const PendingNotificationsPanel = ({
                         <Badge variant="outline" className="mt-2 text-xs">
                           {notification.category}
                         </Badge>
+                      )}
+                      
+                      {notification.actionUrl && (
+                        <div className="mt-3">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-xs gap-2"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              window.open(notification.actionUrl, '_blank', 'noopener,noreferrer');
+                            }}
+                          >
+                            {notification.actionLabel || 'View Details'}
+                            <ExternalLink className="h-3 w-3" />
+                          </Button>
+                        </div>
                       )}
                     </div>
                   </div>

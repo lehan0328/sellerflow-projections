@@ -15,6 +15,7 @@ export const AdminSendUpdate = () => {
   const [message, setMessage] = useState("");
   const [type, setType] = useState<"info" | "warning" | "success" | "critical">("info");
   const [category, setCategory] = useState("");
+  const [actionLink, setActionLink] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [lastSent, setLastSent] = useState<Date | null>(null);
 
@@ -33,6 +34,7 @@ export const AdminSendUpdate = () => {
           message: message.trim(),
           type,
           category: category.trim() || undefined,
+          actionLink: actionLink.trim() || undefined,
         }
       });
 
@@ -45,6 +47,7 @@ export const AdminSendUpdate = () => {
         setTitle("");
         setMessage("");
         setCategory("");
+        setActionLink("");
         setType("info");
       } else {
         throw new Error(data?.error || "Failed to send update");
@@ -161,6 +164,20 @@ export const AdminSendUpdate = () => {
               </div>
             </div>
 
+            <div className="space-y-2">
+              <Label htmlFor="actionLink">Action Link (Optional)</Label>
+              <Input
+                id="actionLink"
+                type="url"
+                placeholder="https://example.com/feature"
+                value={actionLink}
+                onChange={(e) => setActionLink(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                Users can click this link from the notification
+              </p>
+            </div>
+
             <div className="border rounded-lg p-4 space-y-2">
               <Label className="text-sm font-medium">Preview</Label>
               <div className={`p-4 rounded-lg border ${getTypeColor(type)}`}>
@@ -175,6 +192,13 @@ export const AdminSendUpdate = () => {
                     <span className="inline-block text-xs px-2 py-1 rounded border bg-background/50">
                       {category}
                     </span>
+                  </div>
+                )}
+                {actionLink && (
+                  <div className="mt-3">
+                    <Button size="sm" variant="outline" className="text-xs">
+                      View Details →
+                    </Button>
                   </div>
                 )}
               </div>

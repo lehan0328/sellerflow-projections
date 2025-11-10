@@ -13,6 +13,7 @@ export interface Notification {
   dueDate?: Date;
   actionable: boolean;
   actionLabel?: string;
+  actionUrl?: string;
   actionData?: any;
   read: boolean;
   priority: 'high' | 'medium' | 'low';
@@ -50,6 +51,7 @@ export const useNotifications = () => {
         dueDate: n.due_date ? new Date(n.due_date) : undefined,
         actionable: n.actionable,
         actionLabel: n.action_label || undefined,
+        actionUrl: n.action_url || undefined,
         read: n.read,
         priority: n.priority as 'high' | 'medium' | 'low',
       }));

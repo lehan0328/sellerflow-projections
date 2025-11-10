@@ -1490,6 +1490,7 @@ export type Database = {
         Row: {
           account_id: string | null
           action_label: string | null
+          action_url: string | null
           actionable: boolean | null
           amount: number | null
           category: string
@@ -1507,6 +1508,7 @@ export type Database = {
         Insert: {
           account_id?: string | null
           action_label?: string | null
+          action_url?: string | null
           actionable?: boolean | null
           amount?: number | null
           category: string
@@ -1524,6 +1526,7 @@ export type Database = {
         Update: {
           account_id?: string | null
           action_label?: string | null
+          action_url?: string | null
           actionable?: boolean | null
           amount?: number | null
           category?: string
