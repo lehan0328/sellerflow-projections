@@ -25,16 +25,19 @@ export function parseISODate(dateStr: string): Date {
 }
 
 /**
- * Format a number as currency with exactly 2 decimal places
+ * Format a number as currency, hiding decimals for whole numbers
  * @param amount - The amount to format
  * @param showCents - Whether to show cents (default: true)
- * @returns Formatted currency string (e.g., "$1,234.56")
+ * @returns Formatted currency string (e.g., "$1,234.56" or "$1,234")
  */
 export function formatCurrency(amount: number, showCents: boolean = true): string {
+  const isWholeNumber = amount % 1 === 0;
+  const decimals = showCents && !isWholeNumber ? 2 : 0;
+  
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
-    minimumFractionDigits: showCents ? 2 : 0,
-    maximumFractionDigits: showCents ? 2 : 0,
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
   }).format(amount);
 }
