@@ -145,6 +145,37 @@ export default function PrivacyPolicy() {
             </CardContent>
           </Card>
 
+          {/* Information We Collect Automatically */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Database className="h-5 w-5" />
+                Information We Collect Automatically
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p>
+                When you use Auren, we automatically collect certain information to help us operate, maintain, and improve the platform. This may include:
+              </p>
+              
+              <ul className="list-disc pl-6 space-y-2">
+                <li>
+                  <strong>General usage data</strong> such as pages visited, time spent on features, and interactions within the software.
+                </li>
+                <li>
+                  <strong>Aggregated metrics</strong> such as the number of purchase orders created, reports generated, and forecasts viewed.
+                </li>
+                <li>
+                  <strong>Technical data</strong> such as browser type, device information, and IP address for security and performance monitoring.
+                </li>
+              </ul>
+
+              <p className="mt-4">
+                This data is used <strong>solely for internal analytics and service improvement</strong>. We do not sell, share, or use it for advertising purposes.
+              </p>
+            </CardContent>
+          </Card>
+
           {/* Data Security */}
           <Card>
             <CardHeader>
