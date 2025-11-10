@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 export interface Vendor {
   id: string;
@@ -24,9 +25,9 @@ export interface Vendor {
 }
 
 export const useVendors = () => {
-  const [vendors, setVendors] = useState<Vendor[]>([]);
-  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const debounceTimerRef = useRef<NodeJS.Timeout>();
 
   // Helper function to format date for database without timezone issues
   const formatDateForDB = (date: Date) => {
@@ -42,65 +43,63 @@ export const useVendors = () => {
     return new Date(y, (m || 1) - 1, d || 1);
   };
 
-  const fetchVendors = async () => {
-    try {
-      // First check if user is authenticated
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        console.log('No authenticated user found, skipping vendor fetch');
-        setVendors([]);
-        setLoading(false);
-        return;
-      }
+  const fetchVendors = async (): Promise<Vendor[]> => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      console.log('No authenticated user found, skipping vendor fetch');
+      return [];
+    }
 
-      console.log('Fetching vendors for user:', user.id);
-      
-      const { data, error } = await supabase
-        .from('vendors')
-        .select('*')
-        .order('created_at', { ascending: false });
+    console.log('Fetching vendors for user:', user.id);
+    
+    const { data, error } = await supabase
+      .from('vendors')
+      .select('*')
+      .order('created_at', { ascending: false });
 
-      console.log('Vendors query result:', { data, error });
+    console.log('Vendors query result:', { data, error });
 
-      if (error) {
-        console.error('Supabase error fetching vendors:', error);
-        throw error;
-      }
-
-      const formattedVendors = data?.map(vendor => ({
-        id: vendor.id,
-        name: vendor.name,
-        totalOwed: Number(vendor.total_owed),
-        nextPaymentDate: vendor.next_payment_date ? parseDateFromDB(vendor.next_payment_date) : new Date(),
-        nextPaymentAmount: Number(vendor.next_payment_amount),
-        status: vendor.status as Vendor['status'],
-        category: vendor.category || '',
-        paymentType: vendor.payment_type as Vendor['paymentType'],
-        paymentMethod: vendor.payment_method as Vendor['paymentMethod'] || 'bank-transfer', // Load payment method
-        netTermsDays: vendor.net_terms_days?.toString(),
-        poName: vendor.po_name || '',
-        description: vendor.description || '',
-        notes: vendor.notes || '',
-        remarks: vendor.remarks || '',
-        paymentSchedule: Array.isArray(vendor.payment_schedule) ? vendor.payment_schedule : [],
-        source: vendor.source as Vendor['source'] || 'management',
-        created_at: vendor.created_at,
-        updated_at: vendor.updated_at
-      })) || [];
-
-      console.log('Formatted vendors:', formattedVendors);
-      setVendors(formattedVendors);
-    } catch (error) {
-      console.error('Error fetching vendors:', error);
+    if (error) {
+      console.error('Supabase error fetching vendors:', error);
       toast({
         title: "Error",
         description: "Failed to load vendors",
         variant: "destructive",
       });
-    } finally {
-      setLoading(false);
+      return [];
     }
+
+    const formattedVendors = data?.map(vendor => ({
+      id: vendor.id,
+      name: vendor.name,
+      totalOwed: Number(vendor.total_owed),
+      nextPaymentDate: vendor.next_payment_date ? parseDateFromDB(vendor.next_payment_date) : new Date(),
+      nextPaymentAmount: Number(vendor.next_payment_amount),
+      status: vendor.status as Vendor['status'],
+      category: vendor.category || '',
+      paymentType: vendor.payment_type as Vendor['paymentType'],
+      paymentMethod: vendor.payment_method as Vendor['paymentMethod'] || 'bank-transfer',
+      netTermsDays: vendor.net_terms_days?.toString(),
+      poName: vendor.po_name || '',
+      description: vendor.description || '',
+      notes: vendor.notes || '',
+      remarks: vendor.remarks || '',
+      paymentSchedule: Array.isArray(vendor.payment_schedule) ? vendor.payment_schedule : [],
+      source: vendor.source as Vendor['source'] || 'management',
+      created_at: vendor.created_at,
+      updated_at: vendor.updated_at
+    })) || [];
+
+    console.log('Formatted vendors:', formattedVendors);
+    return formattedVendors;
   };
+
+  // Use React Query with 20-minute staleTime (vendors rarely change)
+  const { data: vendors = [], isLoading: loading, refetch } = useQuery({
+    queryKey: ['vendors'],
+    queryFn: fetchVendors,
+    staleTime: 20 * 60 * 1000, // 20 minutes
+  });
 
   const addVendor = async (vendorData: Omit<Vendor, 'id'>) => {
     try {
@@ -156,7 +155,7 @@ export const useVendors = () => {
         status: data.status as Vendor['status'],
         category: data.category || '',
         paymentType: data.payment_type as Vendor['paymentType'],
-        paymentMethod: data.payment_method as Vendor['paymentMethod'] || 'bank-transfer', // Load payment method
+        paymentMethod: data.payment_method as Vendor['paymentMethod'] || 'bank-transfer',
         netTermsDays: data.net_terms_days?.toString(),
         poName: data.po_name || '',
         description: data.description || '',
@@ -165,7 +164,7 @@ export const useVendors = () => {
         source: data.source as Vendor['source'] || 'management'
       };
 
-      setVendors(prev => [newVendor, ...prev]);
+      await queryClient.invalidateQueries({ queryKey: ['vendors'] });
       
       toast({
         title: "Success",
@@ -220,10 +219,8 @@ export const useVendors = () => {
         throw error;
       }
 
-      // Update local state immediately
-      setVendors(prev => prev.map(vendor => 
-        vendor.id === id ? { ...vendor, ...updates } : vendor
-      ));
+      // Invalidate query
+      await queryClient.invalidateQueries({ queryKey: ['vendors'] });
 
       // Also update related transactions if due date changed
       if (updates.nextPaymentDate !== undefined) {
@@ -322,7 +319,7 @@ export const useVendors = () => {
 
       if (error) throw error;
 
-      setVendors(prev => prev.filter(vendor => vendor.id !== id));
+      await queryClient.invalidateQueries({ queryKey: ['vendors'] });
 
       toast({
         title: "Success",
@@ -338,16 +335,26 @@ export const useVendors = () => {
     }
   };
 
-  useEffect(() => {
-    fetchVendors();
-  }, []);
-
-  // Realtime subscription for vendors
+  // Set up debounced real-time updates
   useEffect(() => {
     let channel: any;
     const setup = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
+
+      const debouncedRefetch = () => {
+        if (debounceTimerRef.current) {
+          clearTimeout(debounceTimerRef.current);
+        }
+        
+        // Wait 2 seconds before refetching
+        debounceTimerRef.current = setTimeout(() => {
+          queryClient.invalidateQueries({ 
+            queryKey: ['vendors'],
+            exact: true 
+          });
+        }, 2000);
+      };
 
       channel = supabase
         .channel('vendors-changes')
@@ -355,28 +362,17 @@ export const useVendors = () => {
           event: '*',
           schema: 'public',
           table: 'vendors',
-        }, () => {
-          fetchVendors();
-        })
+        }, debouncedRefetch)
         .subscribe();
     };
     setup();
     return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
       if (channel) supabase.removeChannel(channel);
     };
-  }, []);
-
-  // Also fetch vendors when auth state potentially changes
-  useEffect(() => {
-    const checkAuthAndFetch = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user && vendors.length === 0) {
-        fetchVendors();
-      }
-    };
-    
-    checkAuthAndFetch();
-  }, [vendors.length]);
+  }, [queryClient]);
 
   const deleteAllVendors = async () => {
     try {
@@ -402,7 +398,7 @@ export const useVendors = () => {
 
       if (error) throw error;
 
-      setVendors([]);
+      await queryClient.invalidateQueries({ queryKey: ['vendors'] });
 
       toast({
         title: "Success",
@@ -462,6 +458,6 @@ export const useVendors = () => {
     deleteVendor,
     deleteAllVendors,
     cleanupOrphanedVendors,
-    refetch: fetchVendors
+    refetch
   };
 };

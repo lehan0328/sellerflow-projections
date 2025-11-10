@@ -52,6 +52,7 @@ import { Badge } from "@/components/ui/badge";
 import { DashboardHeader } from "@/components/cash-flow/dashboard-header";
 import { FloatingMenu } from "@/components/cash-flow/floating-menu";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/AppSidebar";
 import { OverviewStats } from "@/components/cash-flow/overview-stats";
 import { CashFlowCalendar } from "@/components/cash-flow/cash-flow-calendar";
 import { CashFlowInsights } from "@/components/cash-flow/cash-flow-insights";
