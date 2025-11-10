@@ -1259,14 +1259,31 @@ export default function Analytics() {
                   <XAxis dataKey="month" />
                   <YAxis />
                   <Tooltip 
-                    formatter={value => formatCurrency(Number(value))}
-                    contentStyle={{
-                      backgroundColor: 'hsl(var(--background))',
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '0.5rem',
-                      color: 'hsl(var(--foreground))'
+                    content={({ active, payload }) => {
+                      if (active && payload && payload.length) {
+                        const data = payload[0].payload;
+                        return (
+                          <div className="bg-background border border-border rounded-lg p-3 shadow-lg">
+                            <p className="font-semibold mb-2 text-foreground">{data.month}</p>
+                            <div className="space-y-1 text-sm">
+                              <div className="flex justify-between gap-4">
+                                <span className="text-green-600">Income:</span>
+                                <span className="font-medium text-foreground">{formatCurrency(data.income)}</span>
+                              </div>
+                              <div className="flex justify-between gap-4">
+                                <span className="text-red-600">Expenses:</span>
+                                <span className="font-medium text-foreground">{formatCurrency(data.expenses)}</span>
+                              </div>
+                              <div className="flex justify-between gap-4 pt-1 border-t border-border">
+                                <span className={data.net >= 0 ? "text-green-600 font-semibold" : "text-red-600 font-semibold"}>Net:</span>
+                                <span className={data.net >= 0 ? "text-green-600 font-bold" : "text-red-600 font-bold"}>{formatCurrency(data.net)}</span>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      }
+                      return null;
                     }}
-                    labelStyle={{ color: 'hsl(var(--foreground))' }}
                   />
                   <Bar dataKey="net" fill="#8b5cf6">
                     {cashFlowData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.net >= 0 ? '#10b981' : '#ef4444'} />)}
