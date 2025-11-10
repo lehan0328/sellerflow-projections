@@ -10,7 +10,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
-import { format } from "date-fns";
+import { format, isBefore, startOfDay } from "date-fns";
 import { useSidebar } from "@/components/ui/sidebar";
 import { useTheme } from "next-themes";
 interface DashboardHeaderProps {
@@ -83,6 +83,29 @@ export function DashboardHeader({
     
     return 'Dashboard';
   };
+
+  // Calculate if there are any pending transactions
+  const hasPendingTransactions = () => {
+    if (isDemo || !vendors.length && !incomeItems.length) return false;
+    
+    const today = startOfDay(new Date());
+    
+    // Check for overdue or today vendors
+    const hasPendingVendors = vendors.some(vendor => {
+      if (vendor.status === 'paid' || vendor.totalOwed <= 0) return false;
+      const paymentDate = startOfDay(new Date(vendor.nextPaymentDate));
+      return isBefore(paymentDate, today) || paymentDate.getTime() === today.getTime();
+    });
+    
+    // Check for overdue or today income
+    const hasPendingIncome = incomeItems.some(income => {
+      if (income.status === 'received') return false;
+      const paymentDate = startOfDay(new Date(income.paymentDate));
+      return isBefore(paymentDate, today) || paymentDate.getTime() === today.getTime();
+    });
+    
+    return hasPendingVendors || hasPendingIncome;
+  };
   return <div className="relative w-full">
       {/* Header Container */}
       <header className="border-b border-border/50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -109,6 +132,14 @@ export function DashboardHeader({
             Professional Plan Trial - Ends {new Date(trial_end).toLocaleDateString()}
           </Badge>
         )}
+        {!isDemo && hasPendingTransactions() && (
+          <PendingNotificationsPanel 
+            vendors={vendors}
+            incomeItems={incomeItems}
+            onVendorClick={onVendorClick}
+            onIncomeClick={onIncomeClick}
+          />
+        )}
         <Button
           variant="outline"
           size="icon"
@@ -128,12 +159,6 @@ export function DashboardHeader({
               <span className="hidden lg:inline text-xs font-bold text-blue-600 dark:text-blue-400">• Earn $2K</span>
             </div>
           </Button>}
-        {!isDemo && <PendingNotificationsPanel 
-          vendors={vendors}
-          incomeItems={incomeItems}
-          onVendorClick={onVendorClick}
-          onIncomeClick={onIncomeClick}
-        />}
         {isDemo ? <DemoUserMenu /> : <UserMenu />}
           </div>
         </div>
