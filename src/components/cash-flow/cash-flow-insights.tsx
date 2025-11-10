@@ -838,16 +838,28 @@ export const CashFlowInsights = memo(({
                     </div>
                     <div className="flex items-baseline gap-2">
                       <span className="text-3xl font-bold text-blue-600">
-                        ${creditCards.reduce((sum, card) => {
-                          const effectiveCreditLimit = card.credit_limit_override || card.credit_limit;
-                          const effectiveAvailableCredit = effectiveCreditLimit - card.balance;
-                          return sum + effectiveAvailableCredit;
-                        }, 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        ${(() => {
+                          const totalAvailable = creditCards.reduce((sum, card) => {
+                            const effectiveCreditLimit = card.credit_limit_override || card.credit_limit;
+                            const effectiveAvailableCredit = effectiveCreditLimit - card.balance;
+                            return sum + effectiveAvailableCredit;
+                          }, 0);
+                          const totalPending = Object.values(pendingOrdersByCard).reduce((sum, amount) => sum + amount, 0);
+                          return (totalAvailable - totalPending).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                        })()}
                       </span>
                       <span className="text-xs text-muted-foreground">
                         across {creditCards.length} {creditCards.length === 1 ? 'card' : 'cards'}
                       </span>
                     </div>
+                    {(() => {
+                      const totalPending = Object.values(pendingOrdersByCard).reduce((sum, amount) => sum + amount, 0);
+                      return totalPending > 0 ? (
+                        <p className="text-[11px] text-muted-foreground mt-0.5">
+                          ${totalPending.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} pending orders
+                        </p>
+                      ) : null;
+                    })()}
                     <p className="text-[10px] text-muted-foreground mt-2">
                       Combined spending power from all your credit cards
                     </p>
