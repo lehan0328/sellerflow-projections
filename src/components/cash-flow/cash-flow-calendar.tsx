@@ -1036,5 +1036,129 @@ export const CashFlowCalendar = ({
       <TransactionDetailModal transaction={selectedTransaction} open={showTransactionModal} onOpenChange={setShowTransactionModal} onEdit={onEditTransaction} />
 
       <DayTransactionsModal transactions={selectedDayTransactions} date={selectedDate} open={showDayTransactionsModal} onOpenChange={setShowDayTransactionsModal} />
+      
+      <Dialog open={showSearchDialog} onOpenChange={setShowSearchDialog}>
+        <DialogContent className="max-w-2xl max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle>Search Transactions</DialogTitle>
+            <DialogDescription>
+              Search for transactions by amount or date
+            </DialogDescription>
+          </DialogHeader>
+          
+          <Tabs value={searchType} onValueChange={(value: 'amount' | 'date') => setSearchType(value)}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="amount">Search by Amount</TabsTrigger>
+              <TabsTrigger value="date">Search by Date</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="amount" className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="search-amount">Amount</Label>
+                <Input
+                  id="search-amount"
+                  type="number"
+                  placeholder="Enter amount to search"
+                  value={searchAmount}
+                  onChange={(e) => setSearchAmount(e.target.value)}
+                />
+              </div>
+              <Button onClick={() => {
+                const amount = parseFloat(searchAmount);
+                if (isNaN(amount)) {
+                  toast.error("Please enter a valid amount");
+                  return;
+                }
+                
+                const results: { date: string; events: CashFlowEvent[] }[] = [];
+                chartData.forEach((day) => {
+                  const matchingEvents = (day.transactions || []).filter(
+                    (event: CashFlowEvent) => Math.abs(event.amount) === Math.abs(amount)
+                  );
+                  if (matchingEvents.length > 0) {
+                    results.push({ date: day.date, events: matchingEvents });
+                  }
+                });
+                
+                setSearchResults(results);
+                if (results.length === 0) {
+                  toast.info("No transactions found for this amount");
+                }
+              }}>
+                <Search className="h-4 w-4 mr-2" />
+                Search
+              </Button>
+            </TabsContent>
+            
+            <TabsContent value="date" className="space-y-4">
+              <div className="space-y-2">
+                <Label>Select Date</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="w-full justify-start text-left font-normal">
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {searchDate ? format(new Date(searchDate), "PPP") : "Pick a date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={searchDate ? new Date(searchDate) : undefined}
+                      onSelect={(date) => setSearchDate(date ? format(date, "yyyy-MM-dd") : "")}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <Button onClick={() => {
+                if (!searchDate) {
+                  toast.error("Please select a date");
+                  return;
+                }
+                
+                const searchDateFormatted = format(new Date(searchDate), "MMM dd");
+                const dayData = chartData.find((day) => day.date === searchDateFormatted);
+                if (dayData && dayData.transactions && dayData.transactions.length > 0) {
+                  setSearchResults([{ date: dayData.date, events: dayData.transactions }]);
+                } else {
+                  setSearchResults([]);
+                  toast.info("No transactions found for this date");
+                }
+              }}>
+                <Search className="h-4 w-4 mr-2" />
+                Search
+              </Button>
+            </TabsContent>
+          </Tabs>
+          
+          {searchResults.length > 0 && (
+            <div className="mt-4">
+              <h3 className="font-semibold mb-2">Search Results ({searchResults.length} {searchResults.length === 1 ? "day" : "days"})</h3>
+              <ScrollArea className="h-[300px]">
+                <div className="space-y-4">
+                  {searchResults.map((result) => (
+                    <div key={result.date} className="border rounded-lg p-3">
+                      <div className="font-medium mb-2">{result.date}</div>
+                      <div className="space-y-2">
+                        {result.events.map((event) => (
+                          <div key={event.id} className="flex justify-between items-center text-sm p-2 bg-muted/50 rounded">
+                            <div>
+                              <div className="font-medium">{event.description}</div>
+                              {event.vendor && <div className="text-xs text-muted-foreground">{event.vendor}</div>}
+                            </div>
+                            <Badge variant={event.type === "inflow" ? "default" : "destructive"}>
+                              {event.type === "inflow" ? "+" : "-"}${formatCurrency(Math.abs(event.amount))}
+                            </Badge>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </Card>;
 };
