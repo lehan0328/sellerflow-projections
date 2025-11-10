@@ -245,7 +245,6 @@ export const AdminSupportTickets = () => {
         ticket={selectedTicket}
         open={showMessagesDialog}
         onOpenChange={setShowMessagesDialog}
-        onTicketUpdated={refetch}
       />
     )}
     </>

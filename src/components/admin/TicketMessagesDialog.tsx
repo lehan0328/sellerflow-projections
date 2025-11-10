@@ -21,10 +21,9 @@ interface TicketMessagesDialogProps {
   ticket: any;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onTicketUpdated?: () => void;
 }
 
-export function TicketMessagesDialog({ ticket, open, onOpenChange, onTicketUpdated }: TicketMessagesDialogProps) {
+export function TicketMessagesDialog({ ticket, open, onOpenChange }: TicketMessagesDialogProps) {
   const [messages, setMessages] = useState<TicketMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -79,20 +78,7 @@ export function TicketMessagesDialog({ ticket, open, onOpenChange, onTicketUpdat
 
       if (error) throw error;
 
-      // Update ticket status to 'open' (awaiting response from customer)
-      const { error: updateError } = await supabase
-        .from('support_tickets')
-        .update({ status: 'open' })
-        .eq('id', ticket.id);
-
-      if (updateError) {
-        console.error('Error updating ticket status:', updateError);
-        toast.error('Failed to update ticket status');
-      } else {
-        // Trigger parent refresh
-        onTicketUpdated?.();
-      }
-
+      // Status update happens automatically via database trigger
       setNewMessage("");
       await loadMessages();
       toast.success('Response sent successfully');
