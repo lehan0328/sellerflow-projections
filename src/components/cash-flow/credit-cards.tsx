@@ -261,6 +261,12 @@ export function CreditCards() {
     }
   };
 
+  // Helper function to parse YYYY-MM-DD as local date
+  const parseLocalDate = (dateString: string): Date => {
+    const [year, month, day] = dateString.split('-').map(Number);
+    return new Date(year, month - 1, day);
+  };
+
   // Check for overdue payment due dates and prompt user to update
   useEffect(() => {
     if (!creditCards || creditCards.length === 0) return;
@@ -270,13 +276,13 @@ export function CreditCards() {
     // Find cards with due dates that have passed
     const overdueCard = creditCards.find(card => {
       if (!card.payment_due_date) return false;
-      const dueDate = startOfDay(new Date(card.payment_due_date));
+      const dueDate = startOfDay(parseLocalDate(card.payment_due_date));
       return isBefore(dueDate, today) || dueDate.getTime() === today.getTime();
     });
 
     if (overdueCard && !showStatementUpdateModal) {
       // Calculate next month's due date
-      const currentDueDate = new Date(overdueCard.payment_due_date);
+      const currentDueDate = parseLocalDate(overdueCard.payment_due_date);
       const nextDueDate = addMonths(currentDueDate, 1);
       
       setCardForStatementUpdate(overdueCard);
@@ -509,6 +515,24 @@ export function CreditCards() {
                       {isOverLimit && (
                         <AlertTriangle className="h-5 w-5 text-destructive" />
                       )}
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          // Manually trigger statement update modal
+                          const nextDueDate = card.payment_due_date 
+                            ? addMonths(parseLocalDate(card.payment_due_date), 1)
+                            : addMonths(new Date(), 1);
+                          
+                          setCardForStatementUpdate(card);
+                          setUpdateStatementBalance('');
+                          setUpdateDueDate(format(nextDueDate, 'yyyy-MM-dd'));
+                          setShowStatementUpdateModal(true);
+                        }}
+                        title="Update Statement Balance"
+                      >
+                        <Calendar className="h-4 w-4" />
+                      </Button>
                       <Button
                         size="sm"
                         variant="ghost"
@@ -804,13 +828,13 @@ export function CreditCards() {
                       className="w-full justify-start text-left font-normal"
                     >
                       <Calendar className="mr-2 h-4 w-4" />
-                      {newDueDate ? format(new Date(newDueDate), "PPP") : <span>Pick a date</span>}
+                      {newDueDate ? format(parseLocalDate(newDueDate), "PPP") : <span>Pick a date</span>}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
                     <CalendarComponent
                       mode="single"
-                      selected={newDueDate ? new Date(newDueDate) : undefined}
+                      selected={newDueDate ? parseLocalDate(newDueDate) : undefined}
                       onSelect={(date) => {
                         if (date) {
                           setNewDueDate(format(date, "yyyy-MM-dd"));
@@ -893,13 +917,13 @@ export function CreditCards() {
                       className="w-full justify-start text-left font-normal"
                     >
                       <Calendar className="mr-2 h-4 w-4" />
-                      {updateDueDate ? format(new Date(updateDueDate), "PPP") : <span>Pick a date</span>}
+                      {updateDueDate ? format(parseLocalDate(updateDueDate), "PPP") : <span>Pick a date</span>}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
                     <CalendarComponent
                       mode="single"
-                      selected={updateDueDate ? new Date(updateDueDate) : undefined}
+                      selected={updateDueDate ? parseLocalDate(updateDueDate) : undefined}
                       onSelect={(date) => {
                         if (date) {
                           setUpdateDueDate(format(date, "yyyy-MM-dd"));
