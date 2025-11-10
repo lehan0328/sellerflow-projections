@@ -142,6 +142,23 @@ export const useNotifications = () => {
     }
   };
 
+  const clearAllNotifications = async () => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('notification_history')
+        .delete()
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      setNotifications([]);
+    } catch (error) {
+      console.error('Error clearing all notifications:', error);
+    }
+  };
+
   const unreadCount = notifications.filter(n => !n.read).length;
 
   return {
@@ -150,6 +167,7 @@ export const useNotifications = () => {
     markAsRead,
     markAllAsRead,
     clearNotification,
+    clearAllNotifications,
     loading,
     refetch: fetchNotifications,
   };
