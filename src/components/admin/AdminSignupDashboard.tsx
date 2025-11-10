@@ -30,8 +30,6 @@ interface SignupMetrics {
 export function AdminSignupDashboard() {
   const { isAdmin } = useAdmin();
   const [allSignups, setAllSignups] = useState<SignupData[]>([]);
-  const [monthlySignupsCount, setMonthlySignupsCount] = useState<number>(0);
-  const [selectedMonth, setSelectedMonth] = useState<string>(format(new Date(), 'yyyy-MM'));
   const [metrics, setMetrics] = useState<SignupMetrics>({
     totalSignups: 0,
     referralPercentage: 0,
@@ -40,18 +38,6 @@ export function AdminSignupDashboard() {
   });
   const [isLoading, setIsLoading] = useState(true);
 
-  // Generate month options for the last 12 months
-  const getMonthOptions = () => {
-    const options = [];
-    const now = new Date();
-    for (let i = 0; i < 12; i++) {
-      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const value = format(date, 'yyyy-MM');
-      const label = format(date, 'MMMM yyyy');
-      options.push({ value, label });
-    }
-    return options;
-  };
 
   // Fetch all-time data once
   useEffect(() => {
@@ -59,13 +45,6 @@ export function AdminSignupDashboard() {
       fetchAllTimeData();
     }
   }, [isAdmin]);
-
-  // Calculate monthly count when month changes
-  useEffect(() => {
-    if (allSignups.length > 0) {
-      calculateMonthlyCount();
-    }
-  }, [selectedMonth, allSignups]);
 
   const fetchAllTimeData = async () => {
     try {
@@ -112,19 +91,6 @@ export function AdminSignupDashboard() {
     }
   };
 
-  const calculateMonthlyCount = () => {
-    const [year, month] = selectedMonth.split('-');
-    const startDate = startOfMonth(new Date(parseInt(year), parseInt(month) - 1));
-    const endDate = endOfMonth(new Date(parseInt(year), parseInt(month) - 1));
-
-    // Filter all signups to count only those in the selected month
-    const monthlySignups = allSignups.filter(signup => {
-      const signupDate = new Date(signup.created_at);
-      return signupDate >= startDate && signupDate <= endDate;
-    });
-
-    setMonthlySignupsCount(monthlySignups.length);
-  };
 
   const formatSource = (source: string | null) => {
     if (!source) return 'Not specified';
@@ -151,24 +117,10 @@ export function AdminSignupDashboard() {
 
   return (
     <div className="space-y-6">
-      {/* Month Selector */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold">Signup Analytics</h2>
-          <p className="text-muted-foreground">Track signup metrics and acquisition sources</p>
-        </div>
-        <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-          <SelectTrigger className="w-[200px]">
-            <SelectValue placeholder="Select month" />
-          </SelectTrigger>
-          <SelectContent>
-            {getMonthOptions().map(option => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      {/* Header */}
+      <div>
+        <h2 className="text-2xl font-bold">Signup Analytics</h2>
+        <p className="text-muted-foreground">Track signup metrics and acquisition sources</p>
       </div>
 
       {/* Metrics Cards */}
@@ -179,8 +131,8 @@ export function AdminSignupDashboard() {
             <UserPlus className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{monthlySignupsCount}</div>
-            <p className="text-xs text-muted-foreground">Signups in {format(new Date(selectedMonth), 'MMMM yyyy')}</p>
+            <div className="text-2xl font-bold">{metrics.totalSignups}</div>
+            <p className="text-xs text-muted-foreground">All-time signups</p>
           </CardContent>
         </Card>
 
