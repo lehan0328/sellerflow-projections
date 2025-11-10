@@ -729,6 +729,94 @@ export default function Analytics() {
       net: data.income - data.expenses
     }));
   }, [incomeItems, bankTransactions, dbTransactions, amazonPayouts]);
+
+  // End of month balances calculation (last 6 months)
+  const endOfMonthBalances = useMemo(() => {
+    const now = new Date();
+    const currentBalance = accounts.reduce((sum, acc) => sum + (acc.balance || 0), 0);
+    
+    const monthlyBalances: Record<string, { income: number; expenses: number }> = {};
+    
+    // Initialize last 6 months
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const key = date.toLocaleDateString('en-US', {
+        month: 'short',
+        year: 'numeric'
+      });
+      monthlyBalances[key] = { income: 0, expenses: 0 };
+    }
+    
+    // Add income from all sources
+    incomeItems.forEach(item => {
+      if (item.status === 'received') {
+        const date = new Date(item.paymentDate);
+        const key = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+        if (monthlyBalances[key]) {
+          monthlyBalances[key].income += item.amount;
+        }
+      }
+    });
+    
+    // Add Amazon payouts
+    amazonPayouts.forEach(payout => {
+      if (payout.status === 'confirmed') {
+        const date = new Date(payout.payout_date);
+        const key = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+        if (monthlyBalances[key]) {
+          monthlyBalances[key].income += payout.total_amount || 0;
+        }
+      }
+    });
+    
+    // Add completed sales orders
+    dbTransactions.forEach(tx => {
+      if ((tx.type === 'sales_order' || tx.type === 'customer_payment') && tx.status === 'completed') {
+        const date = new Date(tx.transactionDate);
+        const key = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+        if (monthlyBalances[key]) {
+          monthlyBalances[key].income += tx.amount;
+        }
+      }
+    });
+    
+    // Add expenses from vendor transactions
+    vendorTransactions.forEach(tx => {
+      if (tx.status === 'completed' || tx.status === 'paid') {
+        const date = new Date(tx.transactionDate);
+        const key = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+        if (monthlyBalances[key]) {
+          monthlyBalances[key].expenses += tx.amount;
+        }
+      }
+    });
+    
+    // Add bank transactions
+    bankTransactions.forEach(tx => {
+      const date = new Date(tx.date);
+      const key = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+      if (monthlyBalances[key]) {
+        if (tx.transactionType === 'credit') {
+          monthlyBalances[key].income += tx.amount;
+        } else {
+          monthlyBalances[key].expenses += tx.amount;
+        }
+      }
+    });
+    
+    // Calculate running balance (work backwards from current balance)
+    const entries = Object.entries(monthlyBalances).reverse();
+    let runningBalance = currentBalance;
+    const results: { month: string; balance: number }[] = [];
+    
+    entries.forEach(([month, data]) => {
+      results.unshift({ month, balance: runningBalance });
+      runningBalance = runningBalance - data.income + data.expenses;
+    });
+    
+    return results;
+  }, [accounts, incomeItems, amazonPayouts, dbTransactions, vendorTransactions, bankTransactions]);
+
   const COLORS = ['#8b5cf6', '#06b6d4', '#f59e0b', '#10b981', '#ef4444', '#ec4899'];
   return <div className="container mx-auto p-6 space-y-6">
       <div>
@@ -1012,6 +1100,54 @@ export default function Analytics() {
               </CardContent>
             </Card>
           </div>
+
+          {/* End of Month Balances Chart */}
+          <Card>
+            <CardHeader>
+              <CardTitle>End of Month Bank Balances</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <AreaChart data={endOfMonthBalances}>
+                  <defs>
+                    <linearGradient id="balanceGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis 
+                    dataKey="month" 
+                    stroke="hsl(var(--muted-foreground))"
+                    fontSize={12}
+                  />
+                  <YAxis 
+                    stroke="hsl(var(--muted-foreground))"
+                    fontSize={12}
+                    tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+                  />
+                  <Tooltip 
+                    formatter={(value) => [formatCurrency(Number(value)), 'Balance']}
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--background))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '0.5rem',
+                      color: 'hsl(var(--foreground))'
+                    }}
+                    labelStyle={{ color: 'hsl(var(--foreground))' }}
+                  />
+                  <Area 
+                    type="monotone" 
+                    dataKey="balance" 
+                    stroke="hsl(var(--primary))" 
+                    strokeWidth={2}
+                    fillOpacity={1} 
+                    fill="url(#balanceGradient)" 
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
 
           <Card>
             <CardHeader>
