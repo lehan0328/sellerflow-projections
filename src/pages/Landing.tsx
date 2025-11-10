@@ -805,10 +805,9 @@ const Landing = () => {
                       lens.style.left = `${x - lensWidth}px`;
                       lens.style.top = `${y - lensHeight}px`;
                       
-                      // Calculate zoom position
-                      const cx = result.offsetWidth / lens.offsetWidth;
-                      const cy = result.offsetHeight / lens.offsetHeight;
-                      result.style.backgroundPosition = `-${x * cx - lensWidth * cx}px -${y * cy - lensHeight * cy}px`;
+                      // Calculate zoom position with 2x magnification
+                      const zoomLevel = 2;
+                      result.style.backgroundPosition = `-${x * zoomLevel - lensWidth * zoomLevel}px -${y * zoomLevel - lensHeight * zoomLevel}px`;
                       
                       // Show lens and result
                       lens.style.opacity = '1';
@@ -824,18 +823,19 @@ const Landing = () => {
                     }
                   }}
                 >
-                  <img src={dashboardPreview} alt="Auren Dashboard Preview - Cash Flow Visualization and Safe Spending Power" className="w-full h-auto" />
+                  <img src={dashboardPreview} alt="Auren Dashboard Preview - Cash Flow Visualization and Safe Spending Power" className="w-full h-auto" style={{ imageRendering: 'crisp-edges' }} />
                   
                   {/* Zoom lens overlay */}
-                  <div className="zoom-lens absolute w-32 h-32 border-2 border-primary rounded-full pointer-events-none opacity-0 transition-opacity duration-200 bg-white/10 backdrop-blur-sm" />
+                  <div className="zoom-lens absolute w-40 h-40 border-2 border-primary rounded-full pointer-events-none opacity-0 transition-opacity duration-200 bg-white/10 backdrop-blur-sm" />
                   
                   {/* Zoomed result */}
                   <div 
-                    className="zoom-result absolute top-4 right-4 w-64 h-64 border-2 border-primary rounded-xl pointer-events-none opacity-0 transition-opacity duration-200 shadow-2xl"
+                    className="zoom-result absolute top-4 right-4 w-80 h-80 border-2 border-primary rounded-xl pointer-events-none opacity-0 transition-opacity duration-200 shadow-2xl bg-background"
                     style={{
                       backgroundImage: `url(${dashboardPreview})`,
                       backgroundRepeat: 'no-repeat',
-                      backgroundSize: `${800}% ${800}%`
+                      backgroundSize: '200% 200%',
+                      imageRendering: 'crisp-edges'
                     }}
                   />
                 </div>
