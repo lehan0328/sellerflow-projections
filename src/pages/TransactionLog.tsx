@@ -6,6 +6,17 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { 
   ArrowLeft, 
   Search, 
@@ -19,13 +30,16 @@ import {
   Receipt,
   Calendar,
   DollarSign,
-  ArrowUpDown
+  ArrowUpDown,
+  Trash2
 } from "lucide-react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useArchivedBankTransactions } from "@/hooks/useArchivedBankTransactions";
 import { useVendorTransactions } from "@/hooks/useVendorTransactions";
 import { useIncome } from "@/hooks/useIncome";
+import { toast } from "sonner";
+import { formatCurrency } from "@/lib/utils";
 
 interface DeletedTransaction {
   id: string;
@@ -77,6 +91,73 @@ export default function TransactionLog() {
   useEffect(() => {
     fetchDeletedTransactions();
   }, [fetchDeletedTransactions]);
+
+  // Delete all archived transactions permanently
+  const handleDeleteAll = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error('Authentication required');
+        return;
+      }
+
+      // Get user's account_id
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('account_id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (!profile?.account_id) {
+        toast.error('Account not found');
+        return;
+      }
+
+      // Delete all from deleted_transactions table
+      const { error: deletedError } = await supabase
+        .from('deleted_transactions')
+        .delete()
+        .eq('user_id', user.id);
+
+      if (deletedError) throw deletedError;
+
+      // Delete all archived bank transactions
+      const { error: bankError } = await supabase
+        .from('bank_transactions')
+        .delete()
+        .eq('account_id', profile.account_id)
+        .eq('archived', true);
+
+      if (bankError) throw bankError;
+
+      // Delete all archived income (status = 'received')
+      const { error: incomeError } = await supabase
+        .from('income')
+        .delete()
+        .eq('account_id', profile.account_id)
+        .eq('archived', true);
+
+      if (incomeError) throw incomeError;
+
+      // Delete all archived vendor transactions (status = 'completed' or 'paid')
+      const { error: vendorError } = await supabase
+        .from('transactions')
+        .delete()
+        .eq('type', 'purchase_order')
+        .in('status', ['completed', 'paid'])
+        .eq('archived', true);
+
+      if (vendorError) throw vendorError;
+
+      // Refresh the page data
+      fetchDeletedTransactions();
+      
+      toast.success('All archived transactions deleted permanently');
+    } catch (error) {
+      console.error('Error deleting archived transactions:', error);
+      toast.error('Failed to delete archived transactions');
+    }
+  };
 
   // Get completed/paid vendor and income transactions (these are effectively archived)
   const archivedVendorTx = vendorTransactions.filter(tx => tx.status === 'completed' || tx.status === 'paid');
@@ -258,6 +339,32 @@ export default function TransactionLog() {
               </div>
             </div>
           </div>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive" className="gap-2">
+                <Trash2 className="h-4 w-4" />
+                Delete All
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete All Archived Transactions?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will permanently delete all {stats.total} archived transactions ({formatCurrency(stats.totalAmount)}). 
+                  This action cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleDeleteAll}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  Delete All Permanently
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
 
         {/* Stats Cards */}
