@@ -49,13 +49,15 @@ export default function Analytics() {
         }
       } = await supabase.auth.getUser();
       if (!user) return;
+      // Fetch ALL purchase orders (including archived/completed) for Analytics
+      // Deleted transactions are not in this table, so they're automatically excluded
       const {
         data,
         error
       } = await supabase.from('transactions').select(`
           *,
           vendors(name, category)
-        `).eq('type', 'purchase_order').eq('archived', false).order('due_date', {
+        `).eq('type', 'purchase_order').order('due_date', {
         ascending: true
       });
       if (error) {
