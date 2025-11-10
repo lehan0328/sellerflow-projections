@@ -15,6 +15,14 @@ interface DashboardStats {
   closedLastMonth: number;
   avgResolutionDays: number;
   categoryBreakdown: { category: string; count: number }[];
+  avgFirstResponseHours: number;
+  avgResponseTimeHours: number;
+  slaCompliance: {
+    within4Hours: number;
+    within24Hours: number;
+  };
+  responseTimeByPriority: Array<{ priority: string; avgHours: number }>;
+  responseTimeByCategory: Array<{ category: string; avgHours: number }>;
 }
 
 export const AdminSupportDashboard = () => {
@@ -46,6 +54,14 @@ export const AdminSupportDashboard = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
+
+      // Fetch all ticket messages
+      const { data: messages, error: messagesError } = await supabase
+        .from('ticket_messages')
+        .select('*')
+        .order('created_at', { ascending: true });
+
+      if (messagesError) throw messagesError;
 
       // Parse selected month
       const [year, month] = selectedMonth.split('-').map(Number);
@@ -100,6 +116,87 @@ export const AdminSupportDashboard = () => {
         .map(([category, count]) => ({ category, count }))
         .sort((a, b) => b.count - a.count);
 
+      // Calculate response time metrics
+      let firstResponseTimes: number[] = [];
+      let allResponseTimes: number[] = [];
+      let within4Hours = 0;
+      let within24Hours = 0;
+      const priorityResponseTimes = new Map<string, number[]>();
+      const categoryResponseTimes = new Map<string, number[]>();
+
+      tickets?.forEach(ticket => {
+        const ticketMessages = messages?.filter(m => m.ticket_id === ticket.id) || [];
+        
+        // First response time: from ticket creation to first admin message
+        const firstAdminMessage = ticketMessages.find(m => m.user_id !== ticket.user_id);
+        if (firstAdminMessage) {
+          const firstResponseMs = new Date(firstAdminMessage.created_at).getTime() - new Date(ticket.created_at).getTime();
+          const firstResponseHours = firstResponseMs / (1000 * 60 * 60);
+          firstResponseTimes.push(firstResponseHours);
+
+          // SLA tracking
+          if (firstResponseHours <= 4) within4Hours++;
+          if (firstResponseHours <= 24) within24Hours++;
+
+          // By priority
+          const priority = ticket.priority || 'medium';
+          if (!priorityResponseTimes.has(priority)) {
+            priorityResponseTimes.set(priority, []);
+          }
+          priorityResponseTimes.get(priority)!.push(firstResponseHours);
+
+          // By category
+          const category = ticket.category || 'Uncategorized';
+          if (!categoryResponseTimes.has(category)) {
+            categoryResponseTimes.set(category, []);
+          }
+          categoryResponseTimes.get(category)!.push(firstResponseHours);
+        }
+
+        // Average response time: customer message to next admin message
+        for (let i = 0; i < ticketMessages.length - 1; i++) {
+          const currentMsg = ticketMessages[i];
+          const nextMsg = ticketMessages[i + 1];
+          
+          // If current is from customer and next is from admin
+          if (currentMsg.user_id === ticket.user_id && nextMsg.user_id !== ticket.user_id) {
+            const responseMs = new Date(nextMsg.created_at).getTime() - new Date(currentMsg.created_at).getTime();
+            const responseHours = responseMs / (1000 * 60 * 60);
+            allResponseTimes.push(responseHours);
+          }
+        }
+      });
+
+      const avgFirstResponseHours = firstResponseTimes.length > 0
+        ? Math.round((firstResponseTimes.reduce((a, b) => a + b, 0) / firstResponseTimes.length) * 10) / 10
+        : 0;
+
+      const avgResponseTimeHours = allResponseTimes.length > 0
+        ? Math.round((allResponseTimes.reduce((a, b) => a + b, 0) / allResponseTimes.length) * 10) / 10
+        : 0;
+
+      const slaCompliance = {
+        within4Hours: firstResponseTimes.length > 0 ? Math.round((within4Hours / firstResponseTimes.length) * 100) : 0,
+        within24Hours: firstResponseTimes.length > 0 ? Math.round((within24Hours / firstResponseTimes.length) * 100) : 0,
+      };
+
+      const responseTimeByPriority = Array.from(priorityResponseTimes.entries())
+        .map(([priority, times]) => ({
+          priority,
+          avgHours: Math.round((times.reduce((a, b) => a + b, 0) / times.length) * 10) / 10
+        }))
+        .sort((a, b) => {
+          const order = { urgent: 0, high: 1, medium: 2, low: 3 };
+          return (order[a.priority as keyof typeof order] || 999) - (order[b.priority as keyof typeof order] || 999);
+        });
+
+      const responseTimeByCategory = Array.from(categoryResponseTimes.entries())
+        .map(([category, times]) => ({
+          category,
+          avgHours: Math.round((times.reduce((a, b) => a + b, 0) / times.length) * 10) / 10
+        }))
+        .sort((a, b) => b.avgHours - a.avgHours);
+
       setStats({
         totalOpen,
         needsResponse,
@@ -109,7 +206,12 @@ export const AdminSupportDashboard = () => {
         closedThisMonth,
         closedLastMonth,
         avgResolutionDays,
-        categoryBreakdown
+        categoryBreakdown,
+        avgFirstResponseHours,
+        avgResponseTimeHours,
+        slaCompliance,
+        responseTimeByPriority,
+        responseTimeByCategory
       });
     } catch (error) {
       console.error('Error fetching dashboard stats:', error);
@@ -266,6 +368,119 @@ export const AdminSupportDashboard = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Response Time Metrics */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">First Response Time</CardTitle>
+            <Clock className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.avgFirstResponseHours}h</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Average time to first admin reply
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Avg. Response Time</CardTitle>
+            <MessageSquare className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.avgResponseTimeHours}h</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Average reply time to customers
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">SLA Compliance</CardTitle>
+            <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.slaCompliance.within4Hours}%</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Responded within 4 hours
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {stats.slaCompliance.within24Hours}% within 24 hours
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Response Time by Priority */}
+      {stats.responseTimeByPriority.length > 0 && (
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Response Time by Priority</CardTitle>
+            <Clock className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {stats.responseTimeByPriority.map((item) => (
+                <div key={item.priority} className="flex items-center justify-between">
+                  <div className="flex items-center gap-3 flex-1">
+                    <span className={`text-sm font-medium capitalize px-2 py-1 rounded ${
+                      item.priority === 'urgent' ? 'bg-red-500/10 text-red-500' :
+                      item.priority === 'high' ? 'bg-orange-500/10 text-orange-500' :
+                      item.priority === 'medium' ? 'bg-yellow-500/10 text-yellow-500' :
+                      'bg-blue-500/10 text-blue-500'
+                    }`}>
+                      {item.priority}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className={`text-sm font-bold ${
+                      item.avgHours <= 4 ? 'text-green-500' :
+                      item.avgHours <= 24 ? 'text-yellow-500' :
+                      'text-red-500'
+                    }`}>
+                      {item.avgHours}h avg
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Response Time by Category */}
+      {stats.responseTimeByCategory.length > 0 && (
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Response Time by Category</CardTitle>
+            <BarChart3 className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {stats.responseTimeByCategory.map((item, index) => (
+                <div key={item.category} className="flex items-center justify-between">
+                  <div className="flex items-center gap-3 flex-1">
+                    <span className="text-sm font-medium text-muted-foreground">#{index + 1}</span>
+                    <span className="text-sm font-medium">{item.category}</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className={`text-sm font-bold ${
+                      item.avgHours <= 4 ? 'text-green-500' :
+                      item.avgHours <= 24 ? 'text-yellow-500' :
+                      'text-red-500'
+                    }`}>
+                      {item.avgHours}h avg
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Category Breakdown */}
       <Card>
