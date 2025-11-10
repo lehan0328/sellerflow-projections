@@ -371,6 +371,10 @@ const Dashboard = () => {
   const [showRecurringIncomeForm, setShowRecurringIncomeForm] = useState(false);
   const [editingIncome, setEditingIncome] = useState<any>(null);
   const [showEditIncomeForm, setShowEditIncomeForm] = useState(false);
+  const [creditCardNotificationData, setCreditCardNotificationData] = useState<{
+    open: boolean;
+    cardName: string | null;
+  }>({ open: false, cardName: null });
   const { toast } = useToast();
   const [vendorTxRefresh, setVendorTxRefresh] = useState(0);
   const [matchReviewDialog, setMatchReviewDialog] = useState<{
@@ -880,6 +884,22 @@ const Dashboard = () => {
           ) // Within 24 hours
       )
     );
+  };
+
+  const handleCreditCardNotificationClick = (notification: any) => {
+    // Extract card name from notification message
+    const message = notification.message || '';
+    const cardNameMatch = message.match(/for (.+?)$/);
+    const cardName = cardNameMatch ? cardNameMatch[1] : null;
+    
+    setCreditCardNotificationData({
+      open: true,
+      cardName: cardName
+    });
+    
+    // Scroll to financials section and select credit cards view
+    setActiveSection('financials');
+    setFinancialsView('credit-cards');
   };
 
   const handlePurchaseOrderSubmit = async (orderData: any) => {
@@ -3420,7 +3440,17 @@ const Dashboard = () => {
           <div className="sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
             <div className="flex items-center min-h-[50px] px-6">
               <SidebarTrigger className="mr-4 self-start mt-6" />
-              <DashboardHeader />
+              <DashboardHeader 
+                vendors={vendors}
+                incomeItems={incomeItems}
+                onVendorClick={(vendor) => {
+                  // Handle vendor click if needed
+                }}
+                onIncomeClick={(income) => {
+                  // Handle income click if needed
+                }}
+                onCreditCardNotificationClick={handleCreditCardNotificationClick}
+              />
             </div>
           </div>
 

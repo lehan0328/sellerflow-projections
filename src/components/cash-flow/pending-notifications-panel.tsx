@@ -39,6 +39,7 @@ interface PendingNotificationsPanelProps {
   incomeItems: IncomeItem[];
   onVendorClick?: (vendor: Vendor) => void;
   onIncomeClick?: (income: IncomeItem) => void;
+  onCreditCardNotificationClick?: (notification: any) => void;
 }
 
 export const PendingNotificationsPanel = ({
@@ -46,13 +47,20 @@ export const PendingNotificationsPanel = ({
   incomeItems,
   onVendorClick,
   onIncomeClick,
+  onCreditCardNotificationClick,
 }: PendingNotificationsPanelProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const { notifications, unreadCount, markAsRead, markAllAsRead, clearNotification } = useNotifications();
 
-  const handleNotificationClick = (notificationId: string, read: boolean) => {
+  const handleNotificationClick = (notification: any, read: boolean) => {
     if (!read) {
-      markAsRead(notificationId);
+      markAsRead(notification.id);
+    }
+    
+    // Check if this is a credit card notification
+    if (notification.category === 'credit' && onCreditCardNotificationClick) {
+      setIsOpen(false);
+      onCreditCardNotificationClick(notification);
     }
   };
 
@@ -121,7 +129,7 @@ export const PendingNotificationsPanel = ({
                 {notifications.map((notification) => (
                   <div
                     key={notification.id}
-                    onClick={() => handleNotificationClick(notification.id, notification.read)}
+                    onClick={() => handleNotificationClick(notification, notification.read)}
                     className={`
                       relative p-4 rounded-lg border cursor-pointer transition-all
                       ${getTypeColor(notification.type)}

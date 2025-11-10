@@ -22,6 +22,7 @@ interface DashboardHeaderProps {
   incomeItems?: any[];
   onVendorClick?: (vendor: any) => void;
   onIncomeClick?: (income: any) => void;
+  onCreditCardNotificationClick?: (notification: any) => void;
 }
 export function DashboardHeader({
   onRefresh,
@@ -31,7 +32,8 @@ export function DashboardHeader({
   vendors = [],
   incomeItems = [],
   onVendorClick,
-  onIncomeClick
+  onIncomeClick,
+  onCreditCardNotificationClick
 }: DashboardHeaderProps) {
   const {
     user
@@ -138,6 +140,7 @@ export function DashboardHeader({
             incomeItems={incomeItems}
             onVendorClick={onVendorClick}
             onIncomeClick={onIncomeClick}
+            onCreditCardNotificationClick={onCreditCardNotificationClick}
           />
         )}
         <Button
