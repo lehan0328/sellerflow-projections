@@ -90,33 +90,35 @@ export const PendingNotificationsPanel = ({
     switch (type) {
       case 'urgent':
       case 'security':
-        return 'bg-red-500 text-white border-red-600';
+        return 'bg-red-400 text-white border-red-500';
       case 'maintenance':
       case 'reminder':
-        return 'bg-amber-500 text-white border-amber-600';
+        return 'bg-amber-400 text-white border-amber-500';
       case 'new_feature':
-        return 'bg-emerald-500 text-white border-emerald-600';
+        return 'bg-emerald-400 text-white border-emerald-500';
       case 'bug_fix':
-        return 'bg-green-500 text-white border-green-600';
+        return 'bg-green-400 text-white border-green-500';
       case 'announcement':
-        return 'bg-purple-500 text-white border-purple-600';
+        return 'bg-purple-400 text-white border-purple-500';
       case 'legal_policy':
-        return 'bg-slate-600 text-white border-slate-700';
+        return 'bg-slate-400 text-white border-slate-500';
+      case 'info':
+        return 'bg-sky-400 text-white border-sky-500';
       default:
-        return 'bg-blue-500 text-white border-blue-600';
+        return 'bg-blue-400 text-white border-blue-500';
     }
   };
 
   const getCategoryColor = (category: string) => {
     switch (category) {
       case 'credit':
-        return 'bg-orange-500 text-white border-orange-600';
+        return 'bg-orange-400 text-white border-orange-500';
       case 'payment':
-        return 'bg-teal-500 text-white border-teal-600';
+        return 'bg-teal-400 text-white border-teal-500';
       case 'account':
-        return 'bg-indigo-500 text-white border-indigo-600';
+        return 'bg-indigo-400 text-white border-indigo-500';
       default:
-        return 'bg-pink-500 text-white border-pink-600';
+        return 'bg-pink-400 text-white border-pink-500';
     }
   };
 
@@ -140,6 +142,8 @@ export const PendingNotificationsPanel = ({
         return '⏰ Reminder';
       case 'security':
         return '🔒 Security';
+      case 'info':
+        return 'ℹ️ Info';
       default:
         return type;
     }
