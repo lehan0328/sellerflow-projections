@@ -478,15 +478,15 @@ export function AdminForecastAccuracy() {
         </CardContent>
       </Card>
 
-      {/* Individual Forecast Comparisons */}
+      {/* Individual Forecast Comparisons - Grouped by User */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Activity className="h-5 w-5" />
-            All Forecast Comparisons
+            User Forecast Summary
           </CardTitle>
           <CardDescription>
-            Detailed view of every forecast vs actual comparison
+            Overall accuracy grouped by user
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -495,63 +495,57 @@ export function AdminForecastAccuracy() {
               <TableHeader>
                 <TableRow>
                   <TableHead>User</TableHead>
-                  <TableHead>Payout Date</TableHead>
                   <TableHead>Marketplace</TableHead>
-                  <TableHead>Model Used</TableHead>
-                  <TableHead className="text-right">MAPE %</TableHead>
-                  <TableHead className="text-center">Accuracy</TableHead>
-                  <TableHead>Tracked Date</TableHead>
+                  <TableHead className="text-center">Total Forecasts</TableHead>
+                  <TableHead className="text-center">Overall Accuracy</TableHead>
+                  <TableHead className="text-center">Within 5%</TableHead>
+                  <TableHead className="text-center">Within 10%</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {allLogs.length === 0 ? (
+                {accountMetrics.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center text-muted-foreground">
-                      No forecast comparisons yet
+                    <TableCell colSpan={6} className="text-center text-muted-foreground">
+                      No forecast data yet
                     </TableCell>
                   </TableRow>
                 ) : (
-                  allLogs.map((log) => {
-                    const accuracy = Math.max(0, 100 - log.difference_percentage);
-                    const modelDisplay = log.modeling_method === 'auren_forecast_v1' 
-                      ? 'Auren V1' 
-                      : log.modeling_method || 'Unknown';
-                    
-                    return (
-                      <TableRow key={log.id}>
-                        <TableCell>
-                          <div className="flex flex-col">
-                            <span className="font-medium text-sm">{log.user_name}</span>
-                            <span className="text-xs text-muted-foreground">{log.user_email}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="font-medium">
-                          {new Date(log.payout_date).toLocaleDateString()}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className="text-xs">
-                            {log.marketplace_name}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="secondary" className="text-xs">
-                            {modelDisplay}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right font-mono">
-                          {log.difference_percentage.toFixed(1)}%
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <Badge variant={accuracy >= 90 ? "default" : accuracy >= 75 ? "secondary" : "outline"}>
-                            {accuracy.toFixed(1)}%
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
-                          {new Date(log.created_at).toLocaleDateString()}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })
+                  accountMetrics.map((metrics) => (
+                    <TableRow key={metrics.accountId}>
+                      <TableCell>
+                        <div className="flex flex-col">
+                          <span className="font-medium">{metrics.userName}</span>
+                          <span className="text-xs text-muted-foreground">{metrics.userEmail}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{metrics.marketplace}</Badge>
+                      </TableCell>
+                      <TableCell className="text-center font-medium">
+                        <div className="flex flex-col items-center">
+                          <span>{metrics.payoutCount}</span>
+                          {metrics.excludedCount > 0 && (
+                            <span className="text-xs text-muted-foreground">
+                              ({metrics.excludedCount} excluded)
+                            </span>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {getAccuracyBadge(metrics.overallAccuracy)}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Badge variant="outline" className="text-xs">
+                          {metrics.within5Percent.toFixed(0)}%
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Badge variant="outline" className="text-xs">
+                          {metrics.within10Percent.toFixed(0)}%
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))
                 )}
               </TableBody>
             </Table>
