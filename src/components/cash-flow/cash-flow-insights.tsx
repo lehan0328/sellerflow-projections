@@ -675,28 +675,6 @@ export const CashFlowInsights = memo(({
                     This is what you can safely spend without risking shortfalls
                   </p>
                   
-                  {/* Formula breakdown */}
-                  <div className="bg-white/50 dark:bg-gray-900/50 rounded p-2 text-xs space-y-1 mb-2 font-mono">
-                    <div className="flex justify-between items-center">
-                      <span className="text-muted-foreground">Current Balance:</span>
-                      <span className="font-medium">${currentBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-muted-foreground">- Reserve Amount:</span>
-                      <span className="font-medium text-red-600">-${reserveAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-muted-foreground">- Lowest Point:</span>
-                      <span className="font-medium text-red-600">-${(currentBalance - safeSpendingLimit - reserveAmount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                    </div>
-                    <div className="border-t border-border pt-1 flex justify-between items-center font-semibold">
-                      <span className="text-foreground">Available to Spend:</span>
-                      <span className={safeSpendingLimit < 0 ? 'text-red-600' : 'text-blue-600'}>
-                        ${safeSpendingLimit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </span>
-                    </div>
-                  </div>
-                  
                   {safeSpendingAvailableDate && safeSpendingLimit > 0 && (
                     <div className="flex items-center justify-between p-2 bg-blue-50 dark:bg-blue-950/20 rounded border border-blue-200 dark:border-blue-800 mt-2">
                       <span className="text-xs font-medium text-muted-foreground">Earliest Purchase Date:</span>
@@ -809,6 +787,13 @@ export const CashFlowInsights = memo(({
                         <Pencil className="h-3 w-3" />
                       </Button>
                     </div>}
+                </div>
+                
+                <div className="flex justify-between items-center p-2 bg-muted/50 rounded">
+                  <span className="text-muted-foreground">Lowest Projected Amount</span>
+                  <span className="font-semibold text-blue-600">
+                    ${(currentBalance - safeSpendingLimit - reserveAmount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
                 </div>
                   
                   {allBuyingOpportunities && allBuyingOpportunities.filter(opp => opp.balance > 0).length > 0 && (
