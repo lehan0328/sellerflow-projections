@@ -670,7 +670,6 @@ export const AdminCustomers = () => {
                 <TableHead>Status</TableHead>
                 <TableHead>{viewMode === 'churned' ? 'Last Plan' : 'Plan'}</TableHead>
                 <TableHead>Discount</TableHead>
-                <TableHead>Monthly Revenue</TableHead>
                 <TableHead>Renewal Date</TableHead>
                 <TableHead>Last Paid</TableHead>
                 {viewMode === 'churned' && <TableHead>Churn Date</TableHead>}
@@ -792,11 +791,6 @@ export const AdminCustomers = () => {
                         ) : (
                           <span className="text-muted-foreground">-</span>
                         )}
-                      </TableCell>
-                      <TableCell>
-                        <span className="text-sm text-muted-foreground">
-                          {typeof customer.amazon_revenue === 'string' ? customer.amazon_revenue : 'Not provided'}
-                        </span>
                       </TableCell>
                       <TableCell>
                         {customer.renewal_date ? (
