@@ -63,6 +63,7 @@ export function CreditCards() {
   const [showSetDueDateDialog, setShowSetDueDateDialog] = useState(false);
   const [cardForDueDate, setCardForDueDate] = useState<any>(null);
   const [newDueDate, setNewDueDate] = useState('');
+  const [newStatementBalance, setNewStatementBalance] = useState('');
   const [formData, setFormData] = useState<CreditCardFormData>({
     nickname: '',
     annual_fee: 0,
@@ -238,17 +239,25 @@ export function CreditCards() {
   };
 
   const handleSetDueDate = async () => {
-    if (!cardForDueDate || !newDueDate) return;
+    if (!cardForDueDate || !newDueDate || !newStatementBalance) return;
+
+    const statementBalanceNum = parseFloat(newStatementBalance);
+    if (isNaN(statementBalanceNum) || statementBalanceNum < 0) {
+      toast.error("Please enter a valid statement balance");
+      return;
+    }
 
     const success = await updateCreditCard(cardForDueDate.id, {
-      payment_due_date: newDueDate
+      payment_due_date: newDueDate,
+      statement_balance: statementBalanceNum
     });
 
     if (success) {
-      toast.success("Payment due date set successfully");
+      toast.success("Payment due date and statement balance set successfully");
       setShowSetDueDateDialog(false);
       setCardForDueDate(null);
       setNewDueDate('');
+      setNewStatementBalance('');
     }
   };
 
@@ -693,8 +702,30 @@ export function CreditCards() {
               <p className="text-sm text-muted-foreground">
                 Set a payment due date for {cardForDueDate?.nickname || `${cardForDueDate?.institution_name} - ${cardForDueDate?.account_name}`}
               </p>
+              
               <div className="space-y-2">
-                <Label htmlFor="due_date">Payment Due Date</Label>
+                <Label htmlFor="statement_balance">Statement Balance <span className="text-destructive">*</span></Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+                  <Input
+                    id="statement_balance"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="0.00"
+                    value={newStatementBalance}
+                    onChange={(e) => setNewStatementBalance(e.target.value)}
+                    className="pl-7"
+                    required
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Enter the current statement balance for this credit card
+                </p>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="due_date">Payment Due Date <span className="text-destructive">*</span></Label>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
@@ -729,13 +760,14 @@ export function CreditCards() {
                   setShowSetDueDateDialog(false);
                   setCardForDueDate(null);
                   setNewDueDate('');
+                  setNewStatementBalance('');
                 }}
               >
                 Cancel
               </Button>
               <Button
                 onClick={handleSetDueDate}
-                disabled={!newDueDate}
+                disabled={!newDueDate || !newStatementBalance}
               >
                 Set Due Date
               </Button>
