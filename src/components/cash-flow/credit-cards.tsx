@@ -325,11 +325,21 @@ export function CreditCards() {
     }
 
     try {
+      // Get user's account_id
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('account_id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (profileError) throw profileError;
+
       // Create a notification for later
       const { error } = await supabase
         .from('notification_history')
         .insert({
           user_id: user.id,
+          account_id: profile.account_id,
           category: 'credit',
           notification_type: 'reminder',
           title: 'Update Credit Card Statement',
@@ -348,9 +358,9 @@ export function CreditCards() {
       setCardForStatementUpdate(null);
       setUpdateStatementBalance('');
       setUpdateDueDate('');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating notification:', error);
-      toast.error("Failed to create reminder");
+      toast.error(error.message || "Failed to create reminder");
     }
   };
 
