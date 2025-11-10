@@ -18,6 +18,10 @@ interface AccuracyLog {
   account_id: string;
   created_at: string;
   modeling_method: string;
+  profiles?: {
+    first_name: string | null;
+    last_name: string | null;
+  };
 }
 
 interface AccountAccuracyMetrics {
@@ -62,27 +66,47 @@ export function AdminForecastAccuracy() {
     try {
       console.log('[Admin Forecast Accuracy] Fetching accuracy logs...');
       
-      const { data, error } = await supabase
+      // Fetch logs and profiles separately, then merge
+      const { data: logs, error: logsError } = await supabase
         .from('forecast_accuracy_log')
         .select('*')
         .order('created_at', { ascending: false });
 
-      console.log('[Admin Forecast Accuracy] Query result:', { 
-        dataCount: data?.length, 
-        error: error?.message,
-        sampleRecord: data?.[0]
-      });
-
-      if (error) {
-        console.error('[Admin Forecast Accuracy] Query error:', error);
-        throw error;
+      if (logsError) {
+        console.error('[Admin Forecast Accuracy] Query error:', logsError);
+        throw logsError;
       }
 
-      if (!data || data.length === 0) {
+      if (!logs || logs.length === 0) {
         console.log('[Admin Forecast Accuracy] No data returned from query');
         setIsLoading(false);
         return;
       }
+
+      // Fetch profiles for all users
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('account_id, first_name, last_name, user_id');
+
+      if (profilesError) {
+        console.error('[Admin Forecast Accuracy] Profiles query error:', profilesError);
+      }
+
+      // Create a map of account_id to profile
+      const profileMap = new Map(
+        profiles?.map(p => [p.account_id, p]) || []
+      );
+
+      // Merge logs with profile data
+      const data = logs.map(log => ({
+        ...log,
+        profiles: profileMap.get(log.account_id)
+      }));
+
+      console.log('[Admin Forecast Accuracy] Query result:', { 
+        dataCount: data?.length,
+        sampleRecord: data?.[0]
+      });
       
       console.log('[Admin Forecast Accuracy] Processing data:', {
         totalRecords: data.length,
@@ -183,11 +207,16 @@ export function AdminForecastAccuracy() {
           ? (filteredLogs.filter(log => Math.abs(log.difference_percentage) <= 10).length / filteredLogs.length) * 100
           : 0;
 
+        const firstLog = sortedLogs[0];
+        const userName = firstLog.profiles 
+          ? `${firstLog.profiles.first_name || ''} ${firstLog.profiles.last_name || ''}`.trim() || 'Unknown'
+          : firstLog.user_name || 'Unknown';
+
         return {
           accountId,
-          userName: sortedLogs[0].user_name || 'Unknown',
-          userEmail: sortedLogs[0].user_email || 'Unknown',
-          marketplace: sortedLogs[0].marketplace_name || 'N/A',
+          userName,
+          userEmail: firstLog.user_email || 'Unknown',
+          marketplace: firstLog.marketplace_name || 'N/A',
           payoutCount: filteredLogs.length,
           originalPayoutCount: sortedLogs.length,
           excludedCount,
