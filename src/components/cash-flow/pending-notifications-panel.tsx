@@ -74,15 +74,33 @@ export const PendingNotificationsPanel = ({
     switch (type) {
       case 'urgent':
       case 'security':
-        return 'bg-red-500/10 border-red-500/30 text-red-600 dark:text-red-400';
+        return 'bg-red-500 text-white border-red-600';
       case 'maintenance':
       case 'reminder':
-        return 'bg-yellow-500/10 border-yellow-500/30 text-yellow-600 dark:text-yellow-400';
+        return 'bg-amber-500 text-white border-amber-600';
       case 'new_feature':
+        return 'bg-emerald-500 text-white border-emerald-600';
       case 'bug_fix':
-        return 'bg-green-500/10 border-green-500/30 text-green-600 dark:text-green-400';
+        return 'bg-green-500 text-white border-green-600';
+      case 'announcement':
+        return 'bg-purple-500 text-white border-purple-600';
+      case 'legal_policy':
+        return 'bg-slate-600 text-white border-slate-700';
       default:
-        return 'bg-blue-500/10 border-blue-500/30 text-blue-600 dark:text-blue-400';
+        return 'bg-blue-500 text-white border-blue-600';
+    }
+  };
+
+  const getCategoryColor = (category: string) => {
+    switch (category) {
+      case 'credit':
+        return 'bg-orange-500 text-white border-orange-600';
+      case 'payment':
+        return 'bg-teal-500 text-white border-teal-600';
+      case 'account':
+        return 'bg-indigo-500 text-white border-indigo-600';
+      default:
+        return 'bg-pink-500 text-white border-pink-600';
     }
   };
 
@@ -177,11 +195,11 @@ export const PendingNotificationsPanel = ({
 
                     <div className="pr-8">
                       <div className="flex items-center gap-2 mb-2">
-                        <Badge className={cn("text-xs font-medium", getTypeColor(notification.type))}>
+                        <Badge className={cn("text-xs font-medium border", getTypeColor(notification.type))}>
                           {getTypeLabel(notification.type)}
                         </Badge>
                         {notification.category && (
-                          <Badge variant="secondary" className="text-xs">
+                          <Badge className={cn("text-xs font-medium border capitalize", getCategoryColor(notification.category))}>
                             {notification.category}
                           </Badge>
                         )}
