@@ -60,6 +60,7 @@ export function CreditCards() {
   const [showSetDueDateDialog, setShowSetDueDateDialog] = useState(false);
   const [cardForDueDate, setCardForDueDate] = useState<any>(null);
   const [newDueDate, setNewDueDate] = useState('');
+  const [newStatementBalance, setNewStatementBalance] = useState('');
   const [formData, setFormData] = useState<CreditCardFormData>({
     nickname: '',
     annual_fee: 0,
@@ -237,15 +238,23 @@ export function CreditCards() {
   const handleSetDueDate = async () => {
     if (!cardForDueDate || !newDueDate) return;
 
-    const success = await updateCreditCard(cardForDueDate.id, {
+    const updateData: any = {
       payment_due_date: newDueDate
-    });
+    };
+
+    // Only include statement_balance if provided
+    if (newStatementBalance && parseFloat(newStatementBalance) >= 0) {
+      updateData.statement_balance = parseFloat(newStatementBalance);
+    }
+
+    const success = await updateCreditCard(cardForDueDate.id, updateData);
 
     if (success) {
-      toast.success("Payment due date set successfully");
+      toast.success("Payment details updated successfully");
       setShowSetDueDateDialog(false);
       setCardForDueDate(null);
       setNewDueDate('');
+      setNewStatementBalance('');
     }
   };
 
@@ -396,6 +405,7 @@ export function CreditCards() {
                             onClick={() => {
                               setCardForDueDate(card);
                               setNewDueDate('');
+                              setNewStatementBalance('');
                               setShowSetDueDateDialog(true);
                             }}
                             className="flex items-center text-blue-600 hover:text-blue-700 hover:underline"
@@ -684,11 +694,11 @@ export function CreditCards() {
         <Dialog open={showSetDueDateDialog} onOpenChange={setShowSetDueDateDialog}>
           <DialogContent className="sm:max-w-[400px]">
             <DialogHeader>
-              <DialogTitle>Set Payment Due Date</DialogTitle>
+              <DialogTitle>Set Payment Details</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <p className="text-sm text-muted-foreground">
-                Set a payment due date for {cardForDueDate?.nickname || `${cardForDueDate?.institution_name} - ${cardForDueDate?.account_name}`}
+                Set payment details for {cardForDueDate?.nickname || `${cardForDueDate?.institution_name} - ${cardForDueDate?.account_name}`}
               </p>
               <div className="space-y-2">
                 <Label htmlFor="due_date">Payment Due Date</Label>
@@ -700,6 +710,25 @@ export function CreditCards() {
                   min={new Date().toISOString().split('T')[0]}
                 />
               </div>
+              <div className="space-y-2">
+                <Label htmlFor="statement_balance">Statement Balance (Optional)</Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+                  <Input
+                    id="statement_balance"
+                    type="number"
+                    placeholder="0.00"
+                    step="0.01"
+                    min="0"
+                    value={newStatementBalance}
+                    onChange={(e) => setNewStatementBalance(e.target.value)}
+                    className="pl-7"
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Leave blank if you don't want to set a statement balance
+                </p>
+              </div>
             </div>
             <div className="flex justify-end gap-2">
               <Button
@@ -708,6 +737,7 @@ export function CreditCards() {
                   setShowSetDueDateDialog(false);
                   setCardForDueDate(null);
                   setNewDueDate('');
+                  setNewStatementBalance('');
                 }}
               >
                 Cancel
@@ -716,7 +746,7 @@ export function CreditCards() {
                 onClick={handleSetDueDate}
                 disabled={!newDueDate}
               >
-                Set Due Date
+                Save Details
               </Button>
             </div>
           </DialogContent>
