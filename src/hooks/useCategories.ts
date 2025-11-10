@@ -1,7 +1,6 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 export interface Category {
   id: string;
@@ -12,68 +11,66 @@ export interface Category {
 }
 
 export function useCategories(type: 'expense' | 'income', isRecurring?: boolean) {
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const debounceTimerRef = useRef<NodeJS.Timeout>();
 
-  const fetchCategories = async (): Promise<Category[]> => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return [];
+  const fetchCategories = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
 
-    // Get user's account_id to filter categories properly
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('account_id')
-      .eq('user_id', user.id)
-      .maybeSingle();
+      // Get user's account_id to filter categories properly
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('account_id')
+        .eq('user_id', user.id)
+        .maybeSingle();
 
-    if (!profile?.account_id) {
-      console.error('[Categories] No account_id found for user');
-      return [];
-    }
+      if (!profile?.account_id) {
+        console.error('[Categories] No account_id found for user');
+        return;
+      }
 
-    let query = supabase
-      .from('categories')
-      .select('*')
-      .eq('type', type)
-      .eq('account_id', profile.account_id);
+      let query = supabase
+        .from('categories')
+        .select('*')
+        .eq('type', type)
+        .eq('account_id', profile.account_id);
 
-    const recurringFilter = isRecurring === true ? true : false;
-    query = query.eq('is_recurring', recurringFilter);
+      // IMPORTANT: Default to non-recurring (false) if not specified
+      // This ensures regular and recurring categories are completely separate
+      const recurringFilter = isRecurring === true ? true : false;
+      query = query.eq('is_recurring', recurringFilter);
 
-    const { data, error } = await query
-      .order('is_default', { ascending: false })
-      .order('name');
+      const { data, error } = await query
+        .order('is_default', { ascending: false })
+        .order('name');
 
-    if (error) {
+      if (error) throw error;
+      
+      // Deduplicate by NAME (case-insensitive) for the same account
+      const uniqueCategories = (data || []).reduce((acc, category) => {
+        const normalizedName = category.name.toLowerCase().trim();
+        if (!acc.find(c => c.name.toLowerCase().trim() === normalizedName)) {
+          acc.push(category as Category);
+        }
+        return acc;
+      }, [] as Category[]);
+      
+      console.log('[Categories] Type:', type, 'Recurring:', recurringFilter, 'Account:', profile.account_id, 'Fetched:', uniqueCategories.length);
+      setCategories(uniqueCategories);
+    } catch (error) {
       console.error('Error fetching categories:', error);
       toast({
         title: "Error",
         description: "Failed to load categories",
         variant: "destructive",
       });
-      return [];
+    } finally {
+      setIsLoading(false);
     }
-    
-    // Deduplicate by NAME (case-insensitive) for the same account
-    const uniqueCategories = (data || []).reduce((acc, category) => {
-      const normalizedName = category.name.toLowerCase().trim();
-      if (!acc.find(c => c.name.toLowerCase().trim() === normalizedName)) {
-        acc.push(category as Category);
-      }
-      return acc;
-    }, [] as Category[]);
-    
-    console.log('[Categories] Type:', type, 'Recurring:', recurringFilter, 'Account:', profile.account_id, 'Fetched:', uniqueCategories.length);
-    return uniqueCategories;
   };
-
-  // Use React Query with 60-minute staleTime (categories rarely change)
-  const { data: categories = [], isLoading, refetch } = useQuery({
-    queryKey: ['categories', type, isRecurring],
-    queryFn: fetchCategories,
-    staleTime: 60 * 60 * 1000, // 60 minutes
-  });
 
   const addCategory = async (name: string, recurring = false) => {
     try {
@@ -151,8 +148,18 @@ export function useCategories(type: 'expense' | 'income', isRecurring?: boolean)
         description: `Category "${capitalizedName}" added successfully`,
       });
 
-      // Invalidate query
-      await queryClient.invalidateQueries({ queryKey: ['categories', type, isRecurring] });
+      // Optimistically add to local state so UIs reflect it immediately
+      setCategories((prev) => {
+        const norm = normalizedName.toLowerCase().trim();
+        if (prev.some((c) => c.name.toLowerCase().trim() === norm)) return prev;
+        const next = [...prev, data as Category];
+        // Keep default categories surfaced and sort alphabetically
+        next.sort((a, b) => (Number(b.is_default) - Number(a.is_default)) || a.name.localeCompare(b.name));
+        return next;
+      });
+
+      // Background refresh to stay in sync with server and realtime
+      fetchCategories();
       return data;
     } catch (error: any) {
       console.error('[Category] Failed to add category:', error);
@@ -179,7 +186,7 @@ export function useCategories(type: 'expense' | 'income', isRecurring?: boolean)
         description: "Category deleted successfully",
       });
 
-      await queryClient.invalidateQueries({ queryKey: ['categories', type, isRecurring] });
+      await fetchCategories();
     } catch (error: any) {
       console.error('Error deleting category:', error);
       toast({
@@ -190,23 +197,9 @@ export function useCategories(type: 'expense' | 'income', isRecurring?: boolean)
     }
   };
 
-  // Set up debounced real-time updates
   useEffect(() => {
     console.log('[Categories] Setting up subscription for type:', type, 'isRecurring:', isRecurring);
-
-    const debouncedRefetch = () => {
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
-      
-      // Wait 3 seconds before refetching (categories rarely change)
-      debounceTimerRef.current = setTimeout(() => {
-        queryClient.invalidateQueries({ 
-          queryKey: ['categories', type, isRecurring],
-          exact: true 
-        });
-      }, 3000);
-    };
+    fetchCategories();
 
     const channel = supabase
       .channel(`categories_changes_${type}_${isRecurring}_${Date.now()}`)
@@ -220,25 +213,22 @@ export function useCategories(type: 'expense' | 'income', isRecurring?: boolean)
         },
         (payload) => {
           console.log('[Categories] Realtime update received:', { type, event: payload.eventType });
-          debouncedRefetch();
+          fetchCategories();
         }
       )
       .subscribe();
 
     return () => {
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
       console.log('[Categories] Cleaning up subscription for type:', type);
       supabase.removeChannel(channel);
     };
-  }, [type, isRecurring, queryClient]);
+  }, [type, isRecurring]);
 
   return {
     categories,
     isLoading,
     addCategory,
     deleteCategory,
-    refetch,
+    refetch: fetchCategories,
   };
 }

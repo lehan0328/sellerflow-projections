@@ -1,8 +1,7 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
 import { toast } from "sonner";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 export interface CreditCard {
   id: string;
@@ -34,35 +33,37 @@ export interface CreditCard {
 }
 
 export const useCreditCards = () => {
+  const [creditCards, setCreditCards] = useState<CreditCard[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
-  const queryClient = useQueryClient();
-  const debounceTimerRef = useRef<NodeJS.Timeout>();
 
-  const fetchCreditCards = async (): Promise<CreditCard[]> => {
-    if (!user) return [];
-
-    const { data, error } = await supabase
-      .from("credit_cards")
-      .select("*")
-      .eq("is_active", true)
-      .order("created_at", { ascending: false });
-
-    if (error) {
-      console.error("Error fetching credit cards:", error);
-      toast.error("Failed to fetch credit cards");
-      return [];
+  const fetchCreditCards = async () => {
+    if (!user) {
+      setIsLoading(false);
+      return;
     }
 
-    return (data || []) as CreditCard[];
-  };
+    try {
+      const { data, error } = await supabase
+        .from("credit_cards")
+        .select("*")
+        .eq("is_active", true)
+        .order("created_at", { ascending: false });
 
-  // Use React Query with 30-minute staleTime (credit cards rarely change)
-  const { data: creditCards = [], isLoading, refetch } = useQuery({
-    queryKey: ['credit-cards', user?.id],
-    queryFn: fetchCreditCards,
-    enabled: !!user,
-    staleTime: 30 * 60 * 1000, // 30 minutes
-  });
+      if (error) {
+        console.error("Error fetching credit cards:", error);
+        toast.error("Failed to fetch credit cards");
+        return;
+      }
+
+      setCreditCards((data || []) as CreditCard[]);
+    } catch (error) {
+      console.error("Error:", error);
+      toast.error("Failed to fetch credit cards");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const addCreditCard = async (cardData: Omit<CreditCard, "id" | "created_at" | "updated_at" | "user_id" | "masked_account_number">) => {
     if (!user) {
@@ -120,7 +121,7 @@ export const useCreditCards = () => {
         return false;
       }
 
-      await queryClient.invalidateQueries({ queryKey: ['credit-cards', user.id] });
+      await fetchCreditCards();
       toast.success("Credit card updated successfully");
       return true;
     } catch (error) {
@@ -172,7 +173,7 @@ export const useCreditCards = () => {
         return false;
       }
 
-      await queryClient.invalidateQueries({ queryKey: ['credit-cards', user.id] });
+      setCreditCards(prev => prev.filter(card => card.id !== cardId));
       toast.success("Credit card removed successfully!");
       return true;
     } catch (error) {
@@ -198,23 +199,13 @@ export const useCreditCards = () => {
     return sum + (effectiveLimit - card.balance);
   }, 0);
 
-  // Set up debounced real-time updates
+  useEffect(() => {
+    fetchCreditCards();
+  }, [user]);
+
+  // Set up real-time updates
   useEffect(() => {
     if (!user) return;
-
-    const debouncedRefetch = () => {
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
-      
-      // Wait 3 seconds before refetching (credit cards rarely change)
-      debounceTimerRef.current = setTimeout(() => {
-        queryClient.invalidateQueries({ 
-          queryKey: ['credit-cards', user.id],
-          exact: true 
-        });
-      }, 3000);
-    };
 
     const channel = supabase
       .channel('credit-cards-changes')
@@ -225,17 +216,16 @@ export const useCreditCards = () => {
           schema: 'public',
           table: 'credit_cards',
         },
-        debouncedRefetch
+        () => {
+          fetchCreditCards();
+        }
       )
       .subscribe();
 
     return () => {
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
       supabase.removeChannel(channel);
     };
-  }, [user, queryClient]);
+  }, [user]);
 
   return {
     creditCards,
@@ -247,6 +237,6 @@ export const useCreditCards = () => {
     updateCreditCard,
     removeCreditCard,
     syncCreditCard,
-    refetch,
+    refetch: fetchCreditCards,
   };
 };

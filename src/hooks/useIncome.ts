@@ -1,8 +1,7 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
-import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 export interface IncomeItem {
   id: string;
@@ -22,9 +21,9 @@ export interface IncomeItem {
 }
 
 export const useIncome = () => {
+  const [incomeItems, setIncomeItems] = useState<IncomeItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
-  const queryClient = useQueryClient();
-  const debounceTimerRef = useRef<NodeJS.Timeout>();
 
   // Helper function to format date for database without timezone issues
   const formatDateForDB = (date: Date) => {
@@ -41,66 +40,71 @@ export const useIncome = () => {
   };
 
   // Fetch income items from database
-  const fetchIncome = useCallback(async (): Promise<IncomeItem[]> => {
-    if (!user) return [];
-
-    // Get user's account_id for proper filtering
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('account_id')
-      .eq('user_id', user.id)
-      .maybeSingle();
-
-    if (!profile?.account_id) {
-      console.error('[Income] No account_id found');
-      return [];
+  const fetchIncome = useCallback(async () => {
+    if (!user) {
+      setIncomeItems([]);
+      setIsLoading(false);
+      return;
     }
 
-    const { data, error } = await supabase
-      .from('income')
-      .select('*')
-      .eq('account_id', profile.account_id)
-      .eq('archived', false)
-      .order('payment_date', { ascending: false });
+    try {
+      // Get user's account_id for proper filtering
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('account_id')
+        .eq('user_id', user.id)
+        .maybeSingle();
 
-    if (error) {
+      if (!profile?.account_id) {
+        console.error('[Income] No account_id found');
+        setIncomeItems([]);
+        setIsLoading(false);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('income')
+        .select('*')
+        .eq('account_id', profile.account_id)
+        .eq('archived', false)
+        .order('payment_date', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching income:', error);
+        toast.error('Failed to load income data');
+        return;
+      }
+
+      const formattedData = data.map(item => ({
+        id: item.id,
+        description: item.description,
+        amount: Number(item.amount),
+        paymentDate: parseDateFromDB(item.payment_date),
+        source: item.source,
+        status: item.status as 'received' | 'pending' | 'overdue',
+        category: item.category || '',
+        isRecurring: item.is_recurring,
+        recurringFrequency: item.recurring_frequency as any,
+        notes: item.notes || undefined,
+        customerId: item.customer_id || undefined,
+        createdAt: new Date(item.created_at),
+        updatedAt: new Date(item.updated_at)
+      }));
+
+      // Deduplicate by ID
+      const uniqueItems = formattedData.filter((item, index, self) => 
+        index === self.findIndex(i => i.id === item.id)
+      );
+
+      console.log('[Income] Account:', profile.account_id, 'Fetched:', data.length, 'Unique:', uniqueItems.length);
+      setIncomeItems(uniqueItems);
+    } catch (error) {
       console.error('Error fetching income:', error);
       toast.error('Failed to load income data');
-      return [];
+    } finally {
+      setIsLoading(false);
     }
-
-    const formattedData = data.map(item => ({
-      id: item.id,
-      description: item.description,
-      amount: Number(item.amount),
-      paymentDate: parseDateFromDB(item.payment_date),
-      source: item.source,
-      status: item.status as 'received' | 'pending' | 'overdue',
-      category: item.category || '',
-      isRecurring: item.is_recurring,
-      recurringFrequency: item.recurring_frequency as any,
-      notes: item.notes || undefined,
-      customerId: item.customer_id || undefined,
-      createdAt: new Date(item.created_at),
-      updatedAt: new Date(item.updated_at)
-    }));
-
-    // Deduplicate by ID
-    const uniqueItems = formattedData.filter((item, index, self) => 
-      index === self.findIndex(i => i.id === item.id)
-    );
-
-    console.log('[Income] Account:', profile.account_id, 'Fetched:', data.length, 'Unique:', uniqueItems.length);
-    return uniqueItems;
   }, [user]);
-
-  // Use React Query with 15-minute staleTime
-  const { data: incomeItems = [], isLoading, refetch } = useQuery({
-    queryKey: ['income', user?.id],
-    queryFn: fetchIncome,
-    enabled: !!user,
-    staleTime: 15 * 60 * 1000, // 15 minutes
-  });
 
   // Add new income item
   const addIncome = async (incomeData: Omit<IncomeItem, 'id' | 'createdAt' | 'updatedAt'>) => {
@@ -165,7 +169,7 @@ export const useIncome = () => {
         updatedAt: new Date(data.updated_at)
       };
 
-      await queryClient.invalidateQueries({ queryKey: ['income', user.id] });
+      setIncomeItems(prev => [newItem, ...prev]);
       toast.success('Income added successfully');
       return newItem;
     } catch (error) {
@@ -220,9 +224,9 @@ export const useIncome = () => {
         return false;
       }
 
-      // If archived, invalidate query
+      // If archived, remove from local state instead of updating
       if (data.archived) {
-        await queryClient.invalidateQueries({ queryKey: ['income', user.id] });
+        setIncomeItems(prev => prev.filter(item => item.id !== id));
         toast.success('Income marked as received and archived');
         return true;
       }
@@ -243,7 +247,7 @@ export const useIncome = () => {
         updatedAt: new Date(data.updated_at)
       };
 
-      await queryClient.invalidateQueries({ queryKey: ['income', user.id] });
+      setIncomeItems(prev => prev.map(item => item.id === id ? updatedItem : item));
       toast.success('Income updated successfully');
       return true;
     } catch (error) {
@@ -316,7 +320,7 @@ export const useIncome = () => {
         // Don't fail the whole operation, just log
       }
 
-      await queryClient.invalidateQueries({ queryKey: ['income', user.id] });
+      setIncomeItems(prev => prev.filter(item => item.id !== id));
       toast.success('Income deleted successfully');
       return true;
     } catch (error) {
@@ -326,26 +330,22 @@ export const useIncome = () => {
     }
   };
 
-  // Set up debounced real-time updates
+  // Refresh income data
+  const refetch = () => {
+    fetchIncome();
+  };
+
+  // Load income on mount and when auth changes
+  useEffect(() => {
+    fetchIncome();
+  }, [fetchIncome]);
+
+  // Realtime subscription for income
   useEffect(() => {
     let channel: any;
     const setup = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-
-      const debouncedRefetch = () => {
-        if (debounceTimerRef.current) {
-          clearTimeout(debounceTimerRef.current);
-        }
-        
-        // Wait 1.5 seconds before refetching
-        debounceTimerRef.current = setTimeout(() => {
-          queryClient.invalidateQueries({ 
-            queryKey: ['income', user.id],
-            exact: true 
-          });
-        }, 1500);
-      };
 
       channel = supabase
         .channel('income-changes')
@@ -353,20 +353,20 @@ export const useIncome = () => {
           event: '*',
           schema: 'public',
           table: 'income',
-        }, debouncedRefetch)
+        }, () => {
+          console.log('[Income] Realtime update received, refetching...');
+          fetchIncome();
+        })
         .subscribe();
     };
     setup();
     return () => {
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
       if (channel) {
         console.log('[Income] Cleaning up realtime subscription');
         supabase.removeChannel(channel);
       }
     };
-  }, [queryClient]);
+  }, [fetchIncome]);
 
   return {
     incomeItems,

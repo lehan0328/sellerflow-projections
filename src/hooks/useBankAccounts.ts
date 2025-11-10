@@ -1,8 +1,7 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
 import { toast } from "sonner";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 export interface BankAccount {
   id: string;
@@ -25,81 +24,89 @@ export interface BankAccount {
 }
 
 export const useBankAccounts = () => {
+  const [accounts, setAccounts] = useState<BankAccount[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
-  const queryClient = useQueryClient();
-  const debounceTimerRef = useRef<NodeJS.Timeout>();
 
-  const fetchAccounts = async (): Promise<BankAccount[]> => {
-    if (!user) return [];
+  const fetchAccounts = async () => {
+    if (!user) {
+      setIsLoading(false);
+      return;
+    }
 
-    // Query the bank_accounts table directly (RLS policies ensure proper access control)
-    const { data, error } = await supabase
-      .from("bank_accounts")
-      .select("*")
-      .eq("is_active", true)
-      .order("created_at", { ascending: false });
+    try {
+      // Query the bank_accounts table directly (RLS policies ensure proper access control)
+      const { data, error } = await supabase
+        .from("bank_accounts")
+        .select("*")
+        .eq("is_active", true)
+        .order("created_at", { ascending: false });
 
-    if (error) {
-      console.error("Error fetching bank accounts:", error);
+      if (error) {
+        console.error("Error fetching bank accounts:", error);
+        toast.error("Failed to fetch bank accounts");
+        return;
+      }
+
+      // Fetch pending transactions to calculate true available balance
+      const { data: pendingTransactions, error: pendingError } = await supabase
+        .from("bank_transactions")
+        .select("bank_account_id, amount")
+        .eq("pending", true)
+        .eq("archived", false);
+
+      if (pendingError) {
+        console.error("Error fetching pending transactions:", pendingError);
+      }
+
+      // Calculate pending totals per account
+      // NOTE: Plaid's available_balance ALREADY includes pending transactions
+      // So we should NOT subtract them again. Only use this for display/awareness.
+      const pendingByAccount = (pendingTransactions || []).reduce((acc, txn) => {
+        if (!acc[txn.bank_account_id]) {
+          acc[txn.bank_account_id] = 0;
+        }
+        // Just track the pending amount for display
+        acc[txn.bank_account_id] += Math.abs(txn.amount);
+        return acc;
+      }, {} as Record<string, number>);
+
+      // Use Plaid's balances directly - they already account for pending transactions
+      const adjustedAccounts = (data || []).map(account => {
+        const pendingAmount = pendingByAccount[account.id] || 0;
+        
+        // Use the balance from Plaid directly - it's already accurate
+        const trueAvailable = account.available_balance ?? account.balance;
+        
+        console.log(`Account ${account.account_name}: Balance: $${account.balance}, Available: $${trueAvailable}, Pending noted: $${pendingAmount}`);
+        
+        return {
+          ...account,
+          available_balance: trueAvailable
+        };
+      });
+
+      // Deduplicate accounts by plaid_account_id (keep the most recent one)
+      const uniqueAccounts = adjustedAccounts.reduce((acc, account) => {
+        const key = account.plaid_account_id || account.id;
+        const existing = acc.get(key);
+        
+        // Keep the most recent account or the one with a plaid_account_id
+        if (!existing || new Date(account.created_at) > new Date(existing.created_at)) {
+          acc.set(key, account);
+        }
+        
+        return acc;
+      }, new Map());
+
+      setAccounts(Array.from(uniqueAccounts.values()) as BankAccount[]);
+    } catch (error) {
+      console.error("Error:", error);
       toast.error("Failed to fetch bank accounts");
-      return [];
+    } finally {
+      setIsLoading(false);
     }
-
-    // Fetch pending transactions to calculate true available balance
-    const { data: pendingTransactions, error: pendingError } = await supabase
-      .from("bank_transactions")
-      .select("bank_account_id, amount")
-      .eq("pending", true)
-      .eq("archived", false);
-
-    if (pendingError) {
-      console.error("Error fetching pending transactions:", pendingError);
-    }
-
-    // Calculate pending totals per account
-    const pendingByAccount = (pendingTransactions || []).reduce((acc, txn) => {
-      if (!acc[txn.bank_account_id]) {
-        acc[txn.bank_account_id] = 0;
-      }
-      acc[txn.bank_account_id] += Math.abs(txn.amount);
-      return acc;
-    }, {} as Record<string, number>);
-
-    // Use Plaid's balances directly - they already account for pending transactions
-    const adjustedAccounts = (data || []).map(account => {
-      const pendingAmount = pendingByAccount[account.id] || 0;
-      const trueAvailable = account.available_balance ?? account.balance;
-      
-      console.log(`Account ${account.account_name}: Balance: $${account.balance}, Available: $${trueAvailable}, Pending noted: $${pendingAmount}`);
-      
-      return {
-        ...account,
-        available_balance: trueAvailable
-      };
-    });
-
-    // Deduplicate accounts by plaid_account_id (keep the most recent one)
-    const uniqueAccounts = adjustedAccounts.reduce((acc, account) => {
-      const key = account.plaid_account_id || account.id;
-      const existing = acc.get(key);
-      
-      if (!existing || new Date(account.created_at) > new Date(existing.created_at)) {
-        acc.set(key, account);
-      }
-      
-      return acc;
-    }, new Map());
-
-    return Array.from(uniqueAccounts.values()) as BankAccount[];
   };
-
-  // Use React Query with 10-minute staleTime (accounts change ~once per hour)
-  const { data: accounts = [], isLoading, refetch } = useQuery({
-    queryKey: ['bank-accounts', user?.id],
-    queryFn: fetchAccounts,
-    enabled: !!user,
-    staleTime: 10 * 60 * 1000, // 10 minutes - balanced for hourly changes
-  });
 
   const addAccount = async (accountData: Omit<BankAccount, "id" | "created_at" | "updated_at" | "user_id" | "masked_account_number">) => {
     if (!user) {
@@ -148,8 +155,8 @@ export const useBankAccounts = () => {
         return false;
       }
 
-      // Invalidate query to refresh accounts
-      await queryClient.invalidateQueries({ queryKey: ['bank-accounts', user.id] });
+      // Refresh accounts to show the new account
+      await fetchAccounts();
       toast.success("Bank account added successfully!");
       return true;
     } catch (error) {
@@ -186,8 +193,8 @@ export const useBankAccounts = () => {
         return false;
       }
 
-      // Invalidate query to refresh accounts
-      await queryClient.invalidateQueries({ queryKey: ['bank-accounts', user.id] });
+      // Refresh accounts to show the updated data
+      await fetchAccounts();
       return true;
     } catch (error) {
       console.error("Error:", error);
@@ -214,7 +221,7 @@ export const useBankAccounts = () => {
         return false;
       }
 
-      await queryClient.invalidateQueries({ queryKey: ['bank-accounts', user.id] });
+      setAccounts(prev => prev.filter(account => account.id !== accountId));
       toast.success("Bank account removed successfully!");
       return true;
     } catch (error) {
@@ -232,24 +239,13 @@ export const useBankAccounts = () => {
 
   const totalBalance = accounts.reduce((sum, account) => sum + account.balance, 0);
 
-  // Set up debounced real-time updates
+  useEffect(() => {
+    fetchAccounts();
+  }, [user]);
+
+  // Set up real-time updates - use the secure view
   useEffect(() => {
     if (!user) return;
-
-    const debouncedRefetch = () => {
-      // Clear existing timer
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
-      
-      // Wait 500ms before refetching to batch multiple changes
-      debounceTimerRef.current = setTimeout(() => {
-        queryClient.invalidateQueries({ 
-          queryKey: ['bank-accounts', user.id],
-          exact: true 
-        });
-      }, 500); // 500ms debounce - more responsive
-    };
 
     const channel = supabase
       .channel('bank-accounts-changes')
@@ -260,7 +256,9 @@ export const useBankAccounts = () => {
           schema: 'public',
           table: 'bank_accounts',
         },
-        debouncedRefetch
+        () => {
+          fetchAccounts();
+        }
       )
       .on(
         'postgres_changes',
@@ -269,17 +267,17 @@ export const useBankAccounts = () => {
           schema: 'public',
           table: 'bank_transactions',
         },
-        debouncedRefetch
+        () => {
+          // Refetch accounts when transactions change to recalculate available balance
+          fetchAccounts();
+        }
       )
       .subscribe();
 
     return () => {
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
       supabase.removeChannel(channel);
     };
-  }, [user, queryClient]);
+  }, [user]);
 
   return {
     accounts,
@@ -289,6 +287,6 @@ export const useBankAccounts = () => {
     updateAccount,
     removeAccount,
     syncAccount,
-    refetch,
+    refetch: fetchAccounts,
   };
 };

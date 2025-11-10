@@ -80,10 +80,10 @@ import DebugProjections from "./pages/DebugProjections";
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 2 * 60 * 1000, // 2 minutes - balanced freshness
+      staleTime: 5 * 60 * 1000, // 5 minutes - data stays fresh
       gcTime: 10 * 60 * 1000,   // 10 minutes - cached data lifetime (formerly cacheTime)
       refetchOnWindowFocus: false, // Don't refetch on tab switch
-      refetchOnMount: true, // Always fetch fresh data on mount
+      refetchOnMount: false, // Use cache if available
       retry: 1, // Only retry once on failure
     },
   },

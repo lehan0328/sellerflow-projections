@@ -1,7 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 export interface Customer {
   id: string;
@@ -12,38 +11,37 @@ export interface Customer {
 }
 
 export const useCustomers = () => {
-  const queryClient = useQueryClient();
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const fetchCustomers = async (): Promise<Customer[]> => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return [];
+  const fetchCustomers = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
 
-    const { data, error } = await supabase
-      .from('customers')
-      .select('*')
-      .order('name');
+      const { data, error } = await supabase
+        .from('customers')
+        .select('*')
+        .order('name');
 
-    if (error) {
+      if (error) throw error;
+
+      const formattedCustomers = data?.map(customer => ({
+        id: customer.id,
+        name: customer.name,
+        paymentTerms: customer.payment_terms,
+        netTermsDays: customer.net_terms_days,
+        category: customer.category
+      })) || [];
+
+      setCustomers(formattedCustomers);
+    } catch (error) {
       console.error('Error fetching customers:', error);
       toast.error('Failed to fetch customers');
-      return [];
+    } finally {
+      setLoading(false);
     }
-
-    return data?.map(customer => ({
-      id: customer.id,
-      name: customer.name,
-      paymentTerms: customer.payment_terms,
-      netTermsDays: customer.net_terms_days,
-      category: customer.category
-    })) || [];
   };
-
-  // Use React Query with 30-minute staleTime (customers rarely change)
-  const { data: customers = [], isLoading: loading, refetch } = useQuery({
-    queryKey: ['customers'],
-    queryFn: fetchCustomers,
-    staleTime: 30 * 60 * 1000, // 30 minutes
-  });
 
   const addCustomer = async (customerData: Omit<Customer, 'id'>) => {
     try {
@@ -77,7 +75,7 @@ export const useCustomers = () => {
         category: data.category
       };
 
-      await queryClient.invalidateQueries({ queryKey: ['customers'] });
+      setCustomers(prev => [newCustomer, ...prev].sort((a, b) => a.name.localeCompare(b.name)));
       return newCustomer;
     } catch (error) {
       console.error('Error adding customer:', error);
@@ -95,7 +93,7 @@ export const useCustomers = () => {
 
       if (error) throw error;
 
-      await queryClient.invalidateQueries({ queryKey: ['customers'] });
+      setCustomers(prev => prev.filter(c => c.id !== customerId));
       toast.success('Customer deleted successfully');
     } catch (error) {
       console.error('Error deleting customer:', error);
@@ -133,7 +131,7 @@ export const useCustomers = () => {
         category: data.category
       };
 
-      await queryClient.invalidateQueries({ queryKey: ['customers'] });
+      setCustomers(prev => prev.map(c => c.id === customerId ? updatedCustomer : c).sort((a, b) => a.name.localeCompare(b.name)));
       toast.success('Customer updated successfully');
       return updatedCustomer;
     } catch (error) {
@@ -143,12 +141,16 @@ export const useCustomers = () => {
     }
   };
 
+  useEffect(() => {
+    fetchCustomers();
+  }, []);
+
   return {
     customers,
     loading,
     addCustomer,
     updateCustomer,
     deleteCustomer,
-    refetch
+    refetch: fetchCustomers
   };
 };

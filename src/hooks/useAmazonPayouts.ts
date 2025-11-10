@@ -1,8 +1,7 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
 import { toast } from "sonner";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 export interface AmazonPayout {
   id: string;
@@ -52,177 +51,192 @@ export interface AmazonPayout {
 
 export const useAmazonPayouts = () => {
   const { user } = useAuth();
-  const queryClient = useQueryClient();
-  const debounceTimerRef = useRef<NodeJS.Timeout>();
+  const [amazonPayouts, setAmazonPayouts] = useState<AmazonPayout[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [forecastsEnabled, setForecastsEnabled] = useState(true);
   const [advancedModelingEnabled, setAdvancedModelingEnabled] = useState(false);
 
-  const fetchAmazonPayouts = async (): Promise<AmazonPayout[]> => {
-    if (!user) return [];
-
-    console.log('[fetchAmazonPayouts] Fetching Amazon payouts for user:', user.id);
-    
-    // Check if forecasts and advanced modeling are enabled
-    const { data: settings } = await supabase
-      .from('user_settings')
-      .select('forecasts_enabled, advanced_modeling_enabled')
-      .eq('user_id', user.id)
-      .maybeSingle();
-
-    const forecastsEnabled = settings?.forecasts_enabled ?? true;
-    const advancedModelingEnabled = settings?.advanced_modeling_enabled ?? false;
-
-    const { data, error } = await supabase
-      .from("amazon_payouts")
-      .select(`
-        *,
-        amazon_accounts(
-          account_name,
-          marketplace_name,
-          is_active,
-          payout_frequency
-        )
-      `)
-      .eq("user_id", user.id)
-      .order("payout_date", { ascending: false });
-    
-    console.log('[fetchAmazonPayouts] Sample payout with modeling_method:', data?.[0]?.modeling_method);
-    console.log('[fetchAmazonPayouts] Query result:', { count: data?.length, error });
-
-    if (error) {
-      console.error("Error fetching Amazon payouts:", error);
-      toast.error("Failed to load Amazon payouts");
-      return [];
+  const fetchAmazonPayouts = async () => {
+    if (!user) {
+      setIsLoading(false);
+      return;
     }
 
-    // Filter payouts based on settings
-    const filteredPayouts = (data || []).filter((payout) => {
-      // Always include open settlements (estimated)
-      if (payout.status === 'estimated') {
-        const rawData = payout.raw_settlement_data as any;
-        const hasEndDate = !!(rawData?.FinancialEventGroupEnd || rawData?.settlement_end_date);
-        
-        if (!hasEndDate) {
-          console.log('[fetchAmazonPayouts] Including open settlement:', {
+    try {
+      console.log('[fetchAmazonPayouts] Fetching Amazon payouts for user:', user.id);
+      
+      // Check if forecasts and advanced modeling are enabled
+      const { data: settings } = await supabase
+        .from('user_settings')
+        .select('forecasts_enabled, advanced_modeling_enabled')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      const forecastsEnabled = settings?.forecasts_enabled ?? true;
+      const advancedModelingEnabled = settings?.advanced_modeling_enabled ?? false;
+
+      const { data, error } = await supabase
+        .from("amazon_payouts")
+        .select(`
+          *,
+          amazon_accounts(
+            account_name,
+            marketplace_name,
+            is_active,
+            payout_frequency
+          )
+        `)
+        .eq("user_id", user.id)
+        .order("payout_date", { ascending: false });
+      
+      console.log('[fetchAmazonPayouts] Sample payout with modeling_method:', data?.[0]?.modeling_method);
+      
+      console.log('[fetchAmazonPayouts] Query result:', { count: data?.length, error });
+
+      if (error) {
+        console.error("Error fetching Amazon payouts:", error);
+        toast.error("Failed to load Amazon payouts");
+        return;
+      }
+
+      // Filter payouts based on settings
+      const filteredPayouts = (data || []).filter((payout) => {
+        // Always include open settlements (estimated) - let the component decide display logic
+        if (payout.status === 'estimated') {
+          const rawData = payout.raw_settlement_data as any;
+          const hasEndDate = !!(rawData?.FinancialEventGroupEnd || rawData?.settlement_end_date);
+          
+          // Always return open settlements (no end date)
+          if (!hasEndDate) {
+            console.log('[fetchAmazonPayouts] Including open settlement:', {
+              id: payout.id,
+              settlement_id: payout.settlement_id,
+              amount: payout.total_amount,
+              status: 'open (no end date)'
+            });
+            return true;
+          }
+          
+          // For closed estimated settlements, apply date filtering
+          const settlementStartStr = rawData?.settlement_start_date || rawData?.FinancialEventGroupStart;
+          
+          if (!settlementStartStr) {
+            console.log('[fetchAmazonPayouts] No start date for closed estimated settlement, excluding:', payout.id);
+            return false;
+          }
+          
+          // Calculate close date: start date + 14 days
+          const settlementStartDate = new Date(settlementStartStr);
+          const settlementCloseDate = new Date(settlementStartDate);
+          settlementCloseDate.setDate(settlementCloseDate.getDate() + 14);
+          
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          settlementCloseDate.setHours(0, 0, 0, 0);
+          
+          // Only show closed estimated settlements that close today or in the future
+          if (settlementCloseDate < today) {
+            console.log('[fetchAmazonPayouts] Filtering past closed estimated settlement:', {
+              id: payout.id,
+              start_date: settlementStartStr,
+              close_date: settlementCloseDate.toISOString().split('T')[0],
+              amount: payout.total_amount,
+              reason: 'Settlement already closed'
+            });
+            return false;
+          }
+          
+          console.log('[fetchAmazonPayouts] Keeping future estimated settlement:', {
             id: payout.id,
-            settlement_id: payout.settlement_id,
-            amount: payout.total_amount,
-            status: 'open (no end date)'
+            status: payout.status,
+            start_date: settlementStartStr,
+            close_date: settlementCloseDate.toISOString().split('T')[0],
+            amount: payout.total_amount
           });
           return true;
         }
         
-        // For closed estimated settlements, apply date filtering
-        const settlementStartStr = rawData?.settlement_start_date || rawData?.FinancialEventGroupStart;
-        
-        if (!settlementStartStr) {
-          console.log('[fetchAmazonPayouts] No start date for closed estimated settlement, excluding:', payout.id);
-          return false;
-        }
-        
-        const settlementStartDate = new Date(settlementStartStr);
-        const settlementCloseDate = new Date(settlementStartDate);
-        settlementCloseDate.setDate(settlementCloseDate.getDate() + 14);
-        
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        settlementCloseDate.setHours(0, 0, 0, 0);
-        
-        if (settlementCloseDate < today) {
-          console.log('[fetchAmazonPayouts] Filtering past closed estimated settlement:', {
+        // Always show confirmed settlements
+        if (payout.status === 'confirmed') {
+          console.log('[fetchAmazonPayouts] Keeping confirmed settlement:', {
             id: payout.id,
-            start_date: settlementStartStr,
-            close_date: settlementCloseDate.toISOString().split('T')[0],
-            amount: payout.total_amount,
-            reason: 'Settlement already closed'
+            status: payout.status,
+            date: payout.payout_date,
+            amount: payout.total_amount
           });
-          return false;
+          return true;
         }
         
-        console.log('[fetchAmazonPayouts] Keeping future estimated settlement:', {
-          id: payout.id,
-          status: payout.status,
-          start_date: settlementStartStr,
-          close_date: settlementCloseDate.toISOString().split('T')[0],
-          amount: payout.total_amount
-        });
-        return true;
-      }
-      
-      if (payout.status === 'confirmed') {
-        console.log('[fetchAmazonPayouts] Keeping confirmed settlement:', {
-          id: payout.id,
-          status: payout.status,
-          date: payout.payout_date,
-          amount: payout.total_amount
-        });
-        return true;
-      }
-      
-      if (payout.status === 'forecasted') {
-        console.log('[fetchAmazonPayouts] Including forecasted payout:', {
-          id: payout.id,
-          date: payout.payout_date,
-          amount: payout.total_amount
-        });
-        return true;
-      }
-      
-      if (payout.status === 'rolled_over') {
-        console.log('[fetchAmazonPayouts] Including rolled_over forecast:', {
-          id: payout.id,
-          date: payout.payout_date,
-          amount: payout.total_amount,
-          note: 'This forecast was rolled into a future date'
-        });
-        return true;
-      }
-      
-      return true;
-    });
-
-    console.log('[fetchAmazonPayouts] Filtered payouts:', filteredPayouts.length, 'total');
-    console.log('[fetchAmazonPayouts] Open settlements:', filteredPayouts.filter(p => p.status === 'estimated').length);
-
-    // Parse and enrich with metadata
-    return filteredPayouts.map(payout => {
-      const rawData = payout.raw_settlement_data as any;
-      const metadata = rawData?.forecast_metadata;
-      
-      return {
-        ...payout,
-        status: payout.status as "confirmed" | "estimated" | "processing" | "forecasted" | "rolled_over",
-        payout_type: payout.payout_type as "bi-weekly" | "reserve-release" | "adjustment" | "daily",
-        amazon_accounts: payout.amazon_accounts ? {
-          ...payout.amazon_accounts,
-          payout_frequency: payout.amazon_accounts.payout_frequency as 'daily' | 'bi-weekly' | undefined
-        } : undefined,
+        // Always include mathematical forecasts - let the consuming components decide display logic
+        // The forecast toggle should only affect calculations, not data availability
+        if (payout.status === 'forecasted') {
+          console.log('[fetchAmazonPayouts] Including forecasted payout:', {
+            id: payout.id,
+            date: payout.payout_date,
+            amount: payout.total_amount
+          });
+          return true;
+        }
         
-        // Daily forecast metadata
-        backlog_amount: metadata?.backlog_amount || 0,
-        daily_unlock_amount: metadata?.daily_unlock_amount || 0,
-        safety_adjusted_amount: metadata?.safety_adjusted_amount || 0,
-        days_since_cashout: metadata?.days_since_cashout || 0,
-        last_cashout_date: metadata?.last_cashout_date,
-        growth_factor: metadata?.growth_factor || 1.0,
-        avg_daily_unlock: metadata?.avg_daily_unlock || 0,
-        available_for_daily_transfer: metadata?.safety_adjusted_amount || metadata?.daily_unlock_amount || 0,
+        // Include rolled-over forecasts (these are past forecasts that were combined with future dates)
+        // They should display on the chart to show rollover history
+        if (payout.status === 'rolled_over') {
+          console.log('[fetchAmazonPayouts] Including rolled_over forecast:', {
+            id: payout.id,
+            date: payout.payout_date,
+            amount: payout.total_amount,
+            note: 'This forecast was rolled into a future date'
+          });
+          return true;
+        }
         
-        // Bi-weekly forecast metadata
-        settlement_start_date: (payout as any).settlement_start_date || metadata?.settlement_period?.start,
-        settlement_end_date: (payout as any).settlement_end_date || metadata?.settlement_period?.end,
-        days_accumulated: metadata?.days_accumulated || 0
-      };
-    });
+        return true;
+      });
+
+      console.log('[fetchAmazonPayouts] Filtered payouts:', filteredPayouts.length, 'total');
+      console.log('[fetchAmazonPayouts] Open settlements:', filteredPayouts.filter(p => p.status === 'estimated').length);
+
+      // Parse and enrich with metadata
+      setAmazonPayouts(filteredPayouts.map(payout => {
+        const rawData = payout.raw_settlement_data as any;
+        const metadata = rawData?.forecast_metadata;
+        
+        return {
+          ...payout,
+          status: payout.status as "confirmed" | "estimated" | "processing" | "forecasted" | "rolled_over",
+          payout_type: payout.payout_type as "bi-weekly" | "reserve-release" | "adjustment" | "daily",
+          amazon_accounts: payout.amazon_accounts ? {
+            ...payout.amazon_accounts,
+            payout_frequency: payout.amazon_accounts.payout_frequency as 'daily' | 'bi-weekly' | undefined
+          } : undefined,
+          
+          // Daily forecast metadata (Delivery Date + 7 method)
+          backlog_amount: metadata?.backlog_amount || 0,
+          daily_unlock_amount: metadata?.daily_unlock_amount || 0,
+          safety_adjusted_amount: metadata?.safety_adjusted_amount || 0,
+          days_since_cashout: metadata?.days_since_cashout || 0,
+          last_cashout_date: metadata?.last_cashout_date,
+          growth_factor: metadata?.growth_factor || 1.0,
+          avg_daily_unlock: metadata?.avg_daily_unlock || 0,
+          available_for_daily_transfer: metadata?.safety_adjusted_amount || metadata?.daily_unlock_amount || 0,
+          
+          // Bi-weekly forecast metadata
+          settlement_start_date: (payout as any).settlement_start_date || metadata?.settlement_period?.start,
+          settlement_end_date: (payout as any).settlement_end_date || metadata?.settlement_period?.end,
+          days_accumulated: metadata?.days_accumulated || 0
+        };
+      }));
+    } catch (error) {
+      console.error("Error fetching Amazon payouts:", error);
+      toast.error("Failed to load Amazon payouts");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  // Use React Query with 6-hour staleTime (payouts change daily, but needs fresher data)
-  const { data: amazonPayouts = [], isLoading, refetch } = useQuery({
-    queryKey: ['amazon-payouts', user?.id],
-    queryFn: fetchAmazonPayouts,
-    enabled: !!user,
-    staleTime: 6 * 60 * 60 * 1000, // 6 hours - balanced for daily changes
-  });
+  useEffect(() => {
+    fetchAmazonPayouts();
+  }, [user]);
 
   // Fetch forecasts_enabled and advanced_modeling_enabled settings
   useEffect(() => {
@@ -238,23 +252,9 @@ export const useAmazonPayouts = () => {
       });
   }, [user]);
 
-  // Set up debounced real-time updates (payouts change once per day)
+  // Subscribe to real-time updates
   useEffect(() => {
     if (!user) return;
-
-    const debouncedRefetch = () => {
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
-      
-      // Wait 500ms before refetching (more responsive)
-      debounceTimerRef.current = setTimeout(() => {
-        queryClient.invalidateQueries({ 
-          queryKey: ['amazon-payouts', user.id],
-          exact: true 
-        });
-      }, 500); // 500ms debounce - more responsive
-    };
 
     const channel = supabase
       .channel("amazon_payouts_changes")
@@ -265,17 +265,16 @@ export const useAmazonPayouts = () => {
           schema: "public",
           table: "amazon_payouts",
         },
-        debouncedRefetch
+        () => {
+          fetchAmazonPayouts();
+        }
       )
       .subscribe();
 
     return () => {
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
       supabase.removeChannel(channel);
     };
-  }, [user, queryClient]);
+  }, [user]);
 
   // Calculate summary statistics
   // EXCLUDE open settlements (status='estimated') to prevent double-counting with forecasts
@@ -358,6 +357,6 @@ export const useAmazonPayouts = () => {
     lastCashOutDate,
     forecastsEnabled,
     advancedModelingEnabled,
-    refetch
+    refetch: fetchAmazonPayouts
   };
 };

@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
-import { useProfile } from './useProfile';
 
 export type SafetyNetLevel = 'low' | 'medium' | 'high' | 'maximum';
 
@@ -27,18 +26,10 @@ export const useUserSettings = () => {
   });
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  
-  // Get user from useAuth hook
-  const [user, setUser] = useState<any>(null);
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setUser(data.user));
-  }, []);
-  
-  // Use shared profile hook
-  const { data: profile } = useProfile(user?.id);
 
   const fetchUserSettings = async () => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
       const { data, error } = await supabase
@@ -121,9 +112,16 @@ export const useUserSettings = () => {
 
   const updateChartPreferences = async (preferences: Partial<typeof chartPreferences>) => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
-      // Use cached profile from shared hook
+      // Get user's account_id
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('account_id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
       if (!profile?.account_id) {
         throw new Error('Account not found');
       }
@@ -158,7 +156,13 @@ export const useUserSettings = () => {
 
   const createDefaultSettings = async (userId: string) => {
     try {
-      // Use cached profile from shared hook
+      // Get user's account_id
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('account_id')
+        .eq('user_id', userId)
+        .maybeSingle();
+
       if (!profile?.account_id) {
         throw new Error('Account not found');
       }
@@ -181,9 +185,16 @@ export const useUserSettings = () => {
 
   const updateTotalCash = async (amountToAdd: number) => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
-      // Use cached profile from shared hook
+      // Get user's account_id
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('account_id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
       if (!profile?.account_id) {
         throw new Error('Account not found');
       }
@@ -272,9 +283,16 @@ export const useUserSettings = () => {
 
   const setStartingBalance = async (amount: number) => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
-      // Use cached profile from shared hook
+      // Get user's account_id
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('account_id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
       if (!profile?.account_id) {
         throw new Error('Account not found');
       }
@@ -304,11 +322,27 @@ export const useUserSettings = () => {
 
   const resetAccount = async () => {
     try {
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError) {
+        console.error('Auth error:', authError);
+        throw new Error('Authentication failed');
+      }
       if (!user) throw new Error('User not authenticated');
 
       console.log('🗑️ Starting account reset for user:', user.id);
 
-      // Use cached profile from shared hook
+      // Get user's account_id first
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('account_id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (profileError) {
+        console.error('Profile lookup error:', profileError);
+        throw new Error(`Failed to lookup account: ${profileError.message}`);
+      }
+
       if (!profile?.account_id) {
         console.error('No account_id found for user:', user.id);
         throw new Error('Account not found. Please contact support.');
