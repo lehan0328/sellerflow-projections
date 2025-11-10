@@ -52,15 +52,11 @@ import { Badge } from "@/components/ui/badge";
 import { DashboardHeader } from "@/components/cash-flow/dashboard-header";
 import { FloatingMenu } from "@/components/cash-flow/floating-menu";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/AppSidebar";
 import { OverviewStats } from "@/components/cash-flow/overview-stats";
 import { CashFlowCalendar } from "@/components/cash-flow/cash-flow-calendar";
 import { CashFlowInsights } from "@/components/cash-flow/cash-flow-insights";
 import { BankAccounts } from "@/components/cash-flow/bank-accounts";
-import {
-  CreditCards,
-  getCreditCardDueDates,
-} from "@/components/cash-flow/credit-cards";
+import { CreditCards, getCreditCardDueDates } from "@/components/cash-flow/credit-cards";
 import { AmazonPayouts } from "@/components/cash-flow/amazon-payouts";
 import {
   OverviewStatsSkeleton,
@@ -2699,37 +2695,37 @@ const Dashboard = () => {
                 <div className="lg:col-span-2 h-full">
                   {showSafeSpendingData ? (
                     <CashFlowCalendar
-                      events={allCalendarEvents}
-                      totalCash={displayCash}
-                      onEditTransaction={handleEditTransaction}
-                      onUpdateTransactionDate={handleUpdateTransactionDate}
-                      todayInflow={todayInflow}
-                      todayOutflow={todayOutflow}
-                      upcomingExpenses={upcomingExpenses}
-                      incomeItems={incomeItems}
-                      bankAccountBalance={displayBankBalance}
-                      projectedDailyBalances={(
-                        safeSpendingData?.calculation?.daily_balances || []
-                      ).map((d) => ({
-                        date: new Date(d.date),
-                        balance: d.balance,
-                      }))}
-                      vendors={vendors}
-                      onVendorClick={handleEditVendorOrder}
-                      onIncomeClick={handleEditIncome}
-                      reserveAmount={reserveAmount}
-                      excludeToday={excludeToday}
-                      safeSpendingLimit={
-                        safeSpendingData?.safe_spending_limit || 0
-                      }
-                      allBuyingOpportunities={
-                        safeSpendingData?.calculation?.all_buying_opportunities ||
-                        []
-                      }
-                      dailyBalances={
-                        safeSpendingData?.calculation?.daily_balances || []
-                      }
-                    />
+                        events={allCalendarEvents}
+                        totalCash={displayCash}
+                        onEditTransaction={handleEditTransaction}
+                        onUpdateTransactionDate={handleUpdateTransactionDate}
+                        todayInflow={todayInflow}
+                        todayOutflow={todayOutflow}
+                        upcomingExpenses={upcomingExpenses}
+                        incomeItems={incomeItems}
+                        bankAccountBalance={displayBankBalance}
+                        projectedDailyBalances={(
+                          safeSpendingData?.calculation?.daily_balances || []
+                        ).map((d) => ({
+                          date: new Date(d.date),
+                          balance: d.balance,
+                        }))}
+                        vendors={vendors}
+                        onVendorClick={handleEditVendorOrder}
+                        onIncomeClick={handleEditIncome}
+                        reserveAmount={reserveAmount}
+                        excludeToday={excludeToday}
+                        safeSpendingLimit={
+                          safeSpendingData?.safe_spending_limit || 0
+                        }
+                        allBuyingOpportunities={
+                          safeSpendingData?.calculation?.all_buying_opportunities ||
+                          []
+                        }
+                        dailyBalances={
+                          safeSpendingData?.calculation?.daily_balances || []
+                        }
+                      />
                   ) : (
                     <CashFlowCalendarSkeleton />
                   )}
@@ -2737,10 +2733,10 @@ const Dashboard = () => {
                 <div className="lg:col-span-1 h-full">
                   {showSafeSpendingData ? (
                     <CashFlowInsights
-                      currentBalance={displayCash}
-                      dailyInflow={todayInflow}
-                      dailyOutflow={todayOutflow}
-                      upcomingExpenses={upcomingExpenses}
+                        currentBalance={displayCash}
+                        dailyInflow={todayInflow}
+                        dailyOutflow={todayOutflow}
+                        upcomingExpenses={upcomingExpenses}
                       events={allCalendarEvents}
                       vendors={vendors}
                       income={incomeItems}
@@ -2848,23 +2844,22 @@ const Dashboard = () => {
       case "transactions":
         return (
           <TransactionsView
-            bankTransactions={bankTransactions}
-            onVendorUpdate={() => {
-              refetchVendors();
-              refetchTransactions();
-              setVendorTxRefresh((v) => v + 1);
-              // Refresh safe spending and credit cards after vendor transaction updates
-              setTimeout(() => {
-                refetchSafeSpending();
-                refetchCreditCards();
-              }, 500);
-            }}
-            refreshKey={vendorTxRefresh}
-            incomeItems={incomeItems}
-            onCollectToday={handleCollectIncome}
-            onEditIncome={handleEditIncome}
-            onDeleteIncome={handleDeleteIncome}
-            onMatchTransaction={async (income) => {
+              bankTransactions={bankTransactions}
+              onVendorUpdate={() => {
+                refetchVendors();
+                refetchTransactions();
+                setVendorTxRefresh((v) => v + 1);
+                setTimeout(() => {
+                  refetchSafeSpending();
+                  refetchCreditCards();
+                }, 500);
+              }}
+              refreshKey={vendorTxRefresh}
+              incomeItems={incomeItems}
+              onCollectToday={handleCollectIncome}
+              onEditIncome={handleEditIncome}
+              onDeleteIncome={handleDeleteIncome}
+              onMatchTransaction={async (income) => {
               await addTransaction({
                 type: "customer_payment",
                 amount: income.amount,

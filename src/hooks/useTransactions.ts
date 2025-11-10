@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 export interface Transaction {
   id: string;
@@ -17,9 +18,9 @@ export interface Transaction {
 }
 
 export const useTransactions = () => {
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const debounceTimerRef = useRef<NodeJS.Timeout>();
 
   // Helper function to format date for database without timezone issues
   const formatDateForDB = (date: Date) => {
@@ -35,49 +36,48 @@ export const useTransactions = () => {
     return new Date(y, (m || 1) - 1, d || 1);
   };
 
-  const fetchTransactions = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        setTransactions([]);
-        setLoading(false);
-        return;
-      }
+  const fetchTransactions = async (): Promise<Transaction[]> => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return [];
 
-      const { data, error } = await supabase
-        .from('transactions')
-        .select('*')
-        .eq('archived', false)
-        .order('created_at', { ascending: false });
+    const { data, error } = await supabase
+      .from('transactions')
+      .select('*')
+      .eq('archived', false)
+      .order('created_at', { ascending: false })
+      .limit(200); // Limit initial fetch to 200 most recent
 
-      if (error) throw error;
-
-      const formattedTransactions = data?.map(transaction => ({
-        id: transaction.id,
-        type: transaction.type as Transaction['type'],
-        amount: Number(transaction.amount),
-        description: transaction.description || '',
-        vendorId: transaction.vendor_id,
-        customerId: transaction.customer_id,
-        creditCardId: transaction.credit_card_id,
-        transactionDate: parseDateFromDB(transaction.transaction_date),
-        dueDate: transaction.due_date ? parseDateFromDB(transaction.due_date) : undefined,
-        status: transaction.status as Transaction['status'],
-        category: transaction.category
-      })) || [];
-
-      setTransactions(formattedTransactions);
-    } catch (error) {
+    if (error) {
       console.error('Error fetching transactions:', error);
       toast({
         title: "Error",
         description: "Failed to load transactions",
         variant: "destructive",
       });
-    } finally {
-      setLoading(false);
+      return [];
     }
+
+    return data?.map(transaction => ({
+      id: transaction.id,
+      type: transaction.type as Transaction['type'],
+      amount: Number(transaction.amount),
+      description: transaction.description || '',
+      vendorId: transaction.vendor_id,
+      customerId: transaction.customer_id,
+      creditCardId: transaction.credit_card_id,
+      transactionDate: parseDateFromDB(transaction.transaction_date),
+      dueDate: transaction.due_date ? parseDateFromDB(transaction.due_date) : undefined,
+      status: transaction.status as Transaction['status'],
+      category: transaction.category
+    })) || [];
   };
+
+  // Use React Query with 15-minute staleTime (transactions change ~5 times/day)
+  const { data: transactions = [], isLoading: loading, refetch } = useQuery({
+    queryKey: ['transactions'],
+    queryFn: fetchTransactions,
+    staleTime: 15 * 60 * 1000, // 15 minutes
+  });
 
   const addTransaction = async (transactionData: Omit<Transaction, 'id'>) => {
     try {
@@ -118,7 +118,7 @@ export const useTransactions = () => {
         category: data.category
       };
 
-      setTransactions(prev => [newTransaction, ...prev]);
+      await queryClient.invalidateQueries({ queryKey: ['transactions'] });
       return newTransaction;
     } catch (error) {
       console.error('Error adding transaction:', error);
@@ -139,7 +139,7 @@ export const useTransactions = () => {
 
       if (error) throw error;
 
-      setTransactions(prev => prev.filter(t => t.id !== id));
+      await queryClient.invalidateQueries({ queryKey: ['transactions'] });
       
       toast({
         title: "Success",
@@ -167,7 +167,7 @@ export const useTransactions = () => {
  
        if (error) throw error;
  
-       setTransactions([]);
+       await queryClient.invalidateQueries({ queryKey: ['transactions'] });
      } catch (error) {
        console.error('Error deleting all transactions:', error);
        // Only show toast for actual errors, not for successful cleanup
@@ -184,7 +184,7 @@ export const useTransactions = () => {
  
        if (error) throw error;
  
-       setTransactions(prev => prev.filter(t => t.vendorId !== vendorId));
+       await queryClient.invalidateQueries({ queryKey: ['transactions'] });
        toast({
          title: "Success",
          description: "Vendor transactions deleted successfully",
@@ -199,16 +199,26 @@ export const useTransactions = () => {
      }
    };
 
-  useEffect(() => {
-    fetchTransactions();
-  }, []);
-
-  // Realtime subscription for transactions
+  // Set up debounced real-time updates
   useEffect(() => {
     let channel: any;
     const setup = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
+
+      const debouncedRefetch = () => {
+        if (debounceTimerRef.current) {
+          clearTimeout(debounceTimerRef.current);
+        }
+        
+        // Wait 1.5 seconds before refetching
+        debounceTimerRef.current = setTimeout(() => {
+          queryClient.invalidateQueries({ 
+            queryKey: ['transactions'],
+            exact: true 
+          });
+        }, 1500);
+      };
 
       channel = supabase
         .channel('transactions-changes')
@@ -216,16 +226,17 @@ export const useTransactions = () => {
           event: '*',
           schema: 'public',
           table: 'transactions',
-        }, () => {
-          fetchTransactions();
-        })
+        }, debouncedRefetch)
         .subscribe();
     };
     setup();
     return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
       if (channel) supabase.removeChannel(channel);
     };
-  }, []);
+  }, [queryClient]);
 
    return {
      transactions,
@@ -234,6 +245,6 @@ export const useTransactions = () => {
      deleteTransaction,
      deleteAllTransactions,
      deleteTransactionsByVendor,
-     refetch: fetchTransactions
+     refetch
    };
 };
