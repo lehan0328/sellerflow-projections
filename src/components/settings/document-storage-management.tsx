@@ -14,6 +14,7 @@ export const DocumentStorageManagement = () => {
   // Fetch document count and total size
   const { data: storageStats, refetch } = useQuery({
     queryKey: ['document-storage-stats'],
+    staleTime: 2 * 60 * 1000, // 2 minutes - storage stats change with uploads/deletes
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');

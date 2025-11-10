@@ -87,6 +87,7 @@ export function TeamManagement() {
   // Fetch user's profile to get account_id and role
   const { data: profile } = useQuery({
     queryKey: ['profile', user?.id],
+    staleTime: 10 * 60 * 1000, // 10 minutes - profile rarely changes
     queryFn: async () => {
       const { data, error } = await supabase
         .from('profiles')
@@ -103,6 +104,7 @@ export function TeamManagement() {
   // Fetch user's role
   const { data: userRole } = useQuery({
     queryKey: ['user-role', user?.id, profile?.account_id],
+    staleTime: 10 * 60 * 1000, // 10 minutes - user role rarely changes
     queryFn: async () => {
       const { data, error } = await supabase
         .from('user_roles')
@@ -122,6 +124,7 @@ export function TeamManagement() {
   // Fetch team members
   const { data: teamMembers = [] } = useQuery({
     queryKey: ['team-members', profile?.account_id],
+    staleTime: 5 * 60 * 1000, // 5 minutes - team changes moderately
     queryFn: async () => {
       // First get all user_roles
       const { data: roles, error: rolesError } = await supabase
@@ -183,6 +186,7 @@ export function TeamManagement() {
   // Fetch pending invitations
   const { data: pendingInvites = [] } = useQuery({
     queryKey: ['pending-invites', profile?.account_id],
+    staleTime: 5 * 60 * 1000, // 5 minutes - invitations change moderately
     queryFn: async () => {
       const { data, error } = await supabase
         .from('team_invitations')

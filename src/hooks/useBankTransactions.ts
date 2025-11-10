@@ -29,6 +29,7 @@ export const useBankTransactions = (accountId?: string, accountType: 'bank' | 'c
 
   const { data: transactions = [], isLoading, error } = useQuery({
     queryKey: ['bank_transactions', accountId, accountType],
+    staleTime: 2 * 60 * 1000, // 2 minutes - transactions change frequently
     queryFn: async () => {
       let query = supabase
         .from('bank_transactions')
@@ -70,7 +71,6 @@ export const useBankTransactions = (accountId?: string, accountType: 'bank' | 'c
         matchedType: tx.matched_type,
       }));
     },
-    staleTime: 30000, // Consider data fresh for 30 seconds
   });
 
   const refetch = () => {

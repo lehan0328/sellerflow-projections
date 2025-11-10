@@ -59,6 +59,7 @@ export const useScenarios = () => {
 
   const { data: scenarios = [], isLoading } = useQuery({
     queryKey: ["scenarios"],
+    staleTime: 10 * 60 * 1000, // 10 minutes - scenarios don't change often
     queryFn: async () => {
       const { data, error } = await supabase
         .from("scenarios")

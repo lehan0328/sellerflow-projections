@@ -28,7 +28,7 @@ export const WelcomeAnimationWrapper = () => {
       return data;
     },
     enabled: !!user?.id,
-    staleTime: 0,
+    staleTime: 10 * 60 * 1000, // 10 minutes - user settings rarely change
   });
 
   // Set animation state when settings load

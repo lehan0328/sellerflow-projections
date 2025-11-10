@@ -77,7 +77,17 @@ import Accounting from "./pages/Accounting";
 import Platforms from "./pages/Platforms";
 import DebugProjections from "./pages/DebugProjections";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes - data stays fresh
+      gcTime: 10 * 60 * 1000,   // 10 minutes - cached data lifetime (formerly cacheTime)
+      refetchOnWindowFocus: false, // Don't refetch on tab switch
+      refetchOnMount: false, // Use cache if available
+      retry: 1, // Only retry once on failure
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>

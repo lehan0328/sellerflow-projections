@@ -21,6 +21,7 @@ export interface ArchivedBankTransaction {
 export const useArchivedBankTransactions = () => {
   const { data: transactions = [], isLoading, error } = useQuery({
     queryKey: ['archived_bank_transactions'],
+    staleTime: 5 * 60 * 1000, // 5 minutes - archived data changes infrequently
     queryFn: async () => {
       const query = supabase
         .from('bank_transactions')
@@ -55,7 +56,6 @@ export const useArchivedBankTransactions = () => {
         archivedAt: new Date(tx.updated_at),
       }));
     },
-    staleTime: 60000,
   });
 
   return {

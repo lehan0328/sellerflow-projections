@@ -21,6 +21,7 @@ export const useCashFlowEvents = () => {
 
   const { data: cashFlowEvents = [], isLoading, error } = useQuery({
     queryKey: ['cash-flow-events', session?.user?.id],
+    staleTime: 5 * 60 * 1000, // 5 minutes - moderate change frequency
     queryFn: async () => {
       if (!session?.user?.id) return [];
 

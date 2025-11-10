@@ -19,6 +19,7 @@ export const useTrialAddonUsage = () => {
   // Fetch current trial addon usage
   const { data: trialUsage, isLoading } = useQuery({
     queryKey: ['trial-addon-usage'],
+    staleTime: 5 * 60 * 1000, // 5 minutes - moderate change frequency
     queryFn: async () => {
       const { data, error } = await supabase
         .from('trial_addon_usage')

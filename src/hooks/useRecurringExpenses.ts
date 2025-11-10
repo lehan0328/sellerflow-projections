@@ -34,6 +34,7 @@ export const useRecurringExpenses = () => {
       if (error) throw error;
       return data as RecurringExpense[];
     },
+    staleTime: 30 * 60 * 1000, // 30 minutes - rarely changes
   });
 
   const createMutation = useMutation({

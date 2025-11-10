@@ -49,6 +49,7 @@ export function DashboardHeader({
   // Fetch user profile for display name - only fetch company
   const { data: profile, isLoading: profileLoading } = useQuery({
     queryKey: ['profile-company', user?.id],
+    staleTime: 10 * 60 * 1000, // 10 minutes - user profile rarely changes
     queryFn: async () => {
       if (!user?.id) return null;
       const { data, error } = await supabase
@@ -65,9 +66,6 @@ export function DashboardHeader({
       return data;
     },
     enabled: !!user?.id,
-    staleTime: 0,
-    refetchOnMount: 'always',
-    refetchOnWindowFocus: true,
   });
 
   // Get user display name for dashboard title

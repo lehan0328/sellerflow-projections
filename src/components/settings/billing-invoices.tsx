@@ -26,6 +26,7 @@ interface Invoice {
 export function BillingInvoices() {
   const { data, isLoading, error } = useQuery({
     queryKey: ['invoices'],
+    staleTime: 5 * 60 * 1000, // 5 minutes - invoices change moderately
     queryFn: async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('No session');

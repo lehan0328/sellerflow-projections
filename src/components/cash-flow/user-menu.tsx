@@ -27,6 +27,7 @@ export function UserMenu() {
     data: profile
   } = useQuery({
     queryKey: ['profile', user?.id],
+    staleTime: 10 * 60 * 1000, // 10 minutes - user profile rarely changes
     queryFn: async () => {
       if (!user?.id) return null;
       const {
@@ -47,6 +48,7 @@ export function UserMenu() {
     data: affiliateStatus
   } = useQuery({
     queryKey: ['affiliate-status', user?.id],
+    staleTime: 10 * 60 * 1000, // 10 minutes - affiliate status rarely changes
     queryFn: async () => {
       if (!user?.id) return null;
       const {
