@@ -27,6 +27,7 @@ export const SignUp = () => {
     company: '',
     monthlyAmazonRevenue: '',
     referralCode: '',
+    hearAboutUs: '',
   });
   const [referralCodeStatus, setReferralCodeStatus] = useState<'idle' | 'validating' | 'valid' | 'invalid'>('idle');
 
@@ -99,7 +100,7 @@ export const SignUp = () => {
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!signUpData.email || !signUpData.password || !signUpData.confirmPassword || !signUpData.firstName || !signUpData.lastName || !signUpData.company || !signUpData.monthlyAmazonRevenue) {
+    if (!signUpData.email || !signUpData.password || !signUpData.confirmPassword || !signUpData.firstName || !signUpData.lastName || !signUpData.company || !signUpData.monthlyAmazonRevenue || !signUpData.hearAboutUs) {
       toast.error('Please fill in all fields');
       return;
     }
@@ -128,6 +129,7 @@ export const SignUp = () => {
       last_name: signUpData.lastName,
       company: signUpData.company,
       monthly_amazon_revenue: signUpData.monthlyAmazonRevenue,
+      hear_about_us: signUpData.hearAboutUs,
     };
 
     // Only include referral code if it's valid
@@ -351,6 +353,34 @@ export const SignUp = () => {
                       )}
                     </div>
                   </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="hearAboutUs" className="text-base">Where did you hear about us?</Label>
+                  <Select
+                    value={signUpData.hearAboutUs}
+                    onValueChange={(value) => setSignUpData({ ...signUpData, hearAboutUs: value })}
+                    disabled={loading}
+                    required
+                  >
+                    <SelectTrigger className="h-12 border-primary/20 bg-background/50 backdrop-blur-sm focus:border-primary focus:ring-primary/20 transition-all">
+                      <SelectValue placeholder="Select an option" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-background">
+                      <SelectItem value="word-of-mouth">Word of mouth</SelectItem>
+                      <SelectItem value="friend">Friend</SelectItem>
+                      <SelectItem value="influencer">Influencer</SelectItem>
+                      <SelectItem value="facebook-instagram">Facebook/Instagram</SelectItem>
+                      <SelectItem value="linkedin">LinkedIn</SelectItem>
+                      <SelectItem value="twitter-x">Twitter/X</SelectItem>
+                      <SelectItem value="reddit">Reddit</SelectItem>
+                      <SelectItem value="youtube">YouTube</SelectItem>
+                      <SelectItem value="google-search">Google Search</SelectItem>
+                      <SelectItem value="email">Email</SelectItem>
+                      <SelectItem value="amazon-app-store">Amazon App Store</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 {referralCodeStatus === 'valid' && (
