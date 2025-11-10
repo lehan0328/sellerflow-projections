@@ -1670,6 +1670,7 @@ export type Database = {
           created_at: string
           currency: string | null
           discount_redeemed_at: string | null
+          email: string | null
           first_name: string | null
           forecast_settings: Json | null
           id: string
@@ -1697,6 +1698,7 @@ export type Database = {
           created_at?: string
           currency?: string | null
           discount_redeemed_at?: string | null
+          email?: string | null
           first_name?: string | null
           forecast_settings?: Json | null
           id?: string
@@ -1724,6 +1726,7 @@ export type Database = {
           created_at?: string
           currency?: string | null
           discount_redeemed_at?: string | null
+          email?: string | null
           first_name?: string | null
           forecast_settings?: Json | null
           id?: string

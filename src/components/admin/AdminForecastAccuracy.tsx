@@ -21,6 +21,7 @@ interface AccuracyLog {
   profiles?: {
     first_name: string | null;
     last_name: string | null;
+    email: string | null;
   };
 }
 
@@ -86,7 +87,7 @@ export function AdminForecastAccuracy() {
       // Fetch profiles for all users
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
-        .select('account_id, first_name, last_name, user_id');
+        .select('account_id, first_name, last_name, user_id, email');
 
       if (profilesError) {
         console.error('[Admin Forecast Accuracy] Profiles query error:', profilesError);
@@ -211,11 +212,13 @@ export function AdminForecastAccuracy() {
         const userName = firstLog.profiles 
           ? `${firstLog.profiles.first_name || ''} ${firstLog.profiles.last_name || ''}`.trim() || 'Unknown'
           : firstLog.user_name || 'Unknown';
+        
+        const userEmail = firstLog.profiles?.email || firstLog.user_email || 'Unknown';
 
         return {
           accountId,
           userName,
-          userEmail: firstLog.user_email || 'Unknown',
+          userEmail,
           marketplace: firstLog.marketplace_name || 'N/A',
           payoutCount: filteredLogs.length,
           originalPayoutCount: sortedLogs.length,
