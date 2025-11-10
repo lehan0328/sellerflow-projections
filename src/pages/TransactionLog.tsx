@@ -67,7 +67,35 @@ export default function TransactionLog() {
 
   const { transactions: archivedBankTx, isLoading: bankLoading } = useArchivedBankTransactions();
   const { transactions: vendorTransactions } = useVendorTransactions();
-  const { incomeItems } = useIncome();
+  const [archivedIncomeItems, setArchivedIncomeItems] = useState<any[]>([]);
+
+  // Fetch archived income transactions
+  const fetchArchivedIncome = useCallback(async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('account_id')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (!profile?.account_id) return;
+
+    const { data, error } = await supabase
+      .from('income')
+      .select('*')
+      .eq('account_id', profile.account_id)
+      .eq('archived', true)
+      .order('payment_date', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching archived income:', error);
+      return;
+    }
+
+    setArchivedIncomeItems(data || []);
+  }, []);
 
   // Fetch deleted transactions
   const fetchDeletedTransactions = useCallback(async () => {
@@ -90,7 +118,8 @@ export default function TransactionLog() {
 
   useEffect(() => {
     fetchDeletedTransactions();
-  }, [fetchDeletedTransactions]);
+    fetchArchivedIncome();
+  }, [fetchDeletedTransactions, fetchArchivedIncome]);
 
   // Delete all archived transactions permanently
   const handleDeleteAll = async () => {
@@ -151,6 +180,7 @@ export default function TransactionLog() {
 
       // Refresh the page data
       fetchDeletedTransactions();
+      fetchArchivedIncome();
       
       toast.success('All archived transactions deleted permanently');
     } catch (error) {
@@ -159,9 +189,19 @@ export default function TransactionLog() {
     }
   };
 
-  // Get completed/paid vendor and income transactions (these are effectively archived)
+  // Get completed/paid vendor transactions (these are effectively archived)
   const archivedVendorTx = vendorTransactions.filter(tx => tx.status === 'completed' || tx.status === 'paid');
-  const archivedIncomeTx = incomeItems.filter(item => item.status === 'received');
+  
+  // Format archived income items
+  const archivedIncomeTx = archivedIncomeItems.map(item => ({
+    id: item.id,
+    source: item.source,
+    amount: Number(item.amount),
+    paymentDate: new Date(item.payment_date),
+    description: item.description,
+    category: item.category || undefined,
+    status: item.status
+  }));
 
   // Combine all archived transactions
   const allArchivedTransactions = useMemo(() => {
@@ -193,7 +233,7 @@ export default function TransactionLog() {
         type: 'income' as const,
         name: tx.source,
         amount: tx.amount,
-        date: new Date(tx.paymentDate),
+        date: tx.paymentDate,
         description: tx.description,
         matchedWith: undefined,
         category: tx.category || undefined,
