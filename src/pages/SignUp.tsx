@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Eye, EyeOff, Check, X, Loader2 } from "lucide-react";
 import aurenIcon from "@/assets/auren-icon-blue.png";
 import { supabase } from "@/integrations/supabase/client";
@@ -299,16 +300,26 @@ export const SignUp = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="monthlyAmazonRevenue" className="text-base">Monthly Amazon Revenue</Label>
-                    <Input
-                      id="monthlyAmazonRevenue"
-                      type="text"
-                      placeholder="e.g., $50,000 or $500k"
+                    <Select
                       value={signUpData.monthlyAmazonRevenue}
-                      onChange={(e) => setSignUpData({ ...signUpData, monthlyAmazonRevenue: e.target.value })}
-                      className="h-12 border-primary/20 bg-background/50 backdrop-blur-sm focus:border-primary focus:ring-primary/20 transition-all"
+                      onValueChange={(value) => setSignUpData({ ...signUpData, monthlyAmazonRevenue: value })}
                       disabled={loading}
                       required
-                    />
+                    >
+                      <SelectTrigger className="h-12 border-primary/20 bg-background/50 backdrop-blur-sm focus:border-primary focus:ring-primary/20 transition-all">
+                        <SelectValue placeholder="Select revenue range" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-background">
+                        <SelectItem value="0-10k">$0 - $10k</SelectItem>
+                        <SelectItem value="10-25k">$10k - $25k</SelectItem>
+                        <SelectItem value="25-50k">$25k - $50k</SelectItem>
+                        <SelectItem value="50-100k">$50k - $100k</SelectItem>
+                        <SelectItem value="100-200k">$100k - $200k</SelectItem>
+                        <SelectItem value="200-500k">$200k - $500k</SelectItem>
+                        <SelectItem value="500k-1m">$500k - $1M</SelectItem>
+                        <SelectItem value="1m+">$1M+</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   <div className="space-y-2">
