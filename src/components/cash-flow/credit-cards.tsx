@@ -896,7 +896,7 @@ export function CreditCards() {
             <DialogHeader>
               <DialogTitle>Update Statement Balance</DialogTitle>
               <DialogDescription>
-                The payment due date has passed. Please update the statement balance for the next billing period.
+                Your payment is due today. This is a reminder to pay your credit card bill and update the new statement balance for the next billing period.
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
