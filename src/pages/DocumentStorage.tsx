@@ -660,14 +660,21 @@ export default function DocumentStorage() {
     // Show ALL documents, even if storage file is missing
     // The UI will indicate when a file is missing
     
-    // Search in file name, display name, notes, and description
+    // Search in file name, display name, notes, description, and line items
     const searchLower = searchQuery.toLowerCase();
     const nameMatch = doc.name.toLowerCase().includes(searchLower);
     const displayNameMatch = doc.display_name?.toLowerCase().includes(searchLower);
     const notesMatch = doc.notes?.toLowerCase().includes(searchLower);
     const descriptionMatch = (doc.description || '').toLowerCase().includes(searchLower);
     
-    const matchesSearch = nameMatch || displayNameMatch || notesMatch || descriptionMatch;
+    // Search in line items
+    const lineItemMatch = doc.line_items?.some(item => 
+      item.description?.toLowerCase().includes(searchLower) ||
+      item.sku?.toLowerCase().includes(searchLower) ||
+      item.category?.toLowerCase().includes(searchLower)
+    ) || false;
+    
+    const matchesSearch = nameMatch || displayNameMatch || notesMatch || descriptionMatch || lineItemMatch;
     
     // Month filter
     let monthMatch = true;
@@ -918,7 +925,7 @@ export default function DocumentStorage() {
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     type="text"
-                    placeholder="Search by name, vendor, description..."
+                    placeholder="Search by name, vendor, description, line items..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full pl-9"
