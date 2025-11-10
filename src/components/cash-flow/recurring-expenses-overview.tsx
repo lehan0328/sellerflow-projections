@@ -171,6 +171,28 @@ export const RecurringExpensesOverview = () => {
     return { icon: CreditCard, label: 'Credit Card', details: null };
   };
 
+  const getFrequencyColor = (frequency: string) => {
+    switch (frequency) {
+      case 'daily':
+        return 'bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300 border-purple-300 dark:border-purple-700';
+      case 'weekdays':
+        return 'bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300 border-indigo-300 dark:border-indigo-700';
+      case 'weekly':
+        return 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300 border-blue-300 dark:border-blue-700';
+      case 'bi-weekly':
+        return 'bg-cyan-100 text-cyan-700 dark:bg-cyan-950 dark:text-cyan-300 border-cyan-300 dark:border-cyan-700';
+      case 'monthly':
+        return 'bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300 border-green-300 dark:border-green-700';
+      case '2-months':
+        return 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300 border-amber-300 dark:border-amber-700';
+      case '3-months':
+        return 'bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-300 border-orange-300 dark:border-orange-700';
+      default:
+        return 'bg-muted text-muted-foreground border-muted-foreground/20';
+    }
+  };
+
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingExpense) return;
@@ -315,7 +337,7 @@ export const RecurringExpensesOverview = () => {
                       <Badge variant={item.type === 'income' ? 'default' : 'destructive'} className="text-xs">
                         {item.type}
                       </Badge>
-                      <Badge variant="outline" className="text-xs">
+                      <Badge variant="outline" className={cn("text-xs", getFrequencyColor(item.frequency))}>
                         {item.frequency}
                       </Badge>
                     </div>
