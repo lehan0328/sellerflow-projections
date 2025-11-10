@@ -35,7 +35,7 @@ serve(async (req) => {
       throw new Error('No authorization header');
     }
 
-    // Create a client with user's token to check admin status
+    // Create a client with user's token to verify authentication
     const token = authHeader.replace('Bearer ', '');
     const userClient = createClient(supabaseUrl, supabaseAnonKey, {
       global: {
@@ -53,11 +53,14 @@ serve(async (req) => {
       throw new Error('Unauthorized');
     }
 
-    // Check if user is admin using the user's context
-    const { data: isAdmin, error: adminError } = await userClient.rpc('is_website_admin');
+    console.log('✅ User authenticated:', user.email);
+
+    // Check if user is admin by checking email directly
+    const ADMIN_EMAILS = ['chuandy914@gmail.com', 'orders@imarand.com'];
+    const isAdmin = user.email && ADMIN_EMAILS.includes(user.email);
     
-    if (adminError || !isAdmin) {
-      console.error('❌ Admin check failed:', isAdmin, adminError);
+    if (!isAdmin) {
+      console.error('❌ User is not admin:', user.email);
       throw new Error('Unauthorized - Admin access required');
     }
 
