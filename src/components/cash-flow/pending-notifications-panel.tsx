@@ -175,14 +175,19 @@ export const PendingNotificationsPanel = ({
                     </Button>
 
                     <div className="pr-8">
-                      <div className="flex items-start justify-between mb-1">
-                        <h4 className="font-semibold text-sm">{notification.title}</h4>
-                      </div>
-                      
-                      <div className="mb-2">
-                        <Badge variant="outline" className="text-xs mb-2">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Badge variant="outline" className="text-xs">
                           {getTypeLabel(notification.type)}
                         </Badge>
+                        {notification.category && (
+                          <Badge variant="outline" className="text-xs">
+                            {notification.category}
+                          </Badge>
+                        )}
+                      </div>
+                      
+                      <div className="flex items-start justify-between mb-1">
+                        <h4 className="font-semibold text-sm">{notification.title}</h4>
                       </div>
                       
                       <p className="text-sm opacity-90 mb-2">
@@ -199,12 +204,6 @@ export const PendingNotificationsPanel = ({
                         <p className="text-xs opacity-75">
                           {format(new Date(notification.date), 'MMM dd, yyyy')}
                         </p>
-                      )}
-                      
-                      {notification.category && (
-                        <Badge variant="outline" className="mt-2 text-xs">
-                          {notification.category}
-                        </Badge>
                       )}
                       
                       {notification.actionUrl && (
