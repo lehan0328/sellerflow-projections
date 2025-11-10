@@ -204,8 +204,8 @@ export const AdminSendUpdate = () => {
                 )}
                 {actionLink && (
                   <div className="mt-3">
-                    <Button size="sm" variant="outline" className="text-xs">
-                      View Details →
+                    <Button size="sm" variant="outline" className="text-xs" disabled>
+                      View Details → (Preview)
                     </Button>
                   </div>
                 )}
