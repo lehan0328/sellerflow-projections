@@ -111,19 +111,33 @@ export const useSupportTickets = (adminView = false) => {
     updates: Partial<SupportTicket>
   ) => {
     try {
-      const { error } = await supabase
-        .from('support_tickets')
-        .update(updates)
-        .eq('id', ticketId);
+      if (adminView) {
+        // Use edge function for admin updates (bypasses RLS with service role)
+        const { data, error } = await supabase.functions.invoke('update-support-ticket', {
+          body: {
+            ticketId,
+            status: updates.status,
+            resolutionNotes: updates.resolution_notes,
+          },
+        });
 
-      if (error) throw error;
+        if (error) throw error;
+        if (!data.success) throw new Error(data.error || 'Failed to update ticket');
+      } else {
+        // Direct update for users (their own tickets)
+        const { error } = await supabase
+          .from('support_tickets')
+          .update(updates)
+          .eq('id', ticketId);
+
+        if (error) throw error;
+      }
 
       toast({
         title: "Success",
         description: "Ticket updated successfully",
       });
 
-      await fetchTickets();
       return { data: null, error: null };
     } catch (error: any) {
       console.error('Error updating ticket:', error);

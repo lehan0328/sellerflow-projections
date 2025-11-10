@@ -185,3 +185,9 @@ verify_jwt = false
 
 [functions.trigger-amazon-sync]
 verify_jwt = false
+
+[functions.get-admin-support-tickets]
+verify_jwt = false
+
+[functions.update-support-ticket]
+verify_jwt = false

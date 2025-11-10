@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
 import { useSupportTickets } from "@/hooks/useSupportTickets";
 import { CheckCircle, Clock, AlertCircle, XCircle, MessageSquare, RefreshCw } from "lucide-react";
 import { TicketMessagesDialog } from "./TicketMessagesDialog";
@@ -65,12 +65,8 @@ export const AdminSupportTickets = () => {
     fetchMessageCounts();
   }, [tickets]);
 
-  const handleStatusChange = async (ticketId: string, newStatus: string) => {
-    const updates: any = { status: newStatus };
-    if (newStatus === 'resolved' || newStatus === 'closed') {
-      updates.resolved_at = new Date().toISOString();
-    }
-    await updateTicket(ticketId, updates);
+  const handleCloseTicket = async (ticketId: string) => {
+    await updateTicket(ticketId, { status: 'closed' });
     await refetch();
   };
 
@@ -218,20 +214,22 @@ export const AdminSupportTickets = () => {
                           </Badge>
                         )}
                       </Button>
-                      {statusIcons[ticket.status]}
-                      <Select 
-                        value={ticket.status} 
-                        onValueChange={(value) => handleStatusChange(ticket.id, value)}
-                      >
-                        <SelectTrigger className="w-[140px]">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="open">Open</SelectItem>
-                          <SelectItem value="needs_response">Needs Response</SelectItem>
-                          <SelectItem value="closed">Closed</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      {ticket.status !== 'closed' && (
+                        <Button
+                          size="sm"
+                          variant="default"
+                          onClick={() => handleCloseTicket(ticket.id)}
+                        >
+                          <CheckCircle className="h-4 w-4 mr-2" />
+                          Close
+                        </Button>
+                      )}
+                      {ticket.status === 'closed' && (
+                        <Badge variant="secondary" className="gap-1">
+                          <CheckCircle className="h-3 w-3" />
+                          Closed
+                        </Badge>
+                      )}
                     </div>
                   </div>
                 </div>
