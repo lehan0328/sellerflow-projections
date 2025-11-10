@@ -1116,12 +1116,32 @@ export const CashFlowCalendar = ({
             <TabsContent value="date" className="space-y-4 mt-4">
               <div className="space-y-2">
                 <Label htmlFor="search-date">Select a date</Label>
-                <Input
-                  id="search-date"
-                  type="date"
-                  value={searchDate}
-                  onChange={(e) => setSearchDate(e.target.value)}
-                />
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start text-left font-normal"
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {searchDate ? format(new Date(searchDate), "PPP") : <span>Pick a date</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={searchDate ? new Date(searchDate) : undefined}
+                      onSelect={(date) => {
+                        if (date) {
+                          setSearchDate(format(date, "yyyy-MM-dd"));
+                        } else {
+                          setSearchDate('');
+                        }
+                      }}
+                      initialFocus
+                      className="pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
               
               <ScrollArea className="h-[400px] pr-4">
