@@ -12,6 +12,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Sparkles, TrendingUp, AlertCircle, Loader2, Pencil, Check, X, CreditCard, ShoppingCart, Info, RefreshCw, Settings, DollarSign, Calendar, ArrowLeft, Search } from "lucide-react";
 import { useState, useEffect, useMemo, useCallback, memo } from "react";
+import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useCreditCards } from "@/hooks/useCreditCards";
@@ -1203,12 +1204,32 @@ export const CashFlowInsights = memo(({
             <TabsContent value="date" className="space-y-4 mt-4">
               <div className="space-y-2">
                 <Label htmlFor="search-date">Select a date</Label>
-                <Input
-                  id="search-date"
-                  type="date"
-                  value={searchDate}
-                  onChange={(e) => setSearchDate(e.target.value)}
-                />
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start text-left font-normal"
+                    >
+                      <Calendar className="mr-2 h-4 w-4" />
+                      {searchDate ? format(new Date(searchDate), "PPP") : <span>Pick a date</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <CalendarComponent
+                      mode="single"
+                      selected={searchDate ? new Date(searchDate) : undefined}
+                      onSelect={(date) => {
+                        if (date) {
+                          setSearchDate(format(date, "yyyy-MM-dd"));
+                        } else {
+                          setSearchDate('');
+                        }
+                      }}
+                      initialFocus
+                      className="pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
               
               <ScrollArea className="h-[400px] pr-4">
