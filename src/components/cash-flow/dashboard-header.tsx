@@ -134,15 +134,6 @@ export function DashboardHeader({
             Professional Plan Trial - Ends {new Date(trial_end).toLocaleDateString()}
           </Badge>
         )}
-        {!isDemo && (
-          <PendingNotificationsPanel 
-            vendors={vendors}
-            incomeItems={incomeItems}
-            onVendorClick={onVendorClick}
-            onIncomeClick={onIncomeClick}
-            onCreditCardNotificationClick={onCreditCardNotificationClick}
-          />
-        )}
         <Button
           variant="outline"
           size="icon"
@@ -162,6 +153,15 @@ export function DashboardHeader({
               <span className="hidden lg:inline text-xs font-bold text-blue-600 dark:text-blue-400">• Earn $2K</span>
             </div>
           </Button>}
+        {!isDemo && (
+          <PendingNotificationsPanel 
+            vendors={vendors}
+            incomeItems={incomeItems}
+            onVendorClick={onVendorClick}
+            onIncomeClick={onIncomeClick}
+            onCreditCardNotificationClick={onCreditCardNotificationClick}
+          />
+        )}
         {isDemo ? <DemoUserMenu /> : <UserMenu />}
           </div>
         </div>
