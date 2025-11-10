@@ -318,6 +318,9 @@ export function OverviewStats({
   });
   const pendingCreditTotal = pendingCreditPurchases.reduce((sum, purchase) => sum + purchase.amount, 0);
 
+  // Calculate net available credit after pending purchases
+  const netAvailableCredit = totalAvailableCredit - pendingCreditTotal;
+
   // Calculate credit utilization (totalCreditLimit already uses credit_limit_override from hook)
   const creditUtilization = totalCreditLimit > 0 ? totalCreditBalance / totalCreditLimit * 100 : 0;
   const getCreditVariant = () => {
@@ -531,7 +534,7 @@ export function OverviewStats({
           {/* Available Credit */}
           <div>
             <p className="text-sm font-medium text-muted-foreground mb-1">Available Credit</p>
-            <p className="text-2xl font-bold text-foreground mb-1.5 text-center">{formatCurrency(totalAvailableCredit)}</p>
+            <p className="text-2xl font-bold text-foreground mb-1.5 text-center">{formatCurrency(netAvailableCredit)}</p>
             {totalCreditLimit === 0 ? <p className="text-sm text-muted-foreground italic">No credit cards linked</p> : <>
                 <p className="text-sm text-muted-foreground text-center mb-1">Pending: {formatCurrency(pendingCreditTotal)}</p>
                 <p className="text-sm text-muted-foreground mb-2 text-center">{creditUtilization.toFixed(1)}% utilization</p>
