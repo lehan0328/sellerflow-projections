@@ -63,10 +63,10 @@ const Admin = () => {
         </div>
       </div>
 
-      <div className="container mx-auto px-6 py-8">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex gap-6">
+      <div className="px-6 py-8">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex gap-4">
           {/* Sidebar Navigation */}
-          <div className="w-64 flex-shrink-0">
+          <div className="w-52 flex-shrink-0">
             <div className="sticky top-6 space-y-1 p-2 rounded-lg border bg-card">
               {tabs.map((tab) => {
                 const Icon = tab.icon;
