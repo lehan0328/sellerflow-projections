@@ -13,7 +13,7 @@ import { toast } from "sonner";
 export const AdminSendUpdate = () => {
   const [title, setTitle] = useState("");
   const [message, setMessage] = useState("");
-  const [type, setType] = useState<"info" | "warning" | "success" | "critical">("info");
+  const [type, setType] = useState<"update" | "announcement" | "maintenance" | "new_feature" | "bug_fix" | "urgent" | "legal_policy" | "reminder" | "security">("update");
   const [category, setCategory] = useState("");
   const [actionLink, setActionLink] = useState("");
   const [isSending, setIsSending] = useState(false);
@@ -48,7 +48,7 @@ export const AdminSendUpdate = () => {
         setMessage("");
         setCategory("");
         setActionLink("");
-        setType("info");
+        setType("update");
       } else {
         throw new Error(data?.error || "Failed to send update");
       }
@@ -62,11 +62,14 @@ export const AdminSendUpdate = () => {
 
   const getTypeColor = (notifType: string) => {
     switch (notifType) {
-      case 'critical':
+      case 'urgent':
+      case 'security':
         return 'bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800 text-red-900 dark:text-red-100';
-      case 'warning':
+      case 'maintenance':
+      case 'reminder':
         return 'bg-yellow-50 dark:bg-yellow-950/20 border-yellow-200 dark:border-yellow-800 text-yellow-900 dark:text-yellow-100';
-      case 'success':
+      case 'new_feature':
+      case 'bug_fix':
         return 'bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800 text-green-900 dark:text-green-100';
       default:
         return 'bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800 text-blue-900 dark:text-blue-100';
@@ -137,20 +140,25 @@ export const AdminSendUpdate = () => {
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="type">Notification Type</Label>
-                <Select value={type} onValueChange={(value: any) => setType(value)}>
-                  <SelectTrigger id="type">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="info">Info</SelectItem>
-                    <SelectItem value="success">Success</SelectItem>
-                    <SelectItem value="warning">Warning</SelectItem>
-                    <SelectItem value="critical">Critical</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="type">Notification Type</Label>
+              <Select value={type} onValueChange={(value: any) => setType(value)}>
+                <SelectTrigger id="type">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="update">🔄 Update</SelectItem>
+                  <SelectItem value="announcement">📢 Announcement</SelectItem>
+                  <SelectItem value="maintenance">🔧 Maintenance</SelectItem>
+                  <SelectItem value="new_feature">✨ New Feature</SelectItem>
+                  <SelectItem value="bug_fix">🐛 Bug Fix</SelectItem>
+                  <SelectItem value="urgent">🚨 Urgent</SelectItem>
+                  <SelectItem value="legal_policy">📋 Legal/Policy Update</SelectItem>
+                  <SelectItem value="reminder">⏰ Reminder</SelectItem>
+                  <SelectItem value="security">🔒 Security</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
               <div className="space-y-2">
                 <Label htmlFor="category">Category (Optional)</Label>

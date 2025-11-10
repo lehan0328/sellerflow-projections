@@ -9,7 +9,7 @@ const corsHeaders = {
 interface UpdateNotificationRequest {
   title: string;
   message: string;
-  type: 'info' | 'warning' | 'success' | 'critical';
+  type: 'update' | 'announcement' | 'maintenance' | 'new_feature' | 'bug_fix' | 'urgent' | 'legal_policy' | 'reminder' | 'security';
   category?: string;
   actionLink?: string;
 }
