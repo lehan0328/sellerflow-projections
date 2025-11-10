@@ -353,11 +353,14 @@ export function CreditCards() {
 
       if (error) throw error;
 
-      toast.info("Reminder added to notifications");
+      toast.success("Reminder added to notifications");
       setShowStatementUpdateModal(false);
       setCardForStatementUpdate(null);
       setUpdateStatementBalance('');
       setUpdateDueDate('');
+      
+      // Force a page refresh to show the notification immediately
+      setTimeout(() => window.location.reload(), 500);
     } catch (error: any) {
       console.error('Error creating notification:', error);
       toast.error(error.message || "Failed to create reminder");
