@@ -121,7 +121,7 @@ export const AdminSupportTickets = () => {
             size="sm"
             onClick={() => setTicketView('open')}
           >
-            Open ({openTickets.length})
+            Awaiting Response ({openTickets.length})
           </Button>
           <Button
             variant={ticketView === 'needs_response' ? 'default' : 'outline'}
