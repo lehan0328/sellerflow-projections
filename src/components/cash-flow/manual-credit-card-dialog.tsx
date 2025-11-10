@@ -40,7 +40,6 @@ export function ManualCreditCardDialog({
     balance: card?.balance?.toString() || "0",
     credit_limit: card?.credit_limit?.toString() || "0",
     minimum_payment: card?.minimum_payment?.toString() || "0",
-    annual_fee: card?.annual_fee?.toString() || "0",
     payment_due_date: card?.payment_due_date || "",
     statement_close_date: card?.statement_close_date || "",
     currency_code: card?.currency_code || "USD"
@@ -54,7 +53,6 @@ export function ManualCreditCardDialog({
         balance: card.balance.toString(),
         credit_limit: card.credit_limit.toString(),
         minimum_payment: card.minimum_payment.toString(),
-        annual_fee: card.annual_fee.toString(),
         payment_due_date: card.payment_due_date || "",
         statement_close_date: card.statement_close_date || "",
         currency_code: card.currency_code
@@ -66,7 +64,6 @@ export function ManualCreditCardDialog({
         balance: "0",
         credit_limit: "0",
         minimum_payment: "0",
-        annual_fee: "0",
         payment_due_date: "",
         statement_close_date: "",
         currency_code: "USD"
@@ -100,7 +97,6 @@ export function ManualCreditCardDialog({
         credit_limit: parseFloat(formData.credit_limit),
         available_credit: parseFloat(formData.credit_limit) - parseFloat(formData.balance),
         minimum_payment: parseFloat(formData.minimum_payment),
-        annual_fee: parseFloat(formData.annual_fee),
         payment_due_date: formData.payment_due_date || null,
         statement_close_date: formData.statement_close_date || null,
         currency_code: formData.currency_code,
@@ -199,30 +195,16 @@ export function ManualCreditCardDialog({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="minimum_payment">Minimum Payment</Label>
-              <Input
-                id="minimum_payment"
-                type="number"
-                step="0.01"
-                value={formData.minimum_payment}
-                onChange={(e) => setFormData({ ...formData, minimum_payment: e.target.value })}
-                placeholder="0.00"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="annual_fee">Annual Fee</Label>
-              <Input
-                id="annual_fee"
-                type="number"
-                step="0.01"
-                value={formData.annual_fee}
-                onChange={(e) => setFormData({ ...formData, annual_fee: e.target.value })}
-                placeholder="0.00"
-              />
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="minimum_payment">Minimum Payment</Label>
+            <Input
+              id="minimum_payment"
+              type="number"
+              step="0.01"
+              value={formData.minimum_payment}
+              onChange={(e) => setFormData({ ...formData, minimum_payment: e.target.value })}
+              placeholder="0.00"
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
