@@ -28,7 +28,9 @@ export const PublicHeader = ({ activePage }: PublicHeaderProps) => {
               <img src={aurenIcon} alt="Auren - Amazon Cash Flow Forecasting Software" className="relative h-12 w-12 hover-scale transition-all duration-300" />
             </div>
             <span className="text-2xl font-display font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
+            <span className="text-2xl font-bold font-display bg-gradient-primary bg-clip-text text-transparent">
               Auren
+            </span>
             </span>
           </Link>
           <div className="hidden md:flex items-center space-x-6">

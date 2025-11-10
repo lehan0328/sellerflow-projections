@@ -696,7 +696,7 @@ const FlexReport = () => {
               <div className="flex items-center justify-center text-xs mb-3">
                 <div className="text-center">
                   <p className="text-slate-700 font-semibold text-sm mb-1">
-                    Powered by <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 bg-clip-text text-transparent font-black text-base">Auren</span>
+                    Powered by <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 bg-clip-text text-transparent font-black text-base font-display">Auren</span>
                   </p>
                   <p className="text-xs font-bold text-slate-700">Cash Flow Management Software For Amazon Sellers</p>
                   <p className="text-xs font-semibold text-blue-600 mt-1">www.aurenapp.com</p>

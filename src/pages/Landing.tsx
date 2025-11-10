@@ -1503,7 +1503,7 @@ const Landing = () => {
                     <h3 className="font-semibold text-center">Feature</h3>
                   </div>
                   <div className="p-6 space-y-4 bg-primary/5">
-                    <h3 className="font-semibold text-center text-primary">Auren</h3>
+                    <h3 className="font-semibold text-center text-primary font-display">Auren</h3>
                   </div>
                   <div className="p-6 space-y-4">
                     <h3 className="font-semibold text-center text-muted-foreground">Other Tools</h3>
@@ -2028,7 +2028,7 @@ const Landing = () => {
                 <div className="h-8 w-8 rounded-lg flex items-center justify-center">
                   <img src={aurenIcon} alt="Auren - Cash Flow Management for Amazon Sellers" className="h-8 w-8" />
                 </div>
-                <span className="text-xl font-bold">Auren</span>
+                <span className="text-xl font-bold font-display">Auren</span>
               </div>
               <p className="text-muted-foreground">
                 The cash flow management solution built specifically for Amazon sellers. Forecast payouts, track expenses, and grow with confidence.

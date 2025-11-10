@@ -169,7 +169,7 @@ export const BlogTemplate = ({
               onClick={() => navigate("/")}
             >
               <img src={aurenIcon} alt="Auren" className="h-12 w-12" />
-              <span className="text-2xl font-bold">Auren</span>
+              <span className="text-2xl font-bold font-display">Auren</span>
             </div>
             <Button variant="ghost" size="sm" onClick={() => navigate("/blog")}>
               <ArrowLeft className="mr-2 h-4 w-4" />

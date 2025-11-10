@@ -57,11 +57,11 @@ export default function AffiliateDashboard() {
                 Affiliate Program Application
               </span>
             </div>
-            <h1 className="text-5xl font-bold mb-4">
-              <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent animate-shimmer bg-[length:200%_100%]">
-                Join Auren Partners
-              </span>
-            </h1>
+          <h1 className="text-5xl font-bold mb-4 font-display">
+            <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent animate-shimmer bg-[length:200%_100%]">
+              Join Auren Partners
+            </span>
+          </h1>
             <p className="text-xl text-muted-foreground">Apply to become an affiliate and earn recurring commissions</p>
           </div>
 
@@ -214,7 +214,7 @@ export default function AffiliateDashboard() {
               Affiliate Portal
             </span>
           </div>
-          <h1 className="text-5xl font-bold mb-3">
+          <h1 className="text-5xl font-bold mb-3 font-display">
             <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent animate-shimmer bg-[length:200%_100%]">
               Auren Partners
             </span>

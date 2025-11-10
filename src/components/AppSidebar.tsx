@@ -148,7 +148,9 @@ export function AppSidebar({
           imageRendering: 'crisp-edges'
         }} />
             <span className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+            <span className="text-xl font-bold font-display bg-gradient-primary bg-clip-text text-transparent">
               Auren
+            </span>
             </span>
           </div>}
       </SidebarHeader>

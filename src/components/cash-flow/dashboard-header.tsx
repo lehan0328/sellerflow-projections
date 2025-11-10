@@ -92,7 +92,9 @@ export function DashboardHeader({
             <div className="flex flex-col items-center">
               <img src={aurenIcon} alt="Auren" className="h-8 w-auto mb-0.5" />
               <span className="text-xs font-bold bg-gradient-primary bg-clip-text text-transparent">
+              <span className="text-lg font-bold font-display bg-gradient-primary bg-clip-text text-transparent">
                 Auren
+              </span>
               </span>
             </div>
           )}
