@@ -62,6 +62,15 @@ import {
   getCreditCardDueDates,
 } from "@/components/cash-flow/credit-cards";
 import { AmazonPayouts } from "@/components/cash-flow/amazon-payouts";
+import {
+  OverviewStatsSkeleton,
+  BankAccountsSkeleton,
+  CashFlowCalendarSkeleton,
+  CashFlowInsightsSkeleton,
+  TransactionsViewSkeleton,
+  CreditCardsSkeleton,
+  AmazonPayoutsSkeleton,
+} from "@/components/dashboard/DashboardSkeleton";
 import { PurchaseOrderForm } from "@/components/cash-flow/purchase-order-form";
 import { VendorOrderEditModal } from "@/components/cash-flow/vendor-order-edit-modal";
 import { IncomeForm } from "@/components/cash-flow/income-form";
@@ -445,8 +454,11 @@ const Dashboard = () => {
   const { recurringExpenses, createRecurringExpense } = useRecurringExpenses();
   const { reserveAmount, updateReserveAmount } = useReserveAmount();
   const { excludeToday } = useExcludeToday();
-  const { data: safeSpendingData, refetch: refetchSafeSpending } =
-    useSafeSpending(reserveAmount, excludeToday, useAvailableBalance);
+  
+  // Initialize safe spending with 30-day projection for faster initial load
+  const { data: safeSpendingData, refetch: refetchSafeSpending, isLoading: isSafeSpendingLoading } =
+    useSafeSpending(reserveAmount, excludeToday, useAvailableBalance, 30); // 30 days for fast load
+  
   const {
     isOverBankLimit,
     isOverAmazonLimit,
@@ -2646,6 +2658,10 @@ const Dashboard = () => {
   const renderSection = () => {
     switch (activeSection) {
       case "overview":
+        // Progressive loading: Show critical data first with skeletons for slower components
+        const showBankAccounts = accounts.length > 0;
+        const showSafeSpendingData = !isSafeSpendingLoading && safeSpendingData;
+        
         return (
           <>
             {/* Amazon Sync Progress Banner */}
@@ -2661,150 +2677,162 @@ const Dashboard = () => {
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-3 lg:h-[620px]">
               {/* Left Sidebar: Combined Stats */}
               <div className="lg:col-span-1">
-                <OverviewStats
-                  totalCash={displayCash}
-                  events={allCalendarEvents}
-                  onUpdateCashBalance={handleUpdateCashBalance}
-                  onTransactionUpdate={() => {
-                    refetchVendorTransactions();
-                    refetchSafeSpending();
-                  }}
-                  pendingIncomeToday={pendingIncomeToday}
-                  useAvailableBalance={useAvailableBalance}
-                />
+                {showSafeSpendingData ? (
+                  <OverviewStats
+                    totalCash={displayCash}
+                    events={allCalendarEvents}
+                    onUpdateCashBalance={handleUpdateCashBalance}
+                    onTransactionUpdate={() => {
+                      refetchVendorTransactions();
+                      refetchSafeSpending();
+                    }}
+                    pendingIncomeToday={pendingIncomeToday}
+                    useAvailableBalance={useAvailableBalance}
+                  />
+                ) : (
+                  <OverviewStatsSkeleton />
+                )}
               </div>
 
               {/* Right Side: Cash Flow Calendar and Insights */}
               <div className="lg:col-span-3 grid grid-cols-1 lg:grid-cols-3 gap-3 h-full">
                 <div className="lg:col-span-2 h-full">
-                  <CashFlowCalendar
-                    events={allCalendarEvents}
-                    totalCash={displayCash}
-                    onEditTransaction={handleEditTransaction}
-                    onUpdateTransactionDate={handleUpdateTransactionDate}
-                    todayInflow={todayInflow}
-                    todayOutflow={todayOutflow}
-                    upcomingExpenses={upcomingExpenses}
-                    incomeItems={incomeItems}
-                    bankAccountBalance={displayBankBalance}
-                    projectedDailyBalances={(
-                      safeSpendingData?.calculation?.daily_balances || []
-                    ).map((d) => ({
-                      date: new Date(d.date),
-                      balance: d.balance,
-                    }))}
-                    vendors={vendors}
-                    onVendorClick={handleEditVendorOrder}
-                    onIncomeClick={handleEditIncome}
-                    reserveAmount={reserveAmount}
-                    excludeToday={excludeToday}
-                    safeSpendingLimit={
-                      safeSpendingData?.safe_spending_limit || 0
-                    }
-                    allBuyingOpportunities={
-                      safeSpendingData?.calculation?.all_buying_opportunities ||
-                      []
-                    }
-                    dailyBalances={
-                      safeSpendingData?.calculation?.daily_balances || []
-                    }
-                  />
+                  {showSafeSpendingData ? (
+                    <CashFlowCalendar
+                      events={allCalendarEvents}
+                      totalCash={displayCash}
+                      onEditTransaction={handleEditTransaction}
+                      onUpdateTransactionDate={handleUpdateTransactionDate}
+                      todayInflow={todayInflow}
+                      todayOutflow={todayOutflow}
+                      upcomingExpenses={upcomingExpenses}
+                      incomeItems={incomeItems}
+                      bankAccountBalance={displayBankBalance}
+                      projectedDailyBalances={(
+                        safeSpendingData?.calculation?.daily_balances || []
+                      ).map((d) => ({
+                        date: new Date(d.date),
+                        balance: d.balance,
+                      }))}
+                      vendors={vendors}
+                      onVendorClick={handleEditVendorOrder}
+                      onIncomeClick={handleEditIncome}
+                      reserveAmount={reserveAmount}
+                      excludeToday={excludeToday}
+                      safeSpendingLimit={
+                        safeSpendingData?.safe_spending_limit || 0
+                      }
+                      allBuyingOpportunities={
+                        safeSpendingData?.calculation?.all_buying_opportunities ||
+                        []
+                      }
+                      dailyBalances={
+                        safeSpendingData?.calculation?.daily_balances || []
+                      }
+                    />
+                  ) : (
+                    <CashFlowCalendarSkeleton />
+                  )}
                 </div>
                 <div className="lg:col-span-1 h-full">
-                  <CashFlowInsights
-                    currentBalance={displayCash}
-                    dailyInflow={todayInflow}
-                    dailyOutflow={todayOutflow}
-                    upcomingExpenses={upcomingExpenses}
-                    events={allCalendarEvents}
-                    vendors={vendors}
-                    income={incomeItems}
-                    safeSpendingLimit={
-                      safeSpendingData?.safe_spending_limit || 0
-                    }
-                    reserveAmount={reserveAmount}
-                    projectedLowestBalance={
-                      safeSpendingData?.calculation?.lowest_projected_balance ||
-                      calendarMinimum.balance
-                    }
-                    lowestBalanceDate={calendarMinimum.date}
-                    safeSpendingAvailableDate={
-                      safeSpendingData?.calculation
-                        ?.safe_spending_available_date
-                    }
-                    nextBuyingOpportunityBalance={
-                      safeSpendingData?.calculation
-                        ?.next_buying_opportunity_balance
-                    }
-                    nextBuyingOpportunityDate={
-                      safeSpendingData?.calculation
-                        ?.next_buying_opportunity_date
-                    }
-                    nextBuyingOpportunityAvailableDate={
-                      safeSpendingData?.calculation
-                        ?.next_buying_opportunity_available_date
-                    }
-                    allBuyingOpportunities={
-                      safeSpendingData?.calculation?.all_buying_opportunities ||
-                      []
-                    }
-                    dailyBalances={
-                      safeSpendingData?.calculation?.daily_balances || []
-                    }
-                    onUpdateReserveAmount={updateReserveAmount}
-                    transactionMatchButton={
-                      <TransactionMatchButton
-                        matches={matches}
-                        onMatchAll={async () => {
-                          // Match all transactions instantly
-                          for (const match of matches) {
-                            if (
-                              match.type === "income" &&
-                              match.matchedIncome
-                            ) {
-                              await updateIncome(match.matchedIncome.id, {
-                                status: "received",
-                              });
-                              await addTransaction({
-                                type: "customer_payment",
-                                amount: match.matchedIncome.amount,
-                                description: `Auto-matched: ${match.matchedIncome.source} - ${match.matchedIncome.description}`,
-                                customerId: match.matchedIncome.customerId,
-                                transactionDate: new Date(),
-                                status: "completed",
-                              });
-                            } else if (
-                              match.type === "vendor" &&
-                              match.matchedVendorTransaction
-                            ) {
-                              // Mark the vendor transaction as paid and archive
-                              await supabase
-                                .from("transactions")
-                                .update({ status: "completed", archived: true })
-                                .eq("id", match.matchedVendorTransaction.id);
+                  {showSafeSpendingData ? (
+                    <CashFlowInsights
+                      currentBalance={displayCash}
+                      dailyInflow={todayInflow}
+                      dailyOutflow={todayOutflow}
+                      upcomingExpenses={upcomingExpenses}
+                      events={allCalendarEvents}
+                      vendors={vendors}
+                      income={incomeItems}
+                      safeSpendingLimit={
+                        safeSpendingData?.safe_spending_limit || 0
+                      }
+                      reserveAmount={reserveAmount}
+                      projectedLowestBalance={
+                        safeSpendingData?.calculation?.lowest_projected_balance ||
+                        calendarMinimum.balance
+                      }
+                      lowestBalanceDate={calendarMinimum.date}
+                      safeSpendingAvailableDate={
+                        safeSpendingData?.calculation
+                          ?.safe_spending_available_date
+                      }
+                      nextBuyingOpportunityBalance={
+                        safeSpendingData?.calculation
+                          ?.next_buying_opportunity_balance
+                      }
+                      nextBuyingOpportunityDate={
+                        safeSpendingData?.calculation
+                          ?.next_buying_opportunity_date
+                      }
+                      nextBuyingOpportunityAvailableDate={
+                        safeSpendingData?.calculation
+                          ?.next_buying_opportunity_available_date
+                      }
+                      allBuyingOpportunities={
+                        safeSpendingData?.calculation?.all_buying_opportunities ||
+                        []
+                      }
+                      dailyBalances={
+                        safeSpendingData?.calculation?.daily_balances || []
+                      }
+                      onUpdateReserveAmount={updateReserveAmount}
+                      transactionMatchButton={
+                        <TransactionMatchButton
+                          matches={matches}
+                          onMatchAll={async () => {
+                            // Match all transactions instantly
+                            for (const match of matches) {
+                              if (
+                                match.type === "income" &&
+                                match.matchedIncome
+                              ) {
+                                await updateIncome(match.matchedIncome.id, {
+                                  status: "received",
+                                });
+                                await addTransaction({
+                                  type: "customer_payment",
+                                  amount: match.matchedIncome.amount,
+                                  description: `Auto-matched: ${match.matchedIncome.source} - ${match.matchedIncome.description}`,
+                                  customerId: match.matchedIncome.customerId,
+                                  transactionDate: new Date(),
+                                  status: "completed",
+                                });
+                              } else if (
+                                match.type === "vendor" &&
+                                match.matchedVendorTransaction
+                              ) {
+                                // Mark the vendor transaction as paid and archive
+                                await supabase
+                                  .from("transactions")
+                                  .update({ status: "completed", archived: true })
+                                  .eq("id", match.matchedVendorTransaction.id);
 
-                              await addTransaction({
-                                type: "vendor_payment",
-                                amount: Math.abs(match.bankTransaction.amount),
-                                description: `Auto-matched: Payment to ${match.matchedVendorTransaction.vendorName} - ${match.matchedVendorTransaction.description}`,
-                                transactionDate: new Date(),
-                                status: "completed",
-                              });
+                                await addTransaction({
+                                  type: "vendor_payment",
+                                  amount: Math.abs(match.bankTransaction.amount),
+                                  description: `Auto-matched: Payment to ${match.matchedVendorTransaction.vendorName} - ${match.matchedVendorTransaction.description}`,
+                                  transactionDate: new Date(),
+                                  status: "completed",
+                                });
+                              }
                             }
-                          }
 
-                          toast({
-                            title: "All matches completed",
-                            description: `${matches.length} transactions have been automatically matched.`,
-                          });
+                            toast({
+                              title: "All matches completed",
+                              description: `${matches.length} transactions have been automatically matched.`,
+                            });
 
-                          refetchIncome();
-                          refetchVendors();
-                        }}
-                        onReviewMatches={() => navigate("/bank-transactions")}
-                      />
-                    }
-                  />
+                            refetchIncome();
+                            refetchVendors();
+                          }}
+                          onReviewMatches={() => navigate("/bank-transactions")}
+                        />
+                      }
+                    />
+                  ) : (
+                    <CashFlowInsightsSkeleton />
+                  )}
                 </div>
               </div>
             </div>

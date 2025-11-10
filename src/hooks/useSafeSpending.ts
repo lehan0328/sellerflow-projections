@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { generateRecurringDates } from "@/lib/recurringDates";
 import { format } from "date-fns";
@@ -56,7 +56,12 @@ interface DailyBalance {
   }>;
 }
 
-export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTransactions: boolean = false, useAvailableBalance: boolean = true) => {
+export const useSafeSpending = (
+  reserveAmountInput: number = 0, 
+  excludeTodayTransactions: boolean = false, 
+  useAvailableBalance: boolean = true,
+  daysToProject: number = 30 // Reduced from 90 to 30 days for faster calculation
+) => {
   const { amazonPayouts, forecastsEnabled } = useAmazonPayouts();
   const [data, setData] = useState<SafeSpendingData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -157,9 +162,9 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
       today.setHours(0, 0, 0, 0);
       const todayStr = formatDate(today);
 
-      // Only look 90 days (3 months) ahead for projections
+      // Project ahead based on daysToProject parameter (default 30 days)
       const futureDate = new Date(today);
-      futureDate.setDate(futureDate.getDate() + 90);
+      futureDate.setDate(futureDate.getDate() + daysToProject);
       const futureDateStr = formatDate(futureDate);
       
       // Get ALL events that affect cash flow (matching calendar logic)
@@ -257,8 +262,8 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
       const dailyBalances: DailyBalance[] = [];
       let runningBalance = bankBalance;
 
-      // Process each day in the next 90 days (3 months)
-      for (let i = 0; i <= 90; i++) {
+      // Process each day based on daysToProject parameter
+      for (let i = 0; i <= daysToProject; i++) {
         const targetDate = new Date(today);
         targetDate.setDate(targetDate.getDate() + i);
         targetDate.setHours(0, 0, 0, 0);
