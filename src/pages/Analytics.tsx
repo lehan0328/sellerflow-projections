@@ -486,13 +486,12 @@ export default function Analytics() {
     });
 
     // Completed sales orders and customer payments filtered by transaction date
-    // Use actual category from transaction to track by real category (Sales, Service, etc.)
+    // Use actual category from transaction - only include if category is set
     dbTransactions.forEach(tx => {
       const txDate = new Date(tx.transactionDate);
       if (txDate >= start && txDate <= end) {
-        if ((tx.type === 'customer_payment' || tx.type === 'sales_order') && tx.status === 'completed') {
-          const category = tx.category || 'Uncategorized Sales';
-          sourceData[category] = (sourceData[category] || 0) + tx.amount;
+        if ((tx.type === 'customer_payment' || tx.type === 'sales_order') && tx.status === 'completed' && tx.category) {
+          sourceData[tx.category] = (sourceData[tx.category] || 0) + tx.amount;
         }
       }
     });
