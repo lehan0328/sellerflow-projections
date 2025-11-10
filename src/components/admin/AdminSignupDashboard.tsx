@@ -29,7 +29,8 @@ interface SignupMetrics {
 
 export function AdminSignupDashboard() {
   const { isAdmin } = useAdmin();
-  const [signups, setSignups] = useState<SignupData[]>([]);
+  const [allSignups, setAllSignups] = useState<SignupData[]>([]);
+  const [monthlySignupsCount, setMonthlySignupsCount] = useState<number>(0);
   const [selectedMonth, setSelectedMonth] = useState<string>(format(new Date(), 'yyyy-MM'));
   const [metrics, setMetrics] = useState<SignupMetrics>({
     totalSignups: 0,
@@ -60,37 +61,47 @@ export function AdminSignupDashboard() {
 
   const fetchSignupData = async () => {
     try {
+      // Fetch all-time signups
+      const { data: allData, error: allError } = await supabase
+        .from('profiles')
+        .select('user_id, email, first_name, last_name, company, monthly_amazon_revenue, referral_code, hear_about_us, created_at')
+        .order('created_at', { ascending: false });
+
+      if (allError) throw allError;
+
+      const allSignupsData = allData || [];
+      setAllSignups(allSignupsData);
+
+      // Fetch monthly signups count
       const [year, month] = selectedMonth.split('-');
       const startDate = startOfMonth(new Date(parseInt(year), parseInt(month) - 1));
       const endDate = endOfMonth(new Date(parseInt(year), parseInt(month) - 1));
 
-      const { data, error } = await supabase
+      const { count, error: countError } = await supabase
         .from('profiles')
-        .select('user_id, email, first_name, last_name, company, monthly_amazon_revenue, referral_code, hear_about_us, created_at')
+        .select('*', { count: 'exact', head: true })
         .gte('created_at', startDate.toISOString())
-        .lte('created_at', endDate.toISOString())
-        .order('created_at', { ascending: false });
+        .lte('created_at', endDate.toISOString());
 
-      if (error) throw error;
+      if (countError) throw countError;
 
-      const signupData = data || [];
-      setSignups(signupData);
+      setMonthlySignupsCount(count || 0);
 
-      // Calculate metrics
-      const totalSignups = signupData.length;
-      const signupsWithReferral = signupData.filter(s => s.referral_code).length;
+      // Calculate all-time metrics
+      const totalSignups = allSignupsData.length;
+      const signupsWithReferral = allSignupsData.filter(s => s.referral_code).length;
       const referralPercentage = totalSignups > 0 ? (signupsWithReferral / totalSignups) * 100 : 0;
 
-      // Source breakdown
+      // Source breakdown (all-time)
       const sourceBreakdown: Record<string, number> = {};
-      signupData.forEach(signup => {
+      allSignupsData.forEach(signup => {
         const source = signup.hear_about_us || 'Unknown';
         sourceBreakdown[source] = (sourceBreakdown[source] || 0) + 1;
       });
 
-      // Revenue breakdown
+      // Revenue breakdown (all-time)
       const revenueBreakdown: Record<string, number> = {};
-      signupData.forEach(signup => {
+      allSignupsData.forEach(signup => {
         const revenue = signup.monthly_amazon_revenue || 'Unknown';
         revenueBreakdown[revenue] = (revenueBreakdown[revenue] || 0) + 1;
       });
@@ -161,7 +172,7 @@ export function AdminSignupDashboard() {
             <UserPlus className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{metrics.totalSignups}</div>
+            <div className="text-2xl font-bold">{monthlySignupsCount}</div>
             <p className="text-xs text-muted-foreground">Signups in {format(new Date(selectedMonth), 'MMMM yyyy')}</p>
           </CardContent>
         </Card>
@@ -173,7 +184,7 @@ export function AdminSignupDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{metrics.referralPercentage.toFixed(1)}%</div>
-            <p className="text-xs text-muted-foreground">Signups with referral code</p>
+            <p className="text-xs text-muted-foreground">All-time signups with referral code</p>
           </CardContent>
         </Card>
 
@@ -188,7 +199,7 @@ export function AdminSignupDashboard() {
                 ? formatSource(Object.entries(metrics.sourceBreakdown).sort((a, b) => b[1] - a[1])[0][0])
                 : 'N/A'}
             </div>
-            <p className="text-xs text-muted-foreground">Most common acquisition channel</p>
+            <p className="text-xs text-muted-foreground">All-time top acquisition channel</p>
           </CardContent>
         </Card>
 
@@ -203,7 +214,7 @@ export function AdminSignupDashboard() {
                 ? Object.entries(metrics.revenueBreakdown).sort((a, b) => b[1] - a[1])[0][0]
                 : 'N/A'}
             </div>
-            <p className="text-xs text-muted-foreground">Most common revenue bracket</p>
+            <p className="text-xs text-muted-foreground">All-time top revenue bracket</p>
           </CardContent>
         </Card>
       </div>
@@ -212,7 +223,7 @@ export function AdminSignupDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
-            <CardTitle>Acquisition Sources</CardTitle>
+            <CardTitle>Acquisition Sources (All-Time)</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
@@ -239,7 +250,7 @@ export function AdminSignupDashboard() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Revenue Distribution</CardTitle>
+            <CardTitle>Revenue Distribution (All-Time)</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
@@ -268,7 +279,7 @@ export function AdminSignupDashboard() {
       {/* Detailed Signup Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Recent Signups</CardTitle>
+          <CardTitle>All Signups</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
@@ -284,14 +295,14 @@ export function AdminSignupDashboard() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {signups.length === 0 ? (
+              {allSignups.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} className="text-center text-muted-foreground">
                     No signups yet
                   </TableCell>
                 </TableRow>
               ) : (
-                signups.map((signup) => (
+                allSignups.map((signup) => (
                   <TableRow key={signup.user_id}>
                     <TableCell>
                       <div className="font-medium">
