@@ -71,6 +71,7 @@ export const AdminSupportTickets = () => {
       updates.resolved_at = new Date().toISOString();
     }
     await updateTicket(ticketId, updates);
+    await refetch();
   };
 
   const handleViewMessages = async (ticket: any) => {
