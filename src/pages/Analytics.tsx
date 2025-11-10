@@ -316,10 +316,15 @@ export default function Analytics() {
       revenue: number;
       projected: number;
       otherIncome: number;
+      isCurrentMonth: boolean;
     }> = {};
     const now = new Date();
     const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
     const twoMonthsAhead = new Date(now.getFullYear(), now.getMonth() + 2, 0);
+    const currentMonthKey = now.toLocaleDateString('en-US', {
+      month: 'short',
+      year: 'numeric'
+    });
 
     // Initialize last 6 months + next 2 months (8 months total)
     for (let i = 5; i >= -2; i--) {
@@ -331,11 +336,12 @@ export default function Analytics() {
       monthlyData[key] = {
         revenue: 0,
         projected: 0,
-        otherIncome: 0
+        otherIncome: 0,
+        isCurrentMonth: key === currentMonthKey
       };
     }
 
-    // Aggregate Amazon payouts (confirmed and forecasted)
+    // First pass: Calculate confirmed revenue for each month
     amazonPayouts.forEach(payout => {
       const date = new Date(payout.payout_date);
       if (date >= sixMonthsAgo && date <= twoMonthsAhead) {
@@ -346,11 +352,51 @@ export default function Analytics() {
         if (monthlyData.hasOwnProperty(key)) {
           if (payout.status === 'confirmed') {
             monthlyData[key].revenue += payout.total_amount || 0;
-            monthlyData[key].projected += payout.total_amount || 0;
-          } else if (payout.status === 'forecasted') {
-            monthlyData[key].projected += payout.total_amount || 0;
           }
         }
+      }
+    });
+
+    // Second pass: Calculate projected amounts
+    // For current month: use total of confirmed + forecasted as fixed projection
+    // For past months: projected = confirmed (actuals)
+    // For future months: projected = forecasted only
+    Object.keys(monthlyData).forEach(key => {
+      const monthData = monthlyData[key];
+      const monthDate = new Date(key);
+      const isPastMonth = monthDate < new Date(now.getFullYear(), now.getMonth(), 1);
+      const isFutureMonth = monthDate > new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+      if (monthData.isCurrentMonth) {
+        // Current month: sum all confirmed + forecasted for total projection
+        const confirmedThisMonth = amazonPayouts
+          .filter(p => {
+            const pDate = new Date(p.payout_date);
+            return p.status === 'confirmed' && pDate.getMonth() === monthDate.getMonth() && pDate.getFullYear() === monthDate.getFullYear();
+          })
+          .reduce((sum, p) => sum + (p.total_amount || 0), 0);
+        
+        const forecastedThisMonth = amazonPayouts
+          .filter(p => {
+            const pDate = new Date(p.payout_date);
+            return p.status === 'forecasted' && pDate.getMonth() === monthDate.getMonth() && pDate.getFullYear() === monthDate.getFullYear();
+          })
+          .reduce((sum, p) => sum + (p.total_amount || 0), 0);
+        
+        monthData.projected = confirmedThisMonth + forecastedThisMonth;
+      } else if (isPastMonth) {
+        // Past months: projected = confirmed (actuals only)
+        monthData.projected = monthData.revenue;
+      } else if (isFutureMonth) {
+        // Future months: projected = forecasted only
+        const forecastedFutureMonth = amazonPayouts
+          .filter(p => {
+            const pDate = new Date(p.payout_date);
+            return p.status === 'forecasted' && pDate.getMonth() === monthDate.getMonth() && pDate.getFullYear() === monthDate.getFullYear();
+          })
+          .reduce((sum, p) => sum + (p.total_amount || 0), 0);
+        
+        monthData.projected = forecastedFutureMonth;
       }
     });
 
