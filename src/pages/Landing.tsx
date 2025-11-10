@@ -735,7 +735,7 @@ const Landing = () => {
               {/* Signature Features Highlights */}
               <div className="relative bg-card/50 backdrop-blur-sm border border-primary/10 rounded-2xl p-6 mb-6">
                 <div className="text-center mb-4">
-                  <span className="text-sm font-semibold text-primary">✨ See Signature Features in Video Below</span>
+                  <span className="text-sm font-semibold text-primary">✨ Try our signature features with a free trial - no card required!</span>
                 </div>
                 
                 {/* Amazon Partner Badge - Bottom Right Corner */}
@@ -790,17 +790,12 @@ const Landing = () => {
                 
                 {/* Image card */}
                 <div className="relative rounded-2xl border-2 border-primary/20 bg-card/80 backdrop-blur-xl shadow-2xl overflow-hidden">
-                  <img 
-                    src={dashboardPreview} 
-                    alt="Auren Dashboard Preview - Cash Flow Visualization and Safe Spending Power" 
-                    className="w-full h-auto will-change-transform"
-                    style={{ 
-                      imageRendering: '-webkit-optimize-contrast',
-                      transform: 'translateZ(0)',
-                      backfaceVisibility: 'hidden',
-                      WebkitFontSmoothing: 'subpixel-antialiased'
-                    }}
-                  />
+                  <img src={dashboardPreview} alt="Auren Dashboard Preview - Cash Flow Visualization and Safe Spending Power" className="w-full h-auto will-change-transform" style={{
+                  imageRendering: '-webkit-optimize-contrast',
+                  transform: 'translateZ(0)',
+                  backfaceVisibility: 'hidden',
+                  WebkitFontSmoothing: 'subpixel-antialiased'
+                }} />
                 </div>
               </div>
               
