@@ -21,6 +21,8 @@ import { Label } from "@/components/ui/label";
 import { useAmazonPayouts } from "@/hooks/useAmazonPayouts";
 import { useAuth } from "@/hooks/useAuth";
 import aurenLogo from "@/assets/auren-icon-blue.png";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 interface CashFlowInsightsProps {
   currentBalance: number;
   dailyInflow: number;
@@ -975,13 +977,28 @@ export const CashFlowInsights = memo(({
                 </div>
                 <div className="space-y-1">
                   <Label htmlFor="projection-date" className="text-xs">Date</Label>
-                  <Input
-                    id="projection-date"
-                    type="date"
-                    value={projectionDate}
-                    onChange={(e) => setProjectionDate(e.target.value)}
-                    className="h-8 text-sm"
-                  />
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal h-8 text-sm",
+                          !projectionDate && "text-muted-foreground"
+                        )}
+                      >
+                        <Calendar className="mr-2 h-4 w-4" />
+                        {projectionDate ? format(new Date(projectionDate), "PP") : <span>Pick date</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <CalendarComponent
+                        mode="single"
+                        selected={projectionDate ? new Date(projectionDate) : undefined}
+                        onSelect={(date) => setProjectionDate(date ? format(date, "yyyy-MM-dd") : "")}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
               </div>
               
