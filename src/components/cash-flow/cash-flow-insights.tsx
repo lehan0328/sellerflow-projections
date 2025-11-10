@@ -84,6 +84,10 @@ export const CashFlowInsights = memo(({
   const [searchType, setSearchType] = useState<'amount' | 'date'>('amount');
   const [searchAmount, setSearchAmount] = useState('');
   const [searchDate, setSearchDate] = useState('');
+  const [searchResults, setSearchResults] = useState<{
+    date: string;
+    events: any[];
+  }[]>([]);
   const [isEditingReserve, setIsEditingReserve] = useState(false);
   const [editReserveValue, setEditReserveValue] = useState(reserveAmount.toString());
   const [isForecastGenerating, setIsForecastGenerating] = useState(false);
@@ -1070,261 +1074,156 @@ export const CashFlowInsights = memo(({
         </DialogContent>
       </Dialog>
 
-      {/* Search Opportunities Modal */}
+      {/* Search Transactions Modal */}
       <Dialog open={showSearchOpportunities} onOpenChange={setShowSearchOpportunities}>
-        <DialogContent className="max-w-4xl">
+        <DialogContent className="max-w-2xl max-h-[80vh]">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => {
-                  setShowSearchOpportunities(false);
-                  setShowAllOpportunities(true);
-                }}
-                className="mr-2"
-              >
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-              <ShoppingCart className="h-5 w-5 text-blue-600" />
-              Search Buying Opportunities
-            </DialogTitle>
+            <DialogTitle>Search Transactions</DialogTitle>
             <DialogDescription>
-              Search by amount to find when you can spend it, or by date to see how much you can spend on that day. All results reflect transactions within the next 3 months only.
+              Search for transactions by amount or date
             </DialogDescription>
           </DialogHeader>
           
-          <Tabs value={searchType} onValueChange={(v) => setSearchType(v as 'amount' | 'date')} className="w-full">
+          <Tabs value={searchType} onValueChange={(value: 'amount' | 'date') => setSearchType(value)}>
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="amount" className="flex items-center gap-2">
-                <DollarSign className="h-4 w-4" />
-                Search by Amount
-              </TabsTrigger>
-              <TabsTrigger value="date" className="flex items-center gap-2">
-                <Calendar className="h-4 w-4" />
-                Search by Date
-              </TabsTrigger>
+              <TabsTrigger value="amount">Search by Amount</TabsTrigger>
+              <TabsTrigger value="date">Search by Date</TabsTrigger>
             </TabsList>
             
-            <TabsContent value="amount" className="space-y-4 mt-4">
+            <TabsContent value="amount" className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="search-amount">Enter amount you want to spend</Label>
-                <div className="flex gap-2">
-                  <div className="flex-1 relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
-                    <Input
-                      id="search-amount"
-                      type="number"
-                      placeholder="0.00"
-                      value={searchAmount}
-                      onChange={(e) => setSearchAmount(e.target.value)}
-                      className="pl-7"
-                    />
-                  </div>
-                </div>
-              </div>
-              
-              <ScrollArea className="h-[400px] pr-4">
-                {searchAmount && parseFloat(searchAmount) > 0 ? (
-                  <div className="space-y-3">
-                    {(() => {
-                      const amount = parseFloat(searchAmount);
-                      // Find the earliest opportunity where balance >= amount
-                      const matchingOpp = mergedOpportunities.find(opp => opp.balance >= amount);
-                      
-                      if (!matchingOpp) {
-                        return (
-                          <div className="text-center p-8 text-muted-foreground">
-                            <AlertCircle className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                            <p className="font-medium">No opportunities found for ${searchAmount}</p>
-                            <p className="text-sm mt-2">Try a lower amount or check back later</p>
-                          </div>
-                        );
-                      }
-                      
-                      const [year, month, day] = matchingOpp.date.split('-').map(Number);
-                      const date = new Date(year, month - 1, day);
-                      const formattedDate = date.toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric'
-                      });
-                      
-                      let availableDate = '';
-                      if (matchingOpp.available_date) {
-                        const [aYear, aMonth, aDay] = matchingOpp.available_date.split('-').map(Number);
-                        const aDate = new Date(aYear, aMonth - 1, aDay);
-                        availableDate = aDate.toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          year: 'numeric'
-                        });
-                      }
-                      
-                      return (
-                        <div className="p-4 rounded-lg border bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/30 dark:to-blue-950/30 border-blue-200 dark:border-blue-800">
-                          <div className="flex items-center justify-between mb-3">
-                            <div>
-                              <div className="text-2xl font-bold text-blue-600">
-                                ${matchingOpp.balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                              </div>
-                              <div className="text-xs text-muted-foreground">Available</div>
-                            </div>
-                            <Badge variant="outline" className="bg-blue-500/10 text-blue-600 border-blue-500/30">
-                              Can afford ${searchAmount}
-                            </Badge>
-                          </div>
-                          <Separator className="my-2" />
-                          <div className="space-y-2 text-sm">
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">Low Point Date:</span>
-                              <span className="font-medium">{formattedDate}</span>
-                            </div>
-                            {availableDate && (
-                              <div className="flex justify-between p-2 bg-blue-100 dark:bg-blue-900/30 rounded">
-                                <span className="text-blue-700 dark:text-blue-400 font-medium">Earliest Purchase:</span>
-                                <span className="font-bold text-blue-600">{availableDate}</span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })()}
-                  </div>
-                ) : (
-                  <div className="text-center p-8 text-muted-foreground">
-                    <DollarSign className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                    <p>Enter an amount to see when you can spend it</p>
-                  </div>
-                )}
-              </ScrollArea>
-            </TabsContent>
-            
-            <TabsContent value="date" className="space-y-4 mt-4">
-              <div className="space-y-2">
-                <Label htmlFor="search-date">Select a date</Label>
+                <Label htmlFor="search-amount">Amount</Label>
                 <Input
-                  id="search-date"
-                  type="date"
-                  value={searchDate}
-                  onChange={(e) => setSearchDate(e.target.value)}
+                  id="search-amount"
+                  type="number"
+                  placeholder="Enter amount to search"
+                  value={searchAmount}
+                  onChange={(e) => setSearchAmount(e.target.value)}
                 />
               </div>
-              
-              <ScrollArea className="h-[400px] pr-4">
-                {searchDate ? (
-                  <div className="space-y-3">
-                    {(() => {
-                      const searchDateObj = new Date(searchDate + 'T00:00:00');
-                      
-                      // Find the opportunity where the selected date falls within the range [earliest_purchase_date, low_point_date]
-                      let relevantOpp = null;
-                      for (const opp of adjustedOpportunities) {
-                        const [year, month, day] = opp.date.split('-').map(Number);
-                        const lowPointDate = new Date(year, month - 1, day);
-                        
-                        let earliestPurchaseDate = lowPointDate;
-                        if (opp.available_date) {
-                          const [aYear, aMonth, aDay] = opp.available_date.split('-').map(Number);
-                          earliestPurchaseDate = new Date(aYear, aMonth - 1, aDay);
-                        }
-                        
-                        // Check if selected date is within the opportunity range
-                        if (searchDateObj >= earliestPurchaseDate && searchDateObj <= lowPointDate) {
-                          relevantOpp = opp;
-                          break;
-                        }
-                      }
-                      
-                      // If no opportunity matches, show a message
-                      if (!relevantOpp) {
-                        return (
-                          <div className="text-center p-8 text-muted-foreground">
-                            <AlertCircle className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                            <p className="font-medium">No buying opportunity available for this date</p>
-                            <p className="text-sm mt-2">The selected date doesn't fall within any opportunity range</p>
-                          </div>
-                        );
-                      }
-                      
-                      const [year, month, day] = relevantOpp.date.split('-').map(Number);
-                      const lowDate = new Date(year, month - 1, day);
-                      const formattedLowDate = lowDate.toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric'
-                      });
-                      
-                      let availableDate = '';
-                      let earliestPurchaseDate = lowDate;
-                      if (relevantOpp.available_date) {
-                        const [aYear, aMonth, aDay] = relevantOpp.available_date.split('-').map(Number);
-                        earliestPurchaseDate = new Date(aYear, aMonth - 1, aDay);
-                        availableDate = earliestPurchaseDate.toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          year: 'numeric'
-                        });
-                      }
-                      
-                      const canPurchase = searchDateObj >= earliestPurchaseDate;
-                      
-                      return (
-                        <div className="p-6 rounded-lg border bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border-blue-200 dark:border-blue-800">
-                          <div className="text-center mb-4">
-                            <div className="text-xs text-muted-foreground mb-2">
-                              On {new Date(searchDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
-                            </div>
-                            <div className="text-4xl font-bold text-blue-600">
-                              ${relevantOpp.balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                            </div>
-                            <div className="text-sm text-muted-foreground mt-1">Available to spend</div>
-                          </div>
-                          
-                          <Separator className="my-4" />
-                          
-                          <div className="space-y-3">
-                            <div className={`p-3 rounded-lg ${canPurchase ? 'bg-green-100 dark:bg-green-900/30' : 'bg-amber-100 dark:bg-amber-900/30'}`}>
-                              <div className="flex items-center gap-2 mb-2">
-                                {canPurchase ? (
-                                  <Check className="h-4 w-4 text-green-600" />
-                                ) : (
-                                  <AlertCircle className="h-4 w-4 text-amber-600" />
-                                )}
-                                <span className={`text-sm font-semibold ${canPurchase ? 'text-green-700 dark:text-green-400' : 'text-amber-700 dark:text-amber-400'}`}>
-                                  {canPurchase ? 'Ready to Purchase' : 'Not Yet Available'}
-                                </span>
-                              </div>
-                              {!canPurchase && availableDate && (
-                                <p className="text-xs text-amber-700 dark:text-amber-400">
-                                  Earliest purchase date: {availableDate}
-                                </p>
-                              )}
-                            </div>
-                            
-                            <div className="text-xs space-y-2 p-3 bg-muted/50 rounded-lg">
-                              <div className="flex justify-between">
-                                <span className="text-muted-foreground">Based on low point:</span>
-                                <span className="font-medium">{formattedLowDate}</span>
-                              </div>
-                              <p className="text-muted-foreground italic">
-                                Assumes $0 spending between now and the selected date
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })()}
-                  </div>
-                ) : (
-                  <div className="text-center p-8 text-muted-foreground">
-                    <Calendar className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                    <p>Select a date to see available spending amount</p>
-                  </div>
-                )}
-              </ScrollArea>
+              <Button onClick={() => {
+                const amount = parseFloat(searchAmount);
+                if (isNaN(amount)) {
+                  toast({
+                    title: "Invalid amount",
+                    description: "Please enter a valid amount",
+                    variant: "destructive"
+                  });
+                  return;
+                }
+                
+                const results: { date: string; events: any[] }[] = [];
+                const grouped = events.reduce((acc: Record<string, any[]>, event: any) => {
+                  const date = new Date(event.date);
+                  const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                  if (!acc[dateStr]) acc[dateStr] = [];
+                  acc[dateStr].push(event);
+                  return acc;
+                }, {});
+                
+                Object.entries(grouped).forEach(([date, eventsOnDate]) => {
+                  const matchingEvents = (eventsOnDate as any[]).filter(
+                    (event: any) => Math.abs(event.amount) === Math.abs(amount)
+                  );
+                  if (matchingEvents.length > 0) {
+                    results.push({ date, events: matchingEvents });
+                  }
+                });
+                
+                setSearchResults(results);
+                if (results.length === 0) {
+                  toast({
+                    title: "No results",
+                    description: "No transactions found for this amount"
+                  });
+                }
+              }}>
+                <Search className="h-4 w-4 mr-2" />
+                Search
+              </Button>
+            </TabsContent>
+            
+            <TabsContent value="date" className="space-y-4">
+              <div className="space-y-2">
+                <Label>Select Date</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="w-full justify-start text-left font-normal">
+                      <Calendar className="mr-2 h-4 w-4" />
+                      {searchDate ? new Date(searchDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : "Pick a date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <CalendarComponent
+                      mode="single"
+                      selected={searchDate ? new Date(searchDate) : undefined}
+                      onSelect={(date) => setSearchDate(date ? date.toISOString().split('T')[0] : "")}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <Button onClick={() => {
+                if (!searchDate) {
+                  toast({
+                    title: "No date selected",
+                    description: "Please select a date",
+                    variant: "destructive"
+                  });
+                  return;
+                }
+                
+                const searchDateObj = new Date(searchDate);
+                const searchDateStr = searchDateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                
+                const eventsOnDate = events.filter((event: any) => {
+                  const eventDate = new Date(event.date);
+                  return eventDate.toDateString() === searchDateObj.toDateString();
+                });
+                
+                if (eventsOnDate.length > 0) {
+                  setSearchResults([{ date: searchDateStr, events: eventsOnDate }]);
+                } else {
+                  setSearchResults([]);
+                  toast({
+                    title: "No results",
+                    description: "No transactions found for this date"
+                  });
+                }
+              }}>
+                <Search className="h-4 w-4 mr-2" />
+                Search
+              </Button>
             </TabsContent>
           </Tabs>
+          
+          {searchResults.length > 0 && (
+            <div className="mt-4">
+              <h3 className="font-semibold mb-2">Search Results ({searchResults.length} {searchResults.length === 1 ? "day" : "days"})</h3>
+              <ScrollArea className="h-[300px]">
+                <div className="space-y-4">
+                  {searchResults.map((result) => (
+                    <div key={result.date} className="border rounded-lg p-3">
+                      <div className="font-medium mb-2">{result.date}</div>
+                      <div className="space-y-2">
+                        {result.events.map((event: any) => (
+                          <div key={event.id} className="flex justify-between items-center text-sm p-2 bg-muted/50 rounded">
+                            <div>
+                              <div className="font-medium">{event.description}</div>
+                              {event.vendor && <div className="text-xs text-muted-foreground">{event.vendor}</div>}
+                            </div>
+                            <Badge variant={event.type === "inflow" ? "default" : "destructive"}>
+                              {event.type === "inflow" ? "+" : "-"}${Math.abs(event.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </Badge>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 
