@@ -71,14 +71,42 @@ export const PendingNotificationsPanel = ({
 
   const getTypeColor = (type: string) => {
     switch (type) {
-      case 'critical':
+      case 'urgent':
+      case 'security':
         return 'bg-red-500/10 border-red-500/30 text-red-600 dark:text-red-400';
-      case 'warning':
+      case 'maintenance':
+      case 'reminder':
         return 'bg-yellow-500/10 border-yellow-500/30 text-yellow-600 dark:text-yellow-400';
-      case 'success':
+      case 'new_feature':
+      case 'bug_fix':
         return 'bg-green-500/10 border-green-500/30 text-green-600 dark:text-green-400';
       default:
         return 'bg-blue-500/10 border-blue-500/30 text-blue-600 dark:text-blue-400';
+    }
+  };
+
+  const getTypeLabel = (type: string) => {
+    switch (type) {
+      case 'update':
+        return '🔄 Update';
+      case 'announcement':
+        return '📢 Announcement';
+      case 'maintenance':
+        return '🔧 Maintenance';
+      case 'new_feature':
+        return '✨ New Feature';
+      case 'bug_fix':
+        return '🐛 Bug Fix';
+      case 'urgent':
+        return '🚨 Urgent';
+      case 'legal_policy':
+        return '📋 Legal/Policy Update';
+      case 'reminder':
+        return '⏰ Reminder';
+      case 'security':
+        return '🔒 Security';
+      default:
+        return type;
     }
   };
 
@@ -149,6 +177,12 @@ export const PendingNotificationsPanel = ({
                     <div className="pr-8">
                       <div className="flex items-start justify-between mb-1">
                         <h4 className="font-semibold text-sm">{notification.title}</h4>
+                      </div>
+                      
+                      <div className="mb-2">
+                        <Badge variant="outline" className="text-xs mb-2">
+                          {getTypeLabel(notification.type)}
+                        </Badge>
                       </div>
                       
                       <p className="text-sm opacity-90 mb-2">
