@@ -232,7 +232,7 @@ export function TicketDetailDialog({ ticket, open, onOpenChange }: TicketDetailD
 
           {/* Reply form - disabled if ticket is closed */}
           {!isTicketClosed && (
-            <div className="mt-3 space-y-2 border-t pt-3">
+            <div className="mt-3 space-y-2 border-t pt-3 px-1">
               <Textarea
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
