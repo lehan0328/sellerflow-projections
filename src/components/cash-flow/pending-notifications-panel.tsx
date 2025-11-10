@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Bell, X, CheckCheck, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import {
   Sheet,
   SheetContent,
@@ -176,11 +177,11 @@ export const PendingNotificationsPanel = ({
 
                     <div className="pr-8">
                       <div className="flex items-center gap-2 mb-2">
-                        <Badge variant="outline" className="text-xs">
+                        <Badge className={cn("text-xs font-medium", getTypeColor(notification.type))}>
                           {getTypeLabel(notification.type)}
                         </Badge>
                         {notification.category && (
-                          <Badge variant="outline" className="text-xs">
+                          <Badge variant="secondary" className="text-xs">
                             {notification.category}
                           </Badge>
                         )}
