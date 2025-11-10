@@ -1251,6 +1251,10 @@ export default function Analytics() {
           <Card>
             <CardHeader>
               <CardTitle>Net Cash Flow Trend (Last 6 Months + Next 2 Months Projected)</CardTitle>
+              <p className="text-sm text-muted-foreground mt-2">
+                <span className="inline-block w-3 h-3 bg-orange-500 rounded mr-1"></span>
+                Orange bars indicate months without expense data
+              </p>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>
@@ -1278,6 +1282,11 @@ export default function Analytics() {
                                 <span className={data.net >= 0 ? "text-green-600 font-semibold" : "text-red-600 font-semibold"}>Net:</span>
                                 <span className={data.net >= 0 ? "text-green-600 font-bold" : "text-red-600 font-bold"}>{formatCurrency(data.net)}</span>
                               </div>
+                              {data.expenses === 0 && (
+                                <div className="text-xs text-orange-600 mt-1 pt-1 border-t border-border">
+                                  ⚠ No expenses recorded for this month
+                                </div>
+                              )}
                             </div>
                           </div>
                         );
@@ -1286,7 +1295,12 @@ export default function Analytics() {
                     }}
                   />
                   <Bar dataKey="net" fill="#8b5cf6">
-                    {cashFlowData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.net >= 0 ? '#10b981' : '#ef4444'} />)}
+                    {cashFlowData.map((entry, index) => (
+                      <Cell 
+                        key={`cell-${index}`} 
+                        fill={entry.expenses === 0 ? '#f97316' : (entry.net >= 0 ? '#10b981' : '#ef4444')} 
+                      />
+                    ))}
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
