@@ -35,9 +35,7 @@ interface CreditCardFormData {
   cash_back: number;
   priority: number;
   forecast_next_month: boolean;
-  pay_minimum: boolean;
   payment_due_date: string;
-  statement_close_date: string;
   statement_balance: number;
   credit_limit_override: number | null;
 }
@@ -67,9 +65,7 @@ export function CreditCards() {
     cash_back: 0,
     priority: 3,
     forecast_next_month: false,
-    pay_minimum: false,
     payment_due_date: '',
-    statement_close_date: '',
     statement_balance: 0,
     credit_limit_override: null,
   });
@@ -98,9 +94,7 @@ export function CreditCards() {
       cash_back: 0,
       priority: 3,
       forecast_next_month: false,
-      pay_minimum: false,
       payment_due_date: '',
-      statement_close_date: '',
       statement_balance: 0,
       credit_limit_override: null,
     });
@@ -203,9 +197,7 @@ export function CreditCards() {
       cash_back: card.cash_back || 0,
       priority: card.priority || 3,
       forecast_next_month: card.forecast_next_month || false,
-      pay_minimum: card.pay_minimum || false,
       payment_due_date: card.payment_due_date || '',
-      statement_close_date: card.statement_close_date || '',
       statement_balance: card.statement_balance || 0,
       credit_limit_override: card.credit_limit_override || null,
     });
@@ -529,31 +521,17 @@ export function CreditCards() {
                   Give this card a custom name for easier identification
                 </p>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="edit_payment_due_date">Payment Due Date</Label>
-                  <Input
-                    id="edit_payment_due_date"
-                    type="date"
-                    value={formData.payment_due_date}
-                    onChange={(e) => setFormData({...formData, payment_due_date: e.target.value})}
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    When is your payment due?
-                  </p>
-                </div>
-                <div>
-                  <Label htmlFor="edit_statement_close_date">Statement Close Date</Label>
-                  <Input
-                    id="edit_statement_close_date"
-                    type="date"
-                    value={formData.statement_close_date}
-                    onChange={(e) => setFormData({...formData, statement_close_date: e.target.value})}
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    When does your statement close?
-                  </p>
-                </div>
+              <div>
+                <Label htmlFor="edit_payment_due_date">Payment Due Date</Label>
+                <Input
+                  id="edit_payment_due_date"
+                  type="date"
+                  value={formData.payment_due_date}
+                  onChange={(e) => setFormData({...formData, payment_due_date: e.target.value})}
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  When is your payment due?
+                </p>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -583,19 +561,6 @@ export function CreditCards() {
                   </p>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Minimum Payment</Label>
-                  <div className="flex items-center h-10 px-3 py-2 text-sm border border-input rounded-md bg-muted">
-                    {editingCard?.minimum_payment 
-                      ? formatCurrency(editingCard.minimum_payment)
-                      : 'Not set'}
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Automatically imported from bank (read-only)
-                  </p>
-                </div>
-              </div>
               <div>
                 <Label htmlFor="edit_priority">Priority (1=Highest, 5=Lowest)</Label>
                 <Select
@@ -612,25 +577,7 @@ export function CreditCards() {
                     <SelectItem value="4">4 - Low Priority</SelectItem>
                     <SelectItem value="5">5 - Lowest Priority</SelectItem>
                   </SelectContent>
-                </Select>
-              </div>
-              <div className="flex items-center justify-between p-3 border border-destructive/50 bg-destructive/5 rounded-md">
-                <div className="space-y-0.5">
-                  <div className="flex items-center gap-2">
-                    <AlertTriangle className="h-4 w-4 text-destructive" />
-                    <Label htmlFor="edit_pay_minimum" className="text-destructive font-semibold">
-                      Pay Minimum Only (Emergency Use)
-                    </Label>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    ⚠️ Not recommended - You will pay interest charges. Use only for emergencies.
-                  </p>
-                </div>
-                <Switch
-                  id="edit_pay_minimum"
-                  checked={formData.pay_minimum}
-                  onCheckedChange={(checked) => setFormData({...formData, pay_minimum: checked})}
-                />
+              </Select>
               </div>
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
