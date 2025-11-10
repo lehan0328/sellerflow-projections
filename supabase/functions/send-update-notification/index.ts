@@ -26,6 +26,7 @@ serve(async (req) => {
     // Create Supabase client with service role key for admin access
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Verify the request is from an authenticated admin
@@ -34,20 +35,29 @@ serve(async (req) => {
       throw new Error('No authorization header');
     }
 
-    // Verify admin status using the authorization header
+    // Create a client with user's token to check admin status
     const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    const userClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: {
+        headers: {
+          Authorization: authHeader,
+        },
+      },
+    });
+
+    // Verify user authentication
+    const { data: { user }, error: userError } = await userClient.auth.getUser();
 
     if (userError || !user) {
       console.error('❌ Authentication error:', userError);
       throw new Error('Unauthorized');
     }
 
-    // Check if user is admin
-    const { data: isAdmin, error: adminError } = await supabase.rpc('is_website_admin');
+    // Check if user is admin using the user's context
+    const { data: isAdmin, error: adminError } = await userClient.rpc('is_website_admin');
     
     if (adminError || !isAdmin) {
-      console.error('❌ Admin check failed:', adminError);
+      console.error('❌ Admin check failed:', isAdmin, adminError);
       throw new Error('Unauthorized - Admin access required');
     }
 
