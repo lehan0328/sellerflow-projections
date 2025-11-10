@@ -132,7 +132,7 @@ export function DashboardHeader({
             Professional Plan Trial - Ends {new Date(trial_end).toLocaleDateString()}
           </Badge>
         )}
-        {!isDemo && hasPendingTransactions() && (
+        {!isDemo && (
           <PendingNotificationsPanel 
             vendors={vendors}
             incomeItems={incomeItems}
