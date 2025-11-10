@@ -1161,14 +1161,25 @@ export default function Analytics() {
                       }}
                     />
                     <Tooltip 
-                      formatter={(value) => [formatCurrency(Number(value)), 'Balance']}
-                      contentStyle={{
-                        backgroundColor: 'hsl(var(--background))',
-                        border: '1px solid hsl(var(--border))',
-                        borderRadius: '0.5rem',
-                        color: 'hsl(var(--foreground))'
+                      content={({ active, payload, label }) => {
+                        if (active && payload && payload.length) {
+                          const balance = Number(payload[0].value) || 0;
+                          return (
+                            <div className="bg-background border border-border rounded-lg shadow-lg p-3">
+                              <p className="font-medium text-foreground mb-2">{label}</p>
+                              <div className="flex justify-between gap-4 text-sm">
+                                <span style={{ color: payload[0].color }}>Balance:</span>
+                                <span className="font-medium">{formatCurrency(balance)}</span>
+                              </div>
+                              <div className="flex justify-between gap-4 text-sm mt-2 pt-2 border-t border-border">
+                                <span className="font-semibold">Total:</span>
+                                <span className="font-semibold">{formatCurrency(balance)}</span>
+                              </div>
+                            </div>
+                          );
+                        }
+                        return null;
                       }}
-                      labelStyle={{ color: 'hsl(var(--foreground))' }}
                     />
                     <Area 
                       type="monotone" 
