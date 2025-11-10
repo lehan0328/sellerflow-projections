@@ -48,6 +48,7 @@ export function CreditCards() {
   const [editingCard, setEditingCard] = useState<any>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [cardToDelete, setCardToDelete] = useState<string | null>(null);
+  const [pendingOrdersForCard, setPendingOrdersForCard] = useState<any[]>([]);
   const [linkToken, setLinkToken] = useState<string | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
   const [showPriorityDialog, setShowPriorityDialog] = useState(false);
@@ -219,9 +220,18 @@ export function CreditCards() {
   const handleDeleteCard = async () => {
     if (!cardToDelete) return;
     
-    await removeCreditCard(cardToDelete);
+    const result = await removeCreditCard(cardToDelete);
+    
+    // Check if deletion was blocked due to pending orders
+    if (result && typeof result === 'object' && 'blocked' in result && result.blocked) {
+      setPendingOrdersForCard(result.orders || []);
+      // Keep dialog open to show the pending orders
+      return;
+    }
+    
     setDeleteDialogOpen(false);
     setCardToDelete(null);
+    setPendingOrdersForCard([]);
   };
 
   const handleSetDueDate = async () => {
@@ -484,14 +494,48 @@ export function CreditCards() {
             <AlertDialogHeader>
               <AlertDialogTitle>Delete Credit Card</AlertDialogTitle>
               <AlertDialogDescription>
-                Are you sure you want to delete this credit card? This will delete all associated transactions and update available cash, which will affect your forecasting. This action cannot be undone.
+                {pendingOrdersForCard.length > 0 ? (
+                  <div className="space-y-3">
+                    <p className="text-destructive font-semibold">
+                      Cannot delete this card: {pendingOrdersForCard.length} pending purchase order{pendingOrdersForCard.length !== 1 ? 's' : ''} are linked to it.
+                    </p>
+                    <div className="bg-muted p-3 rounded-md space-y-2 max-h-48 overflow-y-auto">
+                      {pendingOrdersForCard.map((order: any) => (
+                        <div key={order.id} className="text-sm border-b border-border pb-2 last:border-0">
+                          <p className="font-medium">{order.description}</p>
+                          <div className="flex justify-between text-muted-foreground">
+                            <span>Due: {order.due_date ? new Date(order.due_date).toLocaleDateString() : 'No date'}</span>
+                            <span className="font-semibold">{formatCurrency(order.amount)}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-sm">
+                      Please complete or reassign these orders to another payment method before deleting this card.
+                    </p>
+                  </div>
+                ) : (
+                  "Are you sure you want to delete this credit card? This will delete all associated transactions and update available cash, which will affect your forecasting. This action cannot be undone."
+                )}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={handleDeleteCard} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                Delete
-              </AlertDialogAction>
+              {pendingOrdersForCard.length > 0 ? (
+                <AlertDialogCancel onClick={() => {
+                  setDeleteDialogOpen(false);
+                  setCardToDelete(null);
+                  setPendingOrdersForCard([]);
+                }}>
+                  Close
+                </AlertDialogCancel>
+              ) : (
+                <>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDeleteCard} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                    Delete
+                  </AlertDialogAction>
+                </>
+              )}
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>

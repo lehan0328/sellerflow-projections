@@ -28,6 +28,13 @@ import {
 import { toast } from "sonner";
 import { useCreditCards } from "@/hooks/useCreditCards";
 import { cn } from "@/lib/utils";
+
+const formatCurrency = (amount: number) => {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format(amount);
+};
 import { usePlaidLink } from "react-plaid-link";
 import { supabase } from "@/integrations/supabase/client";
 import { Switch } from "@/components/ui/switch";
@@ -48,6 +55,7 @@ export function CreditCardManagement() {
   } = useCreditCards();
   
   const [showRemoveDialog, setShowRemoveDialog] = useState(false);
+  const [pendingOrdersForRemoval, setPendingOrdersForRemoval] = useState<any[]>([]);
   const [showOnboardingDialog, setShowOnboardingDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [newCardIds, setNewCardIds] = useState<string[]>([]);
@@ -150,11 +158,18 @@ export function CreditCardManagement() {
   const handleRemoveCard = async () => {
     if (!selectedCard) return;
     
-    const success = await removeCreditCard(selectedCard);
-    if (success) {
-      setShowRemoveDialog(false);
-      setSelectedCard(null);
+    const result = await removeCreditCard(selectedCard);
+    
+    // Check if deletion was blocked due to pending orders
+    if (result && typeof result === 'object' && 'blocked' in result && result.blocked) {
+      setPendingOrdersForRemoval(result.orders || []);
+      // Keep dialog open to show the pending orders
+      return;
     }
+    
+    setShowRemoveDialog(false);
+    setSelectedCard(null);
+    setPendingOrdersForRemoval([]);
   };
 
   const handleEditCard = (card: any) => {
@@ -718,17 +733,51 @@ export function CreditCardManagement() {
           <DialogHeader>
             <DialogTitle>Remove Credit Card</DialogTitle>
             <DialogDescription>
-              Are you sure you want to remove this credit card? This action cannot be undone.
+              {pendingOrdersForRemoval.length > 0 ? (
+                <div className="space-y-3">
+                  <p className="text-destructive font-semibold">
+                    Cannot remove this card: {pendingOrdersForRemoval.length} pending purchase order{pendingOrdersForRemoval.length !== 1 ? 's' : ''} are linked to it.
+                  </p>
+                  <div className="bg-muted p-3 rounded-md space-y-2 max-h-48 overflow-y-auto">
+                    {pendingOrdersForRemoval.map((order: any) => (
+                      <div key={order.id} className="text-sm border-b border-border pb-2 last:border-0">
+                        <p className="font-medium">{order.description}</p>
+                        <div className="flex justify-between text-muted-foreground">
+                          <span>Due: {order.due_date ? new Date(order.due_date).toLocaleDateString() : 'No date'}</span>
+                          <span className="font-semibold">{formatCurrency(order.amount)}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-sm">
+                    Please complete or reassign these orders to another payment method before removing this card.
+                  </p>
+                </div>
+              ) : (
+                "Are you sure you want to remove this credit card? This action cannot be undone."
+              )}
             </DialogDescription>
           </DialogHeader>
           
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowRemoveDialog(false)}>
-              Cancel
-            </Button>
-            <Button variant="destructive" onClick={handleRemoveCard}>
-              Remove Credit Card
-            </Button>
+            {pendingOrdersForRemoval.length > 0 ? (
+              <Button variant="outline" onClick={() => {
+                setShowRemoveDialog(false);
+                setSelectedCard(null);
+                setPendingOrdersForRemoval([]);
+              }}>
+                Close
+              </Button>
+            ) : (
+              <>
+                <Button variant="outline" onClick={() => setShowRemoveDialog(false)}>
+                  Cancel
+                </Button>
+                <Button variant="destructive" onClick={handleRemoveCard}>
+                  Remove Credit Card
+                </Button>
+              </>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

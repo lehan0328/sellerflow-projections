@@ -138,6 +138,30 @@ export const useCreditCards = () => {
     }
 
     try {
+      // Check for pending purchase orders linked to this card
+      const { data: pendingOrders, error: checkError } = await supabase
+        .from("transactions")
+        .select("id, description, amount, due_date")
+        .eq("credit_card_id", cardId)
+        .eq("type", "purchase_order")
+        .in("status", ["pending", "partial"])
+        .order("due_date", { ascending: true });
+
+      if (checkError) {
+        console.error("Error checking for pending orders:", checkError);
+        toast.error("Failed to verify purchase orders");
+        return false;
+      }
+
+      if (pendingOrders && pendingOrders.length > 0) {
+        const totalAmount = pendingOrders.reduce((sum, order) => sum + Number(order.amount), 0);
+        toast.error(
+          `Cannot delete card: ${pendingOrders.length} pending purchase order${pendingOrders.length !== 1 ? 's' : ''} (${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(totalAmount)}) are linked to this card. Please complete or reassign these orders first.`,
+          { duration: 6000 }
+        );
+        return { blocked: true, orders: pendingOrders };
+      }
+
       const { error } = await supabase
         .from("credit_cards")
         .delete()
