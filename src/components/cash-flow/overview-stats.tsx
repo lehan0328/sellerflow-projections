@@ -483,16 +483,18 @@ export function OverviewStats({
               </Button>
             </div>
           </div>
-          <div className="grid grid-cols-3 gap-3">
-            <div className="text-center">
-              <p className="text-xs text-muted-foreground mb-1">Income</p>
-              <p className="text-lg font-bold text-green-600">{formatCurrency(todaysIncome)}</p>
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="text-center">
+                <p className="text-xs text-muted-foreground mb-1">Income</p>
+                <p className="text-lg font-bold text-green-600">{formatCurrency(todaysIncome)}</p>
+              </div>
+              <div className="text-center">
+                <p className="text-xs text-muted-foreground mb-1">Expenses</p>
+                <p className="text-lg font-bold text-red-600">{formatCurrency(todaysExpenses)}</p>
+              </div>
             </div>
-            <div className="text-center">
-              <p className="text-xs text-muted-foreground mb-1">Expenses</p>
-              <p className="text-lg font-bold text-red-600">{formatCurrency(todaysExpenses)}</p>
-            </div>
-            <div className="text-center">
+            <div className="text-center pt-2 border-t">
               <p className="text-xs text-muted-foreground mb-1">Net</p>
               <p className={`text-lg font-bold ${todaysIncome - todaysExpenses >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                 {formatCurrency(todaysIncome - todaysExpenses)}
