@@ -78,6 +78,12 @@ export function TicketMessagesDialog({ ticket, open, onOpenChange }: TicketMessa
 
       if (error) throw error;
 
+      // Update ticket status to 'open' (awaiting response from customer)
+      await supabase
+        .from('support_tickets')
+        .update({ status: 'open' })
+        .eq('id', ticket.id);
+
       setNewMessage("");
       await loadMessages();
       toast.success('Response sent successfully');
