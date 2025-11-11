@@ -149,13 +149,19 @@ export const AdminSupportTickets = () => {
     }
 
     // Get staff name from admin_permissions
-    const { data: adminPerm } = await supabase
+    const { data: adminPerm, error: permError } = await supabase
       .from('admin_permissions')
       .select('first_name')
       .eq('email', user.email)
       .single();
 
-    const staffName = adminPerm?.first_name || 'Support Staff';
+    if (permError) {
+      console.error("Error fetching staff name:", permError);
+    }
+
+    console.log("Admin permission data:", adminPerm, "for email:", user.email);
+
+    const staffName = adminPerm?.first_name || 'Support';
 
     const { error } = await supabase
       .from('support_tickets')

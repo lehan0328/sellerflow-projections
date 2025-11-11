@@ -45,12 +45,17 @@ export function TicketMessagesDialog({ ticket, open, onOpenChange }: TicketMessa
     if (!ticket.claimed_by_name) {
       const { data: { user } } = await supabase.auth.getUser();
       if (user?.email) {
-        const { data } = await supabase
+        const { data, error } = await supabase
           .from('admin_permissions')
           .select('first_name')
           .eq('email', user.email)
           .single();
         
+        if (error) {
+          console.error('Error fetching staff name:', error);
+        }
+        
+        console.log('Staff name data:', data, 'for email:', user.email);
         setStaffName(data?.first_name || 'Support');
       }
     } else {
