@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Send, MessageSquare, Clock, CheckCircle2, AlertCircle, Bot, User, Home, Mail } from "lucide-react";
+import { Send, MessageSquare, Clock, CheckCircle2, AlertCircle, Bot, User, Home, Mail, Star } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -640,10 +640,13 @@ const Support = () => {
                     {filteredTickets.map((ticket, index) => (
                       <div
                         key={ticket.id}
-                        className="group relative rounded-xl border-2 border-border/50 bg-gradient-to-br from-card via-card to-muted/20 p-6 hover:border-primary/50 hover:shadow-lg transition-all duration-300 cursor-pointer animate-fade-in"
+                        className="group relative rounded-xl border-2 border-border/50 bg-gradient-to-br from-card via-card to-muted/20 p-6 hover:border-primary/50 hover:shadow-lg transition-all duration-300 animate-fade-in"
                         style={{ animationDelay: `${index * 50}ms` }}
-                        onClick={() => handleViewTicket(ticket)}
                       >
+                        <div 
+                          className="cursor-pointer"
+                          onClick={() => handleViewTicket(ticket)}
+                        >
                         {/* Status indicator bar */}
                         <div className={`absolute left-0 top-0 bottom-0 w-1.5 rounded-l-xl transition-all duration-300 ${
                           ticket.status === 'open' || ticket.status === 'in_progress' ? 'bg-blue-500' :
@@ -696,11 +699,6 @@ const Support = () => {
                                   {ticket.category}
                                 </Badge>
                               )}
-                              {ticket.needsFeedback && (
-                                <Badge className="bg-yellow-500 hover:bg-yellow-600 text-white font-medium animate-pulse">
-                                  ⭐ Rate Support
-                                </Badge>
-                              )}
                             </div>
                           </div>
                           
@@ -732,6 +730,24 @@ const Support = () => {
                             <MessageSquare className="h-3 w-3" />
                           </div>
                         </div>
+                        </div>
+
+                        {/* Rate Support Button - Only shown for closed tickets without feedback */}
+                        {ticket.needsFeedback && (
+                          <div className="mt-4 pt-4 border-t border-border">
+                            <Button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleViewTicket(ticket);
+                              }}
+                              variant="outline"
+                              className="w-full bg-yellow-500/10 hover:bg-yellow-500/20 border-yellow-500/50 text-yellow-700 hover:text-yellow-800"
+                            >
+                              <Star className="h-4 w-4 mr-2 fill-yellow-500 text-yellow-500" />
+                              Rate Your Support Experience
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>

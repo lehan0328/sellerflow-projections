@@ -202,6 +202,8 @@ export function TicketDetailDialog({ ticket, open, onOpenChange }: TicketDetailD
 
   const handleFeedbackComplete = () => {
     onOpenChange(false);
+    // Reload parent to update ticket status
+    window.location.reload();
   };
 
   return (
