@@ -64,7 +64,7 @@ export const PaymentAccessControl = ({ children }: PaymentAccessControlProps) =>
       // Get user's profile to check if they're part of a team
       const { data: profile, error } = await supabase
         .from('profiles')
-        .select('account_status, account_id, is_account_owner')
+        .select('account_status, account_id, is_account_owner, plan_override')
         .eq('user_id', session.user.id)
         .maybeSingle();
 
@@ -81,12 +81,13 @@ export const PaymentAccessControl = ({ children }: PaymentAccessControlProps) =>
       }
 
       let accountStatus = profile.account_status || 'active';
+      let planOverride = profile.plan_override;
 
       // If user is part of a team (not account owner), check account owner's status
       if (profile.account_id && !profile.is_account_owner) {
         const { data: ownerProfile, error: ownerError } = await supabase
           .from('profiles')
-          .select('account_status')
+          .select('account_status, plan_override')
           .eq('account_id', profile.account_id)
           .eq('is_account_owner', true)
           .maybeSingle();
@@ -95,10 +96,18 @@ export const PaymentAccessControl = ({ children }: PaymentAccessControlProps) =>
           console.error('Error fetching owner profile:', ownerError);
         } else if (ownerProfile) {
           accountStatus = ownerProfile.account_status;
+          planOverride = ownerProfile.plan_override;
         }
       }
 
       setAccountStatus(accountStatus);
+
+      // If user has a plan override (lifetime access, tier1, etc.), bypass payment checks
+      if (planOverride) {
+        console.log('User has plan override, bypassing payment checks:', planOverride);
+        setIsChecking(false);
+        return;
+      }
 
       // If account is suspended for payment failure and user is not admin, redirect to payment page
       // If account is trial_expired, let ProtectedRoute handle it with TrialExpiredModal
