@@ -136,7 +136,7 @@ export const SetPlanOverride = () => {
 
       if (error) throw error;
 
-      toast.success(`Successfully invited ${adminEmail} as ${adminRole}`);
+      toast.success(`Invitation email sent to ${adminEmail}`);
       setAdminEmail("");
       fetchAdminPermissions();
     } catch (error: any) {
@@ -190,6 +190,9 @@ export const SetPlanOverride = () => {
               <UserPlus className="h-5 w-5 text-primary" />
               <h3 className="font-semibold">Invite Admin User</h3>
             </div>
+            <p className="text-sm text-muted-foreground">
+              An email invitation will be sent allowing the user to create their own password and access the admin dashboard
+            </p>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label>Email Address</Label>
@@ -220,13 +223,18 @@ export const SetPlanOverride = () => {
             >
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               <UserPlus className="mr-2 h-4 w-4" />
-              Invite User
+              Send Invitation Email
             </Button>
           </div>
 
           {/* Admin List */}
           <div className="space-y-4">
-            <h3 className="font-semibold">Current Admin Users</h3>
+            <div>
+              <h3 className="font-semibold">Current Admin Users</h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                Invited users receive an email with a signup link to create their password and access the admin dashboard
+              </p>
+            </div>
             {loadingAdmins ? (
               <div className="flex items-center justify-center p-8">
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />

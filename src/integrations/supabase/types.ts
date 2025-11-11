@@ -46,27 +46,36 @@ export type Database = {
       }
       admin_permissions: {
         Row: {
+          account_created: boolean | null
           email: string
           id: string
+          invitation_token: string | null
           invited_at: string | null
           invited_by: string | null
           role: string
+          token_expires_at: string | null
           updated_at: string | null
         }
         Insert: {
+          account_created?: boolean | null
           email: string
           id?: string
+          invitation_token?: string | null
           invited_at?: string | null
           invited_by?: string | null
           role: string
+          token_expires_at?: string | null
           updated_at?: string | null
         }
         Update: {
+          account_created?: boolean | null
           email?: string
           id?: string
+          invitation_token?: string | null
           invited_at?: string | null
           invited_by?: string | null
           role?: string
+          token_expires_at?: string | null
           updated_at?: string | null
         }
         Relationships: []

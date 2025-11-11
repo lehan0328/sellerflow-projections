@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import { Resend } from "npm:resend@4.0.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -71,13 +72,20 @@ serve(async (req) => {
       throw new Error("Role must be either 'admin' or 'staff'");
     }
 
-    // Upsert admin permission
+    // Generate invitation token
+    const invitationToken = crypto.randomUUID();
+    const tokenExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+
+    // Upsert admin permission with invitation token
     const { data, error } = await supabaseClient
       .from('admin_permissions')
       .upsert({
         email: email.toLowerCase(),
         role,
         invited_by: user.email,
+        invitation_token: invitationToken,
+        token_expires_at: tokenExpiresAt.toISOString(),
+        account_created: false,
         updated_at: new Date().toISOString()
       }, {
         onConflict: 'email'
@@ -89,12 +97,82 @@ serve(async (req) => {
       throw new Error(`Failed to invite admin: ${error.message}`);
     }
 
-    console.log(`[INVITE_ADMIN] Successfully invited/updated: ${email} as ${role}`);
+    // Send invitation email
+    const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+    const signupUrl = `${Deno.env.get("SUPABASE_URL")?.replace('.supabase.co', '')}/admin/signup?token=${invitationToken}`;
+
+    const emailHtml = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 40px 20px; }
+            .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 8px 8px 0 0; text-align: center; }
+            .content { background: #ffffff; padding: 40px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px; }
+            .button { display: inline-block; background: #667eea; color: white; padding: 14px 32px; text-decoration: none; border-radius: 6px; font-weight: 600; margin: 20px 0; }
+            .button:hover { background: #5568d3; }
+            .info-box { background: #f9fafb; border-left: 4px solid #667eea; padding: 16px; margin: 20px 0; border-radius: 4px; }
+            .footer { text-align: center; margin-top: 30px; color: #6b7280; font-size: 14px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1 style="margin: 0; font-size: 28px;">Welcome to Auren Admin</h1>
+            </div>
+            <div class="content">
+              <p style="font-size: 16px;">Hello,</p>
+              <p>You've been invited to join the Auren Admin Dashboard with <strong>${role}</strong> access by ${user.email}.</p>
+              
+              <div class="info-box">
+                <strong>Your Access Level:</strong> ${role === 'admin' ? 'Full Admin Access' : 'Support & Features Staff Access'}
+              </div>
+
+              <p>To complete your registration and create your password, click the button below:</p>
+              
+              <div style="text-align: center;">
+                <a href="${signupUrl}" class="button">Create Your Admin Account</a>
+              </div>
+
+              <p style="font-size: 14px; color: #6b7280;">Or copy and paste this link into your browser:</p>
+              <p style="font-size: 12px; word-break: break-all; background: #f3f4f6; padding: 10px; border-radius: 4px;">${signupUrl}</p>
+
+              <p style="margin-top: 30px;"><strong>Important:</strong></p>
+              <ul style="color: #6b7280; font-size: 14px;">
+                <li>This invitation expires in 7 days</li>
+                <li>Your email is pre-set and cannot be changed: <strong>${email}</strong></li>
+                <li>You'll create your own secure password during signup</li>
+                <li>This is for admin dashboard access only</li>
+              </ul>
+            </div>
+            <div class="footer">
+              <p>This is an automated invitation from Auren Admin Dashboard</p>
+              <p>If you didn't expect this invitation, please contact the administrator</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    const { error: emailError } = await resend.emails.send({
+      from: "Auren Admin <onboarding@resend.dev>",
+      to: [email],
+      subject: `You're invited to Auren Admin Dashboard (${role})`,
+      html: emailHtml,
+    });
+
+    if (emailError) {
+      console.error("[INVITE_ADMIN] Email error:", emailError);
+      throw new Error(`Failed to send invitation email: ${emailError.message}`);
+    }
+
+    console.log(`[INVITE_ADMIN] Successfully invited ${email} as ${role} - Email sent`);
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: `Successfully invited ${email} as ${role}`,
+        message: `Invitation sent to ${email}`,
         data 
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
