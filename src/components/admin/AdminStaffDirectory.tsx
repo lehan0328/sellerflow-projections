@@ -116,15 +116,15 @@ export function AdminStaffDirectory() {
     try {
       setIsUpdatingEmail(true);
       
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('Not authenticated');
-
-      const { error } = await supabase.auth.admin.updateUserById(
-        selectedStaffForEmail.user_id,
-        { email: newEmail }
-      );
+      const { data, error } = await supabase.functions.invoke('change-admin-email', {
+        body: { 
+          userId: selectedStaffForEmail.user_id,
+          newEmail: newEmail
+        }
+      });
 
       if (error) throw error;
+      if (data.error) throw new Error(data.error);
 
       toast.success('Email updated successfully');
       setEmailDialogOpen(false);
@@ -148,15 +148,15 @@ export function AdminStaffDirectory() {
     try {
       setIsUpdatingPassword(true);
       
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('Not authenticated');
-
-      const { error } = await supabase.auth.admin.updateUserById(
-        selectedStaffForPassword.user_id,
-        { password: newPassword }
-      );
+      const { data, error } = await supabase.functions.invoke('change-admin-password', {
+        body: { 
+          userId: selectedStaffForPassword.user_id,
+          newPassword: newPassword
+        }
+      });
 
       if (error) throw error;
+      if (data.error) throw new Error(data.error);
 
       toast.success('Password updated successfully');
       setPasswordDialogOpen(false);
@@ -175,23 +175,15 @@ export function AdminStaffDirectory() {
     try {
       setIsDeleting(true);
       
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('Not authenticated');
+      const { data, error } = await supabase.functions.invoke('delete-admin-account', {
+        body: { 
+          userId: selectedStaffForDelete.user_id,
+          userEmail: selectedStaffForDelete.email
+        }
+      });
 
-      // Delete from admin_permissions first
-      const { error: permError } = await supabase
-        .from('admin_permissions')
-        .delete()
-        .eq('email', selectedStaffForDelete.email);
-
-      if (permError) throw permError;
-
-      // Delete user account
-      const { error: deleteError } = await supabase.auth.admin.deleteUser(
-        selectedStaffForDelete.user_id
-      );
-
-      if (deleteError) throw deleteError;
+      if (error) throw error;
+      if (data.error) throw new Error(data.error);
 
       toast.success('Account deleted successfully');
       setDeleteDialogOpen(false);
