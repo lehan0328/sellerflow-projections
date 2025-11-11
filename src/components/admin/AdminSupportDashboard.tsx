@@ -63,14 +63,22 @@ export const AdminSupportDashboard = () => {
   const [showReviewsDialog, setShowReviewsDialog] = useState(false);
   const [previousMonthMetrics, setPreviousMonthMetrics] = useState<MonthlyMetrics | null>(null);
 
-  // Generate last 12 months for dropdown
-  const monthOptions = Array.from({ length: 12 }, (_, i) => {
-    const date = subMonths(new Date(), i);
-    return {
+  // Generate months starting from November 2025 (when tracking began)
+  const startDate = new Date(2025, 10, 1); // November 2025 (month is 0-indexed)
+  const currentDate = new Date();
+  const monthOptions = [];
+  
+  let date = startDate;
+  while (date <= currentDate) {
+    monthOptions.push({
       value: format(date, 'yyyy-MM'),
       label: format(date, 'MMMM yyyy')
-    };
-  });
+    });
+    date = new Date(date.getFullYear(), date.getMonth() + 1, 1);
+  }
+  
+  // Reverse to show most recent first
+  monthOptions.reverse();
 
   useEffect(() => {
     fetchDashboardStats();
