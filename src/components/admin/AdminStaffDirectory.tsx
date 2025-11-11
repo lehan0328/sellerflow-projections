@@ -2,10 +2,37 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { UserCheck } from "lucide-react";
+import { UserCheck, MoreVertical, Mail, Lock, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface StaffMember {
   email: string;
@@ -17,6 +44,23 @@ interface StaffMember {
 export function AdminStaffDirectory() {
   const [staffList, setStaffList] = useState<StaffMember[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Email change dialog state
+  const [emailDialogOpen, setEmailDialogOpen] = useState(false);
+  const [selectedStaffForEmail, setSelectedStaffForEmail] = useState<StaffMember | null>(null);
+  const [newEmail, setNewEmail] = useState("");
+  const [isUpdatingEmail, setIsUpdatingEmail] = useState(false);
+  
+  // Password change dialog state
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  const [selectedStaffForPassword, setSelectedStaffForPassword] = useState<StaffMember | null>(null);
+  const [newPassword, setNewPassword] = useState("");
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+  
+  // Delete confirmation dialog state
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedStaffForDelete, setSelectedStaffForDelete] = useState<StaffMember | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     loadStaffList();
@@ -47,6 +91,117 @@ export function AdminStaffDirectory() {
     return email.substring(0, 2).toUpperCase();
   };
 
+  const handleChangeEmail = (staff: StaffMember) => {
+    setSelectedStaffForEmail(staff);
+    setNewEmail(staff.email);
+    setEmailDialogOpen(true);
+  };
+
+  const handleChangePassword = (staff: StaffMember) => {
+    setSelectedStaffForPassword(staff);
+    setNewPassword("");
+    setPasswordDialogOpen(true);
+  };
+
+  const handleDeleteAccount = (staff: StaffMember) => {
+    setSelectedStaffForDelete(staff);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmEmailChange = async () => {
+    if (!selectedStaffForEmail?.user_id || !newEmail) return;
+
+    try {
+      setIsUpdatingEmail(true);
+      
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not authenticated');
+
+      const { error } = await supabase.auth.admin.updateUserById(
+        selectedStaffForEmail.user_id,
+        { email: newEmail }
+      );
+
+      if (error) throw error;
+
+      toast.success('Email updated successfully');
+      setEmailDialogOpen(false);
+      loadStaffList();
+    } catch (error: any) {
+      console.error('Error updating email:', error);
+      toast.error(error.message || 'Failed to update email');
+    } finally {
+      setIsUpdatingEmail(false);
+    }
+  };
+
+  const confirmPasswordChange = async () => {
+    if (!selectedStaffForPassword?.user_id || !newPassword) return;
+
+    if (newPassword.length < 6) {
+      toast.error('Password must be at least 6 characters');
+      return;
+    }
+
+    try {
+      setIsUpdatingPassword(true);
+      
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not authenticated');
+
+      const { error } = await supabase.auth.admin.updateUserById(
+        selectedStaffForPassword.user_id,
+        { password: newPassword }
+      );
+
+      if (error) throw error;
+
+      toast.success('Password updated successfully');
+      setPasswordDialogOpen(false);
+      setNewPassword("");
+    } catch (error: any) {
+      console.error('Error updating password:', error);
+      toast.error(error.message || 'Failed to update password');
+    } finally {
+      setIsUpdatingPassword(false);
+    }
+  };
+
+  const confirmDeleteAccount = async () => {
+    if (!selectedStaffForDelete?.user_id) return;
+
+    try {
+      setIsDeleting(true);
+      
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not authenticated');
+
+      // Delete from admin_permissions first
+      const { error: permError } = await supabase
+        .from('admin_permissions')
+        .delete()
+        .eq('email', selectedStaffForDelete.email);
+
+      if (permError) throw permError;
+
+      // Delete user account
+      const { error: deleteError } = await supabase.auth.admin.deleteUser(
+        selectedStaffForDelete.user_id
+      );
+
+      if (deleteError) throw deleteError;
+
+      toast.success('Account deleted successfully');
+      setDeleteDialogOpen(false);
+      loadStaffList();
+    } catch (error: any) {
+      console.error('Error deleting account:', error);
+      toast.error(error.message || 'Failed to delete account');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <Card>
@@ -69,25 +224,143 @@ export function AdminStaffDirectory() {
           ) : (
             <div className="space-y-3">
               {staffList.map((staff) => (
-                <div key={staff.email} className="flex items-center gap-3 p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
-                  <Avatar>
-                    <AvatarFallback className="bg-primary text-primary-foreground">
-                      {getInitials(staff.first_name, staff.email)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1">
-                    <p className="font-medium">{staff.first_name || staff.email}</p>
-                    <p className="text-xs text-muted-foreground">{staff.email}</p>
+                <div key={staff.email} className="flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <Avatar>
+                      <AvatarFallback className="bg-primary text-primary-foreground">
+                        {getInitials(staff.first_name, staff.email)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="font-medium">{staff.first_name || staff.email}</p>
+                      <p className="text-xs text-muted-foreground">{staff.email}</p>
+                    </div>
                   </div>
-                  <Badge variant={staff.role === 'admin' ? 'default' : 'secondary'}>
-                    {staff.role}
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={staff.role === 'admin' ? 'default' : 'secondary'}>
+                      {staff.role}
+                    </Badge>
+                    
+                    {staff.user_id && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleChangeEmail(staff)}>
+                            <Mail className="h-4 w-4 mr-2" />
+                            Change Email
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleChangePassword(staff)}>
+                            <Lock className="h-4 w-4 mr-2" />
+                            Change Password
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onClick={() => handleDeleteAccount(staff)}
+                            className="text-destructive focus:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete Account
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
           )}
         </CardContent>
       </Card>
+
+      {/* Email Change Dialog */}
+      <Dialog open={emailDialogOpen} onOpenChange={setEmailDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Change Email</DialogTitle>
+            <DialogDescription>
+              Update the email address for {selectedStaffForEmail?.first_name || selectedStaffForEmail?.email}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="new-email">New Email Address</Label>
+              <Input
+                id="new-email"
+                type="email"
+                value={newEmail}
+                onChange={(e) => setNewEmail(e.target.value)}
+                placeholder="Enter new email"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEmailDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={confirmEmailChange} disabled={isUpdatingEmail || !newEmail}>
+              {isUpdatingEmail ? "Updating..." : "Update Email"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Password Change Dialog */}
+      <Dialog open={passwordDialogOpen} onOpenChange={setPasswordDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Change Password</DialogTitle>
+            <DialogDescription>
+              Set a new password for {selectedStaffForPassword?.first_name || selectedStaffForPassword?.email}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="new-password">New Password</Label>
+              <Input
+                id="new-password"
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Enter new password (min 6 characters)"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPasswordDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={confirmPasswordChange} disabled={isUpdatingPassword || !newPassword}>
+              {isUpdatingPassword ? "Updating..." : "Update Password"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the account for {selectedStaffForDelete?.first_name || selectedStaffForDelete?.email}. 
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmDeleteAccount}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? "Deleting..." : "Delete Account"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
