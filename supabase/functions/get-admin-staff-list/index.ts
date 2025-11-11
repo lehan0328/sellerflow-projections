@@ -43,16 +43,19 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Check if user is website admin
-    const { data: isAdmin, error: adminCheckError } = await supabase
-      .rpc('is_website_admin');
+    // Check if user is website admin (hardcoded emails)
+    const websiteAdminEmails = ['chuandy914@gmail.com', 'orders@imarand.com']
+    const isWebsiteAdmin = user.email && websiteAdminEmails.includes(user.email)
 
-    if (adminCheckError || !isAdmin) {
+    if (!isWebsiteAdmin) {
+      console.log('Access denied for:', user.email)
       return new Response(
         JSON.stringify({ error: 'Unauthorized - Admin access required' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    console.log('Admin access granted for:', user.email)
 
     // Fetch all staff from admin_permissions
     const { data: staffData, error: staffError } = await supabase

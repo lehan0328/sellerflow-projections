@@ -35,10 +35,9 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Check if user is admin (website admin or staff)
-    const { data: isWebsiteAdmin } = await supabaseClient
-      .rpc('is_website_admin')
-      .single()
+    // Check if user is website admin (hardcoded emails)
+    const websiteAdminEmails = ['chuandy914@gmail.com', 'orders@imarand.com']
+    const isWebsiteAdmin = user.email && websiteAdminEmails.includes(user.email)
 
     // Check admin_permissions table
     const { data: adminPermission } = await supabaseClient
@@ -52,6 +51,7 @@ Deno.serve(async (req) => {
     const isStaff = userRole === 'staff'
 
     if (!isAdmin) {
+      console.log('Access denied for:', user.email, 'isWebsiteAdmin:', isWebsiteAdmin, 'adminPermission:', adminPermission)
       return new Response(
         JSON.stringify({ error: 'Admin access required' }),
         { 
@@ -60,6 +60,8 @@ Deno.serve(async (req) => {
         }
       )
     }
+
+    console.log('Admin access granted for:', user.email, 'role:', userRole)
 
     // Fetch tickets based on role
     let ticketsQuery = supabaseClient
