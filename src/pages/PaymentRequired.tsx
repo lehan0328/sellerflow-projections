@@ -5,12 +5,14 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { AlertCircle, CreditCard } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { CreateTicketDialog } from "@/components/CreateTicketDialog";
 
 export default function PaymentRequired() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [paymentFailureDate, setPaymentFailureDate] = useState<string | null>(null);
+  const [showTicketDialog, setShowTicketDialog] = useState(false);
 
   useEffect(() => {
     fetchPaymentInfo();
@@ -71,7 +73,7 @@ export default function PaymentRequired() {
   };
 
   const handleContactSupport = () => {
-    navigate('/support');
+    setShowTicketDialog(true);
   };
 
   return (
@@ -119,6 +121,14 @@ export default function PaymentRequired() {
           </div>
         </CardContent>
       </Card>
+      
+      <CreateTicketDialog
+        open={showTicketDialog}
+        onOpenChange={setShowTicketDialog}
+        defaultSubject="Payment Issue - Account Suspended"
+        defaultCategory="billing"
+        defaultMessage="I'm experiencing a payment issue with my account. My account has been suspended and I need assistance resolving this."
+      />
     </div>
   );
 }
