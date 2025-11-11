@@ -954,34 +954,38 @@ export default function Analytics() {
   
   return <div className="container mx-auto p-6 space-y-6">
       {/* Header for screen - includes button */}
-      <div className="flex items-start justify-between gap-4 mb-4">
-        <div className="flex-1 min-w-0" data-pdf-section="header">
-          <h1 className="text-xl font-bold text-foreground">
-            {companyName 
-              ? `${companyName.charAt(0).toUpperCase() + companyName.slice(1)} Business Report`
-              : "Auren Business Report"}
-          </h1>
-          <p className="text-base font-medium text-muted-foreground mt-1">{format(new Date(), 'MMMM yyyy')}</p>
-          <p className="text-sm text-muted-foreground mt-1">Real-time financial insights and comprehensive performance analysis</p>
+      <div className="mb-4">
+        <div className="flex items-start justify-between gap-4 mb-3">
+          <div className="flex-1 max-w-3xl">
+            <h1 className="text-xl font-bold text-foreground">
+              {companyName 
+                ? `${companyName.charAt(0).toUpperCase() + companyName.slice(1)} Business Report`
+                : "Auren Business Report"}
+            </h1>
+            <p className="text-base font-medium text-muted-foreground mt-1">{format(new Date(), 'MMMM yyyy')}</p>
+          </div>
+          <Button 
+            onClick={handleDownloadPDF} 
+            disabled={isGeneratingPDF}
+            className="gap-2 flex-shrink-0 bg-primary hover:bg-primary/90" 
+            data-download-button
+          >
+            {isGeneratingPDF ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Generating...
+              </>
+            ) : (
+              <>
+                <Download className="h-4 w-4" />
+                Download PDF Report
+              </>
+            )}
+          </Button>
         </div>
-        <Button 
-          onClick={handleDownloadPDF} 
-          disabled={isGeneratingPDF}
-          className="gap-2 flex-shrink-0 bg-primary hover:bg-primary/90" 
-          data-download-button
-        >
-          {isGeneratingPDF ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Generating...
-            </>
-          ) : (
-            <>
-              <Download className="h-4 w-4" />
-              Download PDF Report
-            </>
-          )}
-        </Button>
+        <div data-pdf-section="header">
+          <p className="text-sm text-muted-foreground max-w-3xl">Real-time financial insights and comprehensive performance analysis</p>
+        </div>
       </div>
       
       <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/30 rounded-lg p-4">
