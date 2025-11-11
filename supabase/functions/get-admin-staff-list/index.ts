@@ -43,8 +43,8 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Check if user is website admin (hardcoded emails)
-    const websiteAdminEmails = ['chuandy914@gmail.com', 'orders@imarand.com']
+    // Hardcoded website admin emails
+    const websiteAdminEmails = ['chuandy914@gmail.com', 'orders@imarand.com', 'daniel@levelbrands.com']
     const isWebsiteAdmin = user.email && websiteAdminEmails.includes(user.email)
 
     if (!isWebsiteAdmin) {
@@ -72,19 +72,30 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Get all auth users once for efficiency
+    const { data: authUsersList } = await supabase.auth.admin.listUsers();
+
     // For each staff member, get their user_id from auth.users and ticket statistics
     const staffWithStats: StaffMember[] = await Promise.all(
       (staffData || []).map(async (staff) => {
-        // Look up user_id from auth.users by email
-        const { data: authUser, error: authUserError } = await supabase.auth.admin.listUsers();
-        
-        const matchedUser = authUser?.users?.find(u => u.email === staff.email);
+        const matchedUser = authUsersList?.users?.find(u => u.email === staff.email);
         const userId = matchedUser?.id;
 
         if (!userId) {
           return {
             ...staff,
             user_id: null,
+            claimed_tickets_count: 0,
+            open_tickets_count: 0,
+            closed_tickets_count: 0,
+          };
+        }
+
+        // Only fetch ticket stats for staff role, not admin role
+        if (staff.role === 'admin') {
+          return {
+            ...staff,
+            user_id: userId,
             claimed_tickets_count: 0,
             open_tickets_count: 0,
             closed_tickets_count: 0,
@@ -121,10 +132,33 @@ Deno.serve(async (req) => {
       })
     );
 
-    console.log(`Fetched ${staffWithStats.length} staff members with statistics`);
+    // Add hardcoded admin emails that may not be in admin_permissions
+    const hardcodedAdmins: StaffMember[] = [];
+    for (const email of websiteAdminEmails) {
+      // Check if this admin is already in staffWithStats
+      const existsInStaff = staffWithStats.some(s => s.email === email);
+      if (!existsInStaff) {
+        const matchedUser = authUsersList?.users?.find(u => u.email === email);
+        hardcodedAdmins.push({
+          email,
+          first_name: matchedUser?.user_metadata?.first_name || null,
+          role: 'admin',
+          invited_at: '',
+          account_created: true,
+          user_id: matchedUser?.id || null,
+          claimed_tickets_count: 0,
+          open_tickets_count: 0,
+          closed_tickets_count: 0,
+        });
+      }
+    }
+
+    const allStaff = [...hardcodedAdmins, ...staffWithStats];
+
+    console.log(`Fetched ${allStaff.length} total admin and staff members with statistics`);
 
     return new Response(
-      JSON.stringify({ staff: staffWithStats }),
+      JSON.stringify({ staff: allStaff }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 

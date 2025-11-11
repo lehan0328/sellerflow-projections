@@ -98,32 +98,40 @@ export function AdminStaffDirectory() {
                     </Badge>
                   </div>
                   
-                  {/* Middle: Ticket stats */}
-                  <div className="flex gap-6 text-sm">
-                    <div className="text-center">
-                      <p className="text-muted-foreground text-xs">Total</p>
-                      <p className="font-semibold text-lg">{staff.claimed_tickets_count}</p>
+                  {/* Middle: Ticket stats - Only show for staff role */}
+                  {staff.role === 'staff' ? (
+                    <>
+                      <div className="flex gap-6 text-sm">
+                        <div className="text-center">
+                          <p className="text-muted-foreground text-xs">Total</p>
+                          <p className="font-semibold text-lg">{staff.claimed_tickets_count}</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-muted-foreground text-xs">Open</p>
+                          <p className="font-semibold text-lg text-amber-600">{staff.open_tickets_count}</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-muted-foreground text-xs">Closed</p>
+                          <p className="font-semibold text-lg text-green-600">{staff.closed_tickets_count}</p>
+                        </div>
+                      </div>
+                      
+                      {/* Right: View Cases button */}
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleViewStaffCases(staff.user_id!, staff.first_name || staff.email)}
+                        disabled={!staff.user_id || staff.claimed_tickets_count === 0}
+                      >
+                        <LifeBuoy className="h-4 w-4 mr-2" />
+                        View Cases ({staff.claimed_tickets_count})
+                      </Button>
+                    </>
+                  ) : (
+                    <div className="text-sm text-muted-foreground italic">
+                      Admin - No case assignments
                     </div>
-                    <div className="text-center">
-                      <p className="text-muted-foreground text-xs">Open</p>
-                      <p className="font-semibold text-lg text-amber-600">{staff.open_tickets_count}</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-muted-foreground text-xs">Closed</p>
-                      <p className="font-semibold text-lg text-green-600">{staff.closed_tickets_count}</p>
-                    </div>
-                  </div>
-                  
-                  {/* Right: View Cases button */}
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => handleViewStaffCases(staff.user_id!, staff.first_name || staff.email)}
-                    disabled={!staff.user_id || staff.claimed_tickets_count === 0}
-                  >
-                    <LifeBuoy className="h-4 w-4 mr-2" />
-                    View Cases ({staff.claimed_tickets_count})
-                  </Button>
+                  )}
                 </div>
               ))}
             </div>
