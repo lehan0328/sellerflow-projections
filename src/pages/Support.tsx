@@ -220,15 +220,37 @@ const Support = () => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session?.user) return;
 
-    const { data, error } = await supabase
+    // Get tickets and check which ones have feedback
+    const { data: ticketsData, error: ticketsError } = await supabase
       .from('support_tickets')
       .select('*')
       .eq('user_id', session.user.id)
       .order('created_at', { ascending: false });
     
-    if (!error && data) {
-      setTickets(data);
+    if (ticketsError || !ticketsData) {
+      console.error('Error loading tickets:', ticketsError);
+      return;
     }
+
+    // Get all feedback for these tickets
+    const ticketIds = ticketsData.map(t => t.id);
+    const { data: feedbackData } = await supabase
+      .from('ticket_feedback')
+      .select('ticket_id')
+      .in('ticket_id', ticketIds);
+    
+    const feedbackTicketIds = new Set(feedbackData?.map(f => f.ticket_id) || []);
+    
+    // Add feedback status to tickets
+    const ticketsWithFeedback = ticketsData.map(ticket => ({
+      ...ticket,
+      hasFeedback: feedbackTicketIds.has(ticket.id),
+      needsFeedback: (ticket.status === 'closed' || ticket.status === 'resolved') && 
+                     ticket.claimed_by && 
+                     !feedbackTicketIds.has(ticket.id)
+    }));
+    
+    setTickets(ticketsWithFeedback);
   };
 
   // Check if user has any open tickets
@@ -667,6 +689,11 @@ const Support = () => {
                               {ticket.category && (
                                 <Badge variant="outline" className="font-medium">
                                   {ticket.category}
+                                </Badge>
+                              )}
+                              {ticket.needsFeedback && (
+                                <Badge className="bg-yellow-500 hover:bg-yellow-600 text-white font-medium animate-pulse">
+                                  ⭐ Rate Support
                                 </Badge>
                               )}
                             </div>

@@ -43,6 +43,7 @@ export function TicketDetailDialog({ ticket, open, onOpenChange }: TicketDetailD
     if (open && ticket) {
       loadMessages();
       loadStaffName();
+      checkForFeedback();
       
       // Subscribe to new messages
       const channel = supabase
@@ -66,6 +67,26 @@ export function TicketDetailDialog({ ticket, open, onOpenChange }: TicketDetailD
       };
     }
   }, [open, ticket]);
+
+  const checkForFeedback = async () => {
+    // Only prompt for feedback if ticket is already closed and was handled by staff
+    if (!isTicketClosed || !ticket.claimed_by) return;
+
+    try {
+      const { data: existingFeedback } = await supabase
+        .from('ticket_feedback')
+        .select('id')
+        .eq('ticket_id', ticket.id)
+        .maybeSingle();
+
+      // Show feedback dialog if no feedback exists yet
+      if (!existingFeedback) {
+        setShowFeedbackDialog(true);
+      }
+    } catch (error) {
+      console.error('Error checking feedback:', error);
+    }
+  };
 
   useEffect(() => {
     scrollToBottom();
