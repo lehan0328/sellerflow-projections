@@ -44,8 +44,8 @@ serve(async (req) => {
       throw new Error("userEmail and planTier are required");
     }
 
-    // Valid plan tiers
-    const validPlans = ['starter', 'growing', 'professional', 'enterprise'];
+    // Valid plan tiers (includes basic plans, enterprise tiers, and lifetime)
+    const validPlans = ['starter', 'growing', 'professional', 'enterprise', 'tier1', 'tier2', 'tier3', 'tier4', 'tier5', 'lifetime'];
     if (!validPlans.includes(planTier)) {
       throw new Error(`Invalid plan tier. Must be one of: ${validPlans.join(', ')}`);
     }
