@@ -22,7 +22,14 @@ const AdminAuth = () => {
       const { data: { session } } = await supabase.auth.getSession();
       
       if (session?.user) {
-        // Check if user has admin permissions
+        // Check all admin access methods
+        const { data: isWebsiteAdmin } = await supabase.rpc('is_website_admin');
+        
+        if (isWebsiteAdmin) {
+          navigate('/admin/dashboard');
+          return;
+        }
+
         const { data: adminPerms } = await supabase
           .from('admin_permissions')
           .select('role')
@@ -30,6 +37,18 @@ const AdminAuth = () => {
           .maybeSingle();
 
         if (adminPerms) {
+          navigate('/admin/dashboard');
+          return;
+        }
+
+        const { data: userRole } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', session.user.id)
+          .in('role', ['admin', 'staff'])
+          .maybeSingle();
+
+        if (userRole) {
           navigate('/admin/dashboard');
           return;
         }
@@ -45,24 +64,7 @@ const AdminAuth = () => {
     setIsLoading(true);
 
     try {
-      // First check if email has admin permissions
-      const { data: adminPerms, error: permsError } = await supabase
-        .from('admin_permissions')
-        .select('role')
-        .eq('email', email)
-        .maybeSingle();
-
-      if (permsError || !adminPerms) {
-        toast({
-          title: "Access Denied",
-          description: "This email does not have admin dashboard access.",
-          variant: "destructive",
-        });
-        setIsLoading(false);
-        return;
-      }
-
-      // Now attempt login
+      // First attempt to authenticate
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -74,13 +76,74 @@ const AdminAuth = () => {
           description: error.message,
           variant: "destructive",
         });
-      } else if (data.session) {
+        setIsLoading(false);
+        return;
+      }
+
+      if (!data.session?.user) {
+        toast({
+          title: "Login Failed",
+          description: "No session created",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      // Now check if user has admin access through any method
+      // 1. Check if website admin (hardcoded emails)
+      const { data: isWebsiteAdmin } = await supabase
+        .rpc('is_website_admin');
+
+      if (isWebsiteAdmin) {
+        toast({
+          title: "Welcome back!",
+          description: "Logged in as Website Admin",
+        });
+        navigate('/admin/dashboard');
+        return;
+      }
+
+      // 2. Check admin_permissions table
+      const { data: adminPerms } = await supabase
+        .from('admin_permissions')
+        .select('role')
+        .eq('email', data.session.user.email)
+        .maybeSingle();
+
+      if (adminPerms) {
         toast({
           title: "Welcome back!",
           description: `Logged in as ${adminPerms.role}`,
         });
         navigate('/admin/dashboard');
+        return;
       }
+
+      // 3. Check user_roles table for admin or staff role
+      const { data: userRole } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', data.session.user.id)
+        .in('role', ['admin', 'staff'])
+        .maybeSingle();
+
+      if (userRole) {
+        toast({
+          title: "Welcome back!",
+          description: `Logged in as ${userRole.role}`,
+        });
+        navigate('/admin/dashboard');
+        return;
+      }
+
+      // No admin access found - sign them out
+      await supabase.auth.signOut();
+      toast({
+        title: "Access Denied",
+        description: "This account does not have admin dashboard access.",
+        variant: "destructive",
+      });
     } catch (error: any) {
       toast({
         title: "Error",
