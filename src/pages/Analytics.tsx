@@ -880,6 +880,7 @@ export default function Analytics() {
       // Capture sections in order
       await addSection('[data-pdf-section="header"]', 0);
       await addSection('[data-pdf-section="metrics-top"]', 5);
+      await addSection('[data-pdf-section="income-metrics"]', 5);
       await addSection('[data-pdf-section="metrics-bottom"]', 5);
       await addSection('[data-pdf-section="income-expense-breakdown"]', 8);
       await addSection('[data-pdf-section="balance-chart"]', 8);
@@ -958,199 +959,148 @@ export default function Analytics() {
         </Button>
       </div>
 
-      {/* Key Metrics */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5" data-pdf-section="metrics-top">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Inflow</CardTitle>
-            <TrendingUp className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{formatCurrency(metrics.totalInflow)}</div>
-            <p className="text-xs text-muted-foreground">Actual bank credits MTD</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Outflow</CardTitle>
-            <TrendingDown className="h-4 w-4 text-red-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">{formatCurrency(metrics.totalOutflow)}</div>
-            <p className="text-xs text-muted-foreground">Actual bank debits MTD</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Forecasted Payouts</CardTitle>
-            <CalendarIcon className="h-4 w-4 text-amber-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-amber-600">{formatCurrency(metrics.forecastedPayouts)}</div>
-            <p className="text-xs text-muted-foreground">Expected this month</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Amazon Payouts</CardTitle>
-            <Package className="h-4 w-4 text-purple-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-purple-600">{formatCurrency(metrics.amazonRevenueFiltered)}</div>
-            <p className="text-xs text-muted-foreground">Confirmed MTD</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Net Cash Flow</CardTitle>
-            <TrendingUp className="h-4 w-4 text-primary" />
-          </CardHeader>
-          <CardContent>
-            <div className={`text-2xl font-bold ${metrics.netCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              {metrics.netCashFlow >= 0 ? '+' : ''}{formatCurrency(metrics.netCashFlow)}
-            </div>
-            <p className="text-xs text-muted-foreground">Month to date</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4" data-pdf-section="metrics-bottom">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Current Balance</CardTitle>
-            <DollarSign className="h-4 w-4 text-blue-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{formatCurrency(metrics.currentBalance)}</div>
-            <p className="text-xs text-muted-foreground">All accounts</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending Income</CardTitle>
-            <CalendarIcon className="h-4 w-4 text-amber-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-amber-600">{formatCurrency(metrics.pendingIncome)}</div>
-            <p className="text-xs text-muted-foreground">Other expected this month</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Credit Utilization</CardTitle>
-            <CreditCardIcon className="h-4 w-4 text-orange-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-orange-600">{metrics.creditUtilization.toFixed(1)}%</div>
-            <p className="text-xs text-muted-foreground">
-              {formatCurrency(creditCards.reduce((sum, cc) => sum + (cc.balance || 0), 0))} of{' '}
-              {formatCurrency(creditCards.reduce((sum, cc) => sum + (cc.credit_limit || 0), 0))}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Forecasted Income vs Expenses</CardTitle>
-            <Target className="h-4 w-4 text-blue-600" />
-          </CardHeader>
-          <CardContent>
-            <div className={`text-2xl font-bold ${metrics.totalForecastedIncome - metrics.totalForecastedExpenses >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              {metrics.totalForecastedIncome - metrics.totalForecastedExpenses >= 0 ? '+' : ''}{formatCurrency(metrics.totalForecastedIncome - metrics.totalForecastedExpenses)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {formatCurrency(metrics.totalForecastedIncome)} income / {formatCurrency(metrics.totalForecastedExpenses)} expenses
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="space-y-4">
-        <div className="grid gap-4 md:grid-cols-3 mb-4">
-            <Card>
+      {/* Cash Flow Overview Section */}
+      <Card data-pdf-section="metrics-top">
+        <CardHeader>
+          <CardTitle className="text-xl">Cash Flow Overview</CardTitle>
+          <p className="text-sm text-muted-foreground">Month-to-date actual bank activity</p>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 md:grid-cols-3">
+            <Card className="border-green-200 dark:border-green-900/30">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Monthly Amazon Projected Income</CardTitle>
+                <CardTitle className="text-sm font-medium">Total Inflow</CardTitle>
                 <TrendingUp className="h-4 w-4 text-green-600" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-green-600">
-                  ${(() => {
-                // Calculate total PROJECTED Amazon payouts for the NEXT 30 days
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
-                const next30Days = new Date(today);
-                next30Days.setDate(next30Days.getDate() + 30);
-                console.log('[Analytics] Calculating projected Amazon income:', {
-                  today: today.toISOString(),
-                  next30Days: next30Days.toISOString(),
-                  totalPayouts: amazonPayouts.length
-                });
-                const projectedPayouts = amazonPayouts.filter(p => {
-                  // Only include forecasted payouts (future projections)
-                  if (p.status !== 'forecasted') {
-                    return false;
-                  }
-                  const payoutDate = new Date(p.payout_date);
-                  payoutDate.setHours(0, 0, 0, 0);
-                  return payoutDate >= today && payoutDate < next30Days;
-                });
-                const totalProjected = projectedPayouts.reduce((sum, p) => sum + (p.total_amount || 0), 0);
-                console.log('[Analytics] Projected payouts for next 30 days:', {
-                  count: projectedPayouts.length,
-                  total: totalProjected,
-                  payouts: projectedPayouts.map(p => ({
-                    date: p.payout_date,
-                    amount: p.total_amount,
-                    status: p.status
-                  }))
-                });
-                return formatCurrency(totalProjected).replace('$', '');
-              })()}
+                <div className="text-2xl font-bold text-green-600">{formatCurrency(metrics.totalInflow)}</div>
+                <p className="text-xs text-muted-foreground">Actual bank credits</p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-red-200 dark:border-red-900/30">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Outflow</CardTitle>
+                <TrendingDown className="h-4 w-4 text-red-600" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-red-600">{formatCurrency(metrics.totalOutflow)}</div>
+                <p className="text-xs text-muted-foreground">Actual bank debits</p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-primary/30">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Net Cash Flow</CardTitle>
+                <TrendingUp className="h-4 w-4 text-primary" />
+              </CardHeader>
+              <CardContent>
+                <div className={`text-2xl font-bold ${metrics.netCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {metrics.netCashFlow >= 0 ? '+' : ''}{formatCurrency(metrics.netCashFlow)}
                 </div>
+                <p className="text-xs text-muted-foreground">Month to date</p>
+              </CardContent>
+            </Card>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Income Metrics Section */}
+      <Card data-pdf-section="income-metrics">
+        <CardHeader>
+          <CardTitle className="text-xl">Income & Receivables</CardTitle>
+          <p className="text-sm text-muted-foreground">Expected and confirmed income streams</p>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <Card className="border-amber-200 dark:border-amber-900/30">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Forecasted Amazon</CardTitle>
+                <CalendarIcon className="h-4 w-4 text-amber-600" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-amber-600">{formatCurrency(metrics.forecastedPayouts)}</div>
+                <p className="text-xs text-muted-foreground">Expected this month</p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-purple-200 dark:border-purple-900/30">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Confirmed Amazon</CardTitle>
+                <Package className="h-4 w-4 text-purple-600" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-purple-600">{formatCurrency(metrics.amazonRevenueFiltered)}</div>
+                <p className="text-xs text-muted-foreground">Received MTD</p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-green-200 dark:border-green-900/30">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Pending Income</CardTitle>
+                <CalendarIcon className="h-4 w-4 text-green-600" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-green-600">{formatCurrency(metrics.pendingIncome)}</div>
+                <p className="text-xs text-muted-foreground">Other expected</p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-blue-200 dark:border-blue-900/30">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Recurring Income</CardTitle>
+                <Calculator className="h-4 w-4 text-blue-600" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-blue-600">
+                  ${formatCurrency(recurringExpenses.filter(r => r.type === 'income' && r.is_active).reduce((sum, r) => {
+                    const occurrences = generateRecurringDates(r, new Date(new Date().getFullYear(), new Date().getMonth(), 1), new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0));
+                    return sum + occurrences.length * r.amount;
+                  }, 0)).replace('$', '')}
+                </div>
+                <p className="text-xs text-muted-foreground">Monthly recurring</p>
+              </CardContent>
+            </Card>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Account Health Section */}
+      <Card data-pdf-section="metrics-bottom">
+        <CardHeader>
+          <CardTitle className="text-xl">Account Health & Liabilities</CardTitle>
+          <p className="text-sm text-muted-foreground">Current balances and obligations</p>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <Card className="border-blue-200 dark:border-blue-900/30">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Current Balance</CardTitle>
+                <DollarSign className="h-4 w-4 text-blue-600" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-blue-600">{formatCurrency(metrics.currentBalance)}</div>
+                <p className="text-xs text-muted-foreground">All accounts</p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-orange-200 dark:border-orange-900/30">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Credit Utilization</CardTitle>
+                <CreditCardIcon className="h-4 w-4 text-orange-600" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-orange-600">{metrics.creditUtilization.toFixed(1)}%</div>
                 <p className="text-xs text-muted-foreground">
-                  Next 30 days projected payouts
+                  {formatCurrency(creditCards.reduce((sum, cc) => sum + (cc.balance || 0), 0))} of{' '}
+                  {formatCurrency(creditCards.reduce((sum, cc) => sum + (cc.credit_limit || 0), 0))}
                 </p>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="border-amber-200 dark:border-amber-900/30">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Recurring (Monthly)</CardTitle>
-                <Calculator className="h-4 w-4 text-blue-600" />
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-muted-foreground">Income:</span>
-                    <span className="text-sm font-semibold text-green-600">
-                      +${formatCurrency(recurringExpenses.filter(r => r.type === 'income' && r.is_active).reduce((sum, r) => {
-                    const occurrences = generateRecurringDates(r, new Date(new Date().getFullYear(), new Date().getMonth(), 1), new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0));
-                    return sum + occurrences.length * r.amount;
-                  }, 0)).replace('$', '')}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-muted-foreground">Expenses:</span>
-                    <span className="text-sm font-semibold text-red-600">
-                      -${formatCurrency(recurringExpenses.filter(r => r.type === 'expense' && r.is_active).reduce((sum, r) => {
-                    const occurrences = generateRecurringDates(r, new Date(new Date().getFullYear(), new Date().getMonth(), 1), new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0));
-                    return sum + occurrences.length * r.amount;
-                  }, 0)).replace('$', '')}
-                    </span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Purchase Orders</CardTitle>
+                <CardTitle className="text-sm font-medium">Purchase Orders</CardTitle>
                 <ShoppingCart className="h-4 w-4 text-amber-600" />
               </CardHeader>
               <CardContent>
@@ -1158,12 +1108,28 @@ export default function Analytics() {
                   {formatCurrency(dbTransactions.filter(tx => tx.type === 'purchase_order' && tx.status === 'pending').reduce((sum, tx) => sum + tx.amount, 0))}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  {dbTransactions.filter(tx => tx.type === 'purchase_order' && tx.status === 'pending').length} pending orders
+                  {dbTransactions.filter(tx => tx.type === 'purchase_order' && tx.status === 'pending').length} pending
                 </p>
               </CardContent>
             </Card>
-          </div>
 
+            <Card className={`${metrics.totalForecastedIncome - metrics.totalForecastedExpenses >= 0 ? 'border-green-200 dark:border-green-900/30' : 'border-red-200 dark:border-red-900/30'}`}>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Forecast</CardTitle>
+                <Target className="h-4 w-4 text-blue-600" />
+              </CardHeader>
+              <CardContent>
+                <div className={`text-2xl font-bold ${metrics.totalForecastedIncome - metrics.totalForecastedExpenses >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {metrics.totalForecastedIncome - metrics.totalForecastedExpenses >= 0 ? '+' : ''}{formatCurrency(metrics.totalForecastedIncome - metrics.totalForecastedExpenses)}
+                </div>
+                <p className="text-xs text-muted-foreground">Income vs Expenses</p>
+              </CardContent>
+            </Card>
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2" data-pdf-section="income-expense-breakdown">
             <Card>
               <CardHeader>
