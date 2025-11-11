@@ -7,6 +7,7 @@ import { Loader2, TrendingUp, TrendingDown, Clock, CheckCircle2, AlertCircle, Me
 import { startOfMonth, endOfMonth, subMonths, differenceInDays, format } from "date-fns";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useNavigate } from "react-router-dom";
+import { AllCasesDialog } from "./AllCasesDialog";
 
 interface DashboardStats {
   totalOpen: number;
@@ -45,6 +46,7 @@ export const AdminSupportDashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingStaff, setIsLoadingStaff] = useState(true);
   const [selectedMonth, setSelectedMonth] = useState<string>(format(new Date(), 'yyyy-MM'));
+  const [showAllCasesDialog, setShowAllCasesDialog] = useState(false);
 
   // Generate last 12 months for dropdown
   const monthOptions = Array.from({ length: 12 }, (_, i) => {
@@ -309,7 +311,7 @@ export const AdminSupportDashboard = () => {
         <div className="flex items-center gap-3">
           <Button
             variant="outline"
-            onClick={() => navigate('/admin?tab=support')}
+            onClick={() => setShowAllCasesDialog(true)}
           >
             <LifeBuoy className="h-4 w-4 mr-2" />
             View All Cases
@@ -649,6 +651,11 @@ export const AdminSupportDashboard = () => {
           </div>
         </CardContent>
       </Card>
+
+      <AllCasesDialog 
+        open={showAllCasesDialog} 
+        onOpenChange={setShowAllCasesDialog}
+      />
     </div>
   );
 };
