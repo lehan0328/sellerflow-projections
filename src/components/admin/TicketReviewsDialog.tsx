@@ -43,71 +43,11 @@ export function TicketReviewsDialog({ open, onOpenChange }: TicketReviewsDialogP
     try {
       setIsLoading(true);
 
-      // Fetch all ticket feedback
-      const { data: feedbackData, error: feedbackError } = await supabase
-        .from('ticket_feedback')
-        .select(`
-          id,
-          ticket_id,
-          rating,
-          comment,
-          created_at
-        `)
-        .order('created_at', { ascending: false });
+      const { data, error } = await supabase.functions.invoke('get-ticket-reviews');
 
-      if (feedbackError) throw feedbackError;
+      if (error) throw error;
 
-      if (!feedbackData || feedbackData.length === 0) {
-        setReviews([]);
-        return;
-      }
-
-      // Fetch ticket details for all feedback
-      const ticketIds = feedbackData.map(f => f.ticket_id);
-      const { data: ticketsData, error: ticketsError } = await supabase
-        .from('support_tickets')
-        .select('id, ticket_number, subject, user_id, claimed_by')
-        .in('id', ticketIds);
-
-      if (ticketsError) throw ticketsError;
-
-      // Fetch staff names
-      const { data: adminPermissions } = await supabase
-        .from('admin_permissions')
-        .select('email, first_name');
-
-      // Fetch user emails
-      const { data: authData, error: usersError } = await supabase.auth.admin.listUsers();
-      if (usersError) throw usersError;
-      const users = authData?.users || [];
-
-      // Create mappings
-      const userEmailMap = new Map<string, string>();
-      users.forEach((u: any) => {
-        if (u.id && u.email) userEmailMap.set(u.id, u.email);
-      });
-
-      const staffNameMap = new Map<string, string>();
-      adminPermissions?.forEach((perm: any) => {
-        const userId = users.find((u: any) => u.email === perm.email)?.id;
-        if (userId && perm.first_name) {
-          staffNameMap.set(userId, perm.first_name);
-        }
-      });
-
-      // Combine all data
-      const enrichedReviews = feedbackData.map(feedback => {
-        const ticket = ticketsData?.find(t => t.id === feedback.ticket_id);
-        return {
-          ...feedback,
-          ticket_number: ticket?.ticket_number || 0,
-          ticket_subject: ticket?.subject || 'Unknown',
-          staff_name: ticket?.claimed_by ? staffNameMap.get(ticket.claimed_by) || null : null,
-          user_email: ticket?.user_id ? userEmailMap.get(ticket.user_id) || null : null,
-        };
-      });
-
-      setReviews(enrichedReviews);
+      setReviews(data.reviews || []);
     } catch (error: any) {
       console.error('Error loading reviews:', error);
       toast.error('Failed to load ticket reviews');
