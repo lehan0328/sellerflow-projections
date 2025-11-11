@@ -390,9 +390,14 @@ export const AdminCustomers = () => {
       return { label: 'Admin', variant: 'default' as const };
     }
     
-    // Check for lifetime access (plan_override with explicit lifetime values)
-    // Enterprise/professional/growing/starter are paid plans, NOT lifetime
-    if (customer.plan_override === 'lifetime' || customer.plan_override === 'lifetime_access') {
+    // Check for lifetime access (only tier-based or explicit lifetime grants)
+    // tier1, tier2, tier3, tier4 = special manual grants = lifetime
+    // professional, enterprise, growing, starter = regular paid subscriptions = NOT lifetime
+    if (customer.plan_override && (
+      customer.plan_override.includes('tier') || 
+      customer.plan_override === 'lifetime' || 
+      customer.plan_override === 'lifetime_access'
+    )) {
       return { label: 'Lifetime', variant: 'default' as const };
     }
     

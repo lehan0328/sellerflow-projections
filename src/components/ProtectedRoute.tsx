@@ -50,10 +50,13 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
       let trialEndDate = profile?.trial_end || null;
       
       // Check if user has explicit lifetime access grant
-      // Only specific override values grant lifetime access (not regular plan tiers)
-      // Enterprise/professional/growing/starter are paid plans, NOT lifetime access
-      const isLifetimeAccess = profile?.plan_override === 'lifetime' || 
-        profile?.plan_override === 'lifetime_access';
+      // Only tier-based overrides (tier1, tier2, tier3, tier4) or explicit lifetime grants bypass checks
+      // Regular plan names (professional, enterprise, growing, starter) are PAID plans, not lifetime
+      const isLifetimeAccess = profile?.plan_override && (
+        profile.plan_override.includes('tier') || 
+        profile.plan_override === 'lifetime' || 
+        profile.plan_override === 'lifetime_access'
+      );
       setHasPlanOverride(!!isLifetimeAccess);
       
       // Store account status for expired check
