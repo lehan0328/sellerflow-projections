@@ -29,24 +29,49 @@ export const useAdmin = () => {
       }
 
       // Check if user is the website admin (superuser)
-      const isWebsiteAdmin = WEBSITE_ADMIN_EMAILS.includes(session.user.email || '');
-      setIsAdmin(isWebsiteAdmin);
+      let isWebsiteAdmin = WEBSITE_ADMIN_EMAILS.includes(session.user.email || '');
+      let adminRole: 'owner' | 'admin' | 'staff' | null = null;
 
-      // Check user's company role
-      const { data, error } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', session.user.id)
-        .single();
+      // If not a hardcoded website admin, check admin_permissions table
+      if (!isWebsiteAdmin) {
+        const { data: adminPermission } = await supabase
+          .from('admin_permissions')
+          .select('role')
+          .eq('email', session.user.email)
+          .single();
 
-      if (!error && data) {
-        const role = data.role as 'owner' | 'admin' | 'staff' | null;
-        setUserRole(role);
-        // Account admins are owners or admins
-        setIsAccountAdmin(role === 'owner' || role === 'admin');
+        if (adminPermission) {
+          isWebsiteAdmin = true;
+          adminRole = adminPermission.role as 'admin' | 'staff';
+          console.log('[ADMIN] User has admin permission:', { email: session.user.email, role: adminRole });
+        }
       } else {
-        setUserRole(null);
-        setIsAccountAdmin(false);
+        adminRole = 'admin'; // Hardcoded admins are full admins
+      }
+
+      setIsAdmin(isWebsiteAdmin);
+      
+      // If user has admin dashboard permissions, set their role
+      if (adminRole) {
+        setUserRole(adminRole);
+        setIsAccountAdmin(adminRole === 'admin');
+      } else {
+        // Check user's company role
+        const { data, error } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', session.user.id)
+          .single();
+
+        if (!error && data) {
+          const role = data.role as 'owner' | 'admin' | 'staff' | null;
+          setUserRole(role);
+          // Account admins are owners or admins
+          setIsAccountAdmin(role === 'owner' || role === 'admin');
+        } else {
+          setUserRole(null);
+          setIsAccountAdmin(false);
+        }
       }
     } catch (error) {
       console.error('Error checking admin status:', error);

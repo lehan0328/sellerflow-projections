@@ -44,6 +44,33 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_permissions: {
+        Row: {
+          email: string
+          id: string
+          invited_at: string | null
+          invited_by: string | null
+          role: string
+          updated_at: string | null
+        }
+        Insert: {
+          email: string
+          id?: string
+          invited_at?: string | null
+          invited_by?: string | null
+          role: string
+          updated_at?: string | null
+        }
+        Update: {
+          email?: string
+          id?: string
+          invited_at?: string | null
+          invited_by?: string | null
+          role?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       affiliate_payouts: {
         Row: {
           affiliate_id: string
