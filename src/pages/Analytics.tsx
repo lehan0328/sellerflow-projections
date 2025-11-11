@@ -22,6 +22,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { format } from "date-fns";
 import { cn, formatCurrency } from "@/lib/utils";
+import { toast } from "@/hooks/use-toast";
 export default function Analytics() {
   const navigate = useNavigate();
   const {
@@ -817,8 +818,10 @@ export default function Analytics() {
   const COLORS = ['#8b5cf6', '#06b6d4', '#f59e0b', '#10b981', '#ef4444', '#ec4899'];
   
   const handleDownloadPDF = async () => {
-    const element = document.querySelector('.container.mx-auto.p-6.space-y-6') as HTMLElement;
-    if (!element) return;
+    toast({
+      title: "Generating PDF report...",
+      description: "This may take a few moments"
+    });
     
     // Hide the download button temporarily
     const downloadButton = document.querySelector('[data-download-button]') as HTMLElement;
@@ -826,56 +829,91 @@ export default function Analytics() {
       downloadButton.style.display = 'none';
     }
     
-    // Capture the page
-    const canvas = await html2canvas(element, {
-      scale: 2,
-      useCORS: true,
-      logging: false,
-      backgroundColor: '#ffffff'
-    });
-    
-    // Show the download button again
-    if (downloadButton) {
-      downloadButton.style.display = '';
-    }
-    
-    const imgData = canvas.toDataURL('image/png');
+    // Initialize PDF
     const pdf = new jsPDF('p', 'mm', 'a4');
     const pageWidth = pdf.internal.pageSize.getWidth();
     const pageHeight = pdf.internal.pageSize.getHeight();
-    
-    // Calculate dimensions - leave space for footer with logo
-    const footerHeight = 15;
     const margin = 10;
-    const contentHeight = pageHeight - footerHeight - margin;
-    const imgWidth = pageWidth - (margin * 2);
-    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+    const footerHeight = 15;
+    const availableHeight = pageHeight - footerHeight - (margin * 2);
     
-    let heightLeft = imgHeight;
-    let position = margin;
+    let currentY = margin;
     let pageNumber = 1;
     
-    // Add first page
-    pdf.addImage(imgData, 'PNG', margin, position, imgWidth, imgHeight, undefined, 'FAST');
-    heightLeft -= contentHeight;
+    // Helper function to add section
+    const addSection = async (selector: string, spaceBefore = 5) => {
+      const element = document.querySelector(selector) as HTMLElement;
+      if (!element) {
+        console.log(`Section not found: ${selector}`);
+        return;
+      }
+      
+      try {
+        const canvas = await html2canvas(element, {
+          scale: 2,
+          useCORS: true,
+          logging: false,
+          backgroundColor: '#ffffff'
+        });
+        
+        const imgWidth = pageWidth - (margin * 2);
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        
+        // Check if we need a new page
+        if (currentY + imgHeight + spaceBefore > pageHeight - footerHeight - margin) {
+          addFooter(pdf, pageWidth, pageHeight, pageNumber);
+          pdf.addPage();
+          pageNumber++;
+          currentY = margin;
+        } else {
+          currentY += spaceBefore;
+        }
+        
+        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', margin, currentY, imgWidth, imgHeight, undefined, 'FAST');
+        currentY += imgHeight;
+      } catch (error) {
+        console.error(`Error capturing section ${selector}:`, error);
+      }
+    };
     
-    // Add additional pages if needed
-    while (heightLeft > 0) {
-      // Add footer to previous page
+    try {
+      // Capture sections in order
+      await addSection('[data-pdf-section="header"]', 0);
+      await addSection('[data-pdf-section="metrics-top"]', 5);
+      await addSection('[data-pdf-section="metrics-bottom"]', 5);
+      await addSection('[data-pdf-section="income-expense-breakdown"]', 8);
+      await addSection('[data-pdf-section="balance-chart"]', 8);
+      await addSection('[data-pdf-section="vendors-table"]', 8);
+      await addSection('[data-pdf-section="income-trend-chart"]', 8);
+      await addSection('[data-pdf-section="payment-status"]', 8);
+      await addSection('[data-pdf-section="income-expense-chart"]', 8);
+      await addSection('[data-pdf-section="cashflow-chart"]', 8);
+      
+      // Add final footer
       addFooter(pdf, pageWidth, pageHeight, pageNumber);
       
-      position = heightLeft - imgHeight + margin;
-      pdf.addPage();
-      pageNumber++;
-      pdf.addImage(imgData, 'PNG', margin, position, imgWidth, imgHeight, undefined, 'FAST');
-      heightLeft -= contentHeight;
+      // Show download button
+      if (downloadButton) {
+        downloadButton.style.display = '';
+      }
+      
+      // Save PDF
+      pdf.save(`Auren-Analytics-Report-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+      toast({
+        title: "Success!",
+        description: "PDF report generated successfully"
+      });
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate PDF report",
+        variant: "destructive"
+      });
+      if (downloadButton) {
+        downloadButton.style.display = '';
+      }
     }
-    
-    // Add footer to last page
-    addFooter(pdf, pageWidth, pageHeight, pageNumber);
-    
-    // Save the PDF
-    pdf.save(`Auren-Analytics-Report-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
   };
   
   const addFooter = (pdf: jsPDF, pageWidth: number, pageHeight: number, pageNumber: number) => {
@@ -903,7 +941,7 @@ export default function Analytics() {
   };
   
   return <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between" data-pdf-section="header">
         <div className="flex-1">
           <h1 className="text-3xl font-bold">Business Analytics</h1>
           <p className="text-muted-foreground">Comprehensive insights into your financial performance</p>
@@ -921,7 +959,7 @@ export default function Analytics() {
       </div>
 
       {/* Key Metrics */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5" data-pdf-section="metrics-top">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Inflow</CardTitle>
@@ -980,7 +1018,7 @@ export default function Analytics() {
         </Card>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4" data-pdf-section="metrics-bottom">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Current Balance</CardTitle>
@@ -1126,7 +1164,7 @@ export default function Analytics() {
             </Card>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 md:grid-cols-2" data-pdf-section="income-expense-breakdown">
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between gap-4 flex-wrap">
@@ -1247,7 +1285,7 @@ export default function Analytics() {
           </div>
 
           {/* End of Month Balances Chart */}
-          <Card>
+          <Card data-pdf-section="balance-chart">
             <CardHeader>
               <CardTitle>End of Month Bank Balances</CardTitle>
             </CardHeader>
@@ -1320,7 +1358,7 @@ export default function Analytics() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card data-pdf-section="vendors-table">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle>Top 10 Vendors by Spending</CardTitle>
@@ -1384,7 +1422,7 @@ export default function Analytics() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card data-pdf-section="income-trend-chart">
             <CardHeader>
               <CardTitle>Monthly Income Trend</CardTitle>
             </CardHeader>
@@ -1427,7 +1465,7 @@ export default function Analytics() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card data-pdf-section="payment-status">
             <CardHeader>
               <CardTitle>Payment Status Overview</CardTitle>
               <p className="text-sm text-muted-foreground">This month only</p>
@@ -1530,7 +1568,7 @@ export default function Analytics() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card data-pdf-section="income-expense-chart">
             <CardHeader>
               <CardTitle>Income vs Expenses (Last 6 Months + Next 2 Months Projected)</CardTitle>
             </CardHeader>
@@ -1576,7 +1614,7 @@ export default function Analytics() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card data-pdf-section="cashflow-chart">
             <CardHeader>
               <CardTitle>Net Cash Flow Trend (Last 6 Months + Next 2 Months Projected)</CardTitle>
               <p className="text-sm text-muted-foreground mt-2">
