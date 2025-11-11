@@ -38,42 +38,49 @@ const Admin = () => {
       {
         title: "Overview",
         tabs: [
-          { value: "overview", label: "Dashboard", icon: LayoutDashboard },
-          { value: "staff-directory", label: "Staff Directory", icon: UserCog },
-          { value: "plan-override", label: "Plan Management", icon: Settings },
+          { value: "overview", label: "Dashboard", icon: LayoutDashboard, rolesAllowed: ['admin', 'staff'] },
+          { value: "staff-directory", label: "Staff Directory", icon: UserCog, rolesAllowed: ['admin'] },
+          { value: "plan-override", label: "Plan Management", icon: Settings, rolesAllowed: ['admin'] },
         ],
-        rolesAllowed: ['admin', 'staff'] // Both can see overview
+        rolesAllowed: ['admin', 'staff'] // Section visible to both, but tabs filtered individually
       },
       {
         title: "Key Business Metrics",
         tabs: [
-          { value: "signups", label: "Signup Analytics", icon: UserPlus },
-          { value: "customers", label: "Customers", icon: Users },
-          { value: "subscriptions", label: "Subscriptions", icon: CreditCard },
-          { value: "send-update", label: "Send Update", icon: Megaphone },
-          { value: "support-dashboard", label: "Support Dashboard", icon: MessageSquare },
-          { value: "forecast-accuracy", label: "Forecast Accuracy", icon: Target },
+          { value: "signups", label: "Signup Analytics", icon: UserPlus, rolesAllowed: ['admin'] },
+          { value: "customers", label: "Customers", icon: Users, rolesAllowed: ['admin'] },
+          { value: "subscriptions", label: "Subscriptions", icon: CreditCard, rolesAllowed: ['admin'] },
+          { value: "send-update", label: "Send Update", icon: Megaphone, rolesAllowed: ['admin'] },
+          { value: "support-dashboard", label: "Support Dashboard", icon: MessageSquare, rolesAllowed: ['admin'] },
+          { value: "forecast-accuracy", label: "Forecast Accuracy", icon: Target, rolesAllowed: ['admin'] },
         ],
         rolesAllowed: ['admin'] // Only admin can access
       },
       {
         title: "Support & Features",
         tabs: [
-          { value: "support", label: "Support Tickets", icon: LifeBuoy },
-          { value: "features", label: "Feature Requests", icon: MessageSquare },
-          { value: "referrals", label: "Referrals", icon: Gift },
-          { value: "affiliates", label: "Affiliates", icon: UserCog },
+          { value: "support", label: "Support Tickets", icon: LifeBuoy, rolesAllowed: ['admin', 'staff'] },
+          { value: "features", label: "Feature Requests", icon: MessageSquare, rolesAllowed: ['admin', 'staff'] },
+          { value: "referrals", label: "Referrals", icon: Gift, rolesAllowed: ['admin'] },
+          { value: "affiliates", label: "Affiliates", icon: UserCog, rolesAllowed: ['admin'] },
         ],
         rolesAllowed: ['admin', 'staff'] // Both admin and staff can access
       }
     ];
 
     // Filter sections based on user role
-    // Website admins (isAdmin=true) see everything regardless of userRole
+    // Only hardcoded website admins OR users with 'admin' role see everything
+    // Staff users only see sections where their role is explicitly allowed
     const filtered = allSections.filter(section => {
-      if (isAdmin) return true; // Website admins see all sections
       if (!userRole) return false; // No role = no access
-      return section.rolesAllowed.includes(userRole);
+      
+      // Staff can only see sections that explicitly allow 'staff'
+      if (userRole === 'staff') {
+        return section.rolesAllowed.includes('staff');
+      }
+      
+      // Admin role sees everything
+      return true;
     });
     
     console.log('[ADMIN] Filtered sections:', { 
@@ -106,25 +113,32 @@ const Admin = () => {
                     {section.title}
                   </h3>
                   <div className="space-y-0.5">
-                    {section.tabs.map((tab) => {
-                      const Icon = tab.icon;
-                      const isActive = activeTab === tab.value;
-                      
-                      return (
-                        <button
-                          key={tab.value}
-                          onClick={() => setActiveTab(tab.value)}
-                          className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-md text-sm font-medium transition-all ${
-                            isActive
-                              ? 'bg-primary text-primary-foreground shadow-sm'
-                              : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
-                          }`}
-                        >
-                          <Icon className="h-[18px] w-[18px] flex-shrink-0" />
-                          <span className="text-left">{tab.label}</span>
-                        </button>
-                      );
-                    })}
+                    {section.tabs
+                      .filter(tab => {
+                        // Filter individual tabs based on user role
+                        if (!tab.rolesAllowed) return true; // No restriction
+                        if (userRole === 'staff') return tab.rolesAllowed.includes('staff');
+                        return true; // Admin sees all
+                      })
+                      .map((tab) => {
+                        const Icon = tab.icon;
+                        const isActive = activeTab === tab.value;
+                        
+                        return (
+                          <button
+                            key={tab.value}
+                            onClick={() => setActiveTab(tab.value)}
+                            className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-md text-sm font-medium transition-all ${
+                              isActive
+                                ? 'bg-primary text-primary-foreground shadow-sm'
+                                : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                            }`}
+                          >
+                            <Icon className="h-[18px] w-[18px] flex-shrink-0" />
+                            <span className="text-left">{tab.label}</span>
+                          </button>
+                        );
+                      })}
                   </div>
                   {sectionIndex < tabSections.length - 1 && (
                     <div className="h-px bg-border my-2" />
