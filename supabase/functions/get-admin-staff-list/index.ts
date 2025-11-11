@@ -15,6 +15,8 @@ interface StaffMember {
   needs_response_count: number;
   closed_tickets_count: number;
   average_rating: number | null;
+  avg_response_time_hours: number | null;
+  first_response_time_hours: number | null;
   user_id?: string | null;
 }
 
@@ -92,6 +94,8 @@ Deno.serve(async (req) => {
             needs_response_count: 0,
             closed_tickets_count: 0,
             average_rating: null,
+            avg_response_time_hours: null,
+            first_response_time_hours: null,
           };
         }
 
@@ -105,6 +109,8 @@ Deno.serve(async (req) => {
             needs_response_count: 0,
             closed_tickets_count: 0,
             average_rating: null,
+            avg_response_time_hours: null,
+            first_response_time_hours: null,
           };
         }
 
@@ -145,6 +151,62 @@ Deno.serve(async (req) => {
           ? feedbackData.reduce((sum, f) => sum + f.rating, 0) / feedbackData.length
           : null;
 
+        // Calculate response times for this staff member
+        const { data: staffTickets } = await supabase
+          .from('support_tickets')
+          .select('id, created_at')
+          .eq('claimed_by', userId);
+
+        let totalResponseTime = 0;
+        let totalFirstResponseTime = 0;
+        let responseCount = 0;
+        let firstResponseCount = 0;
+
+        if (staffTickets && staffTickets.length > 0) {
+          for (const ticket of staffTickets) {
+            // Get messages for this ticket
+            const { data: messages } = await supabase
+              .from('ticket_messages')
+              .select('created_at, user_id')
+              .eq('ticket_id', ticket.id)
+              .order('created_at', { ascending: true });
+
+            if (messages && messages.length > 0) {
+              // Find first staff message
+              const firstStaffMessage = messages.find(m => m.user_id === userId);
+              
+              if (firstStaffMessage) {
+                // Calculate first response time
+                const ticketCreated = new Date(ticket.created_at);
+                const firstResponse = new Date(firstStaffMessage.created_at);
+                const diffHours = (firstResponse.getTime() - ticketCreated.getTime()) / (1000 * 60 * 60);
+                
+                totalFirstResponseTime += diffHours;
+                firstResponseCount++;
+                
+                // Count all staff responses for average
+                const staffMessages = messages.filter(m => m.user_id === userId);
+                responseCount += staffMessages.length;
+                
+                // Calculate time between ticket creation and each staff message
+                for (const msg of staffMessages) {
+                  const msgTime = new Date(msg.created_at);
+                  const timeDiff = (msgTime.getTime() - ticketCreated.getTime()) / (1000 * 60 * 60);
+                  totalResponseTime += timeDiff;
+                }
+              }
+            }
+          }
+        }
+
+        const avgResponseTime = responseCount > 0 
+          ? Math.round((totalResponseTime / responseCount) * 10) / 10 
+          : null;
+        
+        const avgFirstResponseTime = firstResponseCount > 0 
+          ? Math.round((totalFirstResponseTime / firstResponseCount) * 10) / 10 
+          : null;
+
         return {
           ...staff,
           user_id: userId,
@@ -153,6 +215,8 @@ Deno.serve(async (req) => {
           needs_response_count: needsResponseCount || 0,
           closed_tickets_count: closedCount || 0,
           average_rating: averageRating ? Math.round(averageRating * 10) / 10 : null,
+          avg_response_time_hours: avgResponseTime,
+          first_response_time_hours: avgFirstResponseTime,
         };
       })
     );
@@ -176,6 +240,8 @@ Deno.serve(async (req) => {
           needs_response_count: 0,
           closed_tickets_count: 0,
           average_rating: null,
+          avg_response_time_hours: null,
+          first_response_time_hours: null,
         });
       }
     }

@@ -39,6 +39,8 @@ interface StaffMember {
   role: string;
   first_name: string | null;
   user_id: string | null;
+  avg_response_time_hours: number | null;
+  first_response_time_hours: number | null;
 }
 
 export function AdminStaffDirectory() {
@@ -202,6 +204,13 @@ export function AdminStaffDirectory() {
     }
   };
 
+  const formatResponseTime = (hours: number | null) => {
+    if (hours === null) return "N/A";
+    if (hours < 1) return `${Math.round(hours * 60)}m`;
+    if (hours < 24) return `${hours.toFixed(1)}h`;
+    return `${(hours / 24).toFixed(1)}d`;
+  };
+
   return (
     <div className="space-y-6">
       <Card>
@@ -233,7 +242,19 @@ export function AdminStaffDirectory() {
                     </Avatar>
                     <div>
                       <p className="font-medium">{staff.first_name || staff.email}</p>
-                      <p className="text-xs text-muted-foreground">{staff.email}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-xs text-muted-foreground">{staff.email}</p>
+                        {staff.role === 'staff' && staff.avg_response_time_hours !== null && (
+                          <span className="text-xs text-muted-foreground">
+                            • Avg: {formatResponseTime(staff.avg_response_time_hours)}
+                          </span>
+                        )}
+                        {staff.role === 'staff' && staff.first_response_time_hours !== null && (
+                          <span className="text-xs text-muted-foreground">
+                            • First: {formatResponseTime(staff.first_response_time_hours)}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
