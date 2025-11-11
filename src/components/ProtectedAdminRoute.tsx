@@ -9,7 +9,7 @@ const ProtectedAdminRoute = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     if (!isLoading && !isAdmin) {
-      navigate("/dashboard");
+      navigate("/admin/login");
     }
   }, [isAdmin, isLoading, navigate]);
 

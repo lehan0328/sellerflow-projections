@@ -44,7 +44,9 @@ import { Auth } from "./pages/Auth";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { PlanProtectedRoute } from "./components/PlanProtectedRoute";
 import Admin from "./pages/Admin";
+import AdminAuth from "./pages/AdminAuth";
 import ProtectedAdminRoute from "./components/ProtectedAdminRoute";
+import { AdminLayout } from "./components/AdminLayout";
 import { PaymentAccessControl } from "./components/PaymentAccessControl";
 import PaymentRequired from "./pages/PaymentRequired";
 import Support from "./pages/Support";
@@ -194,9 +196,19 @@ const App = () => (
           <Route path="/advanced-analytics" element={<AdvancedAnalytics />} />
           <Route path="/accounting" element={<Accounting />} />
           <Route path="/platforms" element={<Platforms />} />
+          <Route path="/admin/login" element={<AdminAuth />} />
+          <Route path="/admin/dashboard" element={
+            <ProtectedAdminRoute>
+              <AdminLayout>
+                <Admin />
+              </AdminLayout>
+            </ProtectedAdminRoute>
+          } />
           <Route path="/admin" element={
             <ProtectedAdminRoute>
-              <Admin />
+              <AdminLayout>
+                <Admin />
+              </AdminLayout>
             </ProtectedAdminRoute>
           } />
           <Route path="/referral-dashboard" element={

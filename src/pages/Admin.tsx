@@ -1,14 +1,10 @@
 import { useState, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { useAdmin } from "@/hooks/useAdmin";
 import { 
   Users, 
   LifeBuoy, 
-  CreditCard, 
-  ArrowLeft,
-  Shield,
+  CreditCard,
   Gift,
   MessageSquare,
   UserCog,
@@ -30,7 +26,6 @@ import { AdminSignupDashboard } from "@/components/admin/AdminSignupDashboard";
 import { AdminSendUpdate } from "@/components/admin/AdminSendUpdate";
 
 const Admin = () => {
-  const navigate = useNavigate();
   const { isAdmin, userRole } = useAdmin();
   
   console.log('[ADMIN] User permissions:', { isAdmin, userRole });
@@ -98,32 +93,8 @@ const Admin = () => {
   const [activeTab, setActiveTab] = useState(defaultTab);
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center gap-4">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => navigate('/dashboard')}
-              className="gap-2"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Back
-            </Button>
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10">
-                <Shield className="h-5 w-5 text-primary" />
-              </div>
-              <h1 className="text-2xl font-bold">Admin Dashboard</h1>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="px-6 py-8">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex gap-4">
+    <div className="space-y-6">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex gap-4">
           {/* Sidebar Navigation */}
           <div className="w-52 flex-shrink-0">
             <div className="sticky top-6 space-y-4 p-2 rounded-lg border bg-card">
@@ -208,7 +179,6 @@ const Admin = () => {
             </TabsContent>
           </div>
         </Tabs>
-      </div>
     </div>
   );
 };
