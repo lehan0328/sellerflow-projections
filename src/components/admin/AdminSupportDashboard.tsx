@@ -1,9 +1,12 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, TrendingUp, TrendingDown, Clock, CheckCircle2, AlertCircle, MessageSquare, BarChart3 } from "lucide-react";
+import { Loader2, TrendingUp, TrendingDown, Clock, CheckCircle2, AlertCircle, MessageSquare, BarChart3, LifeBuoy } from "lucide-react";
 import { startOfMonth, endOfMonth, subMonths, differenceInDays, format } from "date-fns";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useNavigate } from "react-router-dom";
 
 interface DashboardStats {
   totalOpen: number;
@@ -25,9 +28,22 @@ interface DashboardStats {
   responseTimeByCategory: Array<{ category: string; avgHours: number }>;
 }
 
+interface StaffMember {
+  email: string;
+  role: string;
+  first_name: string | null;
+  user_id: string | null;
+  claimed_tickets_count: number;
+  open_tickets_count: number;
+  closed_tickets_count: number;
+}
+
 export const AdminSupportDashboard = () => {
+  const navigate = useNavigate();
   const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [staffList, setStaffList] = useState<StaffMember[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingStaff, setIsLoadingStaff] = useState(true);
   const [selectedMonth, setSelectedMonth] = useState<string>(format(new Date(), 'yyyy-MM'));
 
   // Generate last 12 months for dropdown
@@ -41,7 +57,39 @@ export const AdminSupportDashboard = () => {
 
   useEffect(() => {
     fetchDashboardStats();
+    loadStaffList();
   }, [selectedMonth]);
+
+  const loadStaffList = async () => {
+    try {
+      setIsLoadingStaff(true);
+      const { data, error } = await supabase.functions.invoke('get-admin-staff-list');
+      
+      if (error) throw error;
+      
+      // Filter to only show staff members (not admins) with case statistics
+      const staffOnly = (data?.staff || []).filter((s: StaffMember) => s.role === 'staff');
+      setStaffList(staffOnly);
+    } catch (error: any) {
+      console.error('Error loading staff list:', error);
+    } finally {
+      setIsLoadingStaff(false);
+    }
+  };
+
+  const getInitials = (name: string | null, email: string) => {
+    if (name) {
+      const parts = name.split(' ');
+      return parts.length > 1 
+        ? `${parts[0][0]}${parts[1][0]}`.toUpperCase()
+        : name.substring(0, 2).toUpperCase();
+    }
+    return email.substring(0, 2).toUpperCase();
+  };
+
+  const handleViewStaffCases = (userId: string, staffName: string) => {
+    navigate(`/admin?tab=support&staff=${userId}&staffName=${encodeURIComponent(staffName)}`);
+  };
 
   const fetchDashboardStats = async () => {
     try {
@@ -271,6 +319,68 @@ export const AdminSupportDashboard = () => {
           </SelectContent>
         </Select>
       </div>
+
+      {/* Staff Performance Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <LifeBuoy className="h-5 w-5" />
+            Staff Case Load
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {isLoadingStaff ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            </div>
+          ) : staffList.length === 0 ? (
+            <p className="text-muted-foreground text-center py-4">No staff members found</p>
+          ) : (
+            <div className="space-y-3">
+              {staffList.map((staff) => (
+                <div key={staff.email} className="flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <Avatar>
+                      <AvatarFallback className="bg-primary text-primary-foreground">
+                        {getInitials(staff.first_name, staff.email)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="font-medium">{staff.first_name || staff.email}</p>
+                      <p className="text-xs text-muted-foreground">{staff.email}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex gap-6 text-sm">
+                    <div className="text-center">
+                      <p className="text-muted-foreground text-xs">Total</p>
+                      <p className="font-semibold text-lg">{staff.claimed_tickets_count}</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-muted-foreground text-xs">Open</p>
+                      <p className="font-semibold text-lg text-amber-600">{staff.open_tickets_count}</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-muted-foreground text-xs">Closed</p>
+                      <p className="font-semibold text-lg text-green-600">{staff.closed_tickets_count}</p>
+                    </div>
+                  </div>
+                  
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => handleViewStaffCases(staff.user_id!, staff.first_name || staff.email)}
+                    disabled={!staff.user_id || staff.claimed_tickets_count === 0}
+                  >
+                    <LifeBuoy className="h-4 w-4 mr-2" />
+                    View Cases ({staff.claimed_tickets_count})
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Overall Status Overview */}
       <div>
