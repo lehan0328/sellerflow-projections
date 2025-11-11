@@ -30,12 +30,9 @@ const AdminAuth = () => {
         }
 
         const { data: adminPerms } = await supabase
-          .from('admin_permissions')
-          .select('role')
-          .eq('email', session.user.email)
-          .maybeSingle();
+          .rpc('check_admin_permission', { user_email: session.user.email });
 
-        if (adminPerms) {
+        if (adminPerms && adminPerms.length > 0 && adminPerms[0].has_permission) {
           navigate('/admin/dashboard');
           return;
         }
@@ -110,18 +107,15 @@ const AdminAuth = () => {
         return;
       }
 
-      // 2. Check admin_permissions table
+      // 2. Check admin_permissions table using security definer function
       const { data: adminPerms, error: permsError } = await supabase
-        .from('admin_permissions')
-        .select('role, account_created')
-        .eq('email', data.session.user.email)
-        .maybeSingle();
+        .rpc('check_admin_permission', { user_email: data.session.user.email });
 
       console.log('[ADMIN_LOGIN] Admin permissions check:', { adminPerms, permsError, email: data.session.user.email });
 
-      if (adminPerms) {
+      if (adminPerms && adminPerms.length > 0 && adminPerms[0].has_permission) {
         toast.success("Welcome back!", {
-          description: `Logged in as ${adminPerms.role}`,
+          description: `Logged in as ${adminPerms[0].role}`,
         });
         navigate('/admin/dashboard');
         return;

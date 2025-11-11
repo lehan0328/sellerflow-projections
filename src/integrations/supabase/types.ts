@@ -2553,6 +2553,13 @@ export type Database = {
         Args: { card_id_param: string }
         Returns: number
       }
+      check_admin_permission: {
+        Args: { user_email: string }
+        Returns: {
+          has_permission: boolean
+          role: string
+        }[]
+      }
       cleanup_expired_reset_tokens: { Args: never; Returns: undefined }
       cleanup_old_bank_transactions: { Args: never; Returns: undefined }
       clear_user_documents: { Args: never; Returns: undefined }
