@@ -117,6 +117,8 @@ export const PendingNotificationsPanel = ({
         return 'bg-teal-300 text-white border-teal-400';
       case 'account':
         return 'bg-indigo-300 text-white border-indigo-400';
+      case 'support':
+        return 'bg-purple-300 text-white border-purple-400';
       default:
         return 'bg-pink-300 text-white border-pink-400';
     }
