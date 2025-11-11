@@ -26,6 +26,7 @@ import { AdminSupportDashboard } from "@/components/admin/AdminSupportDashboard"
 import { AdminSignupDashboard } from "@/components/admin/AdminSignupDashboard";
 import { AdminSendUpdate } from "@/components/admin/AdminSendUpdate";
 import { AdminDashboardOverview } from "@/components/admin/AdminDashboardOverview";
+import { AdminStaffDirectory } from "@/components/admin/AdminStaffDirectory";
 
 const Admin = () => {
   const { isAdmin, userRole } = useAdmin();
@@ -44,6 +45,7 @@ const Admin = () => {
       {
         title: "Business Management",
         tabs: [
+          { value: "staff-directory", label: "Staff Directory", icon: UserCog },
           { value: "signups", label: "Signup Analytics", icon: UserPlus },
           { value: "customers", label: "Customers", icon: Users },
           { value: "subscriptions", label: "Subscriptions", icon: CreditCard },
@@ -142,6 +144,10 @@ const Admin = () => {
           <div className="flex-1 min-w-0">
             <TabsContent value="overview" className="m-0">
               <AdminDashboardOverview />
+            </TabsContent>
+
+            <TabsContent value="staff-directory" className="m-0">
+              <AdminStaffDirectory />
             </TabsContent>
 
             <TabsContent value="signups" className="m-0">
