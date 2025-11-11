@@ -969,8 +969,8 @@ export default function Analytics() {
           <div>
             <h1 className="text-3xl font-bold text-primary">
               {companyName 
-                ? `(${companyName.charAt(0).toUpperCase() + companyName.slice(1)}) Business Report`
-                : "(Auren) Business Report"}
+                ? `${companyName.charAt(0).toUpperCase() + companyName.slice(1)} Business Report`
+                : "Auren Business Report"}
             </h1>
             <p className="text-lg font-medium text-primary/80 mt-1">{format(new Date(), 'MMMM yyyy')}</p>
             <p className="text-muted-foreground mt-2">Comprehensive insights into your financial performance</p>
