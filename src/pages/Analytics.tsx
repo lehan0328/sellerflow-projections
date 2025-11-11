@@ -1008,8 +1008,25 @@ export default function Analytics() {
       {/* Income Metrics Section */}
       <Card data-pdf-section="income-metrics">
         <CardHeader>
-          <CardTitle className="text-xl">Income & Receivables</CardTitle>
-          <p className="text-sm text-muted-foreground">Expected and confirmed income streams</p>
+          <div className="flex items-start justify-between">
+            <div>
+              <CardTitle className="text-xl">Income & Receivables</CardTitle>
+              <p className="text-sm text-muted-foreground">Expected and confirmed income streams</p>
+            </div>
+            <div className="text-right">
+              <p className="text-sm font-medium text-muted-foreground">Total Projected This Month</p>
+              <p className="text-3xl font-bold text-green-600">
+                {formatCurrency(
+                  metrics.forecastedPayouts + 
+                  metrics.pendingIncome + 
+                  recurringExpenses.filter(r => r.type === 'income' && r.is_active).reduce((sum, r) => {
+                    const occurrences = generateRecurringDates(r, new Date(new Date().getFullYear(), new Date().getMonth(), 1), new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0));
+                    return sum + occurrences.length * r.amount;
+                  }, 0)
+                )}
+              </p>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
