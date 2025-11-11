@@ -536,6 +536,7 @@ const Support = () => {
                           <SelectItem value="bug">Report a Bug</SelectItem>
                           <SelectItem value="feedback">Feedback</SelectItem>
                           <SelectItem value="connection">Amazon/Plaid Connection Issues</SelectItem>
+                          <SelectItem value="forecast">Forecast</SelectItem>
                           <SelectItem value="other">Other</SelectItem>
                         </SelectContent>
                       </Select>
