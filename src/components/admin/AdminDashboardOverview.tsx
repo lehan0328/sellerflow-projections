@@ -67,13 +67,16 @@ export function AdminDashboardOverview() {
       const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       const weekStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-      // Fetch admin/staff emails to exclude them
+      // Fetch admin/staff emails to exclude them (all invitations, not just completed signups)
       const { data: adminPermissions } = await supabase
         .from('admin_permissions')
-        .select('email')
-        .eq('account_created', true);
+        .select('email');
 
       const adminEmails = new Set(adminPermissions?.map(a => a.email) || []);
+      
+      // Also exclude hardcoded website admin emails
+      adminEmails.add('chuandy914@gmail.com');
+      adminEmails.add('orders@imarand.com');
 
       // Fetch total users and recent signups (excluding admins/staff)
       const { data: allUsers, error: usersError } = await supabase
