@@ -2681,6 +2681,7 @@ export type Database = {
         Args: { _account_id: string; _user_id: string }
         Returns: boolean
       }
+      is_admin_staff: { Args: never; Returns: boolean }
       is_website_admin: { Args: never; Returns: boolean }
       update_secure_amazon_account: {
         Args: {
