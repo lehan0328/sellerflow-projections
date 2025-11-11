@@ -50,6 +50,8 @@ interface StaffMember {
   needs_response_count: number;
   closed_tickets_count: number;
   average_rating: number | null;
+  avg_response_time_hours: number | null;
+  first_response_time_hours: number | null;
 }
 
 export const AdminSupportDashboard = () => {
@@ -134,6 +136,13 @@ export const AdminSupportDashboard = () => {
         : name.substring(0, 2).toUpperCase();
     }
     return email.substring(0, 2).toUpperCase();
+  };
+
+  const formatResponseTime = (hours: number | null) => {
+    if (hours === null) return "N/A";
+    if (hours < 1) return `${Math.round(hours * 60)}m`;
+    if (hours < 24) return `${hours.toFixed(1)}h`;
+    return `${(hours / 24).toFixed(1)}d`;
   };
 
   const handleViewStaffCases = (userId: string, staffName: string) => {
@@ -412,7 +421,19 @@ export const AdminSupportDashboard = () => {
                     </Avatar>
                     <div>
                       <p className="font-medium">{staff.first_name || staff.email}</p>
-                      <p className="text-xs text-muted-foreground">{staff.email}</p>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-xs text-muted-foreground">{staff.email}</p>
+                        {staff.avg_response_time_hours !== null && (
+                          <span className="text-xs text-muted-foreground">
+                            • Avg: {formatResponseTime(staff.avg_response_time_hours)}
+                          </span>
+                        )}
+                        {staff.first_response_time_hours !== null && (
+                          <span className="text-xs text-muted-foreground">
+                            • First: {formatResponseTime(staff.first_response_time_hours)}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                   
@@ -420,15 +441,15 @@ export const AdminSupportDashboard = () => {
                     <div className="flex gap-6 text-sm">
                       <div className="text-center">
                         <p className="text-muted-foreground text-xs">Awaiting Response</p>
-                        <p className="font-semibold text-lg text-blue-600">{staff.awaiting_response_count}</p>
+                        <p className="font-semibold text-lg text-blue-600">{staff.awaiting_response_count || 0}</p>
                       </div>
                       <div className="text-center">
                         <p className="text-muted-foreground text-xs">Response Needed</p>
-                        <p className="font-semibold text-lg text-orange-600">{staff.needs_response_count}</p>
+                        <p className="font-semibold text-lg text-orange-600">{staff.needs_response_count || 0}</p>
                       </div>
                       <div className="text-center">
                         <p className="text-muted-foreground text-xs">Closed</p>
-                        <p className="font-semibold text-lg text-green-600">{staff.closed_tickets_count}</p>
+                        <p className="font-semibold text-lg text-green-600">{staff.closed_tickets_count || 0}</p>
                       </div>
                     </div>
                     
@@ -451,10 +472,10 @@ export const AdminSupportDashboard = () => {
                     variant="outline" 
                     size="sm"
                     onClick={() => handleViewStaffCases(staff.user_id!, staff.first_name || staff.email)}
-                    disabled={!staff.user_id || staff.claimed_tickets_count === 0}
+                    disabled={!staff.user_id || (staff.claimed_tickets_count || 0) === 0}
                   >
                     <LifeBuoy className="h-4 w-4 mr-2" />
-                    View Cases ({staff.claimed_tickets_count})
+                    View Cases ({staff.claimed_tickets_count || 0})
                   </Button>
                 </div>
               ))}
@@ -472,9 +493,9 @@ export const AdminSupportDashboard = () => {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.openedThisMonth}</div>
+            <div className="text-2xl font-bold">{stats?.openedThisMonth || 0}</div>
             <p className="text-xs text-muted-foreground mt-1">
-              This month vs {stats.openedLastMonth} last month
+              This month vs {stats?.openedLastMonth || 0} last month
             </p>
             <div className={`text-xs font-medium mt-1 flex items-center gap-1 ${
               Number(openedChange) > 0 ? 'text-red-500' : Number(openedChange) < 0 ? 'text-green-500' : 'text-muted-foreground'
@@ -495,9 +516,9 @@ export const AdminSupportDashboard = () => {
             <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.closedThisMonth}</div>
+            <div className="text-2xl font-bold">{stats?.closedThisMonth || 0}</div>
             <p className="text-xs text-muted-foreground mt-1">
-              This month vs {stats.closedLastMonth} last month
+              This month vs {stats?.closedLastMonth || 0} last month
             </p>
             <div className={`text-xs font-medium mt-1 flex items-center gap-1 ${
               Number(closedChange) > 0 ? 'text-green-500' : Number(closedChange) < 0 ? 'text-red-500' : 'text-muted-foreground'
@@ -518,13 +539,13 @@ export const AdminSupportDashboard = () => {
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.avgResolutionDays}</div>
+            <div className="text-2xl font-bold">{stats.avgResolutionDays || 0}</div>
             <p className="text-xs text-muted-foreground mt-1">
               Days from open to closed
             </p>
             {previousMonthMetrics && (
               <p className="text-xs text-muted-foreground mt-1">
-                vs {previousMonthMetrics.avg_resolution_days} days last month
+                vs {previousMonthMetrics.avg_resolution_days || 0} days last month
               </p>
             )}
           </CardContent>
@@ -540,13 +561,13 @@ export const AdminSupportDashboard = () => {
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.avgFirstResponseHours}h</div>
+            <div className="text-2xl font-bold">{stats.avgFirstResponseHours || 0}h</div>
             <p className="text-xs text-muted-foreground mt-1">
               Average time to first admin reply
             </p>
             {previousMonthMetrics && (
               <p className="text-xs text-muted-foreground mt-1">
-                vs {previousMonthMetrics.first_response_hours}h last month
+                vs {previousMonthMetrics.first_response_hours || 0}h last month
               </p>
             )}
           </CardContent>
@@ -558,13 +579,13 @@ export const AdminSupportDashboard = () => {
             <MessageSquare className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.avgResponseTimeHours}h</div>
+            <div className="text-2xl font-bold">{stats.avgResponseTimeHours || 0}h</div>
             <p className="text-xs text-muted-foreground mt-1">
               Average reply time to customers
             </p>
             {previousMonthMetrics && (
               <p className="text-xs text-muted-foreground mt-1">
-                vs {previousMonthMetrics.avg_response_hours}h last month
+                vs {previousMonthMetrics.avg_response_hours || 0}h last month
               </p>
             )}
           </CardContent>
@@ -576,16 +597,16 @@ export const AdminSupportDashboard = () => {
             <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.slaCompliance.within4Hours}%</div>
+            <div className="text-2xl font-bold">{stats.slaCompliance.within4Hours || 0}%</div>
             <p className="text-xs text-muted-foreground mt-1">
               Responded within 4 hours
             </p>
             <p className="text-xs text-muted-foreground">
-              {stats.slaCompliance.within24Hours}% within 24 hours
+              {stats.slaCompliance.within24Hours || 0}% within 24 hours
             </p>
             {previousMonthMetrics && (
               <p className="text-xs text-muted-foreground mt-1">
-                Last month: {previousMonthMetrics.sla_within_4_hours} within 4h, {previousMonthMetrics.sla_within_24_hours} within 24h
+                Last month: {previousMonthMetrics.sla_within_4_hours || 0} within 4h, {previousMonthMetrics.sla_within_24_hours || 0} within 24h
               </p>
             )}
           </CardContent>
