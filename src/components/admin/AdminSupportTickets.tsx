@@ -194,7 +194,7 @@ export const AdminSupportTickets = () => {
       .update({ 
         claimed_by: user.id,
         claimed_at: new Date().toISOString(),
-        status: 'open' // Set to open since automatic greeting counts as staff response
+        status: 'needs_response' // Keep as needs_response until staff types actual response
       })
       .eq('id', ticketId);
 
@@ -229,7 +229,7 @@ export const AdminSupportTickets = () => {
         ...claimedTicket,
         claimed_by: user.id,
         claimed_by_name: staffName,
-        status: 'open'
+        status: 'needs_response'
       };
       handleViewMessages(updatedTicket);
     }
