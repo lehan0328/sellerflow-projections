@@ -162,7 +162,7 @@ export const AdminSupportTickets = () => {
       .update({ 
         claimed_by: user.id,
         claimed_at: new Date().toISOString(),
-        status: 'open' // Move to open status when claimed
+        status: 'needs_response' // Move to needs_response so staff sees it immediately
       })
       .eq('id', ticketId);
 
