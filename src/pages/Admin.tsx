@@ -39,6 +39,8 @@ const Admin = () => {
         title: "Overview",
         tabs: [
           { value: "overview", label: "Dashboard", icon: LayoutDashboard },
+          { value: "staff-directory", label: "Staff Directory", icon: UserCog },
+          { value: "plan-override", label: "Plan Management", icon: Settings },
         ],
         rolesAllowed: ['admin', 'staff'] // Both can see overview
       },
@@ -63,14 +65,6 @@ const Admin = () => {
           { value: "affiliates", label: "Affiliates", icon: UserCog },
         ],
         rolesAllowed: ['admin', 'staff'] // Both admin and staff can access
-      },
-      {
-        title: "System",
-        tabs: [
-          { value: "staff-directory", label: "Staff Directory", icon: UserCog },
-          { value: "plan-override", label: "Plan Management", icon: Settings },
-        ],
-        rolesAllowed: ['admin'] // Only admin can access
       }
     ];
 
@@ -104,14 +98,14 @@ const Admin = () => {
     <div className="space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex gap-4">
           {/* Sidebar Navigation */}
-          <div className="w-52 flex-shrink-0">
-            <div className="sticky top-6 space-y-4 p-2 rounded-lg border bg-card">
+          <div className="w-48 flex-shrink-0">
+            <div className="sticky top-6 space-y-3 p-2 rounded-lg border bg-card">
               {tabSections.map((section, sectionIndex) => (
                 <div key={section.title}>
-                  <h3 className="px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  <h3 className="px-3 py-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
                     {section.title}
                   </h3>
-                  <div className="space-y-1">
+                  <div className="space-y-0.5">
                     {section.tabs.map((tab) => {
                       const Icon = tab.icon;
                       const isActive = activeTab === tab.value;
@@ -120,13 +114,13 @@ const Admin = () => {
                         <button
                           key={tab.value}
                           onClick={() => setActiveTab(tab.value)}
-                          className={`w-full flex items-center gap-3 px-4 py-3 rounded-md text-sm font-medium transition-all ${
+                          className={`w-full flex items-center gap-2 px-3 py-2 rounded-md text-xs font-medium transition-all ${
                             isActive
                               ? 'bg-primary text-primary-foreground shadow-sm'
                               : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
                           }`}
                         >
-                          <Icon className="h-5 w-5 flex-shrink-0" />
+                          <Icon className="h-4 w-4 flex-shrink-0" />
                           <span className="text-left">{tab.label}</span>
                         </button>
                       );
