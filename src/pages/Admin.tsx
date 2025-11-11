@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useAdmin } from "@/hooks/useAdmin";
 import { 
   Users, 
   LifeBuoy, 
@@ -30,36 +31,56 @@ import { AdminSendUpdate } from "@/components/admin/AdminSendUpdate";
 
 const Admin = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("signups");
+  const { userRole } = useAdmin();
+  
+  const tabSections = useMemo(() => {
+    const allSections = [
+      {
+        title: "Business Management",
+        tabs: [
+          { value: "signups", label: "Signup Analytics", icon: UserPlus },
+          { value: "customers", label: "Customers", icon: Users },
+          { value: "subscriptions", label: "Subscriptions", icon: CreditCard },
+          { value: "send-update", label: "Send Update", icon: Megaphone },
+          { value: "support-dashboard", label: "Support Dashboard", icon: MessageSquare },
+          { value: "forecast-accuracy", label: "Forecast Accuracy", icon: Target },
+        ],
+        rolesAllowed: ['admin'] // Only admin can access
+      },
+      {
+        title: "Support & Features",
+        tabs: [
+          { value: "support", label: "Support Tickets", icon: LifeBuoy },
+          { value: "features", label: "Feature Requests", icon: MessageSquare },
+          { value: "referrals", label: "Referrals", icon: Gift },
+          { value: "affiliates", label: "Affiliates", icon: UserCog },
+        ],
+        rolesAllowed: ['admin', 'staff'] // Both admin and staff can access
+      },
+      {
+        title: "System",
+        tabs: [
+          { value: "plan-override", label: "Plan Management", icon: Settings },
+        ],
+        rolesAllowed: ['admin'] // Only admin can access
+      }
+    ];
 
-  const tabSections = [
-    {
-      title: "Business Management",
-      tabs: [
-        { value: "signups", label: "Signup Analytics", icon: UserPlus },
-        { value: "customers", label: "Customers", icon: Users },
-        { value: "subscriptions", label: "Subscriptions", icon: CreditCard },
-        { value: "send-update", label: "Send Update", icon: Megaphone },
-        { value: "support-dashboard", label: "Support Dashboard", icon: MessageSquare },
-        { value: "forecast-accuracy", label: "Forecast Accuracy", icon: Target },
-      ]
-    },
-    {
-      title: "Support & Features",
-      tabs: [
-        { value: "support", label: "Support Tickets", icon: LifeBuoy },
-        { value: "features", label: "Feature Requests", icon: MessageSquare },
-        { value: "referrals", label: "Referrals", icon: Gift },
-        { value: "affiliates", label: "Affiliates", icon: UserCog },
-      ]
-    },
-    {
-      title: "System",
-      tabs: [
-        { value: "plan-override", label: "Plan Management", icon: Settings },
-      ]
+    // Filter sections based on user role
+    return allSections.filter(section => 
+      !userRole || section.rolesAllowed.includes(userRole)
+    );
+  }, [userRole]);
+
+  // Set default active tab based on user role
+  const defaultTab = useMemo(() => {
+    if (userRole === 'staff') {
+      return 'support'; // Staff defaults to Support Tickets
     }
-  ];
+    return 'signups'; // Admin defaults to Signup Analytics
+  }, [userRole]);
+
+  const [activeTab, setActiveTab] = useState(defaultTab);
 
   return (
     <div className="min-h-screen bg-background">
