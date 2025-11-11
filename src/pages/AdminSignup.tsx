@@ -13,6 +13,7 @@ export default function AdminSignup() {
   const navigate = useNavigate();
   const token = searchParams.get("token");
 
+  const [name, setName] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -73,6 +74,11 @@ export default function AdminSignup() {
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!name.trim()) {
+      toast.error("Name is required");
+      return;
+    }
+
     if (password.length < 8) {
       toast.error("Password must be at least 8 characters");
       return;
@@ -87,7 +93,7 @@ export default function AdminSignup() {
 
     try {
       const { data, error } = await supabase.functions.invoke('complete-admin-signup', {
-        body: { token, password }
+        body: { token, password, name: name.trim() }
       });
 
       if (error) throw error;
@@ -149,6 +155,19 @@ export default function AdminSignup() {
 
           <form onSubmit={handleSignup} className="space-y-4">
             <div className="space-y-2">
+              <Label htmlFor="name">Your Name</Label>
+              <Input
+                id="name"
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Enter your full name"
+                required
+                disabled={isLoading}
+              />
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="password">Create Password</Label>
               <div className="relative">
                 <Input
@@ -191,7 +210,7 @@ export default function AdminSignup() {
               <Button
                 type="submit"
                 className="w-full"
-                disabled={isLoading || !password || !confirmPassword}
+                disabled={isLoading || !name.trim() || !password || !confirmPassword}
               >
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Create Account & Sign In

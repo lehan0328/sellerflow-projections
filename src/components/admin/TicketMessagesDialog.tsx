@@ -27,6 +27,7 @@ export function TicketMessagesDialog({ ticket, open, onOpenChange }: TicketMessa
   const [messages, setMessages] = useState<TicketMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [staffName, setStaffName] = useState<string>("Support");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -36,8 +37,26 @@ export function TicketMessagesDialog({ ticket, open, onOpenChange }: TicketMessa
   useEffect(() => {
     if (open && ticket) {
       loadMessages();
+      loadStaffName();
     }
   }, [open, ticket]);
+
+  const loadStaffName = async () => {
+    if (!ticket.claimed_by_name) {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user?.email) {
+        const { data } = await supabase
+          .from('admin_permissions')
+          .select('first_name')
+          .eq('email', user.email)
+          .single();
+        
+        setStaffName(data?.first_name || 'Support');
+      }
+    } else {
+      setStaffName(ticket.claimed_by_name);
+    }
+  };
 
   useEffect(() => {
     scrollToBottom();
@@ -140,7 +159,7 @@ export function TicketMessagesDialog({ ticket, open, onOpenChange }: TicketMessa
                       <p className={`text-xs font-semibold mb-1 ${
                         isAdminMessage ? 'text-right' : 'text-left'
                       }`}>
-                        {isAdminMessage ? 'You (Support)' : 'Customer'}
+                        {isAdminMessage ? `${staffName} (Support)` : 'Customer'}
                       </p>
                       <div className={`rounded-lg p-3 shadow-sm ${
                         isAdminMessage 

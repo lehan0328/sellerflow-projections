@@ -18,10 +18,10 @@ serve(async (req) => {
       { auth: { persistSession: false } }
     );
 
-    const { token, password } = await req.json();
+    const { token, password, name } = await req.json();
 
-    if (!token || !password) {
-      throw new Error("Token and password are required");
+    if (!token || !password || !name) {
+      throw new Error("Token, password, and name are required");
     }
 
     if (password.length < 8) {
@@ -67,11 +67,12 @@ serve(async (req) => {
 
     console.log(`[ADMIN_SIGNUP] User created: ${userData.user.id}`);
 
-    // Mark invitation as used
+    // Mark invitation as used and store the name
     const { error: updateError } = await supabaseClient
       .from('admin_permissions')
       .update({ 
         account_created: true,
+        first_name: name,
         invitation_token: null, // Clear token after use
         updated_at: new Date().toISOString()
       })

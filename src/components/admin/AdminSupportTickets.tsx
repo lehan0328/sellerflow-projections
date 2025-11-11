@@ -91,13 +91,22 @@ export const AdminSupportTickets = () => {
     setIsRefreshing(false);
   };
 
-  const handleClaimTicket = async (ticketId: string) => {
+  const handleClaimTicket = async (ticketId: string, ticketSubject: string) => {
     const { data: { user } } = await supabase.auth.getUser();
     
     if (!user) {
       toast.error("Must be logged in to claim tickets");
       return;
     }
+
+    // Get staff name from admin_permissions
+    const { data: adminPerm } = await supabase
+      .from('admin_permissions')
+      .select('first_name')
+      .eq('email', user.email)
+      .single();
+
+    const staffName = adminPerm?.first_name || 'Support Staff';
 
     const { error } = await supabase
       .from('support_tickets')
@@ -111,10 +120,25 @@ export const AdminSupportTickets = () => {
     if (error) {
       toast.error("Failed to claim ticket");
       console.error("Error claiming ticket:", error);
-    } else {
-      toast.success("Ticket claimed successfully");
-      await refetch();
+      return;
     }
+
+    // Add system message about claiming
+    const { error: messageError } = await supabase
+      .from('ticket_messages')
+      .insert({
+        ticket_id: ticketId,
+        user_id: user.id,
+        message: `This ticket has been claimed by ${staffName}`,
+        is_internal: true
+      });
+
+    if (messageError) {
+      console.error("Error adding claim message:", messageError);
+    }
+
+    toast.success("Ticket claimed successfully");
+    await refetch();
   };
 
 
@@ -224,6 +248,15 @@ export const AdminSupportTickets = () => {
                         )}
                       </div>
                       
+                      {/* Staff assignment badge */}
+                      {(ticket as any).claimed_by_name && (
+                        <div className="mb-2">
+                          <Badge variant="default" className="text-xs">
+                            Assigned to: {(ticket as any).claimed_by_name}
+                          </Badge>
+                        </div>
+                      )}
+                      
                       <p className="text-sm text-muted-foreground mb-3">{ticket.message}</p>
                       <div className="text-xs text-muted-foreground">
                         Created: {new Date(ticket.created_at).toLocaleString()}
@@ -237,7 +270,7 @@ export const AdminSupportTickets = () => {
                         <Button
                           size="sm"
                           variant="default"
-                          onClick={() => handleClaimTicket(ticket.id)}
+                          onClick={() => handleClaimTicket(ticket.id, ticket.subject)}
                         >
                           <UserPlus className="h-4 w-4 mr-2" />
                           Claim Ticket

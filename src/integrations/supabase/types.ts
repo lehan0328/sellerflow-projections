@@ -48,6 +48,7 @@ export type Database = {
         Row: {
           account_created: boolean | null
           email: string
+          first_name: string | null
           id: string
           invitation_token: string | null
           invited_at: string | null
@@ -59,6 +60,7 @@ export type Database = {
         Insert: {
           account_created?: boolean | null
           email: string
+          first_name?: string | null
           id?: string
           invitation_token?: string | null
           invited_at?: string | null
@@ -70,6 +72,7 @@ export type Database = {
         Update: {
           account_created?: boolean | null
           email?: string
+          first_name?: string | null
           id?: string
           invitation_token?: string | null
           invited_at?: string | null

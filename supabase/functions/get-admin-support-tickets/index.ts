@@ -35,18 +35,21 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Check if user is admin (website admin or account admin)
+    // Check if user is admin (website admin or staff)
     const { data: isWebsiteAdmin } = await supabaseClient
       .rpc('is_website_admin')
       .single()
 
-    const { data: userRoles } = await supabaseClient
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', user.id)
-      .in('role', ['owner', 'admin'])
+    // Check admin_permissions table
+    const { data: adminPermission } = await supabaseClient
+      .from('admin_permissions')
+      .select('role, first_name')
+      .eq('email', user.email)
+      .single()
 
-    const isAdmin = isWebsiteAdmin || (userRoles && userRoles.length > 0)
+    const isAdmin = isWebsiteAdmin || adminPermission
+    const userRole = adminPermission?.role || 'admin'
+    const isStaff = userRole === 'staff'
 
     if (!isAdmin) {
       return new Response(
@@ -58,13 +61,33 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Fetch all tickets
-    const { data: tickets, error: ticketsError } = await supabaseClient
+    // Fetch tickets based on role
+    let ticketsQuery = supabaseClient
       .from('support_tickets')
       .select('*')
       .order('created_at', { ascending: false })
+    
+    // Staff can only see unclaimed tickets or tickets they claimed
+    if (isStaff) {
+      ticketsQuery = ticketsQuery.or(`claimed_by.is.null,claimed_by.eq.${user.id}`)
+    }
+
+    const { data: tickets, error: ticketsError } = await ticketsQuery
 
     if (ticketsError) throw ticketsError
+
+    // Fetch staff names for claimed tickets
+    const { data: adminPermissions } = await supabaseClient
+      .from('admin_permissions')
+      .select('email, first_name')
+
+    // Create email to name mapping
+    const staffNameMap = new Map<string, string>()
+    adminPermissions?.forEach((perm: any) => {
+      if (perm.email && perm.first_name) {
+        staffNameMap.set(perm.email, perm.first_name)
+      }
+    })
 
     // Fetch all users (using service role)
     const { data: authUsers, error: usersError } = await supabaseClient.auth.admin.listUsers()
@@ -109,13 +132,24 @@ Deno.serve(async (req) => {
       if (r.user_id && r.role) userRoleMap.set(r.user_id, r.role)
     })
 
-    // Enrich tickets with user info
-    const enrichedTickets = (tickets || []).map(ticket => ({
-      ...ticket,
-      user_email: userEmailMap.get(ticket.user_id),
-      user_company: userCompanyMap.get(ticket.user_id),
-      user_role: userRoleMap.get(ticket.user_id)
-    }))
+    // Enrich tickets with user info and staff names
+    const enrichedTickets = (tickets || []).map(ticket => {
+      let claimedByName = null
+      if (ticket.claimed_by) {
+        const claimedByEmail = userEmailMap.get(ticket.claimed_by)
+        if (claimedByEmail) {
+          claimedByName = staffNameMap.get(claimedByEmail)
+        }
+      }
+
+      return {
+        ...ticket,
+        user_email: userEmailMap.get(ticket.user_id),
+        user_company: userCompanyMap.get(ticket.user_id),
+        user_role: userRoleMap.get(ticket.user_id),
+        claimed_by_name: claimedByName
+      }
+    })
 
     return new Response(
       JSON.stringify({ tickets: enrichedTickets }),
