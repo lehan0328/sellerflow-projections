@@ -954,63 +954,6 @@ export default function Analytics() {
         </Button>
       </div>
 
-      {/* Cash Flow Overview Section */}
-      <Card data-pdf-section="metrics-top">
-        <CardHeader>
-          <CardTitle className="text-xl">Cash Flow Overview</CardTitle>
-          <p className="text-sm text-muted-foreground">Month-to-date actual bank activity</p>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <Card className="border-blue-200 dark:border-blue-900/30">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Current Balance</CardTitle>
-                <DollarSign className="h-4 w-4 text-blue-600" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-blue-600">{formatCurrency(metrics.currentBalance)}</div>
-                <p className="text-xs text-muted-foreground">All accounts</p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-green-200 dark:border-green-900/30">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Inflow</CardTitle>
-                <TrendingUp className="h-4 w-4 text-green-600" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-green-600">{formatCurrency(metrics.totalInflow)}</div>
-                <p className="text-xs text-muted-foreground">Actual bank credits</p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-red-200 dark:border-red-900/30">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Outflow</CardTitle>
-                <TrendingDown className="h-4 w-4 text-red-600" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-red-600">{formatCurrency(metrics.totalOutflow)}</div>
-                <p className="text-xs text-muted-foreground">Actual bank debits</p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-primary/30">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Net Cash Flow</CardTitle>
-                <TrendingUp className="h-4 w-4 text-primary" />
-              </CardHeader>
-              <CardContent>
-                <div className={`text-2xl font-bold ${metrics.netCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {metrics.netCashFlow >= 0 ? '+' : ''}{formatCurrency(metrics.netCashFlow)}
-                </div>
-                <p className="text-xs text-muted-foreground">Month to date</p>
-              </CardContent>
-            </Card>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Income Metrics Section */}
       <Card data-pdf-section="income-metrics">
         <CardHeader>
