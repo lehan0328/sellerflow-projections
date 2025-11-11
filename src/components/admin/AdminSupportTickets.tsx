@@ -172,20 +172,6 @@ export const AdminSupportTickets = () => {
       return;
     }
 
-    // Add system message about claiming
-    const { error: messageError } = await supabase
-      .from('ticket_messages')
-      .insert({
-        ticket_id: ticketId,
-        user_id: user.id,
-        message: `This ticket has been claimed by ${staffName}`,
-        is_internal: true
-      });
-
-    if (messageError) {
-      console.error("Error adding claim message:", messageError);
-    }
-
     toast.success("Ticket claimed successfully");
     await refetch();
   };
