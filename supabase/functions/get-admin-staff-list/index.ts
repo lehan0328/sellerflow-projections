@@ -11,7 +11,8 @@ interface StaffMember {
   invited_at: string;
   account_created: boolean;
   claimed_tickets_count: number;
-  open_tickets_count: number;
+  awaiting_response_count: number;
+  needs_response_count: number;
   closed_tickets_count: number;
   user_id?: string | null;
 }
@@ -86,7 +87,8 @@ Deno.serve(async (req) => {
             ...staff,
             user_id: null,
             claimed_tickets_count: 0,
-            open_tickets_count: 0,
+            awaiting_response_count: 0,
+            needs_response_count: 0,
             closed_tickets_count: 0,
           };
         }
@@ -97,7 +99,8 @@ Deno.serve(async (req) => {
             ...staff,
             user_id: userId,
             claimed_tickets_count: 0,
-            open_tickets_count: 0,
+            awaiting_response_count: 0,
+            needs_response_count: 0,
             closed_tickets_count: 0,
           };
         }
@@ -108,12 +111,19 @@ Deno.serve(async (req) => {
           .select('*', { count: 'exact', head: true })
           .eq('claimed_by', userId);
 
-        // Get open tickets (open, in_progress, needs_response)
-        const { count: openCount } = await supabase
+        // Get awaiting response tickets (staff sent message, waiting for customer)
+        const { count: awaitingCount } = await supabase
           .from('support_tickets')
           .select('*', { count: 'exact', head: true })
           .eq('claimed_by', userId)
-          .in('status', ['open', 'in_progress', 'needs_response']);
+          .in('status', ['open', 'in_progress']);
+
+        // Get needs response tickets (customer replied, staff needs to respond)
+        const { count: needsResponseCount } = await supabase
+          .from('support_tickets')
+          .select('*', { count: 'exact', head: true })
+          .eq('claimed_by', userId)
+          .eq('status', 'needs_response');
 
         // Get closed tickets (closed, resolved)
         const { count: closedCount } = await supabase
@@ -126,7 +136,8 @@ Deno.serve(async (req) => {
           ...staff,
           user_id: userId,
           claimed_tickets_count: totalCount || 0,
-          open_tickets_count: openCount || 0,
+          awaiting_response_count: awaitingCount || 0,
+          needs_response_count: needsResponseCount || 0,
           closed_tickets_count: closedCount || 0,
         };
       })
@@ -147,7 +158,8 @@ Deno.serve(async (req) => {
           account_created: true,
           user_id: matchedUser?.id || null,
           claimed_tickets_count: 0,
-          open_tickets_count: 0,
+          awaiting_response_count: 0,
+          needs_response_count: 0,
           closed_tickets_count: 0,
         });
       }

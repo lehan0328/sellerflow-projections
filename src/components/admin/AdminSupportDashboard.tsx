@@ -35,7 +35,8 @@ interface StaffMember {
   first_name: string | null;
   user_id: string | null;
   claimed_tickets_count: number;
-  open_tickets_count: number;
+  awaiting_response_count: number;
+  needs_response_count: number;
   closed_tickets_count: number;
 }
 
@@ -364,12 +365,12 @@ export const AdminSupportDashboard = () => {
                   
                   <div className="flex gap-6 text-sm">
                     <div className="text-center">
-                      <p className="text-muted-foreground text-xs">Total</p>
-                      <p className="font-semibold text-lg">{staff.claimed_tickets_count}</p>
+                      <p className="text-muted-foreground text-xs">Awaiting Response</p>
+                      <p className="font-semibold text-lg text-blue-600">{staff.awaiting_response_count}</p>
                     </div>
                     <div className="text-center">
-                      <p className="text-muted-foreground text-xs">Open</p>
-                      <p className="font-semibold text-lg text-amber-600">{staff.open_tickets_count}</p>
+                      <p className="text-muted-foreground text-xs">Response Needed</p>
+                      <p className="font-semibold text-lg text-orange-600">{staff.needs_response_count}</p>
                     </div>
                     <div className="text-center">
                       <p className="text-muted-foreground text-xs">Closed</p>
