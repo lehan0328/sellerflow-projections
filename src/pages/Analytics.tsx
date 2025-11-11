@@ -929,11 +929,17 @@ export default function Analytics() {
   
   return <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
-        <div>
+        <div className="flex-1">
           <h1 className="text-3xl font-bold">Business Analytics</h1>
           <p className="text-muted-foreground">Comprehensive insights into your financial performance</p>
+          <div className="mt-2 flex items-start gap-2 text-sm text-amber-600 dark:text-amber-500">
+            <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+            <p>
+              <strong>Important:</strong> We recommend downloading this report monthly. Historical month-over-month comparisons are not currently available, so saving regular snapshots will help you track your business trends over time.
+            </p>
+          </div>
         </div>
-        <Button onClick={handleDownloadPDF} className="gap-2" data-download-button>
+        <Button onClick={handleDownloadPDF} className="gap-2 flex-shrink-0 ml-4" data-download-button>
           <Download className="h-4 w-4" />
           Download PDF Report
         </Button>
