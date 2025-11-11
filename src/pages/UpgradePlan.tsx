@@ -416,7 +416,7 @@ const UpgradePlan = () => {
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium">Plan</span>
                     <Badge className="bg-gradient-primary">
-                      {PRICING_PLANS[plan].name}
+                      {PRICING_PLANS[plan]?.name || ENTERPRISE_TIERS[plan as keyof typeof ENTERPRISE_TIERS]?.name || 'Enterprise'}
                     </Badge>
                   </div>
                   
@@ -497,18 +497,20 @@ const UpgradePlan = () => {
                       <div className="space-y-1">
                         <div className="flex items-center justify-between text-sm">
                           <span className="text-muted-foreground">Original Price:</span>
-                          <span className="line-through text-muted-foreground">${PRICING_PLANS[plan].price}/mo</span>
+                          <span className="line-through text-muted-foreground">
+                            ${PRICING_PLANS[plan]?.price || ENTERPRISE_TIERS[plan as keyof typeof ENTERPRISE_TIERS]?.price || 0}/mo
+                          </span>
                         </div>
                         <div className="flex items-center justify-between">
                           <span className="font-semibold text-green-600">Discounted Price:</span>
                           <span className="text-xl font-bold text-green-600">
-                            ${(PRICING_PLANS[plan].price * 0.9).toFixed(2)}/mo
+                            ${((PRICING_PLANS[plan]?.price || ENTERPRISE_TIERS[plan as keyof typeof ENTERPRISE_TIERS]?.price || 0) * 0.9).toFixed(2)}/mo
                           </span>
                         </div>
                         <div className="flex items-center justify-between text-xs">
                           <span className="text-green-600">You save:</span>
                           <span className="font-semibold text-green-600">
-                            ${(PRICING_PLANS[plan].price * 0.1).toFixed(2)}/mo
+                            ${((PRICING_PLANS[plan]?.price || ENTERPRISE_TIERS[plan as keyof typeof ENTERPRISE_TIERS]?.price || 0) * 0.1).toFixed(2)}/mo
                           </span>
                         </div>
                       </div>
