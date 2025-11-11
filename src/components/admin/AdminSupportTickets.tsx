@@ -409,7 +409,7 @@ export const AdminSupportTickets = () => {
                       <div className="flex items-center gap-3 mb-2">
                         <h3 className="font-semibold">{ticket.subject}</h3>
                         <Badge variant="outline" className="text-xs font-mono">
-                          Case #{ticket.id.slice(-8)}
+                          #{(ticket as any).ticket_number || ticket.id.slice(-8)}
                         </Badge>
                         <Badge className={priorityColors[ticket.priority]}>
                           {ticket.priority}
