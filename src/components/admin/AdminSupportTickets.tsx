@@ -7,7 +7,8 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { toast } from "sonner";
 
 import { useSupportTickets } from "@/hooks/useSupportTickets";
-import { CheckCircle, Clock, AlertCircle, XCircle, MessageSquare, RefreshCw, UserPlus, UserCheck, X } from "lucide-react";
+import { useAdmin } from "@/hooks/useAdmin";
+import { CheckCircle, Clock, AlertCircle, XCircle, MessageSquare, RefreshCw, UserPlus, UserCheck, X, BarChart3 } from "lucide-react";
 import { TicketMessagesDialog } from "./TicketMessagesDialog";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -34,6 +35,15 @@ export const AdminSupportTickets = () => {
   const [messageCounts, setMessageCounts] = useState<Record<string, number>>({});
   const [ticketView, setTicketView] = useState<'new' | 'open' | 'needs_response' | 'closed'>('new');
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const { userRole } = useAdmin();
+  
+  // Staff dashboard metrics
+  const [totalNew, setTotalNew] = useState(0);
+  const [myNeedsResponse, setMyNeedsResponse] = useState(0);
+  const [myOpen, setMyOpen] = useState(0);
+  const [myClaimed, setMyClaimed] = useState(0);
+  const [myClosed, setMyClosed] = useState(0);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   // Get staff filter from URL params
   const filteredStaffId = searchParams.get('staffId');
@@ -44,6 +54,32 @@ export const AdminSupportTickets = () => {
     searchParams.delete('staffName');
     setSearchParams(searchParams);
   };
+
+  // Get current user ID
+  useEffect(() => {
+    const getCurrentUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setCurrentUserId(user?.id || null);
+    };
+    getCurrentUser();
+  }, []);
+
+  // Calculate dashboard metrics
+  useEffect(() => {
+    if (!tickets.length || !currentUserId) return;
+
+    const newCount = tickets.filter(t => !(t as any).claimed_by && t.status !== 'closed' && t.status !== 'resolved').length;
+    const myNeedsResponseCount = tickets.filter(t => (t as any).claimed_by === currentUserId && t.status === 'needs_response').length;
+    const myOpenCount = tickets.filter(t => (t as any).claimed_by === currentUserId && (t.status === 'open' || t.status === 'in_progress')).length;
+    const myClaimedCount = tickets.filter(t => (t as any).claimed_by === currentUserId).length;
+    const myClosedCount = tickets.filter(t => (t as any).claimed_by === currentUserId && (t.status === 'closed' || t.status === 'resolved')).length;
+
+    setTotalNew(newCount);
+    setMyNeedsResponse(myNeedsResponseCount);
+    setMyOpen(myOpenCount);
+    setMyClaimed(myClaimedCount);
+    setMyClosed(myClosedCount);
+  }, [tickets, currentUserId]);
 
   useEffect(() => {
     const fetchMessageCounts = async () => {
@@ -183,6 +219,74 @@ export const AdminSupportTickets = () => {
 
   return (
     <div className="space-y-4">
+      {/* My Dashboard Section */}
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">New Cases</CardTitle>
+            <AlertCircle className="h-4 w-4 text-blue-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalNew}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Unclaimed tickets available
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Need Response</CardTitle>
+            <MessageSquare className="h-4 w-4 text-red-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{myNeedsResponse}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Cases awaiting my reply
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">My Open</CardTitle>
+            <Clock className="h-4 w-4 text-orange-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{myOpen}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Cases in progress
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Claimed</CardTitle>
+            <BarChart3 className="h-4 w-4 text-purple-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{myClaimed}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              All my cases
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">My Closed</CardTitle>
+            <CheckCircle className="h-4 w-4 text-green-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{myClosed}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Resolved cases
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
       {/* Staff Filter Alert */}
       {filteredStaffId && filteredStaffName && (
         <Alert>
