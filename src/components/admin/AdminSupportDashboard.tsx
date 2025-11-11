@@ -72,9 +72,9 @@ export const AdminSupportDashboard = () => {
       const lastMonthStart = startOfMonth(subMonths(selectedDate, 1));
       const lastMonthEnd = endOfMonth(subMonths(selectedDate, 1));
 
-      // Calculate stats
+      // Calculate stats - open cases are all non-closed/non-resolved tickets
       const totalOpen = tickets?.filter(t => 
-        t.status === 'open' || t.status === 'needs_response' || t.status === 'new'
+        t.status !== 'closed' && t.status !== 'resolved'
       ).length || 0;
       const needsResponse = tickets?.filter(t => t.status === 'needs_response').length || 0;
       const totalClosed = tickets?.filter(t => t.status === 'closed' || t.status === 'resolved').length || 0;
