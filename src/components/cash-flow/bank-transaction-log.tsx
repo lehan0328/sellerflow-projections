@@ -7,13 +7,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { CreditCard, Filter, Search, RefreshCw, DollarSign, ArrowUpDown, Building2, Link2, CheckCircle2 } from "lucide-react";
+import { CreditCard, Filter, Search, RefreshCw, DollarSign, ArrowUpDown, Building2, Link2, CheckCircle2, Plus } from "lucide-react";
 import { useState, useMemo } from "react";
 import { toast } from "sonner";
 import { useBankAccounts } from "@/hooks/useBankAccounts";
 import { useBankTransactions } from "@/hooks/useBankTransactions";
+import { useCreditCards } from "@/hooks/useCreditCards";
 import { TransactionMatch } from "@/hooks/useTransactionMatching";
 import { Vendor } from "@/hooks/useVendors";
+import { ManualBankTransactionDialog } from "./manual-bank-transaction-dialog";
 
 export interface BankTransaction {
   id: string;
@@ -51,6 +53,7 @@ interface BankTransactionLogProps {
 
 export const BankTransactionLog = ({ transactions = [], vendors = [], incomeItems = [], onSyncTransactions, matches = [], onMatchTransaction, onManualMatch }: BankTransactionLogProps) => {
   const { accounts } = useBankAccounts();
+  const { creditCards } = useCreditCards();
   const { transactions: plaidTransactions, isLoading: isLoadingTransactions, refetch: refetchTransactions } = useBankTransactions();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedAccount, setSelectedAccount] = useState<string>('all');
@@ -63,6 +66,9 @@ export const BankTransactionLog = ({ transactions = [], vendors = [], incomeItem
   const [selectedTransaction, setSelectedTransaction] = useState<BankTransaction | null>(null);
   const [selectedMatchType, setSelectedMatchType] = useState<'vendor' | 'income'>('vendor');
   const [selectedMatchId, setSelectedMatchId] = useState<string>('');
+  
+  // Manual transaction dialog state
+  const [manualTransactionDialogOpen, setManualTransactionDialogOpen] = useState(false);
 
   // Map Plaid transactions to component format
   const mappedPlaidTransactions: BankTransaction[] = plaidTransactions.map(tx => {
@@ -192,6 +198,15 @@ export const BankTransactionLog = ({ transactions = [], vendors = [], incomeItem
             <span className="text-sm text-muted-foreground">
               {filteredAndSortedTransactions.length} transactions
             </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setManualTransactionDialogOpen(true)}
+              className="flex items-center space-x-1"
+            >
+              <Plus className="h-4 w-4" />
+              <span>Add Manual</span>
+            </Button>
             <Button
               variant="outline"
               size="sm"
@@ -494,6 +509,30 @@ export const BankTransactionLog = ({ transactions = [], vendors = [], incomeItem
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      
+      {/* Manual Transaction Dialog */}
+      <ManualBankTransactionDialog
+        open={manualTransactionDialogOpen}
+        onOpenChange={setManualTransactionDialogOpen}
+        accounts={[
+          ...accounts.map(acc => ({
+            id: acc.id,
+            account_name: acc.account_name,
+            institution_name: acc.institution_name,
+            accountType: 'bank' as const
+          })),
+          ...creditCards.map(card => ({
+            id: card.id,
+            account_name: card.account_name,
+            institution_name: card.institution_name,
+            accountType: 'credit' as const
+          }))
+        ]}
+        onSuccess={() => {
+          refetchTransactions();
+          toast.success("Manual transaction created successfully");
+        }}
+      />
     </Card>
   );
 };
