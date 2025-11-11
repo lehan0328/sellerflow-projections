@@ -401,6 +401,16 @@ export const AdminSupportTickets = () => {
                         {ticket.category && (
                           <Badge variant="outline">{ticket.category}</Badge>
                         )}
+                        {(ticket as any).claimed_by_name && (
+                          <Badge variant="default" className="text-xs">
+                            Assigned to: {(ticket as any).claimed_by_name}
+                          </Badge>
+                        )}
+                        {ticket.user_role && (
+                          <Badge variant="secondary" className="text-xs">
+                            {ticket.user_role}
+                          </Badge>
+                        )}
                       </div>
                       
                       {/* User information */}
@@ -410,26 +420,12 @@ export const AdminSupportTickets = () => {
                             <strong>Email:</strong> {ticket.user_email}
                           </span>
                         )}
-                        {ticket.user_role && (
-                          <Badge variant="secondary" className="text-xs">
-                            {ticket.user_role}
-                          </Badge>
-                        )}
                         {ticket.user_company && (
                           <span className="flex items-center gap-1">
                             <strong>Company:</strong> {ticket.user_company}
                           </span>
                         )}
                       </div>
-                      
-                      {/* Staff assignment badge */}
-                      {(ticket as any).claimed_by_name && (
-                        <div className="mb-2">
-                          <Badge variant="default" className="text-xs">
-                            Assigned to: {(ticket as any).claimed_by_name}
-                          </Badge>
-                        </div>
-                      )}
                       
                       <p className="text-sm text-muted-foreground mb-3">{ticket.message}</p>
                       <div className="text-xs text-muted-foreground">
