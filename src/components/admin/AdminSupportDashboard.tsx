@@ -380,15 +380,19 @@ export const AdminSupportDashboard = () => {
                       </div>
                     </div>
                     
-                    {staff.average_rating !== null && (
-                      <div className="text-center">
-                        <p className="text-muted-foreground text-xs">Avg Rating</p>
-                        <div className="flex items-center justify-center gap-1">
-                          <p className="font-semibold text-lg text-yellow-600">{staff.average_rating}</p>
-                          <span className="text-yellow-500">★</span>
-                        </div>
+                    <div className="text-center">
+                      <p className="text-muted-foreground text-xs">Avg Rating</p>
+                      <div className="flex items-center justify-center gap-1">
+                        {staff.average_rating !== null ? (
+                          <>
+                            <p className="font-semibold text-lg text-yellow-600">{staff.average_rating}</p>
+                            <span className="text-yellow-500">★</span>
+                          </>
+                        ) : (
+                          <p className="text-sm text-muted-foreground">No reviews</p>
+                        )}
                       </div>
-                    )}
+                    </div>
                   </div>
                   
                   <Button 
