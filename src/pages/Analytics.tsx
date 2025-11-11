@@ -12,7 +12,7 @@ import { useBankAccounts } from "@/hooks/useBankAccounts";
 import { useRecurringExpenses } from "@/hooks/useRecurringExpenses";
 import { useAmazonRevenue } from "@/hooks/useAmazonRevenue";
 import { generateRecurringDates } from "@/lib/recurringDates";
-import { TrendingUp, TrendingDown, DollarSign, CreditCard as CreditCardIcon, Calendar as CalendarIcon, PieChart as PieChartIcon, Calculator, Package, ShoppingCart, AlertTriangle, Target, BarChart3, Hash, Download } from "lucide-react";
+import { TrendingUp, TrendingDown, DollarSign, CreditCard as CreditCardIcon, Calendar as CalendarIcon, PieChart as PieChartIcon, Calculator, Package, ShoppingCart, AlertTriangle, Target, BarChart3, Hash, Download, Loader2 } from "lucide-react";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { useNavigate } from "react-router-dom";
@@ -50,6 +50,8 @@ export default function Analytics() {
 
   // Fetch company name from profile
   const [companyName, setCompanyName] = useState<string>("");
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  
   useEffect(() => {
     const fetchProfile = async () => {
       if (!user) return;
@@ -840,16 +842,11 @@ export default function Analytics() {
   const COLORS = ['#8b5cf6', '#06b6d4', '#f59e0b', '#10b981', '#ef4444', '#ec4899'];
   
   const handleDownloadPDF = async () => {
+    setIsGeneratingPDF(true);
     toast({
       title: "Generating PDF report...",
       description: "This may take a few moments"
     });
-    
-    // Hide the download button temporarily
-    const downloadButton = document.querySelector('[data-download-button]') as HTMLElement;
-    if (downloadButton) {
-      downloadButton.style.display = 'none';
-    }
     
     // Initialize PDF
     const pdf = new jsPDF('p', 'mm', 'a4');
@@ -913,11 +910,6 @@ export default function Analytics() {
       // Add final footer
       addFooter(pdf, pageWidth, pageHeight, pageNumber);
       
-      // Show download button
-      if (downloadButton) {
-        downloadButton.style.display = '';
-      }
-      
       // Save PDF
       pdf.save(`Auren-Analytics-Report-${format(new Date(), 'MMMM-yyyy')}.pdf`);
       toast({
@@ -931,9 +923,8 @@ export default function Analytics() {
         description: "Failed to generate PDF report",
         variant: "destructive"
       });
-      if (downloadButton) {
-        downloadButton.style.display = '';
-      }
+    } finally {
+      setIsGeneratingPDF(false);
     }
   };
   
@@ -974,9 +965,23 @@ export default function Analytics() {
             <p className="text-muted-foreground mt-2">Comprehensive insights into your financial performance</p>
           </div>
         </div>
-        <Button onClick={handleDownloadPDF} className="gap-2 flex-shrink-0 ml-4 bg-primary hover:bg-primary/90" data-download-button>
-          <Download className="h-4 w-4" />
-          Download PDF Report
+        <Button 
+          onClick={handleDownloadPDF} 
+          disabled={isGeneratingPDF}
+          className="gap-2 flex-shrink-0 ml-4 bg-primary hover:bg-primary/90" 
+          data-download-button
+        >
+          {isGeneratingPDF ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Generating...
+            </>
+          ) : (
+            <>
+              <Download className="h-4 w-4" />
+              Download PDF Report
+            </>
+          )}
         </Button>
       </div>
       
