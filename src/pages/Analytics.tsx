@@ -953,6 +953,12 @@ export default function Analytics() {
           Download PDF Report
         </Button>
       </div>
+      
+      <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/30 rounded-lg p-4">
+        <p className="text-sm text-amber-800 dark:text-amber-200">
+          <strong>Note:</strong> We recommend saving this report monthly. The application currently does not provide access to previous months' data, so downloading the PDF is your primary mechanism for archiving and reviewing historical analytics.
+        </p>
+      </div>
 
       {/* Income Metrics Section */}
       <Card data-pdf-section="income-metrics">
