@@ -869,65 +869,62 @@ export default function Analytics() {
     const pageWidth = pdf.internal.pageSize.getWidth();
     const pageHeight = pdf.internal.pageSize.getHeight();
     
-    // Add branding header - Page 1
-    pdf.setFillColor(139, 92, 246);
-    pdf.rect(0, 0, pageWidth, 15, 'F');
-    pdf.setTextColor(255, 255, 255);
-    pdf.setFontSize(14);
-    pdf.setFont('helvetica', 'bold');
-    pdf.text('Auren Analytics Report', pageWidth / 2, 10, { align: 'center' });
-    
-    // Calculate dimensions
-    const imgWidth = pageWidth - 20; // 10mm margin on each side
+    // Calculate dimensions - leave space for footer with logo
+    const footerHeight = 15;
+    const margin = 10;
+    const contentHeight = pageHeight - footerHeight - margin;
+    const imgWidth = pageWidth - (margin * 2);
     const imgHeight = (canvas.height * imgWidth) / canvas.width;
-    const maxContentHeight = pageHeight - 30; // Leave space for header and footer
     
-    // First page content
-    const firstPageHeight = Math.min(imgHeight / 2, maxContentHeight);
-    pdf.addImage(imgData, 'PNG', 10, 20, imgWidth, firstPageHeight, undefined, 'FAST');
+    let heightLeft = imgHeight;
+    let position = margin;
+    let pageNumber = 1;
     
-    // Footer - Page 1
-    pdf.setFontSize(8);
-    pdf.setTextColor(128, 128, 128);
-    pdf.text('Auren - Cash Flow Management', pageWidth / 2, pageHeight - 5, { align: 'center' });
-    pdf.text('Page 1 of 2', pageWidth - 15, pageHeight - 5, { align: 'right' });
+    // Add first page
+    pdf.addImage(imgData, 'PNG', margin, position, imgWidth, imgHeight, undefined, 'FAST');
+    heightLeft -= contentHeight;
     
-    // Second page
-    if (imgHeight > maxContentHeight) {
+    // Add additional pages if needed
+    while (heightLeft > 0) {
+      // Add footer to previous page
+      addFooter(pdf, pageWidth, pageHeight, pageNumber);
+      
+      position = heightLeft - imgHeight + margin;
       pdf.addPage();
-      
-      // Header - Page 2
-      pdf.setFillColor(139, 92, 246);
-      pdf.rect(0, 0, pageWidth, 15, 'F');
-      pdf.setTextColor(255, 255, 255);
-      pdf.setFontSize(14);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('Auren Analytics Report', pageWidth / 2, 10, { align: 'center' });
-      
-      // Second half of content
-      const secondPageHeight = imgHeight - firstPageHeight;
-      const sourceY = (firstPageHeight * canvas.width) / imgWidth;
-      
-      // Create a second canvas for the bottom half
-      const canvas2 = document.createElement('canvas');
-      canvas2.width = canvas.width;
-      canvas2.height = canvas.height - sourceY;
-      const ctx = canvas2.getContext('2d');
-      if (ctx) {
-        ctx.drawImage(canvas, 0, sourceY, canvas.width, canvas.height - sourceY, 0, 0, canvas.width, canvas.height - sourceY);
-        const imgData2 = canvas2.toDataURL('image/png');
-        pdf.addImage(imgData2, 'PNG', 10, 20, imgWidth, Math.min(secondPageHeight, maxContentHeight), undefined, 'FAST');
-      }
-      
-      // Footer - Page 2
-      pdf.setFontSize(8);
-      pdf.setTextColor(128, 128, 128);
-      pdf.text('Auren - Cash Flow Management', pageWidth / 2, pageHeight - 5, { align: 'center' });
-      pdf.text('Page 2 of 2', pageWidth - 15, pageHeight - 5, { align: 'right' });
+      pageNumber++;
+      pdf.addImage(imgData, 'PNG', margin, position, imgWidth, imgHeight, undefined, 'FAST');
+      heightLeft -= contentHeight;
     }
+    
+    // Add footer to last page
+    addFooter(pdf, pageWidth, pageHeight, pageNumber);
     
     // Save the PDF
     pdf.save(`Auren-Analytics-Report-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+  };
+  
+  const addFooter = (pdf: jsPDF, pageWidth: number, pageHeight: number, pageNumber: number) => {
+    // Load and add Auren logo
+    const logoImg = new Image();
+    logoImg.src = '/auren-icon-blue.png';
+    
+    // Add logo (small, on the left)
+    try {
+      pdf.addImage(logoImg, 'PNG', 10, pageHeight - 12, 8, 8);
+    } catch (e) {
+      console.log('Could not add logo to PDF');
+    }
+    
+    // Add "Powered by Auren" text
+    pdf.setFontSize(9);
+    pdf.setTextColor(59, 130, 246); // Blue color
+    pdf.setFont('helvetica', 'normal');
+    pdf.text('Powered by Auren', 20, pageHeight - 7);
+    
+    // Add page number on the right
+    pdf.setFontSize(8);
+    pdf.setTextColor(128, 128, 128);
+    pdf.text(`Page ${pageNumber}`, pageWidth - 20, pageHeight - 7, { align: 'right' });
   };
   
   return <div className="container mx-auto p-6 space-y-6">
