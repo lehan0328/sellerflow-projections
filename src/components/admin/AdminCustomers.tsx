@@ -73,39 +73,19 @@ export const AdminCustomers = () => {
     try {
       setIsLoading(true);
       
-      // First, get all admin/staff user IDs to exclude them
-      const { data: adminUsers } = await supabase
-        .from('admin_permissions')
-        .select('email')
-        .eq('account_created', true);
-      
-      const adminEmails = new Set(adminUsers?.map(u => u.email) || []);
-      
-      // Fetch all profiles
-      const { data: allProfiles, error } = await supabase
+      // Fetch all customer profiles (admin/staff are now excluded at database level)
+      const { data: profiles, error } = await supabase
         .from('profiles')
         .select('user_id, first_name, last_name, company, created_at, plan_override, discount_redeemed_at, trial_end, churn_date, account_status, payment_failure_date, stripe_customer_id, account_id, is_account_owner, monthly_amazon_revenue')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      
-      // Get user emails to filter out admin/staff
-      const userIds = allProfiles?.map(p => p.user_id) || [];
-      const { data: emailData, error: emailError } = await supabase.functions.invoke('get-user-emails', {
+
+      // Get emails for all users
+      const userIds = profiles?.map(p => p.user_id) || [];
+      const { data: emailData } = await supabase.functions.invoke('get-user-emails', {
         body: { userIds }
       });
-      
-      if (emailError) {
-        console.error('Error fetching emails:', emailError);
-      }
-      
-      // Filter out admin/staff users
-      const profiles = allProfiles?.filter(profile => {
-        const userEmail = emailData?.emails?.[profile.user_id];
-        return userEmail && !adminEmails.has(userEmail);
-      }) || [];
-
-      // Email data already fetched above during filtering
 
       // Calculate Amazon payouts for each user (last 30 days, confirmed only)
       const thirtyDaysAgo = new Date();
