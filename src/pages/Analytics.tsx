@@ -1421,7 +1421,10 @@ export default function Analytics() {
                 label
               }) => {
                 if (active && payload && payload.length) {
-                  const total = payload.reduce((sum, entry) => sum + (Number(entry.value) || 0), 0);
+                  // Find the total value directly instead of summing all entries (which would double count)
+                  const totalEntry = payload.find(entry => entry.dataKey === 'total');
+                  const total = totalEntry ? Number(totalEntry.value) : 0;
+                  
                   return <div className="bg-background border border-border rounded-lg shadow-lg p-3">
                             <p className="font-medium text-foreground mb-2">{label}</p>
                             {payload.map((entry, index) => <div key={index} className="flex justify-between gap-4 text-sm">
@@ -1430,10 +1433,6 @@ export default function Analytics() {
                       }}>{entry.name}:</span>
                                 <span className="font-medium">{formatCurrency(Number(entry.value))}</span>
                               </div>)}
-                            <div className="flex justify-between gap-4 text-sm mt-2 pt-2 border-t border-border">
-                              <span className="font-semibold">Total:</span>
-                              <span className="font-semibold">{formatCurrency(total)}</span>
-                            </div>
                           </div>;
                 }
                 return null;
