@@ -2,9 +2,10 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 import { useSupportTickets } from "@/hooks/useSupportTickets";
-import { CheckCircle, Clock, AlertCircle, XCircle, MessageSquare, RefreshCw } from "lucide-react";
+import { CheckCircle, Clock, AlertCircle, XCircle, MessageSquare, RefreshCw, UserPlus } from "lucide-react";
 import { TicketMessagesDialog } from "./TicketMessagesDialog";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -28,7 +29,7 @@ export const AdminSupportTickets = () => {
   const [selectedTicket, setSelectedTicket] = useState<any>(null);
   const [showMessagesDialog, setShowMessagesDialog] = useState(false);
   const [messageCounts, setMessageCounts] = useState<Record<string, number>>({});
-  const [ticketView, setTicketView] = useState<'open' | 'needs_response' | 'closed'>('needs_response');
+  const [ticketView, setTicketView] = useState<'new' | 'open' | 'needs_response' | 'closed'>('new');
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
@@ -90,6 +91,32 @@ export const AdminSupportTickets = () => {
     setIsRefreshing(false);
   };
 
+  const handleClaimTicket = async (ticketId: string) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      toast.error("Must be logged in to claim tickets");
+      return;
+    }
+
+    const { error } = await supabase
+      .from('support_tickets')
+      .update({ 
+        claimed_by: user.id,
+        claimed_at: new Date().toISOString(),
+        status: 'open' // Move to open status when claimed
+      })
+      .eq('id', ticketId);
+
+    if (error) {
+      toast.error("Failed to claim ticket");
+      console.error("Error claiming ticket:", error);
+    } else {
+      toast.success("Ticket claimed successfully");
+      await refetch();
+    }
+  };
+
 
   if (isLoading) {
     return (
@@ -101,11 +128,13 @@ export const AdminSupportTickets = () => {
     );
   }
 
-  const openTickets = tickets.filter(t => t.status === 'open' || t.status === 'in_progress');
-  const needsResponseTickets = tickets.filter(t => t.status === 'needs_response');
+  const newTickets = tickets.filter(t => !(t as any).claimed_by && t.status !== 'closed' && t.status !== 'resolved');
+  const openTickets = tickets.filter(t => (t as any).claimed_by && (t.status === 'open' || t.status === 'in_progress'));
+  const needsResponseTickets = tickets.filter(t => (t as any).claimed_by && t.status === 'needs_response');
   const closedTickets = tickets.filter(t => t.status === 'resolved' || t.status === 'closed');
   
   const displayedTickets = 
+    ticketView === 'new' ? newTickets :
     ticketView === 'open' ? openTickets :
     ticketView === 'needs_response' ? needsResponseTickets :
     closedTickets;
@@ -116,6 +145,13 @@ export const AdminSupportTickets = () => {
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
         <CardTitle>Support Tickets</CardTitle>
         <div className="flex gap-2 items-center">
+          <Button
+            variant={ticketView === 'new' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setTicketView('new')}
+          >
+            New ({newTickets.length})
+          </Button>
           <Button
             variant={ticketView === 'open' ? 'default' : 'outline'}
             size="sm"
@@ -151,7 +187,7 @@ export const AdminSupportTickets = () => {
         <div className="space-y-4">
           {displayedTickets.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              No {ticketView === 'open' ? 'open' : ticketView === 'needs_response' ? 'tickets needing response' : 'closed'} tickets
+              No {ticketView === 'new' ? 'new unclaimed' : ticketView === 'open' ? 'open' : ticketView === 'needs_response' ? 'tickets needing response' : 'closed'} tickets
             </div>
           ) : (
             displayedTickets.map((ticket) => (
@@ -197,24 +233,36 @@ export const AdminSupportTickets = () => {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleViewMessages(ticket)}
-                        className="relative"
-                      >
-                        <MessageSquare className="h-4 w-4 mr-2" />
-                        View Messages
-                        {messageCounts[ticket.id] > 0 && (
-                          <Badge 
-                            variant="destructive" 
-                            className="ml-2 h-5 min-w-5 px-1.5"
-                          >
-                            {messageCounts[ticket.id]}
-                          </Badge>
-                        )}
-                      </Button>
-                      {ticket.status !== 'closed' && (
+                      {ticketView === 'new' && !(ticket as any).claimed_by && (
+                        <Button
+                          size="sm"
+                          variant="default"
+                          onClick={() => handleClaimTicket(ticket.id)}
+                        >
+                          <UserPlus className="h-4 w-4 mr-2" />
+                          Claim Ticket
+                        </Button>
+                      )}
+                      {(ticket as any).claimed_by && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleViewMessages(ticket)}
+                          className="relative"
+                        >
+                          <MessageSquare className="h-4 w-4 mr-2" />
+                          View Messages
+                          {messageCounts[ticket.id] > 0 && (
+                            <Badge 
+                              variant="destructive" 
+                              className="ml-2 h-5 min-w-5 px-1.5"
+                            >
+                              {messageCounts[ticket.id]}
+                            </Badge>
+                          )}
+                        </Button>
+                      )}
+                      {(ticket as any).claimed_by && ticket.status !== 'closed' && (
                         <Button
                           size="sm"
                           variant="default"

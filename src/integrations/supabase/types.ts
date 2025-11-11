@@ -2110,6 +2110,8 @@ export type Database = {
           admin_last_viewed_at: string | null
           assigned_to: string | null
           category: string | null
+          claimed_at: string | null
+          claimed_by: string | null
           created_at: string
           customer_last_viewed_at: string | null
           id: string
@@ -2126,6 +2128,8 @@ export type Database = {
           admin_last_viewed_at?: string | null
           assigned_to?: string | null
           category?: string | null
+          claimed_at?: string | null
+          claimed_by?: string | null
           created_at?: string
           customer_last_viewed_at?: string | null
           id?: string
@@ -2142,6 +2146,8 @@ export type Database = {
           admin_last_viewed_at?: string | null
           assigned_to?: string | null
           category?: string | null
+          claimed_at?: string | null
+          claimed_by?: string | null
           created_at?: string
           customer_last_viewed_at?: string | null
           id?: string
