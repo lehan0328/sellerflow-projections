@@ -663,9 +663,14 @@ const Support = () => {
                                 {getStatusIcon(ticket.status)}
                               </div>
                               <div className="flex-1">
-                                <h3 className="font-semibold text-lg text-foreground group-hover:text-primary transition-colors line-clamp-1">
-                                  {ticket.subject}
-                                </h3>
+                                <div className="flex items-center gap-2 mb-1">
+                                  <Badge variant="secondary" className="text-xs font-mono">
+                                    #{ticket.ticket_number}
+                                  </Badge>
+                                  <h3 className="font-semibold text-lg text-foreground group-hover:text-primary transition-colors line-clamp-1">
+                                    {ticket.subject}
+                                  </h3>
+                                </div>
                                 <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
                                   {ticket.message}
                                 </p>

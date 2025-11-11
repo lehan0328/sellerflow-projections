@@ -208,7 +208,12 @@ export function TicketDetailDialog({ ticket, open, onOpenChange }: TicketDetailD
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle>{ticket.subject}</DialogTitle>
+          <div className="flex items-center gap-2">
+            <Badge variant="secondary" className="text-sm font-mono">
+              #{ticket.ticket_number}
+            </Badge>
+            <DialogTitle className="flex-1">{ticket.subject}</DialogTitle>
+          </div>
           <DialogDescription asChild>
             <span>Ticket Details</span>
           </DialogDescription>

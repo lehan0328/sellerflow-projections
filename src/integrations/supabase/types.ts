@@ -2124,6 +2124,7 @@ export type Database = {
           resolved_at: string | null
           status: string
           subject: string
+          ticket_number: number
           updated_at: string
           user_id: string
         }
@@ -2142,6 +2143,7 @@ export type Database = {
           resolved_at?: string | null
           status?: string
           subject: string
+          ticket_number?: number
           updated_at?: string
           user_id: string
         }
@@ -2160,6 +2162,7 @@ export type Database = {
           resolved_at?: string | null
           status?: string
           subject?: string
+          ticket_number?: number
           updated_at?: string
           user_id?: string
         }
