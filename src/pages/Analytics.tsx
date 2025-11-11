@@ -23,6 +23,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { format } from "date-fns";
 import { cn, formatCurrency } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
+import aurenLogo from "@/assets/auren-full-logo.png";
 export default function Analytics() {
   const navigate = useNavigate();
   const {
@@ -942,11 +943,14 @@ export default function Analytics() {
   };
   
   return <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between bg-gradient-to-r from-primary/10 to-primary/5 p-6 rounded-lg border border-primary/20" data-pdf-section="header">
-        <div className="flex-1">
-          <h1 className="text-3xl font-bold text-primary">Business Analytics</h1>
-          <p className="text-lg font-medium text-primary/80 mt-1">{format(new Date(), 'MMMM yyyy')}</p>
-          <p className="text-muted-foreground mt-2">Comprehensive insights into your financial performance</p>
+      <div className="flex items-center justify-between bg-gradient-to-r from-primary/10 to-primary/5 p-8 rounded-lg border border-primary/20 mb-2" data-pdf-section="header">
+        <div className="flex items-center gap-6 flex-1">
+          <img src={aurenLogo} alt="Auren" className="h-12 w-auto font-display" />
+          <div className="border-l border-primary/30 pl-6">
+            <h1 className="text-3xl font-bold text-primary">Business Analytics Report</h1>
+            <p className="text-lg font-medium text-primary/80 mt-1">{format(new Date(), 'MMMM yyyy')}</p>
+            <p className="text-muted-foreground mt-2">Comprehensive insights into your financial performance</p>
+          </div>
         </div>
         <Button onClick={handleDownloadPDF} className="gap-2 flex-shrink-0 ml-4 bg-primary hover:bg-primary/90" data-download-button>
           <Download className="h-4 w-4" />
