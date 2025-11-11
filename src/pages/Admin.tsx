@@ -11,7 +11,8 @@ import {
   Target,
   Settings,
   UserPlus,
-  Megaphone
+  Megaphone,
+  LayoutDashboard
 } from "lucide-react";
 import { AdminCustomers } from "@/components/admin/AdminCustomers";
 import { AdminSupportTickets } from "@/components/admin/AdminSupportTickets";
@@ -24,6 +25,7 @@ import { SetPlanOverride } from "@/components/admin/SetPlanOverride";
 import { AdminSupportDashboard } from "@/components/admin/AdminSupportDashboard";
 import { AdminSignupDashboard } from "@/components/admin/AdminSignupDashboard";
 import { AdminSendUpdate } from "@/components/admin/AdminSendUpdate";
+import { AdminDashboardOverview } from "@/components/admin/AdminDashboardOverview";
 
 const Admin = () => {
   const { isAdmin, userRole } = useAdmin();
@@ -32,6 +34,13 @@ const Admin = () => {
   
   const tabSections = useMemo(() => {
     const allSections = [
+      {
+        title: "Overview",
+        tabs: [
+          { value: "overview", label: "Dashboard", icon: LayoutDashboard },
+        ],
+        rolesAllowed: ['admin', 'staff'] // Both can see overview
+      },
       {
         title: "Business Management",
         tabs: [
@@ -84,10 +93,7 @@ const Admin = () => {
 
   // Set default active tab based on user role
   const defaultTab = useMemo(() => {
-    if (!isAdmin && userRole === 'staff') {
-      return 'support'; // Staff defaults to Support Tickets
-    }
-    return 'signups'; // Website admins and account admins default to Signup Analytics
+    return 'overview'; // Everyone defaults to Dashboard Overview
   }, [isAdmin, userRole]);
 
   const [activeTab, setActiveTab] = useState(defaultTab);
@@ -134,6 +140,10 @@ const Admin = () => {
 
           {/* Content Area */}
           <div className="flex-1 min-w-0">
+            <TabsContent value="overview" className="m-0">
+              <AdminDashboardOverview />
+            </TabsContent>
+
             <TabsContent value="signups" className="m-0">
               <AdminSignupDashboard />
             </TabsContent>
