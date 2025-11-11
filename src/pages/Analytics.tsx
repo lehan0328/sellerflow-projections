@@ -1137,16 +1137,16 @@ export default function Analytics() {
                     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
                     const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
                     
-                    // Get all pending purchase orders and expenses this month
-                    const pendingPOsAndExpenses = dbTransactions.filter(tx => {
+                    // Get all pending one-time expenses this month
+                    const pendingExpenses = dbTransactions.filter(tx => {
                       const txDate = new Date(tx.transactionDate);
-                      return (tx.type === 'purchase_order' || tx.type === 'expense') && 
+                      return tx.type === 'expense' && 
                              tx.status === 'pending' && 
                              txDate >= startOfMonth && 
                              txDate <= endOfMonth;
                     });
                     
-                    return pendingPOsAndExpenses.reduce((sum, tx) => sum + tx.amount, 0);
+                    return pendingExpenses.reduce((sum, tx) => sum + tx.amount, 0);
                   })())}
                 </div>
                 <p className="text-xs text-muted-foreground">
@@ -1157,7 +1157,7 @@ export default function Analytics() {
                     
                     const allPending = dbTransactions.filter(tx => {
                       const txDate = new Date(tx.transactionDate);
-                      return (tx.type === 'purchase_order' || tx.type === 'expense') && 
+                      return tx.type === 'expense' && 
                              tx.status === 'pending' && 
                              txDate >= startOfMonth && 
                              txDate <= endOfMonth;
