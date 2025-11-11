@@ -87,9 +87,41 @@ serve(async (req) => {
               status: 200,
             });
           }
+
+          // Check if user ever had a successful payment
+          const invoices = await stripe.invoices.list({
+            subscription: subscription.id,
+            status: 'paid',
+            limit: 1
+          });
+
+          const hadSuccessfulPayment = invoices.data.length > 0;
+
+          if (!hadSuccessfulPayment) {
+            // First payment attempt failed - mark as trial_expired, not suspended
+            console.log("First payment failed for customer:", customerEmail);
+            const { data: user } = await supabaseAdmin.auth.admin.listUsers();
+            const targetUser = user?.users.find(u => u.email === customerEmail);
+
+            if (targetUser) {
+              await supabaseAdmin
+                .from('profiles')
+                .update({
+                  account_status: 'trial_expired',
+                  payment_failure_date: new Date().toISOString()
+                })
+                .eq('user_id', targetUser.id);
+              
+              console.log("Account marked as trial_expired (never had paid subscription):", targetUser.id);
+            }
+            return new Response(JSON.stringify({ received: true }), {
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+              status: 200,
+            });
+          }
         }
 
-        console.log("Payment failed for customer:", customerEmail);
+        console.log("Payment failed for existing customer:", customerEmail);
 
         // Find user by email and suspend account
         const { data: user } = await supabaseAdmin.auth.admin.listUsers();
@@ -107,7 +139,7 @@ serve(async (req) => {
           if (error) {
             console.error("Error suspending account:", error);
           } else {
-            console.log("Account suspended for user:", targetUser.id);
+            console.log("Account suspended for user (had previous payments):", targetUser.id);
           }
         }
       }
