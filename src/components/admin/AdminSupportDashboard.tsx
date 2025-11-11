@@ -92,7 +92,7 @@ export const AdminSupportDashboard = () => {
   };
 
   const handleViewStaffCases = (userId: string, staffName: string) => {
-    navigate(`/admin?tab=support&staff=${userId}&staffName=${encodeURIComponent(staffName)}`);
+    navigate(`/admin?tab=support&staffId=${userId}&staffName=${encodeURIComponent(staffName)}`);
   };
 
   const fetchDashboardStats = async () => {
