@@ -94,9 +94,13 @@ const AdminAuth = () => {
       }
 
       // Now check if user has admin access through any method
+      console.log('[ADMIN_LOGIN] Checking admin access for:', data.session.user.email);
+      
       // 1. Check if website admin (hardcoded emails)
-      const { data: isWebsiteAdmin } = await supabase
+      const { data: isWebsiteAdmin, error: rpcError } = await supabase
         .rpc('is_website_admin');
+
+      console.log('[ADMIN_LOGIN] Website admin check:', { isWebsiteAdmin, rpcError });
 
       if (isWebsiteAdmin) {
         toast.success("Welcome back!", {
@@ -107,11 +111,13 @@ const AdminAuth = () => {
       }
 
       // 2. Check admin_permissions table
-      const { data: adminPerms } = await supabase
+      const { data: adminPerms, error: permsError } = await supabase
         .from('admin_permissions')
-        .select('role')
+        .select('role, account_created')
         .eq('email', data.session.user.email)
         .maybeSingle();
+
+      console.log('[ADMIN_LOGIN] Admin permissions check:', { adminPerms, permsError, email: data.session.user.email });
 
       if (adminPerms) {
         toast.success("Welcome back!", {
@@ -122,12 +128,14 @@ const AdminAuth = () => {
       }
 
       // 3. Check user_roles table for admin or staff role
-      const { data: userRole } = await supabase
+      const { data: userRole, error: roleError } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', data.session.user.id)
         .in('role', ['admin', 'staff'])
         .maybeSingle();
+
+      console.log('[ADMIN_LOGIN] User role check:', { userRole, roleError, userId: data.session.user.id });
 
       if (userRole) {
         toast.success("Welcome back!", {
