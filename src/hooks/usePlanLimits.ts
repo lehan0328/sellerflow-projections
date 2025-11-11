@@ -76,16 +76,32 @@ export const usePlanLimits = () => {
   const [profileMaxTeamMembers, setProfileMaxTeamMembers] = useState<number | null>(null);
 
   // Map subscription plan to plan type - default to starter for free users
-  const mapPlanTier = (tier: string | null): PlanType => {
+  const mapPlanTier = (tier: string | null, productId: string | null): PlanType => {
+    console.log('[usePlanLimits] Mapping plan:', { tier, productId });
+    
+    // Check for enterprise product IDs first (prod_TBOi*)
+    if (productId && productId.startsWith('prod_TBOi')) {
+      console.log('[usePlanLimits] Enterprise product detected');
+      return 'enterprise';
+    }
+    
+    // Check for other known product IDs from PRICING_PLANS
+    if (productId === 'prod_TAcNEuRnBTaX61') return 'starter';
+    if (productId === 'prod_TAcNnoGuq5Mr7X') return 'growing';
+    if (productId === 'prod_TAcQOfzGbqPowf') return 'professional';
+    
+    // Fallback to tier-based detection
     if (tier === 'starter') return 'starter';
     if (tier === 'growing') return 'growing';
     if (tier === 'professional') return 'professional';
     if (tier === 'enterprise') return 'enterprise';
+    
     // Free users get starter limits (2 connections)
+    console.warn('[usePlanLimits] No plan match found, defaulting to starter');
     return 'starter';
   };
   
-  const currentPlan: PlanType = mapPlanTier(subscription.plan);
+  const currentPlan: PlanType = mapPlanTier(subscription.plan, subscription.product_id);
   const basePlanLimits = PLAN_LIMITS[currentPlan];
   
   // Add purchased addons to plan limits

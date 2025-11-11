@@ -502,19 +502,25 @@ const Dashboard = () => {
     queryClient.invalidateQueries({ queryKey: ["amazon-payouts"] });
   }, [displayBankBalance, queryClient]);
 
-  // Check for limit violations and show modal
-  useEffect(() => {
+  // Manual function to check limits after specific actions (adding connections)
+  // Only call this after successfully adding bank/Amazon/team member
+  const checkLimitsAfterAction = () => {
+    console.log('[Dashboard] Checking limits after action:', {
+      isOverBankLimit,
+      isOverAmazonLimit,
+      isOverTeamLimit,
+      currentUsage,
+      planLimits
+    });
+    
     if (isOverBankLimit) {
       setShowLimitModal({ open: true, type: "bank_connection" });
     } else if (isOverAmazonLimit) {
       setShowLimitModal({ open: true, type: "amazon_connection" });
     } else if (isOverTeamLimit) {
       setShowLimitModal({ open: true, type: "user" });
-    } else {
-      // Close modal when all limits are satisfied
-      setShowLimitModal({ open: false, type: "bank_connection" });
     }
-  }, [isOverBankLimit, isOverAmazonLimit, isOverTeamLimit]);
+  };
 
   const { amazonPayouts, advancedModelingEnabled } = useAmazonPayouts();
 
