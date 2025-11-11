@@ -416,7 +416,9 @@ const UpgradePlan = () => {
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium">Plan</span>
                     <Badge className="bg-gradient-primary">
-                      {PRICING_PLANS[plan]?.name || ENTERPRISE_TIERS[plan as keyof typeof ENTERPRISE_TIERS]?.name || 'Enterprise'}
+                      {plan === 'lifetime' 
+                        ? 'Lifetime Access' 
+                        : PRICING_PLANS[plan]?.name || ENTERPRISE_TIERS[plan as keyof typeof ENTERPRISE_TIERS]?.name || 'Enterprise'}
                     </Badge>
                   </div>
                   

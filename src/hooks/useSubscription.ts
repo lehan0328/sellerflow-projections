@@ -165,7 +165,7 @@ export const ENTERPRISE_TIERS = {
   }
 } as const;
 
-export type PlanTier = keyof typeof PRICING_PLANS;
+export type PlanTier = keyof typeof PRICING_PLANS | keyof typeof ENTERPRISE_TIERS | 'lifetime';
 
 export interface SubscriptionState {
   subscribed: boolean;
