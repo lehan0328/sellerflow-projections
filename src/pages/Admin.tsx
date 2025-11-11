@@ -1,4 +1,5 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { useAdmin } from "@/hooks/useAdmin";
 import { 
@@ -30,6 +31,7 @@ import { AdminStaffDirectory } from "@/components/admin/AdminStaffDirectory";
 
 const Admin = () => {
   const { isAdmin, userRole } = useAdmin();
+  const [searchParams] = useSearchParams();
   
   console.log('[ADMIN] User permissions:', { isAdmin, userRole });
   
@@ -105,6 +107,14 @@ const Admin = () => {
   }, [userRole]);
 
   const [activeTab, setActiveTab] = useState(defaultTab);
+
+  // Sync activeTab with URL parameter
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam) {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams]);
 
   return (
     <div className="space-y-6">
