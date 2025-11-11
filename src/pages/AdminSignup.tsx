@@ -6,7 +6,15 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2, Eye, EyeOff, Shield, CheckCircle2 } from "lucide-react";
+import { Loader2, Eye, EyeOff, Shield, CheckCircle2, Check, X } from "lucide-react";
+import { z } from "zod";
+
+// Password validation schema
+const passwordSchema = z.string()
+  .min(8, "Password must be at least 8 characters")
+  .regex(/[a-z]/, "Password must contain at least one lowercase letter")
+  .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
+  .regex(/[^a-zA-Z0-9]/, "Password must contain at least one special character");
 
 export default function AdminSignup() {
   const [searchParams] = useSearchParams();
@@ -23,6 +31,13 @@ export default function AdminSignup() {
     email: string;
     role: string;
   } | null>(null);
+
+  // Password validation state
+  const hasMinLength = password.length >= 8;
+  const hasLowercase = /[a-z]/.test(password);
+  const hasUppercase = /[A-Z]/.test(password);
+  const hasSpecialChar = /[^a-zA-Z0-9]/.test(password);
+  const passwordsMatch = password && confirmPassword && password === confirmPassword;
 
   useEffect(() => {
     if (!token) {
@@ -79,8 +94,13 @@ export default function AdminSignup() {
       return;
     }
 
-    if (password.length < 8) {
-      toast.error("Password must be at least 8 characters");
+    // Validate password with zod schema
+    const passwordValidation = passwordSchema.safeParse(password);
+    if (!passwordValidation.success) {
+      toast.error(passwordValidation.error.errors[0].message, {
+        description: "Please ensure your password meets all requirements",
+        duration: 5000,
+      });
       return;
     }
 
@@ -175,9 +195,8 @@ export default function AdminSignup() {
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter password (min 8 characters)"
+                  placeholder="Enter secure password"
                   required
-                  minLength={8}
                   disabled={isLoading}
                 />
                 <Button
@@ -190,6 +209,50 @@ export default function AdminSignup() {
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </Button>
               </div>
+              {password && (
+                <div className="mt-2 space-y-1.5 text-sm">
+                  <div className="flex items-center gap-2">
+                    {hasMinLength ? (
+                      <Check className="h-3.5 w-3.5 text-green-600" />
+                    ) : (
+                      <X className="h-3.5 w-3.5 text-muted-foreground" />
+                    )}
+                    <span className={hasMinLength ? "text-green-600" : "text-muted-foreground"}>
+                      At least 8 characters
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {hasLowercase ? (
+                      <Check className="h-3.5 w-3.5 text-green-600" />
+                    ) : (
+                      <X className="h-3.5 w-3.5 text-muted-foreground" />
+                    )}
+                    <span className={hasLowercase ? "text-green-600" : "text-muted-foreground"}>
+                      One lowercase letter
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {hasUppercase ? (
+                      <Check className="h-3.5 w-3.5 text-green-600" />
+                    ) : (
+                      <X className="h-3.5 w-3.5 text-muted-foreground" />
+                    )}
+                    <span className={hasUppercase ? "text-green-600" : "text-muted-foreground"}>
+                      One uppercase letter
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {hasSpecialChar ? (
+                      <Check className="h-3.5 w-3.5 text-green-600" />
+                    ) : (
+                      <X className="h-3.5 w-3.5 text-muted-foreground" />
+                    )}
+                    <span className={hasSpecialChar ? "text-green-600" : "text-muted-foreground"}>
+                      One special character (!@#$%^&*)
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -201,9 +264,23 @@ export default function AdminSignup() {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="Re-enter password"
                 required
-                minLength={8}
                 disabled={isLoading}
               />
+              {confirmPassword && (
+                <div className="flex items-center gap-2 text-sm mt-1.5">
+                  {passwordsMatch ? (
+                    <>
+                      <Check className="h-3.5 w-3.5 text-green-600" />
+                      <span className="text-green-600">Passwords match</span>
+                    </>
+                  ) : (
+                    <>
+                      <X className="h-3.5 w-3.5 text-destructive" />
+                      <span className="text-destructive">Passwords do not match</span>
+                    </>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="pt-2">
