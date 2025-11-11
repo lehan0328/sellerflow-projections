@@ -98,11 +98,11 @@ const Admin = () => {
     <div className="space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex gap-4">
           {/* Sidebar Navigation */}
-          <div className="w-48 flex-shrink-0">
+          <div className="w-56 flex-shrink-0">
             <div className="sticky top-6 space-y-3 p-2 rounded-lg border bg-card">
               {tabSections.map((section, sectionIndex) => (
                 <div key={section.title}>
-                  <h3 className="px-3 py-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                  <h3 className="px-3 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     {section.title}
                   </h3>
                   <div className="space-y-0.5">
@@ -114,13 +114,13 @@ const Admin = () => {
                         <button
                           key={tab.value}
                           onClick={() => setActiveTab(tab.value)}
-                          className={`w-full flex items-center gap-2 px-3 py-2 rounded-md text-xs font-medium transition-all ${
+                          className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-md text-sm font-medium transition-all ${
                             isActive
                               ? 'bg-primary text-primary-foreground shadow-sm'
                               : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
                           }`}
                         >
-                          <Icon className="h-4 w-4 flex-shrink-0" />
+                          <Icon className="h-[18px] w-[18px] flex-shrink-0" />
                           <span className="text-left">{tab.label}</span>
                         </button>
                       );
