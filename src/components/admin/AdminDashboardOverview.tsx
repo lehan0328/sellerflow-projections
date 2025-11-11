@@ -67,7 +67,15 @@ export function AdminDashboardOverview() {
       const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       const weekStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-      // Fetch total users and recent signups
+      // Fetch admin/staff emails to exclude them
+      const { data: adminPermissions } = await supabase
+        .from('admin_permissions')
+        .select('email')
+        .eq('account_created', true);
+
+      const adminEmails = new Set(adminPermissions?.map(a => a.email) || []);
+
+      // Fetch total users and recent signups (excluding admins/staff)
       const { data: allUsers, error: usersError } = await supabase
         .from('profiles')
         .select('user_id, email, first_name, last_name, created_at, trial_end, plan_override')
@@ -75,13 +83,16 @@ export function AdminDashboardOverview() {
 
       if (usersError) throw usersError;
 
-      const totalUsers = allUsers?.length || 0;
-      const newUsersToday = allUsers?.filter(u => 
+      // Filter out admin/staff users
+      const regularUsers = allUsers?.filter(u => !adminEmails.has(u.email || '')) || [];
+
+      const totalUsers = regularUsers.length;
+      const newUsersToday = regularUsers.filter(u => 
         new Date(u.created_at) >= todayStart
-      ).length || 0;
-      const newUsersThisWeek = allUsers?.filter(u => 
+      ).length;
+      const newUsersThisWeek = regularUsers.filter(u => 
         new Date(u.created_at) >= weekStart
-      ).length || 0;
+      ).length;
       
       // Count actual paying subscribers with Stripe subscriptions
       const { data: subscriptionData, error: subError } = await supabase.functions.invoke('get-admin-subscriptions', {
@@ -94,18 +105,18 @@ export function AdminDashboardOverview() {
       
       const activeSubscriptions = subscriptionData?.summary?.activeSubscriptions || 0;
       
-      // Count trial users (users still in trial period)
-      const trialUsers = allUsers?.filter(u => 
+      // Count trial users (users still in trial period, excluding admins/staff)
+      const trialUsers = regularUsers.filter(u => 
         u.trial_end && new Date(u.trial_end) > now
-      ).length || 0;
+      ).length;
 
-      // Recent signups (last 10)
-      const recentSignups = allUsers?.slice(0, 10).map(u => ({
+      // Recent signups (last 10, excluding admins/staff)
+      const recentSignups = regularUsers.slice(0, 10).map(u => ({
         email: u.email || '',
         created_at: u.created_at || '',
         first_name: u.first_name || '',
         last_name: u.last_name || '',
-      })) || [];
+      }));
 
       // Fetch support tickets
       const { data: tickets, error: ticketsError } = await supabase
