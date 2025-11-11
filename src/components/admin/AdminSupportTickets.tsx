@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { toast } from "sonner";
 
 import { useSupportTickets } from "@/hooks/useSupportTickets";
-import { CheckCircle, Clock, AlertCircle, XCircle, MessageSquare, RefreshCw, UserPlus } from "lucide-react";
+import { CheckCircle, Clock, AlertCircle, XCircle, MessageSquare, RefreshCw, UserPlus, UserCheck, X } from "lucide-react";
 import { TicketMessagesDialog } from "./TicketMessagesDialog";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -25,12 +27,23 @@ const priorityColors = {
 };
 
 export const AdminSupportTickets = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const { tickets, isLoading, updateTicket, refetch } = useSupportTickets(true);
   const [selectedTicket, setSelectedTicket] = useState<any>(null);
   const [showMessagesDialog, setShowMessagesDialog] = useState(false);
   const [messageCounts, setMessageCounts] = useState<Record<string, number>>({});
   const [ticketView, setTicketView] = useState<'new' | 'open' | 'needs_response' | 'closed'>('new');
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Get staff filter from URL params
+  const filteredStaffId = searchParams.get('staffId');
+  const filteredStaffName = searchParams.get('staffName');
+
+  const clearStaffFilter = () => {
+    searchParams.delete('staffId');
+    searchParams.delete('staffName');
+    setSearchParams(searchParams);
+  };
 
   useEffect(() => {
     const fetchMessageCounts = async () => {
@@ -152,10 +165,15 @@ export const AdminSupportTickets = () => {
     );
   }
 
-  const newTickets = tickets.filter(t => !(t as any).claimed_by && t.status !== 'closed' && t.status !== 'resolved');
-  const openTickets = tickets.filter(t => (t as any).claimed_by && (t.status === 'open' || t.status === 'in_progress'));
-  const needsResponseTickets = tickets.filter(t => (t as any).claimed_by && t.status === 'needs_response');
-  const closedTickets = tickets.filter(t => t.status === 'resolved' || t.status === 'closed');
+  // Apply staff filter first if present
+  const staffFilteredTickets = filteredStaffId
+    ? tickets.filter(t => (t as any).claimed_by === filteredStaffId)
+    : tickets;
+
+  const newTickets = staffFilteredTickets.filter(t => !(t as any).claimed_by && t.status !== 'closed' && t.status !== 'resolved');
+  const openTickets = staffFilteredTickets.filter(t => (t as any).claimed_by && (t.status === 'open' || t.status === 'in_progress'));
+  const needsResponseTickets = staffFilteredTickets.filter(t => (t as any).claimed_by && t.status === 'needs_response');
+  const closedTickets = staffFilteredTickets.filter(t => t.status === 'resolved' || t.status === 'closed');
   
   const displayedTickets = 
     ticketView === 'new' ? newTickets :
@@ -164,7 +182,27 @@ export const AdminSupportTickets = () => {
     closedTickets;
 
   return (
-    <>
+    <div className="space-y-4">
+      {/* Staff Filter Alert */}
+      {filteredStaffId && filteredStaffName && (
+        <Alert>
+          <UserCheck className="h-4 w-4" />
+          <AlertTitle>Filtered by Staff Member</AlertTitle>
+          <AlertDescription className="flex items-center justify-between">
+            <span>Showing tickets claimed by <strong>{decodeURIComponent(filteredStaffName)}</strong></span>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={clearStaffFilter}
+              className="ml-4"
+            >
+              <X className="h-4 w-4 mr-1" />
+              Clear filter
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+
       <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
         <CardTitle>Support Tickets</CardTitle>
@@ -328,6 +366,6 @@ export const AdminSupportTickets = () => {
         onOpenChange={setShowMessagesDialog}
       />
     )}
-    </>
+    </div>
   );
 };

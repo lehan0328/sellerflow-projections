@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { 
@@ -13,10 +14,14 @@ import {
   AlertCircle,
   CheckCircle,
   Clock,
-  Target
+  Target,
+  UserCheck
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useAdmin } from "@/hooks/useAdmin";
 
 interface DashboardMetrics {
   totalUsers: number;
@@ -37,7 +42,19 @@ interface DashboardMetrics {
   }>;
 }
 
+interface StaffMember {
+  email: string;
+  first_name: string | null;
+  role: 'admin' | 'staff';
+  claimed_tickets_count: number;
+  open_tickets_count: number;
+  closed_tickets_count: number;
+  user_id: string | null;
+}
+
 export function AdminDashboardOverview() {
+  const navigate = useNavigate();
+  const { isAdmin } = useAdmin();
   const [metrics, setMetrics] = useState<DashboardMetrics>({
     totalUsers: 0,
     newUsersToday: 0,
@@ -51,11 +68,45 @@ export function AdminDashboardOverview() {
     totalReferrals: 0,
     recentSignups: [],
   });
+  const [staffList, setStaffList] = useState<StaffMember[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingStaff, setIsLoadingStaff] = useState(true);
 
   useEffect(() => {
     fetchDashboardMetrics();
-  }, []);
+    if (isAdmin) {
+      fetchStaffList();
+    }
+  }, [isAdmin]);
+
+  const fetchStaffList = async () => {
+    try {
+      setIsLoadingStaff(true);
+      const { data, error } = await supabase.functions.invoke('get-admin-staff-list');
+      
+      if (error) {
+        console.error('Error fetching staff list:', error);
+        return;
+      }
+      
+      setStaffList(data.staff || []);
+    } catch (error) {
+      console.error('Error fetching staff list:', error);
+    } finally {
+      setIsLoadingStaff(false);
+    }
+  };
+
+  const handleViewStaffCases = (staffId: string, staffName: string) => {
+    navigate(`/admin?tab=support&staffId=${staffId}&staffName=${encodeURIComponent(staffName)}`);
+  };
+
+  const getInitials = (firstName: string | null, email: string) => {
+    if (firstName) {
+      return firstName.charAt(0).toUpperCase();
+    }
+    return email.charAt(0).toUpperCase();
+  };
 
   const fetchDashboardMetrics = async () => {
     try {
@@ -366,6 +417,79 @@ export function AdminDashboardOverview() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Staff Directory - Website Admins Only */}
+      {isAdmin && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <UserCheck className="h-5 w-5" />
+              Staff Directory
+            </CardTitle>
+            <CardDescription>All admin and staff members with their case load</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoadingStaff ? (
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => (
+                  <Skeleton key={i} className="h-20 w-full" />
+                ))}
+              </div>
+            ) : staffList.length === 0 ? (
+              <p className="text-muted-foreground text-center py-4">No staff members found</p>
+            ) : (
+              <div className="space-y-3">
+                {staffList.map((staff) => (
+                  <div key={staff.email} className="flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
+                    {/* Left: Staff info */}
+                    <div className="flex items-center gap-3">
+                      <Avatar>
+                        <AvatarFallback className="bg-primary text-primary-foreground">
+                          {getInitials(staff.first_name, staff.email)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="font-medium">{staff.first_name || staff.email}</p>
+                        <p className="text-xs text-muted-foreground">{staff.email}</p>
+                      </div>
+                      <Badge variant={staff.role === 'admin' ? 'default' : 'secondary'}>
+                        {staff.role}
+                      </Badge>
+                    </div>
+                    
+                    {/* Middle: Ticket stats */}
+                    <div className="flex gap-6 text-sm">
+                      <div className="text-center">
+                        <p className="text-muted-foreground text-xs">Total</p>
+                        <p className="font-semibold text-lg">{staff.claimed_tickets_count}</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-muted-foreground text-xs">Open</p>
+                        <p className="font-semibold text-lg text-amber-600">{staff.open_tickets_count}</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-muted-foreground text-xs">Closed</p>
+                        <p className="font-semibold text-lg text-green-600">{staff.closed_tickets_count}</p>
+                      </div>
+                    </div>
+                    
+                    {/* Right: View Cases button */}
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleViewStaffCases(staff.user_id!, staff.first_name || staff.email)}
+                      disabled={!staff.user_id || staff.claimed_tickets_count === 0}
+                    >
+                      <LifeBuoy className="h-4 w-4 mr-2" />
+                      View Cases ({staff.claimed_tickets_count})
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
