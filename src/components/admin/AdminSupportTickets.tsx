@@ -36,6 +36,7 @@ export const AdminSupportTickets = () => {
   const [ticketView, setTicketView] = useState<'new' | 'open' | 'needs_response' | 'closed'>('new');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { userRole } = useAdmin();
+  const [ticketFeedback, setTicketFeedback] = useState<Record<string, { rating: number; comment?: string }>>({});
   
   // Staff dashboard metrics
   const [totalNew, setTotalNew] = useState(0);
@@ -113,6 +114,31 @@ export const AdminSupportTickets = () => {
     };
     
     fetchMessageCounts();
+  }, [tickets]);
+
+  // Fetch feedback for tickets
+  useEffect(() => {
+    const fetchTicketFeedback = async () => {
+      if (!tickets.length) return;
+      
+      const feedback: Record<string, { rating: number; comment?: string }> = {};
+      
+      for (const ticket of tickets) {
+        const { data, error } = await supabase
+          .from('ticket_feedback')
+          .select('rating, comment')
+          .eq('ticket_id', ticket.id)
+          .single();
+        
+        if (!error && data) {
+          feedback[ticket.id] = data;
+        }
+      }
+      
+      setTicketFeedback(feedback);
+    };
+    
+    fetchTicketFeedback();
   }, [tickets]);
 
   const handleCloseTicket = async (ticketId: string) => {
@@ -412,6 +438,33 @@ export const AdminSupportTickets = () => {
                           <> • Resolved: {new Date(ticket.resolved_at).toLocaleString()}</>
                         )}
                       </div>
+                      
+                      {/* Display feedback if available */}
+                      {ticketFeedback[ticket.id] && (
+                        <div className="mt-3 p-3 bg-yellow-50 dark:bg-yellow-950/20 rounded-md border border-yellow-200 dark:border-yellow-900">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-sm font-medium text-yellow-800 dark:text-yellow-300">Customer Feedback:</span>
+                            <div className="flex items-center gap-1">
+                              {[1, 2, 3, 4, 5].map((star) => (
+                                <span
+                                  key={star}
+                                  className={star <= ticketFeedback[ticket.id].rating ? 'text-yellow-500' : 'text-gray-300'}
+                                >
+                                  ★
+                                </span>
+                              ))}
+                              <span className="ml-1 text-sm font-semibold text-yellow-700 dark:text-yellow-400">
+                                {ticketFeedback[ticket.id].rating}/5
+                              </span>
+                            </div>
+                          </div>
+                          {ticketFeedback[ticket.id].comment && (
+                            <p className="text-sm text-yellow-800 dark:text-yellow-300 mt-1">
+                              "{ticketFeedback[ticket.id].comment}"
+                            </p>
+                          )}
+                        </div>
+                      )}
                     </div>
                     <div className="flex items-center gap-2">
                       {ticketView === 'new' && !(ticket as any).claimed_by && (
