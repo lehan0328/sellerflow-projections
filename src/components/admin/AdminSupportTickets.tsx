@@ -172,6 +172,20 @@ export const AdminSupportTickets = () => {
       return;
     }
 
+    // Send automatic greeting message to customer
+    const { error: messageError } = await supabase
+      .from('ticket_messages')
+      .insert({
+        ticket_id: ticketId,
+        user_id: user.id,
+        message: `Hello, my name is ${staffName}. I will be assisting you with this case today. Please give me a few minutes to take a look at your case.`,
+        is_internal: false
+      });
+
+    if (messageError) {
+      console.error("Error sending greeting message:", messageError);
+    }
+
     toast.success("Ticket claimed successfully");
     await refetch();
   };
