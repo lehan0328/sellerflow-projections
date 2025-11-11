@@ -260,8 +260,9 @@ export const useSubscription = () => {
   const checkSubscription = async (forceRefresh = false) => {
     try {
       // Check for session FIRST before anything else
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session) {
         const state = {
           subscribed: false,
           product_id: null,
@@ -289,6 +290,87 @@ export const useSubscription = () => {
           Authorization: `Bearer ${session.access_token}`,
         },
       });
+
+      // Handle 401 errors by attempting session refresh
+      if (error && (error as any)?.status === 401) {
+        console.log('[SUBSCRIPTION] Session expired, attempting refresh...');
+        
+        const { data: { session: refreshedSession }, error: refreshError } = await supabase.auth.refreshSession();
+        
+        if (refreshError || !refreshedSession) {
+          console.error('[SUBSCRIPTION] Session refresh failed:', refreshError);
+          throw new Error("Session expired. Please log in again.");
+        }
+        
+        // Retry with refreshed token
+        const { data: retryData, error: retryError } = await supabase.functions.invoke("check-subscription", {
+          headers: {
+            Authorization: `Bearer ${refreshedSession.access_token}`,
+          },
+        });
+        
+        if (retryError) throw retryError;
+        
+        // Use the retry data
+        const finalData = retryData;
+        
+        // Continue with finalData instead of data
+        let plan: PlanTier | null = null;
+        if (finalData.is_override && finalData.plan) {
+          plan = finalData.plan as PlanTier;
+        } else if (finalData.is_trialing) {
+          plan = 'professional';
+        } else if (finalData.product_id) {
+          const planEntry = Object.entries(PRICING_PLANS).find(
+            ([, planData]) => planData.product_id === finalData.product_id
+          );
+          if (planEntry) {
+            plan = planEntry[0] as PlanTier;
+          }
+        }
+
+        const paymentFailed = finalData.subscriptionStatus === 'past_due' || finalData.subscriptionStatus === 'unpaid';
+        const isExpired = finalData.subscription_end ? new Date(finalData.subscription_end) < new Date() : false;
+        const shouldBlockAccess = paymentFailed && isExpired;
+        const trialExpired = finalData.trial_expired || false;
+
+        const state = {
+          subscribed: finalData.subscribed || false,
+          product_id: finalData.product_id,
+          subscription_end: finalData.subscription_end,
+          plan,
+          isLoading: false,
+          is_trialing: finalData.is_trialing || false,
+          trial_end: finalData.trial_end || null,
+          trial_expired: trialExpired,
+          billing_interval: finalData.billing_interval || null,
+          current_period_start: finalData.current_period_start || null,
+          price_amount: finalData.price_amount || null,
+          currency: finalData.currency || null,
+          discount: finalData.discount || null,
+          discount_ever_redeemed: finalData.discount_ever_redeemed || false,
+          payment_failed: finalData.payment_failed || false,
+          is_expired: shouldBlockAccess || trialExpired,
+        };
+        
+        setSubscriptionState(state);
+        saveToCache(state);
+
+        if (finalData.subscribed && refreshedSession) {
+          try {
+            const { data: pmData } = await supabase.functions.invoke("get-payment-method", {
+              headers: { Authorization: `Bearer ${refreshedSession.access_token}` },
+            });
+            if (pmData?.brand && pmData?.last4) {
+              setPaymentMethod({ brand: pmData.brand, last4: pmData.last4 });
+            }
+          } catch (error) {
+            console.error("Failed to fetch payment method:", error);
+          }
+        }
+        
+        return;
+      }
 
       if (error) throw error;
 
