@@ -956,12 +956,12 @@ export default function Analytics() {
       {/* Header for screen - includes button */}
       <div className="flex items-center justify-between mb-2">
         <div className="flex-1" data-pdf-section="header">
-          <h1 className="text-2xl font-bold text-foreground">
+          <h1 className="text-xl font-bold text-foreground">
             {companyName 
               ? `${companyName.charAt(0).toUpperCase() + companyName.slice(1)} Business Report`
               : "Auren Business Report"}
           </h1>
-          <p className="text-lg font-medium text-muted-foreground mt-1">{format(new Date(), 'MMMM yyyy')}</p>
+          <p className="text-base font-medium text-muted-foreground mt-1">{format(new Date(), 'MMMM yyyy')}</p>
         </div>
         <Button 
           onClick={handleDownloadPDF} 
