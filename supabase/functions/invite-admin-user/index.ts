@@ -156,7 +156,7 @@ serve(async (req) => {
     `;
 
     const { error: emailError } = await resend.emails.send({
-      from: "Auren Admin <onboarding@resend.dev>",
+      from: "Auren Admin <noreply@aurenapp.com>",
       to: [email],
       subject: `You're invited to Auren Admin Dashboard (${role})`,
       html: emailHtml,
