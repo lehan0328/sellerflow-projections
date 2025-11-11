@@ -41,8 +41,6 @@ const Admin = () => {
         { value: "subscriptions", label: "Subscriptions", icon: CreditCard },
         { value: "send-update", label: "Send Update", icon: Megaphone },
         { value: "support-dashboard", label: "Support Dashboard", icon: MessageSquare },
-        { value: "referrals", label: "Referrals", icon: Gift },
-        { value: "affiliates", label: "Affiliates", icon: UserCog },
         { value: "forecast-accuracy", label: "Forecast Accuracy", icon: Target },
       ]
     },
@@ -51,6 +49,8 @@ const Admin = () => {
       tabs: [
         { value: "support", label: "Support Tickets", icon: LifeBuoy },
         { value: "features", label: "Feature Requests", icon: MessageSquare },
+        { value: "referrals", label: "Referrals", icon: Gift },
+        { value: "affiliates", label: "Affiliates", icon: UserCog },
       ]
     },
     {
