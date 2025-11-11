@@ -3,11 +3,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, TrendingUp, TrendingDown, Clock, CheckCircle2, AlertCircle, MessageSquare, BarChart3, LifeBuoy } from "lucide-react";
+import { Loader2, TrendingUp, TrendingDown, Clock, CheckCircle2, AlertCircle, MessageSquare, BarChart3, LifeBuoy, Star } from "lucide-react";
 import { startOfMonth, endOfMonth, subMonths, differenceInDays, format } from "date-fns";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useNavigate } from "react-router-dom";
 import { AllCasesDialog } from "./AllCasesDialog";
+import { TicketReviewsDialog } from "./TicketReviewsDialog";
 
 interface DashboardStats {
   totalOpen: number;
@@ -49,6 +50,7 @@ export const AdminSupportDashboard = () => {
   const [isLoadingStaff, setIsLoadingStaff] = useState(true);
   const [selectedMonth, setSelectedMonth] = useState<string>(format(new Date(), 'yyyy-MM'));
   const [showAllCasesDialog, setShowAllCasesDialog] = useState(false);
+  const [showReviewsDialog, setShowReviewsDialog] = useState(false);
 
   // Generate last 12 months for dropdown
   const monthOptions = Array.from({ length: 12 }, (_, i) => {
@@ -311,6 +313,13 @@ export const AdminSupportDashboard = () => {
           <p className="text-muted-foreground">Overview of support ticket metrics and performance</p>
         </div>
         <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            onClick={() => setShowReviewsDialog(true)}
+          >
+            <Star className="h-4 w-4 mr-2" />
+            Track Reviews
+          </Button>
           <Button
             variant="outline"
             onClick={() => setShowAllCasesDialog(true)}
@@ -673,6 +682,11 @@ export const AdminSupportDashboard = () => {
       <AllCasesDialog 
         open={showAllCasesDialog} 
         onOpenChange={setShowAllCasesDialog}
+      />
+
+      <TicketReviewsDialog
+        open={showReviewsDialog}
+        onOpenChange={setShowReviewsDialog}
       />
     </div>
   );
