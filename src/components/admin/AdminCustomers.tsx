@@ -390,6 +390,14 @@ export const AdminCustomers = () => {
       return { label: 'Admin', variant: 'default' as const };
     }
     
+    // Check for lifetime access (plan_override with enterprise tiers or explicit lifetime)
+    if (customer.plan_override && customer.plan_override !== 'admin') {
+      // Lifetime access includes enterprise tiers (tier1, tier2, tier3, tier4) or any plan_override that's not trial-based
+      if (customer.plan_override.includes('tier') || customer.plan_override === 'enterprise' || customer.plan_override === 'professional' || customer.plan_override === 'growing' || customer.plan_override === 'starter') {
+        return { label: 'Lifetime', variant: 'default' as const };
+      }
+    }
+    
     // Check for active Stripe subscription first (most accurate)
     // Active subscription status from Stripe takes priority
     if (customer.stripe_subscription_status === 'active' || customer.stripe_subscription_status === 'trialing') {
