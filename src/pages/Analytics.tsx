@@ -955,14 +955,15 @@ export default function Analytics() {
   return <div className="container mx-auto p-6 space-y-6">
       {/* Header for screen - includes button */}
       <div className="mb-4">
-        <div className="flex items-start justify-between gap-4 mb-3">
-          <div className="flex-1 max-w-3xl">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1 max-w-3xl" data-pdf-section="header">
             <h1 className="text-xl font-bold text-foreground">
               {companyName 
                 ? `${companyName.charAt(0).toUpperCase() + companyName.slice(1)} Business Report`
                 : "Auren Business Report"}
             </h1>
             <p className="text-base font-medium text-muted-foreground mt-1">{format(new Date(), 'MMMM yyyy')}</p>
+            <p className="text-sm text-muted-foreground mt-2">Real-time financial insights and comprehensive performance analysis</p>
           </div>
           <Button 
             onClick={handleDownloadPDF} 
@@ -982,9 +983,6 @@ export default function Analytics() {
               </>
             )}
           </Button>
-        </div>
-        <div data-pdf-section="header">
-          <p className="text-sm text-muted-foreground max-w-3xl">Real-time financial insights and comprehensive performance analysis</p>
         </div>
       </div>
       
