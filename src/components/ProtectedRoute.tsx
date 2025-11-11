@@ -17,6 +17,7 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const [trialEnd, setTrialEnd] = useState<string | null>(null);
   const [checkingTrial, setCheckingTrial] = useState(true);
   const [hasPlanOverride, setHasPlanOverride] = useState(false);
+  const [accountStatus, setAccountStatus] = useState<string | null>(null);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -42,7 +43,7 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
       // Get user's profile to check if they're part of a team
       const { data: profile } = await supabase
         .from('profiles')
-        .select('trial_end, account_id, is_account_owner, plan_override')
+        .select('trial_end, account_id, is_account_owner, plan_override, account_status')
         .eq('user_id', user.id)
         .maybeSingle();
 
@@ -50,6 +51,9 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
       
       // Check if user has a plan override (lifetime access, etc.)
       setHasPlanOverride(!!profile?.plan_override);
+      
+      // Store account status for expired check
+      setAccountStatus(profile?.account_status || null);
 
       // If user is part of a team (not account owner), check account owner's trial
       if (profile?.account_id && !profile?.is_account_owner) {
@@ -77,7 +81,11 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   // If subscribed is true (has active Stripe subscription), never block access
   // If user has plan_override (lifetime access, etc.), never block access
   // Only check trial if they don't have an active subscription or plan override
-  const isTrialExpired = !subscribed && !hasPlanOverride && trialEnd && new Date(trialEnd) < new Date();
+  // Also check account_status - if it's 'trial_expired', show the modal
+  const isTrialExpired = !subscribed && !hasPlanOverride && (
+    (trialEnd && new Date(trialEnd) < new Date()) || 
+    accountStatus === 'trial_expired'
+  );
 
   if (loading || subLoading || checkingTrial) {
     return <LoadingScreen message="Verifying your session..." />;
