@@ -902,13 +902,11 @@ export default function Analytics() {
       // Capture sections in order
       await addSection('[data-pdf-section="header"]', 0);
       await addSection('[data-pdf-section="metrics-top"]', 5);
-      await addSection('[data-pdf-section="income-metrics"]', 5);
-      await addSection('[data-pdf-section="metrics-bottom"]', 5);
+      await addSection('[data-pdf-section="grouped-metrics"]', 5);
       await addSection('[data-pdf-section="income-expense-breakdown"]', 8);
       await addSection('[data-pdf-section="balance-chart"]', 8);
       await addSection('[data-pdf-section="vendors-table"]', 8);
       await addSection('[data-pdf-section="income-trend-chart"]', 8);
-      await addSection('[data-pdf-section="payment-status"]', 8);
       await addSection('[data-pdf-section="income-expense-chart"]', 8);
       await addSection('[data-pdf-section="cashflow-chart"]', 8);
       
@@ -988,8 +986,10 @@ export default function Analytics() {
         </p>
       </div>
 
-      {/* Income Metrics Section */}
-      <Card data-pdf-section="income-metrics">
+      {/* Grouped Metrics Section for PDF - Income, Account Health, Payment Status */}
+      <div data-pdf-section="grouped-metrics" className="space-y-4">
+        {/* Income Metrics Section */}
+        <Card>
         <CardHeader>
           <div className="flex items-start justify-between">
             <div>
@@ -1103,8 +1103,8 @@ export default function Analytics() {
         </CardContent>
       </Card>
 
-      {/* Account Health Section */}
-      <Card data-pdf-section="metrics-bottom">
+        {/* Account Health Section */}
+        <Card>
         <CardHeader>
           <div className="flex items-center justify-between gap-4 flex-wrap">
             <div>
@@ -1266,8 +1266,8 @@ export default function Analytics() {
         </CardContent>
       </Card>
 
-      {/* Payment Status Overview */}
-      <Card data-pdf-section="payment-status">
+        {/* Payment Status Overview */}
+        <Card>
         <CardHeader>
           <CardTitle>Payment Status Overview</CardTitle>
           <p className="text-sm text-muted-foreground">This month only</p>
@@ -1369,6 +1369,7 @@ export default function Analytics() {
           </div>
         </CardContent>
       </Card>
+      </div>
 
       <div className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2" data-pdf-section="income-expense-breakdown">
