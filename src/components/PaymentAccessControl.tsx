@@ -31,7 +31,8 @@ export const PaymentAccessControl = ({ children }: PaymentAccessControlProps) =>
       '/blog',
       '/partners',
       '/oauth-redirect',
-      '/amazon-oauth-callback'
+      '/amazon-oauth-callback',
+      '/admin' // Admin routes don't need subscription checks
     ];
     
     // Skip check for public routes (including dynamic routes like /blog/*, /features/*, /docs/*)

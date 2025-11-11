@@ -110,6 +110,22 @@ const App = () => (
             <Route path="/signups-closed" element={<SignUpsClosed />} />
             <Route path="/payment-required" element={<PaymentRequired />} />
             <Route path="/contact" element={<Contact />} />
+            <Route path="/admin/login" element={<AdminAuth />} />
+            <Route path="/admin/signup" element={<AdminSignup />} />
+            <Route path="/admin/dashboard" element={
+              <ProtectedAdminRoute>
+                <AdminLayout>
+                  <Admin />
+                </AdminLayout>
+              </ProtectedAdminRoute>
+            } />
+            <Route path="/admin" element={
+              <ProtectedAdminRoute>
+                <AdminLayout>
+                  <Admin />
+                </AdminLayout>
+              </ProtectedAdminRoute>
+            } />
           <Route path="/docs" element={<Docs />} />
           <Route path="/docs/getting-started" element={<DocsGettingStarted />} />
           <Route path="/docs/amazon-integration" element={<DocsAmazonIntegration />} />
@@ -197,22 +213,6 @@ const App = () => (
           <Route path="/advanced-analytics" element={<AdvancedAnalytics />} />
           <Route path="/accounting" element={<Accounting />} />
           <Route path="/platforms" element={<Platforms />} />
-          <Route path="/admin/login" element={<AdminAuth />} />
-          <Route path="/admin/signup" element={<AdminSignup />} />
-          <Route path="/admin/dashboard" element={
-            <ProtectedAdminRoute>
-              <AdminLayout>
-                <Admin />
-              </AdminLayout>
-            </ProtectedAdminRoute>
-          } />
-          <Route path="/admin" element={
-            <ProtectedAdminRoute>
-              <AdminLayout>
-                <Admin />
-              </AdminLayout>
-            </ProtectedAdminRoute>
-          } />
           <Route path="/referral-dashboard" element={
             <ProtectedRoute>
               <ReferralDashboard />
