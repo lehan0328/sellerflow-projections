@@ -31,11 +31,11 @@ serve(async (req) => {
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
 
-    // Get all active profiles
+    // Get all profiles that aren't already suspended or trial expired
     const { data: profiles, error: profilesError } = await supabaseClient
       .from('profiles')
       .select('user_id, email, trial_end, account_status')
-      .neq('account_status', 'suspended_payment');
+      .not('account_status', 'in', '(suspended_payment,trial_expired)');
 
     if (profilesError) {
       logStep("Error fetching profiles", { error: profilesError });
@@ -65,12 +65,12 @@ serve(async (req) => {
         });
 
         if (customers.data.length === 0) {
-          // No Stripe customer and no active trial - suspend
-          logStep(`No Stripe customer found for ${profile.email}, suspending`);
+          // No Stripe customer and no active trial - trial expired (never paid)
+          logStep(`No Stripe customer found for ${profile.email}, marking trial expired`);
           await supabaseClient
             .from('profiles')
             .update({ 
-              account_status: 'suspended_payment',
+              account_status: 'trial_expired',
               payment_failure_date: now.toISOString()
             })
             .eq('user_id', profile.user_id);
@@ -82,7 +82,7 @@ serve(async (req) => {
         const subscriptions = await stripe.subscriptions.list({
           customer: customerId,
           status: 'all',
-          limit: 1,
+          limit: 100, // Get more subscriptions to check history
         });
 
         const hasActiveSubscription = subscriptions.data.some(sub => 
@@ -90,15 +90,32 @@ serve(async (req) => {
         );
 
         if (!hasActiveSubscription) {
-          // No active subscription and no trial - suspend account
-          logStep(`No active subscription for ${profile.email}, suspending`);
-          await supabaseClient
-            .from('profiles')
-            .update({ 
-              account_status: 'suspended_payment',
-              payment_failure_date: now.toISOString()
-            })
-            .eq('user_id', profile.user_id);
+          // Check if user had a previous active subscription
+          const hadPreviousSubscription = subscriptions.data.some(sub => 
+            sub.status === 'canceled' || sub.status === 'past_due' || sub.status === 'unpaid'
+          );
+
+          if (hadPreviousSubscription) {
+            // Had subscription before, payment failed - suspend for payment issue
+            logStep(`Payment failed for ${profile.email}, suspending`);
+            await supabaseClient
+              .from('profiles')
+              .update({ 
+                account_status: 'suspended_payment',
+                payment_failure_date: now.toISOString()
+              })
+              .eq('user_id', profile.user_id);
+          } else {
+            // Never had active subscription - trial expired
+            logStep(`Trial expired for ${profile.email}, no subscription history`);
+            await supabaseClient
+              .from('profiles')
+              .update({ 
+                account_status: 'trial_expired',
+                payment_failure_date: now.toISOString()
+              })
+              .eq('user_id', profile.user_id);
+          }
           suspendedCount++;
         }
       } catch (error) {

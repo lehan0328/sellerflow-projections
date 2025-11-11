@@ -100,7 +100,8 @@ export const PaymentAccessControl = ({ children }: PaymentAccessControlProps) =>
 
       setAccountStatus(accountStatus);
 
-      // If account is suspended and user is not admin, redirect to payment page
+      // If account is suspended for payment failure and user is not admin, redirect to payment page
+      // If account is trial_expired, let ProtectedRoute handle it with TrialExpiredModal
       if (accountStatus === 'suspended_payment' && !isAdmin) {
         navigate('/payment-required');
         return;
