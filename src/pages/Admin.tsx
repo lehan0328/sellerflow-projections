@@ -45,7 +45,6 @@ const Admin = () => {
       {
         title: "Business Management",
         tabs: [
-          { value: "staff-directory", label: "Staff Directory", icon: UserCog },
           { value: "signups", label: "Signup Analytics", icon: UserPlus },
           { value: "customers", label: "Customers", icon: Users },
           { value: "subscriptions", label: "Subscriptions", icon: CreditCard },
@@ -68,6 +67,7 @@ const Admin = () => {
       {
         title: "System",
         tabs: [
+          { value: "staff-directory", label: "Staff Directory", icon: UserCog },
           { value: "plan-override", label: "Plan Management", icon: Settings },
         ],
         rolesAllowed: ['admin'] // Only admin can access
