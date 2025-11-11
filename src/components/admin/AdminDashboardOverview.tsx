@@ -81,14 +81,20 @@ export function AdminDashboardOverview() {
         new Date(u.created_at) >= weekStart
       ).length || 0;
       
-      // Count trial vs paid users
+      // Count actual paying subscribers with Stripe subscriptions
+      const { data: subscriptionData, error: subError } = await supabase.functions.invoke('get-admin-subscriptions', {
+        body: {}
+      });
+      
+      if (subError) {
+        console.error('Error fetching subscriptions:', subError);
+      }
+      
+      const activeSubscriptions = subscriptionData?.summary?.activeSubscriptions || 0;
+      
+      // Count trial users (users still in trial period)
       const trialUsers = allUsers?.filter(u => 
         u.trial_end && new Date(u.trial_end) > now
-      ).length || 0;
-      
-      // Active subscriptions (users with plan_override or past trial)
-      const activeSubscriptions = allUsers?.filter(u => 
-        u.plan_override || (u.trial_end && new Date(u.trial_end) <= now)
       ).length || 0;
 
       // Recent signups (last 10)
@@ -119,12 +125,14 @@ export function AdminDashboardOverview() {
       if (featuresError) throw featuresError;
       const pendingFeatureRequests = features?.length || 0;
 
-      // Fetch referrals
+      // Fetch affiliate referrals (correct table name)
       const { data: referrals, error: referralsError } = await supabase
-        .from('referrals')
+        .from('affiliate_referrals')
         .select('id, status');
 
-      if (referralsError) throw referralsError;
+      if (referralsError) {
+        console.error('Error fetching referrals:', referralsError);
+      }
 
       const totalReferrals = referrals?.length || 0;
       const activeReferrals = referrals?.filter(r => r.status === 'active').length || 0;
