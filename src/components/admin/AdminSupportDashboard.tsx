@@ -73,9 +73,11 @@ export const AdminSupportDashboard = () => {
       const lastMonthEnd = endOfMonth(subMonths(selectedDate, 1));
 
       // Calculate stats
-      const totalOpen = tickets?.filter(t => t.status === 'open').length || 0;
+      const totalOpen = tickets?.filter(t => 
+        t.status === 'open' || t.status === 'needs_response' || t.status === 'new'
+      ).length || 0;
       const needsResponse = tickets?.filter(t => t.status === 'needs_response').length || 0;
-      const totalClosed = tickets?.filter(t => t.status === 'closed').length || 0;
+      const totalClosed = tickets?.filter(t => t.status === 'closed' || t.status === 'resolved').length || 0;
 
       const openedThisMonth = tickets?.filter(t => {
         const createdAt = new Date(t.created_at);
