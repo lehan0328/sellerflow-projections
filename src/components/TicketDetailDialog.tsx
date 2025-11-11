@@ -8,6 +8,7 @@ import { Send, User, Shield, Lock, CheckCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { TicketFeedbackDialog } from "./admin/TicketFeedbackDialog";
 
 interface TicketMessage {
   id: string;
@@ -28,6 +29,8 @@ export function TicketDetailDialog({ ticket, open, onOpenChange }: TicketDetailD
   const [messages, setMessages] = useState<TicketMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showFeedbackDialog, setShowFeedbackDialog] = useState(false);
+  const [staffName, setStaffName] = useState<string>("Support");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const isTicketClosed = ticket.status === 'closed' || ticket.status === 'resolved';
@@ -39,6 +42,7 @@ export function TicketDetailDialog({ ticket, open, onOpenChange }: TicketDetailD
   useEffect(() => {
     if (open && ticket) {
       loadMessages();
+      loadStaffName();
       
       // Subscribe to new messages
       const channel = supabase
@@ -92,6 +96,26 @@ export function TicketDetailDialog({ ticket, open, onOpenChange }: TicketDetailD
     }
   };
 
+  const loadStaffName = async () => {
+    if (!ticket.claimed_by) return;
+    
+    // Get user email from auth.users
+    const { data: userData } = await supabase.auth.admin.getUserById(ticket.claimed_by);
+    
+    if (userData?.user?.email) {
+      // Get staff name from admin_permissions using email
+      const { data, error } = await supabase
+        .from('admin_permissions')
+        .select('first_name')
+        .eq('email', userData.user.email)
+        .single();
+      
+      if (!error && data?.first_name) {
+        setStaffName(data.first_name);
+      }
+    }
+  };
+
   const handleSendMessage = async () => {
     if (!newMessage.trim() || isTicketClosed) return;
 
@@ -135,11 +159,28 @@ export function TicketDetailDialog({ ticket, open, onOpenChange }: TicketDetailD
       if (error) throw error;
 
       toast.success('Ticket closed successfully');
-      onOpenChange(false);
+      
+      // Check if there's already feedback and if ticket was claimed by staff
+      const { data: existingFeedback } = await supabase
+        .from('ticket_feedback')
+        .select('id')
+        .eq('ticket_id', ticket.id)
+        .single();
+
+      // Show feedback dialog only if no feedback exists and ticket was claimed by staff
+      if (!existingFeedback && ticket.claimed_by) {
+        setShowFeedbackDialog(true);
+      } else {
+        onOpenChange(false);
+      }
     } catch (error: any) {
       console.error('Error closing ticket:', error);
       toast.error('Failed to close ticket');
     }
+  };
+
+  const handleFeedbackComplete = () => {
+    onOpenChange(false);
   };
 
   return (
@@ -278,6 +319,15 @@ export function TicketDetailDialog({ ticket, open, onOpenChange }: TicketDetailD
           )}
         </div>
       </DialogContent>
+
+      <TicketFeedbackDialog
+        open={showFeedbackDialog}
+        onOpenChange={setShowFeedbackDialog}
+        ticketId={ticket.id}
+        staffId={ticket.claimed_by || ''}
+        staffName={staffName}
+        onComplete={handleFeedbackComplete}
+      />
     </Dialog>
   );
 }

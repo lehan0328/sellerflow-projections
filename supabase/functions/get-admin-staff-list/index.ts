@@ -14,6 +14,7 @@ interface StaffMember {
   awaiting_response_count: number;
   needs_response_count: number;
   closed_tickets_count: number;
+  average_rating: number | null;
   user_id?: string | null;
 }
 
@@ -90,6 +91,7 @@ Deno.serve(async (req) => {
             awaiting_response_count: 0,
             needs_response_count: 0,
             closed_tickets_count: 0,
+            average_rating: null,
           };
         }
 
@@ -102,6 +104,7 @@ Deno.serve(async (req) => {
             awaiting_response_count: 0,
             needs_response_count: 0,
             closed_tickets_count: 0,
+            average_rating: null,
           };
         }
 
@@ -132,6 +135,16 @@ Deno.serve(async (req) => {
           .eq('claimed_by', userId)
           .in('status', ['closed', 'resolved']);
 
+        // Get average rating from ticket_feedback
+        const { data: feedbackData } = await supabase
+          .from('ticket_feedback')
+          .select('rating')
+          .eq('staff_id', userId);
+
+        const averageRating = feedbackData && feedbackData.length > 0
+          ? feedbackData.reduce((sum, f) => sum + f.rating, 0) / feedbackData.length
+          : null;
+
         return {
           ...staff,
           user_id: userId,
@@ -139,6 +152,7 @@ Deno.serve(async (req) => {
           awaiting_response_count: awaitingCount || 0,
           needs_response_count: needsResponseCount || 0,
           closed_tickets_count: closedCount || 0,
+          average_rating: averageRating ? Math.round(averageRating * 10) / 10 : null,
         };
       })
     );
@@ -161,6 +175,7 @@ Deno.serve(async (req) => {
           awaiting_response_count: 0,
           needs_response_count: 0,
           closed_tickets_count: 0,
+          average_rating: null,
         });
       }
     }

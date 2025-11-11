@@ -38,6 +38,7 @@ interface StaffMember {
   awaiting_response_count: number;
   needs_response_count: number;
   closed_tickets_count: number;
+  average_rating: number | null;
 }
 
 export const AdminSupportDashboard = () => {
@@ -363,19 +364,31 @@ export const AdminSupportDashboard = () => {
                     </div>
                   </div>
                   
-                  <div className="flex gap-6 text-sm">
-                    <div className="text-center">
-                      <p className="text-muted-foreground text-xs">Awaiting Response</p>
-                      <p className="font-semibold text-lg text-blue-600">{staff.awaiting_response_count}</p>
+                  <div className="flex flex-col gap-4">
+                    <div className="flex gap-6 text-sm">
+                      <div className="text-center">
+                        <p className="text-muted-foreground text-xs">Awaiting Response</p>
+                        <p className="font-semibold text-lg text-blue-600">{staff.awaiting_response_count}</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-muted-foreground text-xs">Response Needed</p>
+                        <p className="font-semibold text-lg text-orange-600">{staff.needs_response_count}</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-muted-foreground text-xs">Closed</p>
+                        <p className="font-semibold text-lg text-green-600">{staff.closed_tickets_count}</p>
+                      </div>
                     </div>
-                    <div className="text-center">
-                      <p className="text-muted-foreground text-xs">Response Needed</p>
-                      <p className="font-semibold text-lg text-orange-600">{staff.needs_response_count}</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-muted-foreground text-xs">Closed</p>
-                      <p className="font-semibold text-lg text-green-600">{staff.closed_tickets_count}</p>
-                    </div>
+                    
+                    {staff.average_rating !== null && (
+                      <div className="text-center">
+                        <p className="text-muted-foreground text-xs">Avg Rating</p>
+                        <div className="flex items-center justify-center gap-1">
+                          <p className="font-semibold text-lg text-yellow-600">{staff.average_rating}</p>
+                          <span className="text-yellow-500">★</span>
+                        </div>
+                      </div>
+                    )}
                   </div>
                   
                   <Button 

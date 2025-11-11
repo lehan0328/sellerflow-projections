@@ -7,6 +7,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Send, User, Shield } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { TicketFeedbackDialog } from "./TicketFeedbackDialog";
 
 interface TicketMessage {
   id: string;
@@ -28,6 +29,7 @@ export function TicketMessagesDialog({ ticket, open, onOpenChange }: TicketMessa
   const [newMessage, setNewMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [staffName, setStaffName] = useState<string>("Support");
+  const [showFeedbackDialog, setShowFeedbackDialog] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -114,9 +116,46 @@ export function TicketMessagesDialog({ ticket, open, onOpenChange }: TicketMessa
     }
   };
 
+  const handleCloseTicket = async () => {
+    try {
+      const { error } = await supabase
+        .from('support_tickets')
+        .update({ 
+          status: 'closed',
+          resolved_at: new Date().toISOString()
+        })
+        .eq('id', ticket.id);
+
+      if (error) throw error;
+
+      toast.success('Ticket closed successfully');
+      
+      // Check if there's already feedback for this ticket
+      const { data: existingFeedback } = await supabase
+        .from('ticket_feedback')
+        .select('id')
+        .eq('ticket_id', ticket.id)
+        .single();
+
+      // Show feedback dialog only if no feedback exists yet
+      if (!existingFeedback && ticket.claimed_by) {
+        setShowFeedbackDialog(true);
+      } else {
+        onOpenChange(false);
+      }
+    } catch (error: any) {
+      console.error('Error closing ticket:', error);
+      toast.error('Failed to close ticket');
+    }
+  };
+
+  const handleFeedbackComplete = () => {
+    onOpenChange(false);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[80vh] flex flex-col">
+      <DialogContent className="max-w-3xl h-[80vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>{ticket.subject}</DialogTitle>
           <div className="flex items-center gap-2 mt-2">
@@ -126,9 +165,9 @@ export function TicketMessagesDialog({ ticket, open, onOpenChange }: TicketMessa
           </div>
         </DialogHeader>
 
-        <div className="flex-1 flex flex-col min-h-0">
+        <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
           {/* Original ticket message */}
-          <div className="mb-4 p-4 bg-muted/50 rounded-lg">
+          <div className="mb-4 p-4 bg-muted/50 rounded-lg flex-shrink-0">
             <p className="text-sm font-medium mb-2">Original Message:</p>
             <p className="text-sm text-muted-foreground">{ticket.message}</p>
             <p className="text-xs text-muted-foreground mt-2">
@@ -137,8 +176,8 @@ export function TicketMessagesDialog({ ticket, open, onOpenChange }: TicketMessa
           </div>
 
           {/* Messages */}
-          <ScrollArea className="flex-1 pr-4">
-            <div className="space-y-4">
+          <ScrollArea className="flex-1 min-h-0">
+            <div className="space-y-4 pr-4 pb-4">
               {messages.map((msg) => {
                 const isAdminMessage = msg.user_id !== ticket.user_id;
                 
@@ -198,8 +237,16 @@ export function TicketMessagesDialog({ ticket, open, onOpenChange }: TicketMessa
                 variant="outline"
                 onClick={() => onOpenChange(false)}
               >
-                Close
+                Cancel
               </Button>
+              {ticket.status !== 'closed' && ticket.status !== 'resolved' && (
+                <Button
+                  variant="destructive"
+                  onClick={handleCloseTicket}
+                >
+                  Close Ticket
+                </Button>
+              )}
               <Button
                 onClick={handleSendMessage}
                 disabled={isSubmitting || !newMessage.trim()}
@@ -211,6 +258,15 @@ export function TicketMessagesDialog({ ticket, open, onOpenChange }: TicketMessa
           </div>
         </div>
       </DialogContent>
+
+      <TicketFeedbackDialog
+        open={showFeedbackDialog}
+        onOpenChange={setShowFeedbackDialog}
+        ticketId={ticket.id}
+        staffId={ticket.claimed_by || ''}
+        staffName={staffName}
+        onComplete={handleFeedbackComplete}
+      />
     </Dialog>
   );
 }
