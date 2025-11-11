@@ -1095,7 +1095,7 @@ export default function Analytics() {
           <p className="text-sm text-muted-foreground">Current balances and obligations</p>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 md:grid-cols-3">
             <Card className="border-orange-200 dark:border-orange-900/30">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Credit Utilization</CardTitle>
@@ -1185,19 +1185,6 @@ export default function Analytics() {
                   }, 0))}
                 </div>
                 <p className="text-xs text-muted-foreground">Monthly recurring</p>
-              </CardContent>
-            </Card>
-
-            <Card className={`${metrics.totalForecastedIncome - metrics.totalForecastedExpenses >= 0 ? 'border-green-200 dark:border-green-900/30' : 'border-red-200 dark:border-red-900/30'}`}>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Net Forecast</CardTitle>
-                <Target className="h-4 w-4 text-blue-600" />
-              </CardHeader>
-              <CardContent>
-                <div className={`text-2xl font-bold ${metrics.totalForecastedIncome - metrics.totalForecastedExpenses >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {metrics.totalForecastedIncome - metrics.totalForecastedExpenses >= 0 ? '+' : ''}{formatCurrency(metrics.totalForecastedIncome - metrics.totalForecastedExpenses)}
-                </div>
-                <p className="text-xs text-muted-foreground">Income vs Expenses</p>
               </CardContent>
             </Card>
           </div>
