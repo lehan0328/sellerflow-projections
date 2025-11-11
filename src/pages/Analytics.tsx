@@ -898,8 +898,8 @@ export default function Analytics() {
     try {
       // Capture sections in order
       await addSection('[data-pdf-section="header"]', 0);
-      await addSection('[data-pdf-section="metrics-top"]', 5);
-      await addSection('[data-pdf-section="grouped-metrics"]', 5);
+      await addSection('[data-pdf-section="metrics-top"]', 3);
+      await addSection('[data-pdf-section="grouped-metrics"]', 2);
       await addSection('[data-pdf-section="income-expense-breakdown"]', 8);
       await addSection('[data-pdf-section="balance-chart"]', 8);
       await addSection('[data-pdf-section="vendors-table"]', 8);
@@ -962,7 +962,6 @@ export default function Analytics() {
               : "Auren Business Report"}
           </h1>
           <p className="text-lg font-medium text-muted-foreground mt-1">{format(new Date(), 'MMMM yyyy')}</p>
-          <p className="text-muted-foreground mt-1">Comprehensive insights into your financial performance</p>
         </div>
         <Button 
           onClick={handleDownloadPDF} 
