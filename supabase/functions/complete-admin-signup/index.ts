@@ -53,19 +53,49 @@ serve(async (req) => {
 
     console.log(`[ADMIN_SIGNUP] Valid invitation for: ${invitation.email}`);
 
-    // Create user account
-    const { data: userData, error: createError } = await supabaseClient.auth.admin.createUser({
-      email: invitation.email,
-      password: password,
-      email_confirm: true, // Auto-confirm email for admin users
-    });
+    // Check if user already exists
+    const { data: existingUsers } = await supabaseClient.auth.admin.listUsers();
+    const existingUser = existingUsers?.users.find(u => u.email === invitation.email);
 
-    if (createError) {
-      console.error("[ADMIN_SIGNUP] User creation error:", createError);
-      throw new Error(`Failed to create account: ${createError.message}`);
+    let userId: string;
+
+    if (existingUser) {
+      console.log(`[ADMIN_SIGNUP] User already exists, updating password: ${existingUser.id}`);
+      
+      // Update existing user's password and confirm email
+      const { data: updatedUser, error: updateError } = await supabaseClient.auth.admin.updateUserById(
+        existingUser.id,
+        { 
+          password: password,
+          email_confirm: true
+        }
+      );
+
+      if (updateError) {
+        console.error("[ADMIN_SIGNUP] User update error:", updateError);
+        throw new Error(`Failed to update account: ${updateError.message}`);
+      }
+
+      userId = existingUser.id;
+      console.log(`[ADMIN_SIGNUP] User password updated: ${userId}`);
+    } else {
+      console.log(`[ADMIN_SIGNUP] Creating new user: ${invitation.email}`);
+      
+      // Create new user account
+      const { data: userData, error: createError } = await supabaseClient.auth.admin.createUser({
+        email: invitation.email,
+        password: password,
+        email_confirm: true, // Auto-confirm email for admin users
+      });
+
+      if (createError) {
+        console.error("[ADMIN_SIGNUP] User creation error:", createError);
+        throw new Error(`Failed to create account: ${createError.message}`);
+      }
+
+      userId = userData.user.id;
+      console.log(`[ADMIN_SIGNUP] User created: ${userId}`);
     }
-
-    console.log(`[ADMIN_SIGNUP] User created: ${userData.user.id}`);
 
     // Mark invitation as used and store the name
     const { error: updateError } = await supabaseClient
