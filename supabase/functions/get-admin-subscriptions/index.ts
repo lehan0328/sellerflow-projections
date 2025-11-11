@@ -13,7 +13,7 @@ serve(async (req) => {
   }
 
   try {
-    const supabaseClient = createClient(
+    const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
       { auth: { persistSession: false } }
@@ -25,8 +25,14 @@ serve(async (req) => {
       throw new Error("No authorization header");
     }
 
-    const token = authHeader.replace("Bearer ", "");
-    const { data: { user }, error: userError } = await supabaseClient.auth.getUser(token);
+    // Use anon client for token verification
+    const supabaseClient = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+      { global: { headers: { Authorization: authHeader } } }
+    );
+    
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
     
     if (userError || !user) {
       throw new Error("Unauthorized");
@@ -45,7 +51,7 @@ serve(async (req) => {
     });
 
     // Fetch all profiles with Stripe customer IDs to check their subscriptions
-    const { data: profiles, error: profilesError } = await supabaseClient
+    const { data: profiles, error: profilesError } = await supabaseAdmin
       .from('profiles')
       .select('*')
       .not('stripe_customer_id', 'is', null)
@@ -54,7 +60,7 @@ serve(async (req) => {
     if (profilesError) throw profilesError;
 
     // Get all users to map emails
-    const { data: { users }, error: usersError } = await supabaseClient.auth.admin.listUsers();
+    const { data: { users }, error: usersError } = await supabaseAdmin.auth.admin.listUsers();
     if (usersError) throw usersError;
 
     const emailMap = new Map(users.map(u => [u.id, u.email || '']));
