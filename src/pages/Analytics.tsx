@@ -962,6 +962,7 @@ export default function Analytics() {
               : "Auren Business Report"}
           </h1>
           <p className="text-base font-medium text-muted-foreground mt-1">{format(new Date(), 'MMMM yyyy')}</p>
+          <p className="text-sm text-muted-foreground mt-0.5">Real-time financial insights and comprehensive performance analysis</p>
         </div>
         <Button 
           onClick={handleDownloadPDF} 
@@ -1319,29 +1320,6 @@ export default function Analytics() {
                     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
                     const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
                     return tx.status === 'pending' && txDate >= startOfMonth && txDate <= endOfMonth;
-                  }).reduce((sum, tx) => sum + Number(tx.amount || 0), 0))}
-                </div>
-              </div>
-            </div>
-            <div className="flex justify-between items-center p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
-              <span className="font-medium">Scheduled</span>
-              <div className="text-right">
-                <div className="text-blue-600 font-bold">
-                  {vendorTransactions.filter(tx => {
-                    const txDate = new Date(tx.dueDate);
-                    const now = new Date();
-                    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-                    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
-                    return tx.status === 'scheduled' && txDate >= startOfMonth && txDate <= endOfMonth;
-                  }).length} purchase orders
-                </div>
-                <div className="text-sm text-blue-600 font-semibold">
-                  {formatCurrency(vendorTransactions.filter(tx => {
-                    const txDate = new Date(tx.dueDate);
-                    const now = new Date();
-                    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-                    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
-                    return tx.status === 'scheduled' && txDate >= startOfMonth && txDate <= endOfMonth;
                   }).reduce((sum, tx) => sum + Number(tx.amount || 0), 0))}
                 </div>
               </div>
