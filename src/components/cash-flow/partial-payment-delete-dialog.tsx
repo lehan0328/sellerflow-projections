@@ -43,6 +43,12 @@ export const PartialPaymentDeleteDialog = ({
             Delete Partially Paid Transaction
           </AlertDialogTitle>
           <AlertDialogDescription className="space-y-4 pt-4">
+            <div className="rounded-lg border-2 border-destructive bg-destructive/10 p-4">
+              <p className="text-foreground font-semibold">
+                ⚠️ Warning: This action is permanent and cannot be recovered.
+              </p>
+            </div>
+
             <div className="rounded-lg border bg-muted/50 p-4 space-y-3">
               <div className="font-semibold text-foreground">
                 Transaction: {baseDescription}

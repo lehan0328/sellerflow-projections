@@ -50,9 +50,11 @@ export const IncomeOverview = ({ incomeItems, bankTransactions = [], onCollectTo
   const [customFromDate, setCustomFromDate] = useState<Date | undefined>();
   const [customToDate, setCustomToDate] = useState<Date | undefined>();
   
-  // State for confirmation dialog
+  // State for confirmation dialogs
   const [confirmingIncome, setConfirmingIncome] = useState<IncomeItem | null>(null);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [deletingIncome, setDeletingIncome] = useState<IncomeItem | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   // Filter and sort income items
   const filteredAndSortedIncomes = useMemo(() => {
@@ -135,6 +137,24 @@ export const IncomeOverview = ({ incomeItems, bankTransactions = [], onCollectTo
   const handleCancelReceiveToday = () => {
     setShowConfirmDialog(false);
     setConfirmingIncome(null);
+  };
+
+  const handleDeleteClick = (income: IncomeItem) => {
+    setDeletingIncome(income);
+    setShowDeleteDialog(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (deletingIncome) {
+      onDeleteIncome?.(deletingIncome);
+    }
+    setShowDeleteDialog(false);
+    setDeletingIncome(null);
+  };
+
+  const handleCancelDelete = () => {
+    setShowDeleteDialog(false);
+    setDeletingIncome(null);
   };
 
   const handleMatch = async (income: IncomeItem) => {
@@ -416,7 +436,7 @@ export const IncomeOverview = ({ incomeItems, bankTransactions = [], onCollectTo
                               <Button 
                                 variant="outline" 
                                 size="sm"
-                                onClick={() => onDeleteIncome?.(income)}
+                                onClick={() => handleDeleteClick(income)}
                                 className="text-destructive hover:text-destructive"
                               >
                                 <Trash2 className="h-3 w-3" />
@@ -437,7 +457,7 @@ export const IncomeOverview = ({ incomeItems, bankTransactions = [], onCollectTo
         </div>
       </CardContent>
       
-      {/* Confirmation Dialog */}
+      {/* Receive Confirmation Dialog */}
       <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -459,6 +479,31 @@ export const IncomeOverview = ({ incomeItems, bankTransactions = [], onCollectTo
               className="bg-gradient-primary"
             >
               Yes, Receive Today
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Income Transaction</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{deletingIncome?.description}"?
+              <br /><br />
+              <strong className="text-destructive">This action is permanent and cannot be recovered.</strong> The transaction will be completely removed from your records.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCancelDelete}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleConfirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete Permanently
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

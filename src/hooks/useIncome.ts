@@ -269,32 +269,6 @@ export const useIncome = () => {
       const income = incomeItems.find(item => item.id === id);
       if (!income) throw new Error('Income not found');
 
-      // Save to deleted_transactions before deleting
-      const { error: saveError } = await supabase
-        .from('deleted_transactions')
-        .insert({
-          user_id: user.id,
-          transaction_type: 'income',
-          original_id: income.id,
-          name: income.description,
-          amount: income.amount,
-          description: income.description,
-          payment_date: formatDateForDB(income.paymentDate),
-          status: income.status,
-          category: income.category,
-          metadata: {
-            source: income.source,
-            isRecurring: income.isRecurring,
-            recurringFrequency: income.recurringFrequency,
-            notes: income.notes,
-            customerId: income.customerId
-          }
-        });
-
-      if (saveError) {
-        console.error('Error saving deleted income:', saveError);
-      }
-
       // Delete from income table
       const { error } = await supabase
         .from('income')
@@ -321,7 +295,7 @@ export const useIncome = () => {
       }
 
       setIncomeItems(prev => prev.filter(item => item.id !== id));
-      toast.success('Income deleted successfully');
+      toast.success('Income deleted permanently');
       return true;
     } catch (error) {
       console.error('Error deleting income:', error);

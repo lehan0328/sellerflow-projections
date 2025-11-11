@@ -744,15 +744,17 @@ export const VendorsOverview = ({
                               </TooltipContent>
                               <AlertDialogContent>
                                 <AlertDialogHeader>
-                                  <AlertDialogTitle>Delete Transaction</AlertDialogTitle>
+                                  <AlertDialogTitle>Delete Purchase Order</AlertDialogTitle>
                                   <AlertDialogDescription>
-                                    This will permanently delete this purchase order transaction. This action cannot be undone.
+                                    Are you sure you want to delete this purchase order from {tx.vendorName}?
+                                    <br /><br />
+                                    <strong className="text-destructive">This action is permanent and cannot be recovered.</strong> The transaction will be completely removed from your records.
                                   </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
                                   <AlertDialogCancel>Cancel</AlertDialogCancel>
                                   <AlertDialogAction onClick={() => handleDeleteTransaction(tx)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                                    Delete
+                                    Delete Permanently
                                   </AlertDialogAction>
                                 </AlertDialogFooter>
                               </AlertDialogContent>
