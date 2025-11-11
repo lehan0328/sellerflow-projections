@@ -32,8 +32,9 @@ serve(async (req) => {
     
     const { data: userData, error: userError } = await supabaseClient.auth.getUser();
     if (userError) throw userError;
-
-    const { userIds } = await req.json();
+    
+    const body = await req.json();
+    const { userIds } = body;
 
     // Get the requesting user's account_id
     const { data: requestingUserProfile } = await supabaseAdmin
