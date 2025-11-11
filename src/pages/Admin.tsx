@@ -32,18 +32,33 @@ const Admin = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("signups");
 
-  const tabs = [
-    { value: "signups", label: "Signup Analytics", icon: UserPlus },
-    { value: "customers", label: "Customers", icon: Users },
-    { value: "subscriptions", label: "Subscriptions", icon: CreditCard },
-    { value: "send-update", label: "Send Update", icon: Megaphone },
-    { value: "support-dashboard", label: "Support Dashboard", icon: MessageSquare },
-    { value: "support", label: "Support Tickets", icon: LifeBuoy },
-    { value: "referrals", label: "Referrals", icon: Gift },
-    { value: "affiliates", label: "Affiliates", icon: UserCog },
-    { value: "features", label: "Feature Requests", icon: MessageSquare },
-    { value: "forecast-accuracy", label: "Forecast Accuracy", icon: Target },
-    { value: "plan-override", label: "Plan Management", icon: Settings },
+  const tabSections = [
+    {
+      title: "Business Management",
+      tabs: [
+        { value: "signups", label: "Signup Analytics", icon: UserPlus },
+        { value: "customers", label: "Customers", icon: Users },
+        { value: "subscriptions", label: "Subscriptions", icon: CreditCard },
+        { value: "send-update", label: "Send Update", icon: Megaphone },
+        { value: "support-dashboard", label: "Support Dashboard", icon: MessageSquare },
+        { value: "referrals", label: "Referrals", icon: Gift },
+        { value: "affiliates", label: "Affiliates", icon: UserCog },
+        { value: "forecast-accuracy", label: "Forecast Accuracy", icon: Target },
+      ]
+    },
+    {
+      title: "Support & Features",
+      tabs: [
+        { value: "support", label: "Support Tickets", icon: LifeBuoy },
+        { value: "features", label: "Feature Requests", icon: MessageSquare },
+      ]
+    },
+    {
+      title: "System",
+      tabs: [
+        { value: "plan-override", label: "Plan Management", icon: Settings },
+      ]
+    }
   ];
 
   return (
@@ -75,26 +90,38 @@ const Admin = () => {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex gap-4">
           {/* Sidebar Navigation */}
           <div className="w-52 flex-shrink-0">
-            <div className="sticky top-6 space-y-1 p-2 rounded-lg border bg-card">
-              {tabs.map((tab) => {
-                const Icon = tab.icon;
-                const isActive = activeTab === tab.value;
-                
-                return (
-                  <button
-                    key={tab.value}
-                    onClick={() => setActiveTab(tab.value)}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-md text-sm font-medium transition-all ${
-                      isActive
-                        ? 'bg-primary text-primary-foreground shadow-sm'
-                        : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
-                    }`}
-                  >
-                    <Icon className="h-5 w-5 flex-shrink-0" />
-                    <span className="text-left">{tab.label}</span>
-                  </button>
-                );
-              })}
+            <div className="sticky top-6 space-y-4 p-2 rounded-lg border bg-card">
+              {tabSections.map((section, sectionIndex) => (
+                <div key={section.title}>
+                  <h3 className="px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    {section.title}
+                  </h3>
+                  <div className="space-y-1">
+                    {section.tabs.map((tab) => {
+                      const Icon = tab.icon;
+                      const isActive = activeTab === tab.value;
+                      
+                      return (
+                        <button
+                          key={tab.value}
+                          onClick={() => setActiveTab(tab.value)}
+                          className={`w-full flex items-center gap-3 px-4 py-3 rounded-md text-sm font-medium transition-all ${
+                            isActive
+                              ? 'bg-primary text-primary-foreground shadow-sm'
+                              : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                          }`}
+                        >
+                          <Icon className="h-5 w-5 flex-shrink-0" />
+                          <span className="text-left">{tab.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {sectionIndex < tabSections.length - 1 && (
+                    <div className="h-px bg-border my-2" />
+                  )}
+                </div>
+              ))}
             </div>
           </div>
 
