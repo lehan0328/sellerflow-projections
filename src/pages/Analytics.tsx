@@ -966,10 +966,11 @@ export default function Analytics() {
   return <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between bg-gradient-to-r from-primary/10 to-primary/5 p-8 rounded-lg border border-primary/20 mb-2" data-pdf-section="header">
         <div className="flex items-center gap-6 flex-1">
-          <img src={aurenLogo} alt="Auren" className="h-12 w-auto font-display" />
-          <div className="border-l border-primary/30 pl-6">
+          <div>
             <h1 className="text-3xl font-bold text-primary">
-              {companyName ? `Auren x ${companyName}` : "Auren Business Analytics"}
+              {companyName 
+                ? `(${companyName.charAt(0).toUpperCase() + companyName.slice(1)}) Business Report`
+                : "(Auren) Business Report"}
             </h1>
             <p className="text-lg font-medium text-primary/80 mt-1">{format(new Date(), 'MMMM yyyy')}</p>
             <p className="text-muted-foreground mt-2">Comprehensive insights into your financial performance</p>
