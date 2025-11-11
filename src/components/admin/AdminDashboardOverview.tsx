@@ -26,6 +26,7 @@ interface DashboardMetrics {
   activeSubscriptions: number;
   trialUsers: number;
   openTickets: number;
+  awaitingResponseTickets: number;
   needsResponseTickets: number;
   pendingFeatureRequests: number;
   activeReferrals: number;
@@ -47,6 +48,7 @@ export function AdminDashboardOverview() {
     activeSubscriptions: 0,
     trialUsers: 0,
     openTickets: 0,
+    awaitingResponseTickets: 0,
     needsResponseTickets: 0,
     pendingFeatureRequests: 0,
     activeReferrals: 0,
@@ -109,11 +111,12 @@ export function AdminDashboardOverview() {
       const { data: tickets, error: ticketsError } = await supabase
         .from('support_tickets')
         .select('id, status')
-        .in('status', ['open', 'needs_response']);
+        .in('status', ['open', 'in_progress', 'needs_response']);
 
       if (ticketsError) throw ticketsError;
 
       const openTickets = tickets?.length || 0;
+      const awaitingResponseTickets = tickets?.filter(t => t.status === 'open' || t.status === 'in_progress').length || 0;
       const needsResponseTickets = tickets?.filter(t => t.status === 'needs_response').length || 0;
 
       // Fetch feature requests
@@ -144,6 +147,7 @@ export function AdminDashboardOverview() {
         activeSubscriptions,
         trialUsers,
         openTickets,
+        awaitingResponseTickets,
         needsResponseTickets,
         pendingFeatureRequests,
         activeReferrals,
@@ -313,13 +317,20 @@ export function AdminDashboardOverview() {
       {/* Support Metrics */}
       <div className="space-y-2">
         <h3 className="text-lg font-semibold">Support & Engagement</h3>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <MetricCard
             title="Open Tickets"
             value={metrics.openTickets}
             icon={LifeBuoy}
             description="Total support tickets"
             variant={metrics.openTickets > 10 ? "warning" : "default"}
+          />
+          <MetricCard
+            title="Awaiting Response"
+            value={metrics.awaitingResponseTickets}
+            icon={Clock}
+            description="Staff waiting for customer"
+            variant="default"
           />
           <MetricCard
             title="Needs Response"
