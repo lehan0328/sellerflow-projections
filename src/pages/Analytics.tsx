@@ -1148,10 +1148,32 @@ export default function Analytics() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-amber-600">
-                  {formatCurrency(dbTransactions.filter(tx => tx.type === 'purchase_order' && tx.status === 'pending').reduce((sum, tx) => sum + tx.amount, 0))}
+                  {formatCurrency((() => {
+                    const now = new Date();
+                    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+                    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+                    return dbTransactions.filter(tx => {
+                      const txDate = new Date(tx.transactionDate);
+                      return tx.type === 'purchase_order' && 
+                             tx.status === 'pending' && 
+                             txDate >= startOfMonth && 
+                             txDate <= endOfMonth;
+                    }).reduce((sum, tx) => sum + tx.amount, 0);
+                  })())}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  {dbTransactions.filter(tx => tx.type === 'purchase_order' && tx.status === 'pending').length} pending
+                  {(() => {
+                    const now = new Date();
+                    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+                    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+                    return dbTransactions.filter(tx => {
+                      const txDate = new Date(tx.transactionDate);
+                      return tx.type === 'purchase_order' && 
+                             tx.status === 'pending' && 
+                             txDate >= startOfMonth && 
+                             txDate <= endOfMonth;
+                    }).length;
+                  })()} pending this month
                 </p>
               </CardContent>
             </Card>
