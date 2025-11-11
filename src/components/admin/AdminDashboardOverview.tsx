@@ -110,14 +110,14 @@ export function AdminDashboardOverview() {
       // Fetch support tickets
       const { data: tickets, error: ticketsError } = await supabase
         .from('support_tickets')
-        .select('id, status')
-        .in('status', ['open', 'in_progress', 'needs_response']);
+        .select('id, status, claimed_by');
 
       if (ticketsError) throw ticketsError;
 
-      const openTickets = tickets?.length || 0;
-      const awaitingResponseTickets = tickets?.filter(t => t.status === 'open' || t.status === 'in_progress').length || 0;
-      const needsResponseTickets = tickets?.filter(t => t.status === 'needs_response').length || 0;
+      // Open tickets = new unclaimed tickets awaiting to be claimed
+      const openTickets = tickets?.filter(t => !t.claimed_by && t.status !== 'closed' && t.status !== 'resolved').length || 0;
+      const awaitingResponseTickets = tickets?.filter(t => t.claimed_by && (t.status === 'open' || t.status === 'in_progress')).length || 0;
+      const needsResponseTickets = tickets?.filter(t => t.claimed_by && t.status === 'needs_response').length || 0;
 
       // Fetch feature requests
       const { data: features, error: featuresError } = await supabase
@@ -322,7 +322,7 @@ export function AdminDashboardOverview() {
             title="Open Tickets"
             value={metrics.openTickets}
             icon={LifeBuoy}
-            description="Total support tickets"
+            description="New tickets awaiting claim"
             variant={metrics.openTickets > 10 ? "warning" : "default"}
           />
           <MetricCard
