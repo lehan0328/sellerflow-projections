@@ -30,6 +30,16 @@ interface DashboardStats {
   responseTimeByCategory: Array<{ category: string; avgHours: number }>;
 }
 
+interface MonthlyMetrics {
+  cases_opened: number;
+  cases_closed: number;
+  avg_resolution_days: number;
+  first_response_hours: number;
+  avg_response_hours: number;
+  sla_within_4_hours: number;
+  sla_within_24_hours: number;
+}
+
 interface StaffMember {
   email: string;
   role: string;
@@ -51,6 +61,7 @@ export const AdminSupportDashboard = () => {
   const [selectedMonth, setSelectedMonth] = useState<string>(format(new Date(), 'yyyy-MM'));
   const [showAllCasesDialog, setShowAllCasesDialog] = useState(false);
   const [showReviewsDialog, setShowReviewsDialog] = useState(false);
+  const [previousMonthMetrics, setPreviousMonthMetrics] = useState<MonthlyMetrics | null>(null);
 
   // Generate last 12 months for dropdown
   const monthOptions = Array.from({ length: 12 }, (_, i) => {
@@ -64,7 +75,31 @@ export const AdminSupportDashboard = () => {
   useEffect(() => {
     fetchDashboardStats();
     loadStaffList();
+    loadPreviousMonthMetrics();
   }, [selectedMonth]);
+
+  const loadPreviousMonthMetrics = async () => {
+    try {
+      // Get previous month in YYYY-MM format
+      const currentDate = new Date(selectedMonth + '-01');
+      const prevMonth = subMonths(currentDate, 1);
+      const prevMonthStr = format(prevMonth, 'yyyy-MM');
+
+      const { data, error } = await supabase
+        .from('monthly_support_metrics')
+        .select('*')
+        .eq('month_year', prevMonthStr)
+        .single();
+
+      if (error && error.code !== 'PGRST116') { // Ignore "no rows" error
+        console.error('Error loading previous month metrics:', error);
+      }
+
+      setPreviousMonthMetrics(data);
+    } catch (error) {
+      console.error('Error loading previous month metrics:', error);
+    }
+  };
 
   const loadStaffList = async () => {
     try {
@@ -479,6 +514,11 @@ export const AdminSupportDashboard = () => {
             <p className="text-xs text-muted-foreground mt-1">
               Days from open to closed
             </p>
+            {previousMonthMetrics && (
+              <p className="text-xs text-muted-foreground mt-1">
+                vs {previousMonthMetrics.avg_resolution_days} days last month
+              </p>
+            )}
           </CardContent>
         </Card>
         </div>
@@ -496,6 +536,11 @@ export const AdminSupportDashboard = () => {
             <p className="text-xs text-muted-foreground mt-1">
               Average time to first admin reply
             </p>
+            {previousMonthMetrics && (
+              <p className="text-xs text-muted-foreground mt-1">
+                vs {previousMonthMetrics.first_response_hours}h last month
+              </p>
+            )}
           </CardContent>
         </Card>
 
@@ -509,6 +554,11 @@ export const AdminSupportDashboard = () => {
             <p className="text-xs text-muted-foreground mt-1">
               Average reply time to customers
             </p>
+            {previousMonthMetrics && (
+              <p className="text-xs text-muted-foreground mt-1">
+                vs {previousMonthMetrics.avg_response_hours}h last month
+              </p>
+            )}
           </CardContent>
         </Card>
 
@@ -525,6 +575,11 @@ export const AdminSupportDashboard = () => {
             <p className="text-xs text-muted-foreground">
               {stats.slaCompliance.within24Hours}% within 24 hours
             </p>
+            {previousMonthMetrics && (
+              <p className="text-xs text-muted-foreground mt-1">
+                Last month: {previousMonthMetrics.sla_within_4_hours} within 4h, {previousMonthMetrics.sla_within_24_hours} within 24h
+              </p>
+            )}
           </CardContent>
         </Card>
       </div>

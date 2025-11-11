@@ -1525,6 +1525,54 @@ export type Database = {
           },
         ]
       }
+      monthly_support_metrics: {
+        Row: {
+          avg_resolution_days: number | null
+          avg_response_hours: number | null
+          cases_by_category: Json | null
+          cases_closed: number
+          cases_opened: number
+          created_at: string | null
+          first_response_hours: number | null
+          id: string
+          month_year: string
+          response_time_by_category: Json | null
+          response_time_by_priority: Json | null
+          sla_within_24_hours: number | null
+          sla_within_4_hours: number | null
+        }
+        Insert: {
+          avg_resolution_days?: number | null
+          avg_response_hours?: number | null
+          cases_by_category?: Json | null
+          cases_closed?: number
+          cases_opened?: number
+          created_at?: string | null
+          first_response_hours?: number | null
+          id?: string
+          month_year: string
+          response_time_by_category?: Json | null
+          response_time_by_priority?: Json | null
+          sla_within_24_hours?: number | null
+          sla_within_4_hours?: number | null
+        }
+        Update: {
+          avg_resolution_days?: number | null
+          avg_response_hours?: number | null
+          cases_by_category?: Json | null
+          cases_closed?: number
+          cases_opened?: number
+          created_at?: string | null
+          first_response_hours?: number | null
+          id?: string
+          month_year?: string
+          response_time_by_category?: Json | null
+          response_time_by_priority?: Json | null
+          sla_within_24_hours?: number | null
+          sla_within_4_hours?: number | null
+        }
+        Relationships: []
+      }
       notification_history: {
         Row: {
           account_id: string | null
