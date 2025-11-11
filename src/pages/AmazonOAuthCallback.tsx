@@ -4,11 +4,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Card } from "@/components/ui/card";
 import { Loader2, CheckCircle2, XCircle } from "lucide-react";
+import { useLimitCheck } from "@/contexts/LimitCheckContext";
 
 const AmazonOAuthCallback = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { triggerLimitCheck } = useLimitCheck();
   const [status, setStatus] = useState<'processing' | 'success' | 'error'>('processing');
   const [message, setMessage] = useState('Processing Amazon authorization...');
 
@@ -71,6 +73,9 @@ const AmazonOAuthCallback = () => {
         }
         
         setStatus('success');
+        
+        // Trigger limit check after successful Amazon connection
+        triggerLimitCheck();
         
         // Check if coming from onboarding
         const fromOnboarding = searchParams.get('from') === 'onboarding';

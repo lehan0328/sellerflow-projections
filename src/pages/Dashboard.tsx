@@ -109,6 +109,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCreditCards } from "@/hooks/useCreditCards";
 import { usePlanLimits } from "@/hooks/usePlanLimits";
 import { LimitEnforcementModal } from "@/components/LimitEnforcementModal";
+import { LimitCheckProvider } from "@/contexts/LimitCheckContext";
 
 import { useVendors, type Vendor } from "@/hooks/useVendors";
 import { useTransactions } from "@/hooks/useTransactions";
@@ -502,24 +503,9 @@ const Dashboard = () => {
     queryClient.invalidateQueries({ queryKey: ["amazon-payouts"] });
   }, [displayBankBalance, queryClient]);
 
-  // Manual function to check limits after specific actions (adding connections)
-  // Only call this after successfully adding bank/Amazon/team member
-  const checkLimitsAfterAction = () => {
-    console.log('[Dashboard] Checking limits after action:', {
-      isOverBankLimit,
-      isOverAmazonLimit,
-      isOverTeamLimit,
-      currentUsage,
-      planLimits
-    });
-    
-    if (isOverBankLimit) {
-      setShowLimitModal({ open: true, type: "bank_connection" });
-    } else if (isOverAmazonLimit) {
-      setShowLimitModal({ open: true, type: "amazon_connection" });
-    } else if (isOverTeamLimit) {
-      setShowLimitModal({ open: true, type: "user" });
-    }
+  // Callback for limit violations triggered by LimitCheckProvider
+  const handleLimitViolation = (type: 'bank_connection' | 'amazon_connection' | 'user') => {
+    setShowLimitModal({ open: true, type });
   };
 
   const { amazonPayouts, advancedModelingEnabled } = useAmazonPayouts();
@@ -3433,8 +3419,9 @@ const Dashboard = () => {
   };
 
   return (
-    <SidebarProvider>
-      <div className="h-screen flex w-full bg-background overflow-hidden relative">
+    <LimitCheckProvider onLimitViolation={handleLimitViolation}>
+      <SidebarProvider>
+        <div className="h-screen flex w-full bg-background overflow-hidden relative">
         {/* Floating watermark behind everything */}
         <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-0">
           <div className="absolute inset-0 flex items-center justify-center opacity-[0.10]">
@@ -3680,6 +3667,7 @@ const Dashboard = () => {
         </div>
       </div>
     </SidebarProvider>
+    </LimitCheckProvider>
   );
 };
 

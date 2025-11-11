@@ -16,6 +16,7 @@ import { useCreditCards } from "@/hooks/useCreditCards";
 import { usePlanLimits } from "@/hooks/usePlanLimits";
 import { UpgradeModal } from "@/components/upgrade-modal";
 import { AddonLimitDialog } from "./addon-limit-dialog";
+import { useLimitCheck } from "@/contexts/LimitCheckContext";
 
 interface AddAccountModalProps {
   open: boolean;
@@ -37,6 +38,7 @@ export const AddAccountModal = ({ open, onOpenChange }: AddAccountModalProps) =>
   const { refetch: refetchBankAccounts } = useBankAccounts();
   const { refetch: refetchCreditCards } = useCreditCards();
   const { canAddBankConnection, canAddAmazonConnection, planLimits, currentUsage } = usePlanLimits();
+  const { triggerLimitCheck } = useLimitCheck();
 
   // Stripe Financial Connections handler
   const handleStripeConnect = async () => {
@@ -79,6 +81,7 @@ export const AddAccountModal = ({ open, onOpenChange }: AddAccountModalProps) =>
             toast.success(`Successfully connected ${accounts.accounts.length} account(s)`);
             refetchBankAccounts();
             refetchCreditCards();
+            triggerLimitCheck(); // Check limits after successful connection
             onOpenChange(false);
           }
           setIsLoading(false);
@@ -145,6 +148,7 @@ export const AddAccountModal = ({ open, onOpenChange }: AddAccountModalProps) =>
         toast.success(`Successfully connected ${metadata.accounts?.length || 0} account(s)!`);
         refetchBankAccounts();
         refetchCreditCards();
+        triggerLimitCheck(); // Check limits after successful connection
         onOpenChange(false);
       } catch (error: any) {
         console.error('Error exchanging Plaid token:', error);

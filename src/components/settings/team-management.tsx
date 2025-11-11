@@ -45,6 +45,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { usePlanLimits } from "@/hooks/usePlanLimits";
 import { AddonLimitDialog } from "@/components/cash-flow/addon-limit-dialog";
+import { useLimitCheck } from "@/contexts/LimitCheckContext";
 
 interface TeamMember {
   id: string;
@@ -70,6 +71,7 @@ export function TeamManagement() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const { canAddTeamMember, currentUsage, planLimits } = usePlanLimits();
+  const { triggerLimitCheck } = useLimitCheck();
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showAddonDialog, setShowAddonDialog] = useState(false);
@@ -222,6 +224,7 @@ export function TeamManagement() {
       setInviteEmail("");
       setInviteRole('staff');
       queryClient.invalidateQueries({ queryKey: ['pending-invites'] });
+      triggerLimitCheck(); // Check limits after successful invitation
     },
     onError: (error: Error) => {
       if (error.message === 'Team member limit reached') {
@@ -303,6 +306,7 @@ export function TeamManagement() {
       });
       setInviteRole('staff');
       queryClient.invalidateQueries({ queryKey: ['team-members'] });
+      triggerLimitCheck(); // Check limits after successful account creation
     },
     onError: (error: Error) => {
       if (error.message === 'Team member limit reached') {
