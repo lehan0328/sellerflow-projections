@@ -31,7 +31,9 @@ import { AdminSendUpdate } from "@/components/admin/AdminSendUpdate";
 
 const Admin = () => {
   const navigate = useNavigate();
-  const { userRole } = useAdmin();
+  const { isAdmin, userRole } = useAdmin();
+  
+  console.log('[ADMIN] User permissions:', { isAdmin, userRole });
   
   const tabSections = useMemo(() => {
     const allSections = [
@@ -67,18 +69,31 @@ const Admin = () => {
     ];
 
     // Filter sections based on user role
-    return allSections.filter(section => 
-      !userRole || section.rolesAllowed.includes(userRole)
-    );
-  }, [userRole]);
+    // Website admins (isAdmin=true) see everything regardless of userRole
+    const filtered = allSections.filter(section => {
+      if (isAdmin) return true; // Website admins see all sections
+      if (!userRole) return false; // No role = no access
+      return section.rolesAllowed.includes(userRole);
+    });
+    
+    console.log('[ADMIN] Filtered sections:', { 
+      isAdmin, 
+      userRole, 
+      totalSections: allSections.length, 
+      filteredSections: filtered.length,
+      sectionTitles: filtered.map(s => s.title)
+    });
+    
+    return filtered;
+  }, [isAdmin, userRole]);
 
   // Set default active tab based on user role
   const defaultTab = useMemo(() => {
-    if (userRole === 'staff') {
+    if (!isAdmin && userRole === 'staff') {
       return 'support'; // Staff defaults to Support Tickets
     }
-    return 'signups'; // Admin defaults to Signup Analytics
-  }, [userRole]);
+    return 'signups'; // Website admins and account admins default to Signup Analytics
+  }, [isAdmin, userRole]);
 
   const [activeTab, setActiveTab] = useState(defaultTab);
 
