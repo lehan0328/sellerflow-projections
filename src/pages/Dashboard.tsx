@@ -377,6 +377,7 @@ const Dashboard = () => {
   >("bank-accounts");
   const [showPurchaseOrderForm, setShowPurchaseOrderForm] = useState(false);
   const [showIncomeForm, setShowIncomeForm] = useState(false);
+  const [showExpenseForm, setShowExpenseForm] = useState(false);
   const [showRecurringIncomeForm, setShowRecurringIncomeForm] = useState(false);
   const [editingIncome, setEditingIncome] = useState<any>(null);
   const [showEditIncomeForm, setShowEditIncomeForm] = useState(false);
@@ -3490,6 +3491,7 @@ const Dashboard = () => {
           <FloatingMenu
             onAddPurchaseOrder={handleOpenPurchaseOrderForm}
             onAddIncome={() => setShowIncomeForm(true)}
+            onAddExpense={() => setShowExpenseForm(true)}
             onAddRecurringIncome={() => setShowRecurringIncomeForm(true)}
           />
 
@@ -3537,6 +3539,18 @@ const Dashboard = () => {
               onSubmitIncome={handleUpdateIncome}
               onSubmitExpense={handleExpenseSubmit}
               editingIncome={editingIncome}
+              customers={customers}
+              onAddCustomer={addCustomer}
+            />
+          )}
+
+          {showExpenseForm && (
+            <IncomeForm
+              open={showExpenseForm}
+              onOpenChange={setShowExpenseForm}
+              onSubmitIncome={handleIncomeSubmit}
+              onSubmitExpense={handleExpenseSubmit}
+              initialType="expense"
               customers={customers}
               onAddCustomer={addCustomer}
             />

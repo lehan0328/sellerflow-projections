@@ -35,6 +35,7 @@ interface IncomeFormProps {
   editingIncome?: any;
   customers?: Customer[];
   onAddCustomer?: (customerData: any) => void;
+  initialType?: "income" | "expense";
 }
 
 export const IncomeForm = ({ 
@@ -45,14 +46,15 @@ export const IncomeForm = ({
   isRecurring = false, 
   editingIncome,
   customers = [],
-  onAddCustomer
+  onAddCustomer,
+  initialType = "income"
 }: IncomeFormProps) => {
   const { categories: incomeCategories, addCategory: addIncomeCategory } = useCategories('income', isRecurring);
   const { categories: expenseCategories, addCategory: addExpenseCategory } = useCategories('expense', isRecurring);
   const { creditCards } = useCreditCards();
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [formData, setFormData] = useState({
-    type: "income" as "income" | "expense",
+    type: initialType as "income" | "expense",
     customer: "",
     customerId: "",
     transactionName: editingIncome?.transactionName || "",
