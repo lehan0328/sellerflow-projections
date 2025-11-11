@@ -899,7 +899,7 @@ export default function Analytics() {
       }
       
       // Save PDF
-      pdf.save(`Auren-Analytics-Report-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+      pdf.save(`Auren-Analytics-Report-${format(new Date(), 'MMMM-yyyy')}.pdf`);
       toast({
         title: "Success!",
         description: "PDF report generated successfully"
@@ -942,18 +942,13 @@ export default function Analytics() {
   };
   
   return <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between" data-pdf-section="header">
+      <div className="flex items-center justify-between bg-gradient-to-r from-primary/10 to-primary/5 p-6 rounded-lg border border-primary/20" data-pdf-section="header">
         <div className="flex-1">
-          <h1 className="text-3xl font-bold">Business Analytics</h1>
-          <p className="text-muted-foreground">Comprehensive insights into your financial performance</p>
-          <div className="mt-2 flex items-start gap-2 text-sm text-amber-600 dark:text-amber-500">
-            <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
-            <p>
-              <strong>Important:</strong> We recommend downloading this report monthly. Historical month-over-month comparisons are not currently available, so saving regular snapshots will help you track your business trends over time.
-            </p>
-          </div>
+          <h1 className="text-3xl font-bold text-primary">Business Analytics</h1>
+          <p className="text-lg font-medium text-primary/80 mt-1">{format(new Date(), 'MMMM yyyy')}</p>
+          <p className="text-muted-foreground mt-2">Comprehensive insights into your financial performance</p>
         </div>
-        <Button onClick={handleDownloadPDF} className="gap-2 flex-shrink-0 ml-4" data-download-button>
+        <Button onClick={handleDownloadPDF} className="gap-2 flex-shrink-0 ml-4 bg-primary hover:bg-primary/90" data-download-button>
           <Download className="h-4 w-4" />
           Download PDF Report
         </Button>
