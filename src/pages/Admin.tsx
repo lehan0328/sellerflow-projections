@@ -38,11 +38,11 @@ const Admin = () => {
       {
         title: "Overview",
         tabs: [
-          { value: "overview", label: "Dashboard", icon: LayoutDashboard, rolesAllowed: ['admin', 'staff'] },
+          { value: "overview", label: "Dashboard", icon: LayoutDashboard, rolesAllowed: ['admin'] },
           { value: "staff-directory", label: "Staff Directory", icon: UserCog, rolesAllowed: ['admin'] },
           { value: "plan-override", label: "Plan Management", icon: Settings, rolesAllowed: ['admin'] },
         ],
-        rolesAllowed: ['admin', 'staff'] // Section visible to both, but tabs filtered individually
+        rolesAllowed: ['admin'] // Admin only
       },
       {
         title: "Key Business Metrics",
@@ -61,8 +61,8 @@ const Admin = () => {
         tabs: [
           { value: "support", label: "Support Tickets", icon: LifeBuoy, rolesAllowed: ['admin', 'staff'] },
           { value: "features", label: "Feature Requests", icon: MessageSquare, rolesAllowed: ['admin', 'staff'] },
-          { value: "referrals", label: "Referrals", icon: Gift, rolesAllowed: ['admin'] },
-          { value: "affiliates", label: "Affiliates", icon: UserCog, rolesAllowed: ['admin'] },
+          { value: "referrals", label: "Referrals", icon: Gift, rolesAllowed: ['admin', 'staff'] },
+          { value: "affiliates", label: "Affiliates", icon: UserCog, rolesAllowed: ['admin', 'staff'] },
         ],
         rolesAllowed: ['admin', 'staff'] // Both admin and staff can access
       }
@@ -96,8 +96,13 @@ const Admin = () => {
 
   // Set default active tab based on user role
   const defaultTab = useMemo(() => {
-    return 'overview'; // Everyone defaults to Dashboard Overview
-  }, [isAdmin, userRole]);
+    // Staff users default to support tickets
+    if (userRole === 'staff') {
+      return 'support';
+    }
+    // Admin users default to dashboard overview
+    return 'overview';
+  }, [userRole]);
 
   const [activeTab, setActiveTab] = useState(defaultTab);
 
