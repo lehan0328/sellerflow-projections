@@ -47,13 +47,18 @@ export const AdminSupportDashboard = () => {
     try {
       setIsLoading(true);
       
-      // Fetch all tickets
-      const { data: tickets, error } = await supabase
-        .from('support_tickets')
-        .select('*')
-        .order('created_at', { ascending: false });
+      // Fetch all tickets via edge function (handles admin permissions correctly)
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const { data: ticketsData, error } = await supabase.functions.invoke('get-admin-support-tickets', {
+        headers: {
+          Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+        }
+      });
 
       if (error) throw error;
+      const tickets = ticketsData?.tickets || [];
 
       // Fetch all ticket messages
       const { data: messages, error: messagesError } = await supabase
