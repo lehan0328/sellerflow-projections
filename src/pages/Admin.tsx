@@ -45,7 +45,7 @@ const Admin = () => {
         rolesAllowed: ['admin', 'staff'] // Both can see overview
       },
       {
-        title: "Business Management",
+        title: "Key Business Metrics",
         tabs: [
           { value: "signups", label: "Signup Analytics", icon: UserPlus },
           { value: "customers", label: "Customers", icon: Users },
