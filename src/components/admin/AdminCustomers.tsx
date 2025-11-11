@@ -69,9 +69,23 @@ export const AdminCustomers = () => {
     fetchCustomers();
   }, []);
 
-  const fetchCustomers = async () => {
+  const fetchCustomers = async (forceRefresh = false) => {
     try {
       setIsLoading(true);
+      
+      // Force clear any cached data
+      if (forceRefresh) {
+        // Clear localStorage cache
+        try {
+          Object.keys(localStorage).forEach(key => {
+            if (key.includes('supabase') || key.includes('cache')) {
+              localStorage.removeItem(key);
+            }
+          });
+        } catch (e) {
+          console.error('Failed to clear cache:', e);
+        }
+      }
       
       // Fetch all customer profiles (admin/staff are now excluded at database level)
       const { data: profiles, error } = await supabase
@@ -627,6 +641,14 @@ export const AdminCustomers = () => {
               >
                 <Download className="w-4 h-4" />
                 Export CSV
+              </Button>
+              <Button
+                onClick={() => fetchCustomers(true)}
+                disabled={isLoading}
+                variant="outline"
+                size="sm"
+              >
+                {isLoading ? 'Refreshing...' : 'Refresh Data'}
               </Button>
               <Button
                 onClick={backfillStripeCustomerIds}
