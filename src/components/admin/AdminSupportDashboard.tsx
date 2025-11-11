@@ -420,51 +420,6 @@ export const AdminSupportDashboard = () => {
         </CardContent>
       </Card>
 
-      {/* Overall Status Overview */}
-      <div>
-        <h3 className="text-lg font-semibold mb-4">Overall Statistics</h3>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Open Cases</CardTitle>
-            <AlertCircle className="h-4 w-4 text-orange-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalOpen}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Awaiting resolution
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Needs Response</CardTitle>
-            <MessageSquare className="h-4 w-4 text-red-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.needsResponse}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Requires attention
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Closed</CardTitle>
-            <CheckCircle2 className="h-4 w-4 text-green-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalClosed}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              All time resolved
-            </p>
-          </CardContent>
-        </Card>
-        </div>
-      </div>
-
       {/* Monthly Metrics */}
       <div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
