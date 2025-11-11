@@ -962,6 +962,7 @@ export default function Analytics() {
               : "Auren Business Report"}
           </h1>
           <p className="text-lg font-medium text-muted-foreground mt-1">{format(new Date(), 'MMMM yyyy')}</p>
+          <p className="text-muted-foreground mt-1">Comprehensive insights into your financial performance</p>
         </div>
         <Button 
           onClick={handleDownloadPDF} 
