@@ -1064,8 +1064,46 @@ export default function Analytics() {
                 <CalendarIcon className="h-4 w-4 text-green-600" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-green-600">{formatCurrency(metrics.pendingIncome)}</div>
-                <p className="text-xs text-muted-foreground">Other expected</p>
+                <div className="text-2xl font-bold text-green-600">
+                  {formatCurrency((() => {
+                    const now = new Date();
+                    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+                    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+                    
+                    // Get pending income this month (future dates)
+                    return incomeItems.filter(i => {
+                      const paymentDate = new Date(i.paymentDate);
+                      return i.status === 'pending' && 
+                             paymentDate >= startOfMonth && 
+                             paymentDate <= endOfMonth;
+                    }).reduce((sum, i) => sum + i.amount, 0);
+                  })())}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {(() => {
+                    const now = new Date();
+                    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+                    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+                    
+                    const pendingCount = incomeItems.filter(i => {
+                      const paymentDate = new Date(i.paymentDate);
+                      return i.status === 'pending' && 
+                             paymentDate >= startOfMonth && 
+                             paymentDate <= endOfMonth &&
+                             paymentDate > now;
+                    }).length;
+                    
+                    const completedAmount = incomeItems.filter(i => {
+                      const paymentDate = new Date(i.paymentDate);
+                      return i.status === 'pending' && 
+                             paymentDate >= startOfMonth && 
+                             paymentDate <= endOfMonth &&
+                             paymentDate <= now;
+                    }).reduce((sum, i) => sum + i.amount, 0);
+                    
+                    return `${pendingCount} pending, ${formatCurrency(completedAmount)} completed`;
+                  })()}
+                </p>
               </CardContent>
             </Card>
 
