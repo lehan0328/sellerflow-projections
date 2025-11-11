@@ -29,6 +29,13 @@ export const AdminSupportDashboard = () => {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedMonth, setSelectedMonth] = useState<string>(format(new Date(), 'yyyy-MM'));
+  const [staffStats, setStaffStats] = useState<{
+    totalNew: number;
+    myNeedsResponse: number;
+    myOpen: number;
+    myClaimed: number;
+    myClosed: number;
+  } | null>(null);
 
   // Generate last 12 months for dropdown
   const monthOptions = Array.from({ length: 12 }, (_, i) => {
@@ -59,6 +66,21 @@ export const AdminSupportDashboard = () => {
 
       if (error) throw error;
       const tickets = ticketsData?.tickets || [];
+
+      // Calculate staff-specific metrics
+      const totalNew = tickets.filter((t: any) => !t.claimed_by && t.status !== 'closed' && t.status !== 'resolved').length;
+      const myClaimed = tickets.filter((t: any) => t.claimed_by === user.id).length;
+      const myNeedsResponse = tickets.filter((t: any) => t.claimed_by === user.id && t.status === 'needs_response').length;
+      const myOpen = tickets.filter((t: any) => t.claimed_by === user.id && (t.status === 'open' || t.status === 'in_progress')).length;
+      const myClosed = tickets.filter((t: any) => t.claimed_by === user.id && (t.status === 'closed' || t.status === 'resolved')).length;
+
+      setStaffStats({
+        totalNew,
+        myNeedsResponse,
+        myOpen,
+        myClaimed,
+        myClosed
+      });
 
       // Fetch all ticket messages
       const { data: messages, error: messagesError } = await supabase
@@ -272,7 +294,82 @@ export const AdminSupportDashboard = () => {
         </Select>
       </div>
 
-      {/* Status Overview */}
+      {/* Staff Dashboard - My Cases */}
+      {staffStats && (
+        <div>
+          <h3 className="text-lg font-semibold mb-4">My Dashboard</h3>
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">New Cases</CardTitle>
+                <AlertCircle className="h-4 w-4 text-blue-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{staffStats.totalNew}</div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Unclaimed tickets
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Need Response</CardTitle>
+                <MessageSquare className="h-4 w-4 text-red-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{staffStats.myNeedsResponse}</div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  My cases awaiting reply
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">My Open</CardTitle>
+                <Clock className="h-4 w-4 text-orange-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{staffStats.myOpen}</div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Awaiting customer
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Claimed</CardTitle>
+                <BarChart3 className="h-4 w-4 text-purple-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{staffStats.myClaimed}</div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  All my cases
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">My Closed</CardTitle>
+                <CheckCircle2 className="h-4 w-4 text-green-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{staffStats.myClosed}</div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Resolved cases
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      )}
+
+      {/* Overall Status Overview */}
+      <div>
+        <h3 className="text-lg font-semibold mb-4">Overall Statistics</h3>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -312,9 +409,11 @@ export const AdminSupportDashboard = () => {
             </p>
           </CardContent>
         </Card>
+        </div>
       </div>
 
       {/* Monthly Metrics */}
+      <div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -374,6 +473,7 @@ export const AdminSupportDashboard = () => {
             </p>
           </CardContent>
         </Card>
+        </div>
       </div>
 
       {/* Response Time Metrics */}
