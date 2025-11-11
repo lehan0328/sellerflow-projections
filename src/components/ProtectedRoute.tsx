@@ -49,11 +49,11 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
 
       let trialEndDate = profile?.trial_end || null;
       
-      // Check if user has a real plan override (lifetime access like enterprise tiers)
-      // Discount codes like "referred_user_discount" don't count as access grants
-      const isLifetimeAccess = profile?.plan_override && 
-        !profile.plan_override.includes('discount') && 
-        profile.plan_override !== 'admin';
+      // Check if user has explicit lifetime access grant
+      // Only specific override values grant lifetime access (not regular plan tiers)
+      // Enterprise/professional/growing/starter are paid plans, NOT lifetime access
+      const isLifetimeAccess = profile?.plan_override === 'lifetime' || 
+        profile?.plan_override === 'lifetime_access';
       setHasPlanOverride(!!isLifetimeAccess);
       
       // Store account status for expired check
