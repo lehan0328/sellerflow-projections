@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ArrowLeft, RefreshCw, Link2 } from "lucide-react";
+import { ArrowLeft, RefreshCw, Link2, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,6 +17,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { TransactionMatchButton } from "@/components/cash-flow/transaction-match-button";
 import { MatchReviewDialog } from "@/components/cash-flow/match-review-dialog";
+import { ManualBankTransactionDialog } from "@/components/cash-flow/manual-bank-transaction-dialog";
 
 const BankTransactions = () => {
   const navigate = useNavigate();
@@ -30,6 +31,7 @@ const BankTransactions = () => {
   const [showReviewDialog, setShowReviewDialog] = useState(false);
   const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
   const [currentMatch, setCurrentMatch] = useState<TransactionMatch | null>(null);
+  const [showManualDialog, setShowManualDialog] = useState(false);
   
   const { transactions, isLoading: transactionsLoading, refetch } = useBankTransactions(
     selectedAccountId === "all" ? undefined : selectedAccountId,
@@ -337,6 +339,14 @@ const BankTransactions = () => {
             Sync Transactions
           </Button>
           
+          <Button 
+            onClick={() => setShowManualDialog(true)}
+            variant="outline"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add Manual Transaction
+          </Button>
+          
           <div className="flex-1 min-w-[250px]">
             <TransactionMatchButton
               matches={matches}
@@ -445,6 +455,13 @@ const BankTransactions = () => {
           match={currentMatch}
           onAccept={handleAcceptMatch}
           onReject={handleRejectMatch}
+        />
+        
+        <ManualBankTransactionDialog
+          open={showManualDialog}
+          onOpenChange={setShowManualDialog}
+          accounts={allAccounts}
+          onSuccess={refetch}
         />
       </div>
     </div>
