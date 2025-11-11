@@ -258,17 +258,30 @@ export const useSubscription = () => {
   };
 
   const checkSubscription = async (forceRefresh = false) => {
+    console.log('[SUBSCRIPTION] Starting checkSubscription, forceRefresh:', forceRefresh);
     try {
       // Check for session FIRST before anything else
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
       if (sessionError || !session) {
+        console.log('[SUBSCRIPTION] No session found or session error:', sessionError);
         const state = {
           subscribed: false,
           product_id: null,
           subscription_end: null,
           plan: null,
           isLoading: false,
+          is_trialing: false,
+          trial_end: null,
+          trial_expired: false,
+          billing_interval: null,
+          current_period_start: null,
+          price_amount: null,
+          currency: null,
+          discount: null,
+          discount_ever_redeemed: false,
+          payment_failed: false,
+          is_expired: false,
         };
         setSubscriptionState(state);
         saveToCache(state);
@@ -279,17 +292,22 @@ export const useSubscription = () => {
       if (!forceRefresh) {
         const cached = loadFromCache();
         if (cached) {
+          console.log('[SUBSCRIPTION] Using cached data:', cached);
           const { cachedAt, ...state } = cached;
           setSubscriptionState(state);
           return;
         }
       }
+      
+      console.log('[SUBSCRIPTION] Session valid, calling check-subscription edge function');
 
       const { data, error } = await supabase.functions.invoke("check-subscription", {
         headers: {
           Authorization: `Bearer ${session.access_token}`,
         },
       });
+      
+      console.log('[SUBSCRIPTION] check-subscription response:', { data, error });
 
       // Handle 401 errors by attempting session refresh
       if (error && (error as any)?.status === 401) {
@@ -372,8 +390,12 @@ export const useSubscription = () => {
         return;
       }
 
-      if (error) throw error;
+      if (error) {
+        console.error('[SUBSCRIPTION] Error after retry or initial call:', error);
+        throw error;
+      }
 
+      console.log('[SUBSCRIPTION] Processing subscription data:', data);
       // Handle plan override (lifetime access, special cases)
       let plan: PlanTier | null = null;
       if (data.is_override && data.plan) {
@@ -408,6 +430,15 @@ export const useSubscription = () => {
       
       // Also check if trial expired (for users without payment method)
       const trialExpired = data.trial_expired || false;
+      
+      console.log('[SUBSCRIPTION] Calculated flags:', { 
+        paymentFailed, 
+        isExpired, 
+        shouldBlockAccess, 
+        trialExpired,
+        subscriptionStatus: data.subscriptionStatus,
+        subscription_end: data.subscription_end
+      });
 
       const state = {
         subscribed: data.subscribed || false,

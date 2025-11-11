@@ -120,7 +120,16 @@ const UpgradePlan = () => {
     const subscriptionExpired = subscription_end ? new Date(subscription_end) < new Date() : false;
     const shouldBlock = trialExpired || (payment_failed && subscriptionExpired);
     
+    console.log('[UPGRADE_PLAN] Payment modal trigger check:', {
+      trialExpired,
+      subscriptionExpired,
+      payment_failed,
+      shouldBlock,
+      subscription_end
+    });
+    
     if (shouldBlock) {
+      console.log('[UPGRADE_PLAN] Opening payment failed dialog');
       setShowPaymentFailedDialog(true);
     }
   }, [subscriptionData?.trial_expired, payment_failed, subscription_end]);
