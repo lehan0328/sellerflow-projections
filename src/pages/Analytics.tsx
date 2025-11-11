@@ -1130,6 +1130,53 @@ export default function Analytics() {
               </CardContent>
             </Card>
 
+            <Card className="border-amber-200 dark:border-amber-900/30">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Pending Expenses</CardTitle>
+                <Target className="h-4 w-4 text-amber-600" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-amber-600">
+                  {formatCurrency((() => {
+                    const now = new Date();
+                    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+                    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+                    
+                    // Get all pending purchase orders and expenses this month
+                    const pendingPOsAndExpenses = dbTransactions.filter(tx => {
+                      const txDate = new Date(tx.transactionDate);
+                      return (tx.type === 'purchase_order' || tx.type === 'expense') && 
+                             tx.status === 'pending' && 
+                             txDate >= startOfMonth && 
+                             txDate <= endOfMonth;
+                    });
+                    
+                    return pendingPOsAndExpenses.reduce((sum, tx) => sum + tx.amount, 0);
+                  })())}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {(() => {
+                    const now = new Date();
+                    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+                    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+                    
+                    const allPending = dbTransactions.filter(tx => {
+                      const txDate = new Date(tx.transactionDate);
+                      return (tx.type === 'purchase_order' || tx.type === 'expense') && 
+                             tx.status === 'pending' && 
+                             txDate >= startOfMonth && 
+                             txDate <= endOfMonth;
+                    });
+                    
+                    const pending = allPending.filter(tx => new Date(tx.transactionDate) > now).length;
+                    const overdue = allPending.filter(tx => new Date(tx.transactionDate) <= now).length;
+                    
+                    return `${pending} pending, ${overdue} overdue`;
+                  })()}
+                </p>
+              </CardContent>
+            </Card>
+
             <Card className="border-red-200 dark:border-red-900/30">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Recurring Expenses</CardTitle>
@@ -1148,7 +1195,7 @@ export default function Analytics() {
 
             <Card className={`${metrics.totalForecastedIncome - metrics.totalForecastedExpenses >= 0 ? 'border-green-200 dark:border-green-900/30' : 'border-red-200 dark:border-red-900/30'}`}>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Forecast</CardTitle>
+                <CardTitle className="text-sm font-medium">Net Forecast</CardTitle>
                 <Target className="h-4 w-4 text-blue-600" />
               </CardHeader>
               <CardContent>
