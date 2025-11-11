@@ -189,56 +189,29 @@ export default function Analytics() {
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
 
-    // Total cash inflow from bank transactions (credits) - MTD
-    const bankInflow = bankTransactions.filter(tx => {
+    // Total inflow - actual money received via bank (no double-counting)
+    const totalInflow = bankTransactions.filter(tx => {
       const txDate = new Date(tx.date);
       return tx.transactionType === 'credit' && txDate >= startOfMonth && txDate <= now;
     }).reduce((sum, tx) => sum + tx.amount, 0);
 
-    // Total inflow from sales orders and customer payments - MTD
-    const transactionInflow = dbTransactions.filter(tx => {
-      const txDate = new Date(tx.transactionDate);
-      return (tx.type === 'sales_order' || tx.type === 'customer_payment') && tx.status === 'completed' && txDate >= startOfMonth && txDate <= now;
-    }).reduce((sum, tx) => sum + tx.amount, 0);
+    // Total outflow - actual money spent via bank (no double-counting)
+    const totalOutflow = bankTransactions.filter(tx => {
+      const txDate = new Date(tx.date);
+      return tx.transactionType === 'debit' && txDate >= startOfMonth && txDate <= now;
+    }).reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
 
-    // Total inflow from income items (received) - MTD
-    // Exclude Amazon source income since it's already counted in amazonRevenueFiltered
-    const incomeInflow = incomeItems.filter(i => {
-      const paymentDate = new Date(i.paymentDate);
-      return i.status === 'received' && paymentDate >= startOfMonth && paymentDate <= now && i.source?.toLowerCase() !== 'amazon'; // Exclude Amazon to avoid double-counting
-    }).reduce((sum, i) => sum + i.amount, 0);
+    // Forecasted Payouts - expected but not yet received
+    const forecastedPayouts = amazonPayouts.filter(p => {
+      const payoutDate = new Date(p.payout_date);
+      return p.status === 'forecasted' && payoutDate >= startOfMonth && payoutDate <= endOfMonth;
+    }).reduce((sum, p) => sum + (p.total_amount || 0), 0);
 
-    // Amazon payouts (confirmed only, NET after fees) - MTD
+    // Amazon Payouts (confirmed MTD) - for reference
     const amazonRevenueFiltered = amazonPayouts.filter(p => {
       const payoutDate = new Date(p.payout_date);
       return p.status === 'confirmed' && payoutDate >= startOfMonth && payoutDate <= now;
     }).reduce((sum, p) => sum + (p.total_amount || 0), 0);
-
-    // Recurring income that already occurred MTD
-    const recurringInflowMTD = recurringExpenses.filter(e => e.is_active && e.type === 'income').reduce((sum, e) => {
-      const occurrences = generateRecurringDates(e as any, startOfMonth, now);
-      return sum + e.amount * occurrences.length;
-    }, 0);
-    const totalInflow = bankInflow + transactionInflow + incomeInflow + amazonRevenueFiltered + recurringInflowMTD;
-
-    // Total cash outflow from bank transactions (debits) - MTD
-    const bankOutflow = bankTransactions.filter(tx => {
-      const txDate = new Date(tx.date);
-      return tx.transactionType === 'debit' && txDate >= startOfMonth && txDate <= now;
-    }).reduce((sum, tx) => sum + tx.amount, 0);
-
-    // Total outflow from purchase orders and vendor payments - MTD
-    const transactionOutflow = dbTransactions.filter(tx => {
-      const txDate = new Date(tx.transactionDate);
-      return (tx.type === 'purchase_order' || tx.type === 'vendor_payment') && tx.status !== 'cancelled' && txDate >= startOfMonth && txDate <= now;
-    }).reduce((sum, tx) => sum + tx.amount, 0);
-
-    // Recurring expenses that already occurred MTD
-    const recurringExpensesMonth = recurringExpenses.filter(e => e.is_active && e.type === 'expense').reduce((sum, e) => {
-      const occurrences = generateRecurringDates(e as any, startOfMonth, now);
-      return sum + e.amount * occurrences.length;
-    }, 0);
-    const totalOutflow = bankOutflow + transactionOutflow + recurringExpensesMonth;
 
     // Current bank balance
     const currentBalance = accounts.reduce((sum, acc) => sum + (acc.balance || 0), 0);
@@ -307,6 +280,7 @@ export default function Analytics() {
       // Last 30 days GROSS revenue from hook
       amazonRevenueFiltered,
       // MTD NET payouts
+      forecastedPayouts,
       totalExpenses,
       netCashFlow,
       totalForecastedIncome,
@@ -955,7 +929,7 @@ export default function Analytics() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">{formatCurrency(metrics.totalInflow)}</div>
-            <p className="text-xs text-muted-foreground">Month to date</p>
+            <p className="text-xs text-muted-foreground">Actual bank credits MTD</p>
           </CardContent>
         </Card>
 
@@ -966,7 +940,18 @@ export default function Analytics() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-red-600">{formatCurrency(metrics.totalOutflow)}</div>
-            <p className="text-xs text-muted-foreground">Month to date</p>
+            <p className="text-xs text-muted-foreground">Actual bank debits MTD</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Forecasted Payouts</CardTitle>
+            <CalendarIcon className="h-4 w-4 text-amber-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-amber-600">{formatCurrency(metrics.forecastedPayouts)}</div>
+            <p className="text-xs text-muted-foreground">Expected this month</p>
           </CardContent>
         </Card>
 
@@ -977,7 +962,7 @@ export default function Analytics() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-purple-600">{formatCurrency(metrics.amazonRevenueFiltered)}</div>
-            <p className="text-xs text-muted-foreground">Month to date</p>
+            <p className="text-xs text-muted-foreground">Confirmed MTD</p>
           </CardContent>
         </Card>
 
@@ -991,6 +976,44 @@ export default function Analytics() {
               {metrics.netCashFlow >= 0 ? '+' : ''}{formatCurrency(metrics.netCashFlow)}
             </div>
             <p className="text-xs text-muted-foreground">Month to date</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Current Balance</CardTitle>
+            <DollarSign className="h-4 w-4 text-blue-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-600">{formatCurrency(metrics.currentBalance)}</div>
+            <p className="text-xs text-muted-foreground">All accounts</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Pending Income</CardTitle>
+            <CalendarIcon className="h-4 w-4 text-amber-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-amber-600">{formatCurrency(metrics.pendingIncome)}</div>
+            <p className="text-xs text-muted-foreground">Other expected this month</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Credit Utilization</CardTitle>
+            <CreditCardIcon className="h-4 w-4 text-orange-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-orange-600">{metrics.creditUtilization.toFixed(1)}%</div>
+            <p className="text-xs text-muted-foreground">
+              {formatCurrency(creditCards.reduce((sum, cc) => sum + (cc.balance || 0), 0))} of{' '}
+              {formatCurrency(creditCards.reduce((sum, cc) => sum + (cc.credit_limit || 0), 0))}
+            </p>
           </CardContent>
         </Card>
 
