@@ -57,15 +57,28 @@ export const UpgradeModal = ({ open, onOpenChange, feature = "connections", curr
                 Professional Plan Features
               </h3>
               <ul className="space-y-2 text-sm text-muted-foreground ml-7">
-                <li>• 7 bank/credit card connections</li>
-                <li>• Automated notifications</li>
-                <li>• Scenario planning</li>
-                <li>• AI insights</li>
-                <li>• AI PDF extractor</li>
-                <li>• 5 additional users</li>
-                <li>• Advanced analytics</li>
+                <li>• Unlimited bank and credit card connections</li>
+                <li>• Unlimited Amazon accounts</li>
+                <li>• Amazon payout forecasting</li>
+                <li>• Advanced cash flow analytics</li>
+                <li>• Transaction matching & automation</li>
+                <li>• Custom categories & vendors</li>
+                <li>• Purchase order management</li>
+                <li>• Scenario planning tools</li>
+                <li>• Document storage</li>
+                <li>• Team collaboration (5 members)</li>
                 <li>• Priority support</li>
               </ul>
+              <Button 
+                className="w-full mt-4" 
+                variant="outline"
+                onClick={() => {
+                  onOpenChange(false);
+                  navigate('/subscription-management');
+                }}
+              >
+                Manage Subscription
+              </Button>
             </div>
             
             {nextPlans.length > 0 && (
