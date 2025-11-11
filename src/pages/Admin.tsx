@@ -116,6 +116,22 @@ const Admin = () => {
     }
   }, [searchParams]);
 
+  // Redirect staff users to support section if they try to access admin tabs
+  useEffect(() => {
+    if (userRole === 'staff') {
+      // Get all allowed tab values for staff
+      const staffAllowedTabs = tabSections
+        .flatMap(section => section.tabs)
+        .filter(tab => tab.rolesAllowed?.includes('staff'))
+        .map(tab => tab.value);
+
+      // If current tab is not allowed for staff, redirect to support
+      if (!staffAllowedTabs.includes(activeTab)) {
+        setActiveTab('support');
+      }
+    }
+  }, [userRole, activeTab, tabSections]);
+
   return (
     <div className="space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex gap-4">
