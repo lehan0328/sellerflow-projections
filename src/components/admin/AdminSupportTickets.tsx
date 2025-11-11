@@ -220,6 +220,19 @@ export const AdminSupportTickets = () => {
 
     toast.success("Ticket claimed successfully");
     await refetch();
+    
+    // Automatically open the ticket messages dialog
+    const claimedTicket = tickets.find(t => t.id === ticketId);
+    if (claimedTicket) {
+      // Update the ticket with claimed_by info for the dialog
+      const updatedTicket = {
+        ...claimedTicket,
+        claimed_by: user.id,
+        claimed_by_name: staffName,
+        status: 'needs_response'
+      };
+      handleViewMessages(updatedTicket);
+    }
   };
 
 
