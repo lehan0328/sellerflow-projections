@@ -24,8 +24,10 @@ import { format } from "date-fns";
 import { cn, formatCurrency } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
 import aurenLogo from "@/assets/auren-full-logo.png";
+import { useAuth } from "@/hooks/useAuth";
 export default function Analytics() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const {
     vendors
   } = useVendors();
@@ -45,6 +47,25 @@ export default function Analytics() {
   const {
     last30DaysGrossRevenue: amazonRevenue
   } = useAmazonRevenue();
+
+  // Fetch company name from profile
+  const [companyName, setCompanyName] = useState<string>("");
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (!user) return;
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('company')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      if (profile?.company) {
+        setCompanyName(profile.company);
+      }
+    };
+    fetchProfile();
+  }, [user]);
+
   useEffect(() => {
     const fetchAllVendorTransactions = async () => {
       const {
@@ -947,7 +968,9 @@ export default function Analytics() {
         <div className="flex items-center gap-6 flex-1">
           <img src={aurenLogo} alt="Auren" className="h-12 w-auto font-display" />
           <div className="border-l border-primary/30 pl-6">
-            <h1 className="text-3xl font-bold text-primary">Business Analytics Report</h1>
+            <h1 className="text-3xl font-bold text-primary">
+              {companyName ? `Auren x ${companyName}` : "Auren Business Analytics"}
+            </h1>
             <p className="text-lg font-medium text-primary/80 mt-1">{format(new Date(), 'MMMM yyyy')}</p>
             <p className="text-muted-foreground mt-2">Comprehensive insights into your financial performance</p>
           </div>
