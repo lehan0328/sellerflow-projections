@@ -1095,7 +1095,50 @@ export default function Analytics() {
           <p className="text-sm text-muted-foreground">Current balances and obligations</p>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+            <Card className="border-blue-200 dark:border-blue-900/30">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Projected This Month</CardTitle>
+                <Target className="h-4 w-4 text-blue-600" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-blue-600">
+                  {formatCurrency((() => {
+                    const now = new Date();
+                    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+                    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+                    
+                    // Get recurring expenses for this month
+                    const recurringTotal = recurringExpenses.filter(r => r.type === 'expense' && r.is_active).reduce((sum, r) => {
+                      const occurrences = generateRecurringDates(r, startOfMonth, endOfMonth);
+                      return sum + occurrences.length * r.amount;
+                    }, 0);
+                    
+                    // Get pending one-time expenses this month
+                    const pendingExpensesTotal = dbTransactions.filter(tx => {
+                      const txDate = new Date(tx.transactionDate);
+                      return tx.type === 'expense' && 
+                             tx.status === 'pending' && 
+                             txDate >= startOfMonth && 
+                             txDate <= endOfMonth;
+                    }).reduce((sum, tx) => sum + tx.amount, 0);
+                    
+                    // Get pending purchase orders this month
+                    const purchaseOrdersTotal = dbTransactions.filter(tx => {
+                      const txDate = new Date(tx.transactionDate);
+                      return tx.type === 'purchase_order' && 
+                             tx.status === 'pending' && 
+                             txDate >= startOfMonth && 
+                             txDate <= endOfMonth;
+                    }).reduce((sum, tx) => sum + tx.amount, 0);
+                    
+                    return recurringTotal + pendingExpensesTotal + purchaseOrdersTotal;
+                  })())}
+                </div>
+                <p className="text-xs text-muted-foreground">Recurring + Pending + POs</p>
+              </CardContent>
+            </Card>
+
             <Card className="border-orange-200 dark:border-orange-900/30">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Credit Utilization</CardTitle>
@@ -1117,10 +1160,10 @@ export default function Analytics() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-amber-600">
-                  {formatCurrency(dbTransactions.filter(tx => (tx.type === 'purchase_order' || tx.type === 'expense') && tx.status === 'pending').reduce((sum, tx) => sum + tx.amount, 0))}
+                  {formatCurrency(dbTransactions.filter(tx => tx.type === 'purchase_order' && tx.status === 'pending').reduce((sum, tx) => sum + tx.amount, 0))}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  {dbTransactions.filter(tx => (tx.type === 'purchase_order' || tx.type === 'expense') && tx.status === 'pending').length} pending
+                  {dbTransactions.filter(tx => tx.type === 'purchase_order' && tx.status === 'pending').length} pending
                 </p>
               </CardContent>
             </Card>
