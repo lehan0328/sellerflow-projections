@@ -1100,7 +1100,7 @@ export default function Analytics() {
           <p className="text-sm text-muted-foreground">Current balances and obligations</p>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <Card className="border-orange-200 dark:border-orange-900/30">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Credit Utilization</CardTitle>
@@ -1127,6 +1127,22 @@ export default function Analytics() {
                 <p className="text-xs text-muted-foreground">
                   {dbTransactions.filter(tx => tx.type === 'purchase_order' && tx.status === 'pending').length} pending
                 </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-red-200 dark:border-red-900/30">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Recurring Expenses</CardTitle>
+                <Calculator className="h-4 w-4 text-red-600" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-red-600">
+                  {formatCurrency(recurringExpenses.filter(r => r.type === 'expense' && r.is_active).reduce((sum, r) => {
+                    const occurrences = generateRecurringDates(r, new Date(new Date().getFullYear(), new Date().getMonth(), 1), new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0));
+                    return sum + occurrences.length * r.amount;
+                  }, 0))}
+                </div>
+                <p className="text-xs text-muted-foreground">Monthly recurring</p>
               </CardContent>
             </Card>
 
