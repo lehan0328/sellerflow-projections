@@ -129,15 +129,10 @@ serve(async (req) => {
               box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             }
             .header { 
-              background: linear-gradient(135deg, #3fa9d9 0%, #2b7fa6 100%);
+              background: linear-gradient(135deg, #1CA8DD 0%, #1589BA 100%);
               color: white; 
-              padding: 40px 30px; 
+              padding: 50px 30px; 
               text-align: center; 
-            }
-            .logo {
-              max-width: 180px;
-              height: auto;
-              margin-bottom: 20px;
             }
             .content { 
               background: #ffffff; 
@@ -145,7 +140,7 @@ serve(async (req) => {
             }
             .button { 
               display: inline-block; 
-              background: #3fa9d9; 
+              background: #1CA8DD; 
               color: white !important; 
               padding: 16px 40px; 
               text-decoration: none; 
@@ -155,11 +150,11 @@ serve(async (req) => {
               transition: background 0.3s ease;
             }
             .button:hover { 
-              background: #2b7fa6; 
+              background: #1589BA; 
             }
             .info-box { 
               background: #eff6ff; 
-              border-left: 4px solid #3fa9d9; 
+              border-left: 4px solid #1CA8DD; 
               padding: 20px; 
               margin: 24px 0; 
               border-radius: 6px; 
@@ -193,7 +188,7 @@ serve(async (req) => {
             }
             .role-badge {
               display: inline-block;
-              background: #3fa9d9;
+              background: #1CA8DD;
               color: white;
               padding: 6px 16px;
               border-radius: 20px;
@@ -207,8 +202,8 @@ serve(async (req) => {
           <div class="container">
             <div class="email-card">
               <div class="header">
-                <img src="https://aurenapp.com/auren-full-logo.png" alt="Auren Logo" class="logo" />
-                <h1 style="margin: 0; font-size: 28px; font-weight: 700;">Admin Dashboard Invitation</h1>
+                <h1 style="margin: 0; font-size: 32px; font-weight: 700;">Auren</h1>
+                <p style="margin: 8px 0 0 0; font-size: 16px; opacity: 0.95;">Admin Dashboard Invitation</p>
               </div>
               <div class="content">
                 <p style="font-size: 16px; margin-top: 0;">Hello,</p>
@@ -244,7 +239,7 @@ serve(async (req) => {
                 </div>
               </div>
               <div class="footer">
-                <p style="margin: 0 0 8px 0; font-weight: 600; color: #3fa9d9;">Auren Cash Flow Management</p>
+                <p style="margin: 0 0 8px 0; font-weight: 600; color: #1CA8DD;">Auren Cash Flow Management</p>
                 <p style="margin: 0;">This is an automated invitation. If you didn't expect this, please contact the administrator.</p>
               </div>
             </div>
