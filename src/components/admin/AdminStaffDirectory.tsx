@@ -234,19 +234,7 @@ export function AdminStaffDirectory() {
                     </Avatar>
                     <div>
                       <p className="font-medium">{staff.first_name || staff.email}</p>
-                      <div className="flex items-center gap-2">
-                        <p className="text-xs text-muted-foreground">{staff.email}</p>
-                        {staff.role === 'staff' && staff.avg_response_time_hours !== null && (
-                          <span className="text-xs text-muted-foreground">
-                            • Avg: {formatResponseTime(staff.avg_response_time_hours)}
-                          </span>
-                        )}
-                        {staff.role === 'staff' && staff.first_response_time_hours !== null && (
-                          <span className="text-xs text-muted-foreground">
-                            • First: {formatResponseTime(staff.first_response_time_hours)}
-                          </span>
-                        )}
-                      </div>
+                      <p className="text-xs text-muted-foreground">{staff.email}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
