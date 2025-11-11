@@ -32,17 +32,14 @@ export const useAdmin = () => {
       let isWebsiteAdmin = WEBSITE_ADMIN_EMAILS.includes(session.user.email || '');
       let adminRole: 'owner' | 'admin' | 'staff' | null = null;
 
-      // If not a hardcoded website admin, check admin_permissions table
+      // If not a hardcoded website admin, check admin_permissions using RPC function
       if (!isWebsiteAdmin) {
         const { data: adminPermission } = await supabase
-          .from('admin_permissions')
-          .select('role')
-          .eq('email', session.user.email)
-          .single();
+          .rpc('check_admin_permission', { user_email: session.user.email || '' });
 
-        if (adminPermission) {
+        if (adminPermission && adminPermission.length > 0 && adminPermission[0].has_permission) {
           isWebsiteAdmin = true;
-          adminRole = adminPermission.role as 'admin' | 'staff';
+          adminRole = adminPermission[0].role as 'admin' | 'staff';
           console.log('[ADMIN] User has admin permission:', { email: session.user.email, role: adminRole });
         }
       } else {
