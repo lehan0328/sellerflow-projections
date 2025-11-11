@@ -13,7 +13,7 @@ interface StaffMember {
   claimed_tickets_count: number;
   open_tickets_count: number;
   closed_tickets_count: number;
-  user_id: string | null;
+  user_id?: string | null;
 }
 
 Deno.serve(async (req) => {
@@ -60,7 +60,7 @@ Deno.serve(async (req) => {
     // Fetch all staff from admin_permissions
     const { data: staffData, error: staffError } = await supabase
       .from('admin_permissions')
-      .select('email, first_name, role, invited_at, account_created, user_id')
+      .select('email, first_name, role, invited_at, account_created')
       .eq('account_created', true)
       .order('invited_at', { ascending: false });
 
@@ -72,12 +72,19 @@ Deno.serve(async (req) => {
       );
     }
 
-    // For each staff member, get their ticket statistics
+    // For each staff member, get their user_id from auth.users and ticket statistics
     const staffWithStats: StaffMember[] = await Promise.all(
       (staffData || []).map(async (staff) => {
-        if (!staff.user_id) {
+        // Look up user_id from auth.users by email
+        const { data: authUser, error: authUserError } = await supabase.auth.admin.listUsers();
+        
+        const matchedUser = authUser?.users?.find(u => u.email === staff.email);
+        const userId = matchedUser?.id;
+
+        if (!userId) {
           return {
             ...staff,
+            user_id: null,
             claimed_tickets_count: 0,
             open_tickets_count: 0,
             closed_tickets_count: 0,
@@ -88,24 +95,25 @@ Deno.serve(async (req) => {
         const { count: totalCount } = await supabase
           .from('support_tickets')
           .select('*', { count: 'exact', head: true })
-          .eq('claimed_by', staff.user_id);
+          .eq('claimed_by', userId);
 
         // Get open tickets (open, in_progress, needs_response)
         const { count: openCount } = await supabase
           .from('support_tickets')
           .select('*', { count: 'exact', head: true })
-          .eq('claimed_by', staff.user_id)
+          .eq('claimed_by', userId)
           .in('status', ['open', 'in_progress', 'needs_response']);
 
         // Get closed tickets (closed, resolved)
         const { count: closedCount } = await supabase
           .from('support_tickets')
           .select('*', { count: 'exact', head: true })
-          .eq('claimed_by', staff.user_id)
+          .eq('claimed_by', userId)
           .in('status', ['closed', 'resolved']);
 
         return {
           ...staff,
+          user_id: userId,
           claimed_tickets_count: totalCount || 0,
           open_tickets_count: openCount || 0,
           closed_tickets_count: closedCount || 0,
