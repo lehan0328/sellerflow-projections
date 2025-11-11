@@ -99,7 +99,8 @@ serve(async (req) => {
 
     // Send invitation email
     const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
-    const signupUrl = `https://aurenapp.com/admin/signup?token=${invitationToken}`;
+    const appUrl = 'https://aurenapp.com'; // Your production domain
+    const signupUrl = `${appUrl}/admin/signup?token=${invitationToken}`;
 
     const emailHtml = `
       <!DOCTYPE html>
