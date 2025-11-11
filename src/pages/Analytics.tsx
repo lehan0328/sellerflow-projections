@@ -446,7 +446,8 @@ export default function Analytics() {
       month,
       revenue: data.revenue,
       projected: data.projected,
-      otherIncome: data.otherIncome
+      otherIncome: data.otherIncome,
+      total: data.revenue + data.projected + data.otherIncome
     }));
   }, [amazonPayouts, incomeItems, dbTransactions, recurringExpenses]);
 
@@ -1397,6 +1398,7 @@ export default function Analytics() {
                   <Line type="monotone" dataKey="revenue" name="Amazon Confirmed" stroke="#10b981" strokeWidth={2} />
                   <Line type="monotone" dataKey="projected" name="Amazon Projected" stroke="#8b5cf6" strokeWidth={2} strokeDasharray="5 5" />
                   <Line type="monotone" dataKey="otherIncome" name="Other Income" stroke="#f59e0b" strokeWidth={2} />
+                  <Line type="monotone" dataKey="total" name="Total Income" stroke="#3b82f6" strokeWidth={3} />
                 </LineChart>
               </ResponsiveContainer>
             </CardContent>
