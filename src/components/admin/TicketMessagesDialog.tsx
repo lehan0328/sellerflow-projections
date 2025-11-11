@@ -225,36 +225,53 @@ export function TicketMessagesDialog({ ticket, open, onOpenChange }: TicketMessa
 
           {/* Reply form */}
           <div className="mt-4 space-y-3 border-t pt-4">
-            <Textarea
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              placeholder="Type your response..."
-              rows={3}
-              className="resize-none"
-            />
-            <div className="flex justify-end gap-2">
-              <Button
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-              >
-                Cancel
-              </Button>
-              {ticket.status !== 'closed' && ticket.status !== 'resolved' && (
+            {ticket.status === 'closed' || ticket.status === 'resolved' ? (
+              <div className="text-center py-4 text-muted-foreground">
+                <p className="text-sm font-medium">This ticket is closed</p>
+                <p className="text-xs">No new messages can be sent</p>
+              </div>
+            ) : (
+              <>
+                <Textarea
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  placeholder="Type your response..."
+                  rows={3}
+                  className="resize-none"
+                />
+                <div className="flex justify-end gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => onOpenChange(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    onClick={handleCloseTicket}
+                  >
+                    Close Ticket
+                  </Button>
+                  <Button
+                    onClick={handleSendMessage}
+                    disabled={isSubmitting || !newMessage.trim()}
+                  >
+                    <Send className="h-4 w-4 mr-2" />
+                    Send Response
+                  </Button>
+                </div>
+              </>
+            )}
+            {(ticket.status === 'closed' || ticket.status === 'resolved') && (
+              <div className="flex justify-end">
                 <Button
-                  variant="destructive"
-                  onClick={handleCloseTicket}
+                  variant="outline"
+                  onClick={() => onOpenChange(false)}
                 >
-                  Close Ticket
+                  Close
                 </Button>
-              )}
-              <Button
-                onClick={handleSendMessage}
-                disabled={isSubmitting || !newMessage.trim()}
-              >
-                <Send className="h-4 w-4 mr-2" />
-                Send Response
-              </Button>
-            </div>
+              </div>
+            )}
           </div>
         </div>
       </DialogContent>
