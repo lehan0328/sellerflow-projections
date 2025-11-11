@@ -2571,6 +2571,18 @@ export type Database = {
         Args: { plain_text: string }
         Returns: string
       }
+      get_all_admin_permissions: {
+        Args: never
+        Returns: {
+          account_created: boolean
+          email: string
+          first_name: string
+          id: string
+          invited_at: string
+          invited_by: string
+          role: string
+        }[]
+      }
       get_amazon_revenue_30_days: {
         Args: { p_user_id: string }
         Returns: number

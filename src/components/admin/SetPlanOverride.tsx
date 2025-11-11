@@ -103,9 +103,7 @@ export const SetPlanOverride = () => {
     setLoadingAdmins(true);
     try {
       const { data, error } = await supabase
-        .from('admin_permissions')
-        .select('*')
-        .order('invited_at', { ascending: false });
+        .rpc('get_all_admin_permissions');
 
       if (error) throw error;
       setAdminPermissions(data || []);
