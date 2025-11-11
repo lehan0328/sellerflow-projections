@@ -1486,7 +1486,7 @@ const Dashboard = () => {
           : null,
         is_active: true,
         type: "expense",
-        category: null,
+        category: expenseData.category || null,
         notes: expenseData.description || expenseData.notes || null,
         credit_card_id: expenseData.creditCardId || null,
       });
@@ -1498,46 +1498,29 @@ const Dashboard = () => {
 
       setShowIncomeForm(false);
       setShowRecurringIncomeForm(false);
+      setShowExpenseForm(false);
       return;
     }
 
-    // Note: In a real Plaid integration, this would deduct from connected account
-
-    // Create vendor for expense
-    const newVendor = await addVendor({
-      name: expenseData.description,
-      totalOwed: amount,
-      nextPaymentDate: expenseData.paymentDate || new Date(),
-      nextPaymentAmount: amount,
-      status: "upcoming",
-      category: expenseData.category || "Other",
-      paymentType: "total",
-      description: expenseData.description,
-      notes: expenseData.notes,
-    });
-
-    // Create transaction (link to the created vendor)
+    // For one-time expenses, create as 'expense' type transaction (not purchase_order)
     await addTransaction({
-      type: "purchase_order",
+      type: "expense",
       amount: amount,
       description: expenseData.description || "Expense",
-      vendorId: newVendor?.id,
       transactionDate: expenseData.paymentDate || new Date(),
       status: "completed",
+      category: expenseData.category || null,
+      creditCardId: expenseData.creditCardId || null,
     });
 
-    // Create cash flow event
-    const newEvent: CashFlowEvent = {
-      id: Date.now().toString(),
-      type: "outflow",
-      amount: amount,
-      description: expenseData.description || "Expense",
-      date: expenseData.paymentDate || new Date(),
-    };
-    setCashFlowEvents((prev) => [newEvent, ...prev]);
+    toast({
+      title: "Expense added!",
+      description: `${expenseData.description} has been recorded`,
+    });
 
     setShowIncomeForm(false);
     setShowRecurringIncomeForm(false);
+    setShowExpenseForm(false);
   };
 
   const handleCollectIncome = async (income: any) => {

@@ -164,8 +164,8 @@ export const IncomeForm = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate credit card selection for recurring expenses
-    if (formData.isRecurring && formData.type === "expense" && formData.paymentMethod === "credit-card" && !formData.creditCardId) {
+    // Validate credit card selection for expenses with credit card payment
+    if (formData.type === "expense" && formData.paymentMethod === "credit-card" && !formData.creditCardId) {
       toast.error("Please select a credit card");
       return;
     }
@@ -177,7 +177,7 @@ export const IncomeForm = ({
       paymentDate: formData.paymentDate || new Date(),
       status: editingIncome?.status || 'pending',
       customerId: formData.customerId || undefined,
-      creditCardId: (formData.isRecurring && formData.type === "expense" && formData.paymentMethod === "credit-card") ? formData.creditCardId : undefined
+      creditCardId: (formData.type === "expense" && formData.paymentMethod === "credit-card") ? formData.creditCardId : undefined
     };
     
     console.log("Submitting:", data);
@@ -526,8 +526,8 @@ export const IncomeForm = ({
                 </div>
               )}
 
-              {/* Credit Card Payment Method - only for recurring expenses */}
-              {(formData.isRecurring || isRecurring) && formData.type === "expense" && (
+              {/* Credit Card Payment Method - for all expenses */}
+              {formData.type === "expense" && (
                 <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
                   <div className="space-y-3">
                     <Label className="text-sm font-medium">Payment Method *</Label>
@@ -620,11 +620,21 @@ export const IncomeForm = ({
                         return null;
                       })()}
 
-                      <Alert>
-                        <AlertDescription className="text-sm">
-                          Note: Your card will be charged when this expense is due, not now. This only tracks which card will be used for future charges.
-                        </AlertDescription>
-                      </Alert>
+                      {!formData.isRecurring && (
+                        <Alert>
+                          <AlertDescription className="text-sm">
+                            Note: This expense will be recorded on the selected credit card.
+                          </AlertDescription>
+                        </Alert>
+                      )}
+
+                      {formData.isRecurring && (
+                        <Alert>
+                          <AlertDescription className="text-sm">
+                            Note: Your card will be charged when this expense is due, not now. This only tracks which card will be used for future charges.
+                          </AlertDescription>
+                        </Alert>
+                      )}
                     </>
                   )}
                 </div>

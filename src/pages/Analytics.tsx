@@ -60,7 +60,7 @@ export default function Analytics() {
       } = await supabase.from('transactions').select(`
           *,
           vendors(name, category)
-        `).eq('type', 'purchase_order').order('due_date', {
+        `).in('type', ['purchase_order', 'expense']).order('due_date', {
         ascending: true
       });
       if (error) {
@@ -93,7 +93,7 @@ export default function Analytics() {
       event: '*',
       schema: 'public',
       table: 'transactions',
-      filter: 'type=eq.purchase_order'
+      filter: 'type=in.(purchase_order,expense)'
     }, () => {
       fetchAllVendorTransactions();
     }).subscribe();
@@ -225,10 +225,10 @@ export default function Analytics() {
     const totalCreditUsed = creditCards.reduce((sum, c) => sum + (c.balance || 0), 0);
     const creditUtilization = totalCreditLimit > 0 ? totalCreditUsed / totalCreditLimit * 100 : 0;
 
-    // Total expenses from vendors + purchase orders
+    // Total expenses from vendors + purchase orders + expenses
     const vendorExpenses = vendors.reduce((sum, v) => sum + (v.totalOwed || 0), 0);
-    const purchaseOrders = dbTransactions.filter(tx => tx.type === 'purchase_order' && tx.status === 'pending').reduce((sum, tx) => sum + tx.amount, 0);
-    const totalExpenses = vendorExpenses + purchaseOrders;
+    const purchaseOrdersAndExpenses = dbTransactions.filter(tx => (tx.type === 'purchase_order' || tx.type === 'expense') && tx.status === 'pending').reduce((sum, tx) => sum + tx.amount, 0);
+    const totalExpenses = vendorExpenses + purchaseOrdersAndExpenses;
 
     // Net cash flow
     const netCashFlow = totalInflow - totalOutflow;
@@ -259,10 +259,10 @@ export default function Analytics() {
     }, 0);
     const totalForecastedIncome = confirmedPayoutsThisMonth + forecastedAmazonPayouts + additionalIncome + recurringIncome;
 
-    // All purchase orders this month
-    const purchaseOrdersMonth = dbTransactions.filter(tx => {
+    // All purchase orders and expenses this month
+    const purchaseOrdersAndExpensesMonth = dbTransactions.filter(tx => {
       const txDate = new Date(tx.transactionDate);
-      return tx.type === 'purchase_order' && txDate >= startOfMonth && txDate <= endOfMonth;
+      return (tx.type === 'purchase_order' || tx.type === 'expense') && txDate >= startOfMonth && txDate <= endOfMonth;
     }).reduce((sum, tx) => sum + tx.amount, 0);
 
     // All recurring expenses for this month
@@ -270,7 +270,7 @@ export default function Analytics() {
       const occurrences = generateRecurringDates(e as any, startOfMonth, endOfMonth);
       return sum + e.amount * occurrences.length;
     }, 0);
-    const totalForecastedExpenses = purchaseOrdersMonth + recurringExpensesThisMonth;
+    const totalForecastedExpenses = purchaseOrdersAndExpensesMonth + recurringExpensesThisMonth;
     return {
       totalInflow,
       totalOutflow,
@@ -676,9 +676,9 @@ export default function Analytics() {
       }
     });
 
-    // Aggregate expenses from purchase orders and vendor payments
+    // Aggregate expenses from purchase orders, expenses, and vendor payments
     dbTransactions.forEach(tx => {
-      if ((tx.type === 'purchase_order' || tx.type === 'vendor_payment') && tx.status !== 'cancelled') {
+      if ((tx.type === 'purchase_order' || tx.type === 'expense' || tx.type === 'vendor_payment') && tx.status !== 'cancelled') {
         const date = new Date(tx.transactionDate);
         const key = date.toLocaleDateString('en-US', {
           month: 'short'
@@ -1122,10 +1122,10 @@ export default function Analytics() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-amber-600">
-                  {formatCurrency(dbTransactions.filter(tx => tx.type === 'purchase_order' && tx.status === 'pending').reduce((sum, tx) => sum + tx.amount, 0))}
+                  {formatCurrency(dbTransactions.filter(tx => (tx.type === 'purchase_order' || tx.type === 'expense') && tx.status === 'pending').reduce((sum, tx) => sum + tx.amount, 0))}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  {dbTransactions.filter(tx => tx.type === 'purchase_order' && tx.status === 'pending').length} pending
+                  {dbTransactions.filter(tx => (tx.type === 'purchase_order' || tx.type === 'expense') && tx.status === 'pending').length} pending
                 </p>
               </CardContent>
             </Card>

@@ -4,7 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 
 export interface Transaction {
   id: string;
-  type: 'purchase_order' | 'sales_order' | 'vendor_payment' | 'customer_payment';
+  type: 'purchase_order' | 'sales_order' | 'vendor_payment' | 'customer_payment' | 'expense';
   amount: number;
   description: string;
   vendorId?: string;
