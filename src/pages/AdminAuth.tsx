@@ -5,12 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 
 const AdminAuth = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -71,20 +70,24 @@ const AdminAuth = () => {
       });
 
       if (error) {
-        toast({
-          title: "Login Failed",
-          description: error.message,
-          variant: "destructive",
+        console.error('[ADMIN_LOGIN] Authentication error:', error);
+        const errorMsg = error.message.toLowerCase().includes('invalid') 
+          ? "Invalid email or password. Please check your credentials and try again."
+          : error.message;
+        
+        toast.error(errorMsg, {
+          description: "Unable to sign in to admin dashboard",
+          duration: 5000,
         });
         setIsLoading(false);
         return;
       }
 
       if (!data.session?.user) {
-        toast({
-          title: "Login Failed",
-          description: "No session created",
-          variant: "destructive",
+        console.error('[ADMIN_LOGIN] No session created');
+        toast.error("Unable to create session", {
+          description: "Please try again or contact support",
+          duration: 5000,
         });
         setIsLoading(false);
         return;
@@ -96,8 +99,7 @@ const AdminAuth = () => {
         .rpc('is_website_admin');
 
       if (isWebsiteAdmin) {
-        toast({
-          title: "Welcome back!",
+        toast.success("Welcome back!", {
           description: "Logged in as Website Admin",
         });
         navigate('/admin/dashboard');
@@ -112,8 +114,7 @@ const AdminAuth = () => {
         .maybeSingle();
 
       if (adminPerms) {
-        toast({
-          title: "Welcome back!",
+        toast.success("Welcome back!", {
           description: `Logged in as ${adminPerms.role}`,
         });
         navigate('/admin/dashboard');
@@ -129,8 +130,7 @@ const AdminAuth = () => {
         .maybeSingle();
 
       if (userRole) {
-        toast({
-          title: "Welcome back!",
+        toast.success("Welcome back!", {
           description: `Logged in as ${userRole.role}`,
         });
         navigate('/admin/dashboard');
@@ -138,17 +138,17 @@ const AdminAuth = () => {
       }
 
       // No admin access found - sign them out
+      console.warn('[ADMIN_LOGIN] User authenticated but no admin access found:', data.session.user.email);
       await supabase.auth.signOut();
-      toast({
-        title: "Access Denied",
+      toast.error("Access Denied", {
         description: "This account does not have admin dashboard access.",
-        variant: "destructive",
+        duration: 6000,
       });
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "An unexpected error occurred",
-        variant: "destructive",
+      console.error('[ADMIN_LOGIN] Unexpected error:', error);
+      toast.error("Login Error", {
+        description: error.message || "An unexpected error occurred. Please try again.",
+        duration: 5000,
       });
     } finally {
       setIsLoading(false);
