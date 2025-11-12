@@ -749,7 +749,7 @@ const UpgradePlan = () => {
                       You have a 10% discount waiting!
                     </p>
                     <p className="text-sm text-green-800 dark:text-green-200">
-                      As a referred user, you'll automatically receive <strong>10% off for 6 months</strong> when you subscribe to any plan below.
+                      As a referred user, you'll automatically receive <strong>10% off for 3 months</strong> when you subscribe to any plan below.
                     </p>
                   </div>
                 </div>

@@ -425,7 +425,7 @@ export const SignUp = () => {
                   <Alert className="bg-green-500/10 border-green-500/20">
                     <Check className="h-4 w-4 text-green-500" />
                     <AlertDescription className="text-green-600 dark:text-green-400 text-sm">
-                      Valid code! You'll get 10% off for 6 months after your trial ends.
+                      Valid code! You'll get 10% off for 3 months after your trial ends.
                     </AlertDescription>
                   </Alert>
                 )}

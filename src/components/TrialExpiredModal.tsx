@@ -288,7 +288,7 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
                   <div className="text-xs text-green-800 dark:text-green-200 space-y-1">
                     <p className="flex items-center gap-1">
                       <Check className="h-3.5 w-3.5" />
-                      <strong>Monthly plans:</strong> 10% off for 6 months
+                      <strong>Monthly plans:</strong> 10% off for 3 months
                     </p>
                     <p className="flex items-center gap-1">
                       <Check className="h-3.5 w-3.5" />
