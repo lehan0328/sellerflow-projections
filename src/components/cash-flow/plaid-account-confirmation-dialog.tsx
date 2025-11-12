@@ -324,9 +324,6 @@ export function PlaidAccountConfirmationDialog({
                 <CreditCard className="h-4 w-4" />
                 Credit Cards ({creditCardAccounts.length})
               </h3>
-              <p className="text-xs text-muted-foreground bg-muted/30 p-2 rounded-md border border-muted">
-                <strong>Note:</strong> Some credit card companies such as Amex have extended buying power that is not visible in the API. Please update this in settings after adding your account.
-              </p>
               <div className="space-y-2 border rounded-lg p-2">
                 {creditCardAccounts.map((account) => {
                   const isSelected = selectedAccountIds.has(account.uniqueId);
