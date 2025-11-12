@@ -297,10 +297,10 @@ export default function Partners() {
                   <span className="text-sm font-bold text-accent-foreground">Lifetime Commission</span>
                 </div>
                 <p className="text-8xl md:text-9xl font-bold bg-gradient-to-br from-accent via-primary to-accent bg-clip-text text-transparent mb-4">
-                  40%
+                  30%
                 </p>
                 <p className="text-2xl text-muted-foreground">
-                  Earn up to <span className="text-accent font-bold">40% recurring commission</span> on every referral
+                  Earn up to <span className="text-accent font-bold">30% recurring commission</span> on every referral
                 </p>
               </CardContent>
             </Card>
