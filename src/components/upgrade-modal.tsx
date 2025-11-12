@@ -71,13 +71,12 @@ export const UpgradeModal = ({ open, onOpenChange, feature = "connections", curr
               </ul>
               <Button 
                 className="w-full mt-4" 
-                variant="outline"
                 onClick={() => {
                   onOpenChange(false);
                   navigate('/subscription-management');
                 }}
               >
-                Manage Subscription
+                Upgrade Now
               </Button>
             </div>
             
