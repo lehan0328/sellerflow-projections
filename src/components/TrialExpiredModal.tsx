@@ -388,20 +388,44 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
                   </Button>
                 </div>
 
-                <div className="space-y-1.5 pt-2 border-t">
+                <div className="space-y-3 pt-2 border-t">
+                  {/* Signature Features Section */}
+                  <div>
+                    <h4 className="text-xs font-semibold text-primary mb-2">Signature Features</h4>
+                    <ul className="space-y-1.5">
+                      {plan.features
+                        .filter(f => ['Amazon payout forecasting', 'Smart purchase planning', 'Safe spending power', 'Buying opportunity projection'].includes(f.text))
+                        .map((feature, index) => (
+                          <li key={index} className="flex items-start gap-2">
+                            {feature.included ? (
+                              <Check className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
+                            ) : (
+                              <X className="h-3.5 w-3.5 text-muted-foreground/40 shrink-0 mt-0.5" />
+                            )}
+                            <span className={`text-xs leading-relaxed ${!feature.included && 'text-muted-foreground/60'}`}>
+                              {feature.text}
+                            </span>
+                          </li>
+                        ))}
+                    </ul>
+                  </div>
+
+                  {/* Other Features */}
                   <ul className="space-y-1.5">
-                    {plan.features.map((feature, index) => (
-                      <li key={index} className="flex items-start gap-2">
-                        {feature.included ? (
-                          <Check className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
-                        ) : (
-                          <X className="h-3.5 w-3.5 text-muted-foreground/40 shrink-0 mt-0.5" />
-                        )}
-                        <span className={`text-xs leading-relaxed ${!feature.included && 'text-muted-foreground/60'}`}>
-                          {feature.text}
-                        </span>
-                      </li>
-                    ))}
+                    {plan.features
+                      .filter(f => !['Amazon payout forecasting', 'Smart purchase planning', 'Safe spending power', 'Buying opportunity projection'].includes(f.text))
+                      .map((feature, index) => (
+                        <li key={index} className="flex items-start gap-2">
+                          {feature.included ? (
+                            <Check className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
+                          ) : (
+                            <X className="h-3.5 w-3.5 text-muted-foreground/40 shrink-0 mt-0.5" />
+                          )}
+                          <span className={`text-xs leading-relaxed ${!feature.included && 'text-muted-foreground/60'}`}>
+                            {feature.text}
+                          </span>
+                        </li>
+                      ))}
                   </ul>
                 </div>
               </div>
