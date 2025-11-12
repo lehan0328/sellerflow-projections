@@ -500,7 +500,7 @@ export function OverviewStats({
                 <p className="text-lg font-bold text-green-600">{formatCurrency(todaysIncome)}</p>
               </div>
               <div className="text-center">
-                <p className="text-xs text-muted-foreground mb-1">Expenses</p>
+                <p className="text-xs text-muted-foreground mb-1">Outflow</p>
                 <p className="text-lg font-bold text-red-600">{formatCurrency(todaysExpenses)}</p>
               </div>
             </div>
