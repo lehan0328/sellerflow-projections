@@ -142,17 +142,26 @@ export function AdminDashboardOverview() {
       if (featuresError) throw featuresError;
       const pendingFeatureRequests = features?.length || 0;
 
-      // Fetch affiliate referrals (correct table name)
-      const { data: referrals, error: referralsError } = await supabase
-        .from('affiliate_referrals')
-        .select('id, status');
+      // Fetch referrals from profiles (users who signed up with a referral code)
+      const { data: referralUsers, error: referralsError } = await supabase
+        .from('profiles')
+        .select('user_id, email, referral_code, trial_end, stripe_customer_id')
+        .not('referral_code', 'is', null)
+        .neq('referral_code', '');
 
       if (referralsError) {
         console.error('Error fetching referrals:', referralsError);
       }
 
-      const totalReferrals = referrals?.length || 0;
-      const activeReferrals = referrals?.filter(r => r.status === 'active').length || 0;
+      // Filter out admin emails from referral users
+      const validReferralUsers = referralUsers?.filter(u => !adminEmails.has(u.email || '')) || [];
+      
+      const totalReferrals = validReferralUsers.length;
+      
+      // Active referrals = users who converted to paid (have stripe_customer_id and not in trial)
+      const activeReferrals = validReferralUsers.filter(u => 
+        u.stripe_customer_id && (!u.trial_end || new Date(u.trial_end) < now)
+      ).length;
 
       setMetrics({
         totalUsers,
