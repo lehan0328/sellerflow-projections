@@ -14,6 +14,7 @@ interface CodeUsage {
   code: string;
   type: 'referral' | 'affiliate' | 'custom';
   totalUses: number;
+  trialUsers: number;
   activeSubscriptions: number;
   discountAmount: string;
   duration: string;
@@ -28,6 +29,7 @@ export function AdminCodeTracking() {
   const [stats, setStats] = useState({
     totalCodes: 0,
     totalUses: 0,
+    trialUsers: 0,
     activeConversions: 0,
     conversionRate: 0,
   });
@@ -87,6 +89,8 @@ export function AdminCodeTracking() {
             p.email && 
             activeSubscriptionEmails.has(p.email)
         ).length || 0;
+        
+        const trialCount = usageCount - activeCount;
 
         // Map code_type to correct type
         const typeMap: Record<string, 'referral' | 'affiliate' | 'custom'> = {
@@ -100,6 +104,7 @@ export function AdminCodeTracking() {
           code,
           type: typeMap[codeData.code_type] || 'custom',
           totalUses: usageCount,
+          trialUsers: trialCount,
           activeSubscriptions: activeCount,
           discountAmount: `${codeData.discount_percentage}% off`,
           duration: `${codeData.duration_months} months`,
@@ -110,6 +115,7 @@ export function AdminCodeTracking() {
 
       // Calculate stats
       const totalUses = allCodesData.reduce((sum, code) => sum + code.totalUses, 0);
+      const totalTrialUsers = allCodesData.reduce((sum, code) => sum + code.trialUsers, 0);
       const activeConversions = allCodesData.reduce((sum, code) => sum + code.activeSubscriptions, 0);
       
       setAllCodes(allCodesData);
@@ -117,6 +123,7 @@ export function AdminCodeTracking() {
       setStats({
         totalCodes: allCodesData.length,
         totalUses,
+        trialUsers: totalTrialUsers,
         activeConversions,
         conversionRate: totalUses > 0 ? Math.round((activeConversions / totalUses) * 100) : 0,
       });
@@ -173,7 +180,7 @@ export function AdminCodeTracking() {
   };
 
   const handleDeleteCode = async (codeId: string, codeName: string) => {
-    if (!confirm(`Are you sure you want to delete the code "${codeName}"?`)) {
+    if (!confirm(`Are you sure you want to delete the code "${codeName}"?\n\nNote: Users who already used this code will keep their existing discounts. This action cannot be undone.`)) {
       return;
     }
 
@@ -230,7 +237,7 @@ export function AdminCodeTracking() {
       </div>
 
       {/* Summary Stats */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Codes</CardTitle>
@@ -255,11 +262,22 @@ export function AdminCodeTracking() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Trial Users</CardTitle>
+            <Users className="h-4 w-4 text-yellow-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-yellow-600">{stats.trialUsers}</div>
+            <p className="text-xs text-muted-foreground">Still on trial or churned</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Active Subscriptions</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.activeConversions}</div>
+            <div className="text-2xl font-bold text-green-600">{stats.activeConversions}</div>
             <p className="text-xs text-muted-foreground">Converted to paid</p>
           </CardContent>
         </Card>
@@ -381,10 +399,14 @@ export function AdminCodeTracking() {
                         {code.discountAmount} • {code.duration}
                       </p>
                     </div>
-                    <div className="flex items-center gap-8">
+                    <div className="flex items-center gap-6">
                       <div className="text-right">
                         <p className="text-2xl font-bold">{code.totalUses}</p>
                         <p className="text-xs text-muted-foreground">Total Uses</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-2xl font-bold text-yellow-600">{code.trialUsers}</p>
+                        <p className="text-xs text-muted-foreground">Trial Users</p>
                       </div>
                       <div className="text-right">
                         <p className="text-2xl font-bold text-green-600">{code.activeSubscriptions}</p>
@@ -399,7 +421,7 @@ export function AdminCodeTracking() {
                         </p>
                         <p className="text-xs text-muted-foreground">Conversion</p>
                       </div>
-                      {code.type === 'custom' && code.id && (
+                      {code.id && (
                         <div>
                           <Button
                             variant="destructive"
