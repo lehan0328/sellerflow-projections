@@ -71,23 +71,35 @@ serve(async (req) => {
     const trialEnd = profile?.trial_end ? new Date(profile.trial_end) : null;
     const isTrialExpired = trialEnd ? trialEnd < new Date() : false;
 
-    // referred_user_discount is NOT a subscription - it's just a discount flag
-    // Only check plan_override if it's NOT referred_user_discount
-    if (profile?.plan_override && profile.plan_override !== 'referred_user_discount') {
-      // Normalize plan_override to lowercase to handle case sensitivity issues
-      const normalizedPlan = profile.plan_override.toLowerCase();
-      logStep("Plan override found - granting access regardless of trial status", { plan: normalizedPlan });
+    // Check for LIFETIME ACCESS grants only (tier-based or explicit lifetime)
+    // Regular plan names (professional, enterprise, growing, starter) are NOT lifetime
+    // referred_user_discount is just a discount flag, not access
+    if (profile?.plan_override) {
+      const isLifetimeAccess = 
+        profile.plan_override.includes('tier') || 
+        profile.plan_override === 'lifetime' || 
+        profile.plan_override === 'lifetime_access';
       
-      // Plan overrides (lifetime access, etc.) bypass trial expiration checks
-      return new Response(JSON.stringify({
-        subscribed: true,
-        plan: normalizedPlan,
-        subscription_end: null,
-        is_override: true,
-        discount_ever_redeemed: !!profile.discount_redeemed_at
-      }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
+      if (isLifetimeAccess) {
+        const normalizedPlan = profile.plan_override.toLowerCase();
+        logStep("Lifetime access grant found - bypassing all checks", { plan: normalizedPlan });
+        
+        return new Response(JSON.stringify({
+          subscribed: true,
+          plan: normalizedPlan,
+          subscription_end: null,
+          is_override: true,
+          discount_ever_redeemed: !!profile.discount_redeemed_at
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        });
+      }
+      
+      // If plan_override is set but NOT lifetime, log it but continue to Stripe check
+      logStep("Plan override found but not lifetime access", { 
+        plan: profile.plan_override,
+        note: "Will check Stripe subscription status"
       });
     }
 
