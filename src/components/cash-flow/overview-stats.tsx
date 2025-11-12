@@ -468,6 +468,14 @@ export function OverviewStats({
     paymentDate.setHours(0, 0, 0, 0);
     return income.status === 'pending' && paymentDate < today;
   }).length;
+  
+  // Calculate overdue credit card transactions
+  const overdueCreditCardCount = vendorTransactions.filter(tx => {
+    const dueDate = new Date(tx.dueDate);
+    dueDate.setHours(0, 0, 0, 0);
+    return tx.status === 'pending' && dueDate < today && tx.creditCardId;
+  }).length;
+  
   const totalOverdueCount = overdueVendorCount + overdueIncomeCount;
   return <div className="p-5 pb-6 h-full overflow-y-auto flex flex-col border border-border rounded-lg bg-background/10 backdrop-blur-sm">
       <h2 className="text-xl font-bold text-foreground mb-4">Overview</h2>
@@ -539,6 +547,10 @@ export function OverviewStats({
                 <p className="text-sm text-muted-foreground text-center mb-1">Pending: {formatCurrency(pendingCreditTotal)}</p>
                 <p className="text-sm text-muted-foreground mb-2 text-center">{creditUtilization.toFixed(1)}% utilization</p>
               </>}
+            {overdueCreditCardCount > 0 && <Button variant="outline" size="sm" onClick={() => setShowOverdueModal(true)} className="mb-1.5 h-7 px-2 text-xs border-destructive text-destructive">
+                <AlertCircle className="h-3 w-3 mr-1" />
+                Overdue ({overdueCreditCardCount})
+              </Button>}
             {creditCards.length > 0 && <Button variant="link" size="sm" onClick={() => setShowCreditCardsModal(true)} className="h-6 px-0 text-xs mx-auto block">
                 View {creditCards.length} card{creditCards.length !== 1 ? 's' : ''}
               </Button>}
