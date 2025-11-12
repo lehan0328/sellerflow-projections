@@ -80,6 +80,7 @@ export function PlaidAccountConfirmationDialog({
   const [priorities, setPriorities] = useState<Record<string, number>>({});
   const [creditCardData, setCreditCardData] = useState<Record<string, CreditCardData>>({});
   const [isAdding, setIsAdding] = useState(false);
+  const [openPriorityPopover, setOpenPriorityPopover] = useState<string | null>(null);
 
   // Auto-select all accounts when dialog opens
   useEffect(() => {
@@ -365,7 +366,11 @@ export function PlaidAccountConfirmationDialog({
                           </p>
                         </div>
                         {isSelected && (
-                <Popover modal={true}>
+                <Popover 
+                  modal={true}
+                  open={openPriorityPopover === account.uniqueId}
+                  onOpenChange={(open) => setOpenPriorityPopover(open ? account.uniqueId : null)}
+                >
                   <PopoverTrigger asChild>
                               <Button
                                 type="button"
@@ -395,6 +400,7 @@ export function PlaidAccountConfirmationDialog({
                                       e.stopPropagation();
                                       console.log('Setting priority:', p, 'for account:', account.uniqueId);
                                       setPriorities({ ...priorities, [account.uniqueId]: p });
+                                      setOpenPriorityPopover(null); // Close popover after selection
                                     }}
                                     className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
                                       priority === p 
