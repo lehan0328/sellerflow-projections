@@ -37,7 +37,7 @@ export function AdminCodeTracking() {
     durationMonths: 3,
   });
   const [isCreating, setIsCreating] = useState(false);
-  const [filterType, setFilterType] = useState<'all' | 'user' | 'affiliate' | 'custom'>('all');
+  const [filterType, setFilterType] = useState<'all' | 'referral' | 'affiliate' | 'custom'>('all');
 
   useEffect(() => {
     fetchCodeTracking();
@@ -343,11 +343,11 @@ export function AdminCodeTracking() {
               <select
                 id="filter"
                 value={filterType}
-                onChange={(e) => setFilterType(e.target.value as 'all' | 'user' | 'affiliate' | 'custom')}
+                onChange={(e) => setFilterType(e.target.value as 'all' | 'referral' | 'affiliate' | 'custom')}
                 className="px-3 py-2 border rounded-md text-sm bg-background"
               >
                 <option value="all">All Codes</option>
-                <option value="user">User Referrals</option>
+                <option value="referral">User Referrals</option>
                 <option value="affiliate">Affiliates</option>
                 <option value="custom">Custom Codes</option>
               </select>
