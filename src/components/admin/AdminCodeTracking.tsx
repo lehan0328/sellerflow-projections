@@ -85,6 +85,7 @@ export function AdminCodeTracking() {
         };
 
         return {
+          id: codeData.id,
           code,
           type: typeMap[codeData.code_type] || 'custom',
           totalUses: usageCount,
@@ -130,11 +131,13 @@ export function AdminCodeTracking() {
     setIsCreating(true);
     try {
       const { error } = await supabase
-        .from('custom_discount_codes')
+        .from('referral_codes')
         .insert({
           code: newCode.code.toUpperCase().trim(),
+          code_type: 'custom',
           discount_percentage: newCode.discountPercentage,
           duration_months: newCode.durationMonths,
+          is_active: true,
         });
 
       if (error) {
@@ -164,7 +167,7 @@ export function AdminCodeTracking() {
 
     try {
       const { error } = await supabase
-        .from('custom_discount_codes')
+        .from('referral_codes')
         .delete()
         .eq('id', codeId);
 

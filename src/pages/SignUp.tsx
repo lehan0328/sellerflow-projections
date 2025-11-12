@@ -82,30 +82,31 @@ export const SignUp = () => {
     try {
       const upperCode = code.toUpperCase();
       
-      // Check unified referral_codes table
+      // Check unified referral_codes table (includes user, affiliate, and custom codes)
       const { data: referralCode, error } = await supabase
         .from("referral_codes")
         .select("code, code_type, discount_percentage, duration_months")
         .eq("code", upperCode)
         .eq("is_active", true)
-        .maybeSingle();
+        .single();
 
-      if (error && error.code !== 'PGRST116') {
-        console.error("Error validating referral code:", error);
-        setReferralCodeStatus('invalid');
-        setReferralCodeType(null);
+      if (error) {
+        if (error.code === 'PGRST116') {
+          // No matching code found
+          setReferralCodeStatus('invalid');
+          setReferralCodeType(null);
+        } else {
+          console.error("Error validating referral code:", error);
+          setReferralCodeStatus('invalid');
+          setReferralCodeType(null);
+        }
         return;
       }
 
-      if (referralCode) {
-        setReferralCodeStatus('valid');
-        // Ensure code_type is one of the expected values
-        const validTypes = ['user', 'affiliate', 'custom'];
-        setReferralCodeType(validTypes.includes(referralCode.code_type) ? referralCode.code_type as 'affiliate' | 'custom' | 'user' : null);
-      } else {
-        setReferralCodeStatus('invalid');
-        setReferralCodeType(null);
-      }
+      // Code found and valid
+      setReferralCodeStatus('valid');
+      const validTypes = ['user', 'affiliate', 'custom'];
+      setReferralCodeType(validTypes.includes(referralCode.code_type) ? referralCode.code_type as 'affiliate' | 'custom' | 'user' : null);
     } catch (err) {
       console.error('Unexpected error validating referral code:', err);
       setReferralCodeStatus('invalid');
