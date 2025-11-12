@@ -75,12 +75,27 @@ export const useReferrals = () => {
     });
   };
 
-  const createReferralCode = async (code: string): Promise<{ success: boolean; error?: string }> => {
-    // Referral codes are now auto-generated, this function is deprecated
-    return { 
-      success: false, 
-      error: 'Referral codes are automatically generated. Your code is: ' + referralCode 
-    };
+  const createReferralCode = async (): Promise<{ success: boolean; code?: string; error?: string }> => {
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-referral-code');
+
+      if (error) throw error;
+
+      if (!data.success) {
+        return { success: false, error: data.error };
+      }
+
+      await fetchReferralData();
+      toast({ title: "Success", description: data.message || "Referral code generated!" });
+      return { success: true, code: data.code };
+    } catch (error: any) {
+      toast({ 
+        title: "Error", 
+        description: error.message || "Failed to generate code",
+        variant: "destructive" 
+      });
+      return { success: false, error: error.message };
+    }
   };
 
   return {

@@ -197,3 +197,6 @@ verify_jwt = false
 
 [functions.complete-admin-signup]
 verify_jwt = false
+
+[functions.generate-referral-code]
+verify_jwt = true

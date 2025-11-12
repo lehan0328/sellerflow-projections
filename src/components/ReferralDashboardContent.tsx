@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,26 +30,38 @@ export function ReferralDashboardContent({ isDemo = false }: ReferralDashboardCo
   const { loading, referralCode, referrals, rewards, copyReferralLink, createReferralCode } = useReferrals();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [customCode, setCustomCode] = useState('');
+  const [companyName, setCompanyName] = useState('');
   const [codeError, setCodeError] = useState('');
   const [creating, setCreating] = useState(false);
   const [showRewards, setShowRewards] = useState(false);
 
-  const handleCreateCode = async () => {
-    if (!customCode.trim()) {
-      setCodeError('Please enter a referral code');
-      return;
-    }
+  // Fetch user's company name
+  useEffect(() => {
+    const fetchCompany = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('company')
+          .eq('user_id', user.id)
+          .single();
+        
+        if (profile?.company) {
+          setCompanyName(profile.company);
+        }
+      }
+    };
+    fetchCompany();
+  }, []);
 
+  const handleCreateCode = async () => {
     setCreating(true);
     setCodeError('');
     
-    const result = await createReferralCode(customCode.toUpperCase().trim());
+    const result = await createReferralCode();
     
     if (!result.success) {
-      setCodeError(result.error || 'Failed to create code');
-    } else {
-      setCustomCode('');
+      setCodeError(result.error || 'Failed to generate code');
     }
     
     setCreating(false);
@@ -326,33 +338,29 @@ export function ReferralDashboardContent({ isDemo = false }: ReferralDashboardCo
             </>
           ) : (
             <>
-              <div className="space-y-3">
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <div className="flex-1">
-                    <Input
-                      placeholder="Enter your custom code (e.g., JOHN2024)"
-                      value={customCode}
-                      onChange={(e) => {
-                        setCustomCode(e.target.value.toUpperCase());
-                        setCodeError('');
-                      }}
-                      onKeyDown={(e) => e.key === 'Enter' && handleCreateCode()}
-                      maxLength={20}
-                      className="h-12 text-lg font-mono uppercase"
-                      disabled={creating}
-                    />
-                    <p className="text-xs text-muted-foreground mt-2">
-                      3-20 characters, uppercase letters and numbers only
+              <div className="space-y-4">
+                <div className="p-4 bg-muted/50 rounded-lg">
+                  <p className="text-sm text-muted-foreground">
+                    Your referral code will be based on your company name: 
+                    <span className="font-semibold text-foreground ml-1">
+                      {companyName || 'Not set'}
+                    </span>
+                  </p>
+                  {!companyName && (
+                    <p className="text-xs text-destructive mt-2">
+                      Please add your company name in Settings first
                     </p>
-                  </div>
-                  <Button 
-                    onClick={handleCreateCode} 
-                    className="bg-gradient-primary hover-scale h-12"
-                    disabled={creating || !customCode.trim()}
-                  >
-                    {creating ? 'Creating...' : 'Create Code'}
-                  </Button>
+                  )}
                 </div>
+                
+                <Button 
+                  onClick={handleCreateCode} 
+                  className="bg-gradient-primary hover-scale w-full h-12"
+                  disabled={creating || !companyName}
+                >
+                  <Sparkles className="h-5 w-5 mr-2" />
+                  {creating ? 'Generating Code...' : 'Generate Referral Code'}
+                </Button>
                 
                 {codeError && (
                   <Alert variant="destructive">
@@ -360,6 +368,10 @@ export function ReferralDashboardContent({ isDemo = false }: ReferralDashboardCo
                     <AlertDescription>{codeError}</AlertDescription>
                   </Alert>
                 )}
+                
+                <div className="text-xs text-muted-foreground text-center p-3 bg-muted/30 rounded-lg">
+                  ⚠️ <strong>Note:</strong> Your referral code cannot be changed once created
+                </div>
               </div>
             </>
           )}
