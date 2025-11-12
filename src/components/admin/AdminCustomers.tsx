@@ -748,16 +748,18 @@ export const AdminCustomers = () => {
                               )}
                             </button>
                           )}
-                          <span>
-                            {customer.first_name || customer.last_name
-                              ? `${customer.first_name || ''} ${customer.last_name || ''}`.trim()
-                              : 'Unnamed'}
+                          <div className="flex items-center gap-1 flex-wrap">
+                            <span>
+                              {customer.first_name || customer.last_name
+                                ? `${customer.first_name || ''} ${customer.last_name || ''}`.trim()
+                                : 'Unnamed'}
+                            </span>
                             {hasTeamMembers && (
-                              <Badge variant="outline" className="ml-2 text-xs">
+                              <Badge variant="outline" className="text-xs">
                                 {customer.team_members!.length} {customer.team_members!.length === 1 ? 'member' : 'members'}
                               </Badge>
                             )}
-                          </span>
+                          </div>
                         </div>
                       </TableCell>
                       <TableCell>{customer.email}</TableCell>
