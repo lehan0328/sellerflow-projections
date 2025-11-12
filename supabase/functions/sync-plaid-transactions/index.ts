@@ -95,20 +95,11 @@ serve(async (req) => {
       }
     }
 
-    // Create client with user's auth token
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-      global: {
-        headers: {
-          Authorization: authHeader,
-        },
-      },
-    });
-
     console.log(`Syncing transactions for ${accountType} account:`, accountId);
 
-    // Get the account from database (bank or credit card)
+    // Get the account from database (bank or credit card) using admin client
     const tableName = accountType === 'credit' ? 'credit_cards' : 'bank_accounts';
-    const { data: account, error: fetchError } = await supabase
+    const { data: account, error: fetchError } = await supabaseAdmin
       .from(tableName)
       .select('encrypted_access_token, plaid_account_id, account_id')
       .eq('id', accountId)
@@ -120,7 +111,7 @@ serve(async (req) => {
     }
 
     // Decrypt the access token
-    const { data: accessToken, error: decryptError } = await supabase.rpc('decrypt_banking_credential', {
+    const { data: accessToken, error: decryptError } = await supabaseAdmin.rpc('decrypt_banking_credential', {
       encrypted_text: account.encrypted_access_token
     });
 
@@ -193,7 +184,7 @@ serve(async (req) => {
         }
 
         // Check if transaction already exists
-        const { data: existingTx } = await supabase
+        const { data: existingTx } = await supabaseAdmin
           .from('bank_transactions')
           .select('id')
           .eq('plaid_transaction_id', transaction.transaction_id)
@@ -203,14 +194,14 @@ serve(async (req) => {
         let insertError = null;
         if (existingTx) {
           // Update existing transaction
-          const { error } = await supabase
+          const { error } = await supabaseAdmin
             .from('bank_transactions')
             .update(transactionData)
             .eq('id', existingTx.id);
           insertError = error;
         } else {
           // Insert new transaction
-          const { error } = await supabase
+          const { error } = await supabaseAdmin
             .from('bank_transactions')
             .insert(transactionData);
           insertError = error;
@@ -258,7 +249,7 @@ serve(async (req) => {
       console.log('💵 Updating available balance to:', latestAvailableBalance);
     }
 
-    await supabase
+    await supabaseAdmin
       .from(tableName)
       .update(updateData)
       .eq('id', accountId);
