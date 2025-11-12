@@ -133,6 +133,7 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
       { text: "Buying opportunity projection", included: true },
       { text: "Additional users", included: false },
       { text: "AI PDF extractor", included: false },
+      { text: "Advanced analytics", included: false },
       { text: "Document storage", included: false },
       { text: "Scenario planning", included: false },
     ],
@@ -150,7 +151,8 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
       { text: "Smart purchase planning", included: true },
       { text: "Safe spending power", included: true },
       { text: "Buying opportunity projection", included: true },
-      { text: "Basic analytics", included: true },
+      { text: "Advanced analytics", included: true },
+      { text: "Document storage", included: false },
       { text: "Scenario planning", included: false },
     ],
     professional: [
@@ -167,6 +169,7 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
       { text: "Smart purchase planning", included: true },
       { text: "Safe spending power", included: true },
       { text: "Buying opportunity projection", included: true },
+      { text: "Advanced analytics", included: true },
       { text: "Scenario planning", included: true },
     ],
     enterprise_tier1: [
