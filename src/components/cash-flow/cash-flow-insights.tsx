@@ -490,13 +490,17 @@ export const CashFlowInsights = memo(({
       return sum + effectiveAvailableCredit;
     }, 0);
     
-    // Add available credit to each opportunity
+    // Deduct pending credit card transactions
+    const totalPending = Object.values(pendingOrdersByCard).reduce((sum, amount) => sum + amount, 0);
+    const netAvailableCredit = totalAvailableCredit - totalPending;
+    
+    // Add net available credit to each opportunity
     return adjustedOpportunities.map(opp => ({
       ...opp,
-      balance: opp.balance + totalAvailableCredit,
+      balance: opp.balance + netAvailableCredit,
       includesCredit: true
     }));
-  }, [adjustedOpportunities, includeCreditInOpportunities, creditCards]);
+  }, [adjustedOpportunities, includeCreditInOpportunities, creditCards, pendingOrdersByCard]);
 
   const handleDateSearch = useCallback(async (date: Date) => {
     setSearchedDate(date);
