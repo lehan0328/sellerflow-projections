@@ -673,7 +673,21 @@ export const CashFlowInsights = memo(({
                       {safeSpendingLimit < 0 && <AlertCircle className="h-4 w-4 text-red-600" />}
                     </div>
                     <span className={`text-2xl font-bold ${safeSpendingLimit < 0 ? 'text-red-600' : 'text-blue-700'}`}>
-                      ${safeSpendingLimit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      ${(() => {
+                        // Calculate effective safe spending with credit if toggled on
+                        let effectiveAmount = safeSpendingLimit;
+                        if (includeCreditInOpportunities && creditCards.length > 0) {
+                          const totalAvailableCredit = creditCards.reduce((sum, card) => {
+                            const effectiveCreditLimit = card.credit_limit_override || card.credit_limit;
+                            const effectiveAvailableCredit = effectiveCreditLimit - card.balance;
+                            return sum + effectiveAvailableCredit;
+                          }, 0);
+                          const totalPending = Object.values(pendingOrdersByCard).reduce((sum, amount) => sum + amount, 0);
+                          const netAvailableCredit = totalAvailableCredit - totalPending;
+                          effectiveAmount = safeSpendingLimit + netAvailableCredit;
+                        }
+                        return effectiveAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                      })()}
                     </span>
                   </div>
                   <p className="text-xs text-muted-foreground mb-2">
@@ -722,7 +736,21 @@ export const CashFlowInsights = memo(({
                 </div>
 
                 {/* Opportunity #2 Preview - only show if current safe spending is positive */}
-                {safeSpendingLimit > 0 && allBuyingOpportunities.length > 1 && allBuyingOpportunities[1].balance > 0 && (
+                {(() => {
+                  // Calculate effective safe spending with credit if toggled on
+                  let effectiveSafeSpending = safeSpendingLimit;
+                  if (includeCreditInOpportunities && creditCards.length > 0) {
+                    const totalAvailableCredit = creditCards.reduce((sum, card) => {
+                      const effectiveCreditLimit = card.credit_limit_override || card.credit_limit;
+                      const effectiveAvailableCredit = effectiveCreditLimit - card.balance;
+                      return sum + effectiveAvailableCredit;
+                    }, 0);
+                    const totalPending = Object.values(pendingOrdersByCard).reduce((sum, amount) => sum + amount, 0);
+                    const netAvailableCredit = totalAvailableCredit - totalPending;
+                    effectiveSafeSpending = safeSpendingLimit + netAvailableCredit;
+                  }
+                  return effectiveSafeSpending > 0;
+                })() && mergedOpportunities.length > 1 && mergedOpportunities[1].balance > 0 && (
                   <div className="p-3 rounded-lg bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border-2 border-blue-200 dark:border-blue-800">
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
@@ -730,7 +758,7 @@ export const CashFlowInsights = memo(({
                         <h5 className="font-semibold text-xs">Opportunity #2</h5>
                       </div>
                       <span className="text-lg font-bold text-blue-600">
-                        ${allBuyingOpportunities[1].balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        ${mergedOpportunities[1].balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </span>
                     </div>
                     <div className="space-y-1.5 text-xs">
@@ -738,7 +766,7 @@ export const CashFlowInsights = memo(({
                         <span className="text-muted-foreground">Low Point</span>
                         <span className="font-medium">
                           {(() => {
-                            const [year, month, day] = allBuyingOpportunities[1].date.split('-').map(Number);
+                            const [year, month, day] = mergedOpportunities[1].date.split('-').map(Number);
                             const date = new Date(year, month - 1, day);
                             return date.toLocaleDateString('en-US', {
                               month: 'short',
@@ -747,12 +775,12 @@ export const CashFlowInsights = memo(({
                           })()}
                         </span>
                       </div>
-                      {allBuyingOpportunities[1].available_date && (
+                      {mergedOpportunities[1].available_date && (
                         <div className="flex items-center justify-between p-1.5 bg-blue-50 dark:bg-blue-950/20 rounded border border-blue-200 dark:border-blue-800">
                           <span className="text-muted-foreground text-xs">Earliest Purchase Date</span>
                           <span className="font-semibold text-blue-600">
                             {(() => {
-                              const [year, month, day] = allBuyingOpportunities[1].available_date.split('-').map(Number);
+                              const [year, month, day] = mergedOpportunities[1].available_date.split('-').map(Number);
                               const date = new Date(year, month - 1, day);
                               return date.toLocaleDateString('en-US', {
                                 month: 'short',
