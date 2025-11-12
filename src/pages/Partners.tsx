@@ -2,13 +2,27 @@ import { useState, useEffect } from "react";
 import { Helmet } from "react-helmet";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Gift, DollarSign, Users, TrendingUp, Lock, AlertCircle, ArrowRight } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Gift, DollarSign, Users, TrendingUp, Lock, AlertCircle, ArrowRight, Send } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
 import { PublicHeader } from "@/components/PublicHeader";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export default function Partners() {
   const navigate = useNavigate();
   const [showStickyCTA, setShowStickyCTA] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    subject: "Affiliate Program Inquiry",
+    message: ""
+  });
 
   useEffect(() => {
     const handleScroll = () => {
@@ -17,6 +31,49 @@ export default function Partners() {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!formData.name.trim() || !formData.email.trim() || !formData.message.trim()) {
+      toast.error("Please fill in all fields");
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const { error } = await supabase.functions.invoke('send-contact-email', {
+        body: {
+          name: formData.name,
+          email: formData.email,
+          subject: formData.subject,
+          message: formData.message
+        }
+      });
+      
+      if (error) throw error;
+      
+      toast.success("Message sent successfully! We'll get back to you within 24-48 hours.");
+      setFormData({
+        name: "",
+        email: "",
+        subject: "Affiliate Program Inquiry",
+        message: ""
+      });
+      setIsDialogOpen(false);
+    } catch (error) {
+      console.error("Contact form error:", error);
+      toast.error("Failed to send message. Please try emailing support@aurenapp.com directly.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <>
@@ -97,7 +154,7 @@ export default function Partners() {
               size="lg" 
               variant="outline" 
               className="border-2 border-primary/40 hover:bg-gradient-to-r hover:from-primary/10 hover:to-accent/10 hover-scale backdrop-blur text-lg px-8 py-7 hover:border-primary"
-              onClick={() => document.getElementById('affiliate-section')?.scrollIntoView({ behavior: 'smooth' })}
+              onClick={() => setIsDialogOpen(true)}
             >
               <TrendingUp className="mr-2 h-5 w-5" />
               Become an Affiliate
@@ -488,6 +545,64 @@ export default function Partners() {
           </div>
         </div>
       </footer>
+
+      {/* Contact Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Become an Affiliate</DialogTitle>
+            <DialogDescription>
+              Fill out the form below and we'll get back to you within 24-48 hours about the affiliate program
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Name *</Label>
+              <Input
+                id="name"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                placeholder="Your name"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="email">Email *</Label>
+              <Input
+                id="email"
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                placeholder="your@email.com"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="message">Message *</Label>
+              <Textarea
+                id="message"
+                value={formData.message}
+                onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                placeholder="Tell us about your audience and why you'd like to become an affiliate..."
+                rows={5}
+                required
+              />
+            </div>
+
+            <div className="flex justify-end gap-3">
+              <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? "Sending..." : "Send Message"}
+                <Send className="ml-2 h-4 w-4" />
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
     </>
   );
