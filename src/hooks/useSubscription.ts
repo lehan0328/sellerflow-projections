@@ -57,8 +57,8 @@ export const PRICING_PLANS = {
   },
   growing: {
     name: "Growing",
-    price: 59,
-    yearlyPrice: 590,
+    price: 79,
+    yearlyPrice: 790,
     product_id: "prod_TAcNnoGuq5Mr7X",
     price_id: "price_1SEH8iB28kMY3Usem3k3vElT",
     yearly_price_id: "price_1SEHZVB28kMY3Use9bH8xPlg",
