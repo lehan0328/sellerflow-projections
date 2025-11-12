@@ -81,6 +81,7 @@ export function PlaidAccountConfirmationDialog({
   const [creditCardData, setCreditCardData] = useState<Record<string, CreditCardData>>({});
   const [isAdding, setIsAdding] = useState(false);
   const [openPriorityPopover, setOpenPriorityPopover] = useState<string | null>(null);
+  const [openDatePopover, setOpenDatePopover] = useState<string | null>(null);
 
   // Auto-select all accounts when dialog opens
   useEffect(() => {
@@ -455,7 +456,11 @@ export function PlaidAccountConfirmationDialog({
                               <Label htmlFor={`duedate-${account.uniqueId}`} className="text-xs">
                                 Payment Due Date
                               </Label>
-                <Popover modal={true}>
+                <Popover 
+                  modal={true}
+                  open={openDatePopover === account.uniqueId}
+                  onOpenChange={(open) => setOpenDatePopover(open ? account.uniqueId : null)}
+                >
                   <PopoverTrigger asChild>
                                   <Button
                                     type="button"
@@ -479,6 +484,7 @@ export function PlaidAccountConfirmationDialog({
                                         const month = String(date.getMonth() + 1).padStart(2, '0');
                                         const day = String(date.getDate()).padStart(2, '0');
                                         updateCreditCardData(account.uniqueId, 'dueDate', `${year}-${month}-${day}`);
+                                        setOpenDatePopover(null); // Close popover after date selection
                                       }
                                     }}
                                     initialFocus
