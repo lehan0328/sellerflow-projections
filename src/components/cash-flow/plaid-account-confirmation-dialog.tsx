@@ -31,7 +31,7 @@ import { usePlanLimits } from "@/hooks/usePlanLimits";
 import { format } from "date-fns";
 
 interface PlaidAccount {
-  id: string; // Plaid uses 'id' not 'account_id'
+  account_id: string; // Plaid uses 'account_id' as the field name
   name: string;
   type: string;
   subtype: string;
@@ -72,7 +72,7 @@ export function PlaidAccountConfirmationDialog({
   // Generate stable unique IDs for each account
   const accountsWithIds = accounts.map((acc, index) => ({
     ...acc,
-    uniqueId: acc.id || `temp-account-${index}-${acc.name.replace(/\s/g, '-')}`
+    uniqueId: acc.account_id || `temp-account-${index}-${acc.name.replace(/\s/g, '-')}`
   }));
 
   // Initialize with empty selection
@@ -97,7 +97,7 @@ export function PlaidAccountConfirmationDialog({
 
   // Debug logging
   console.log('PlaidAccountConfirmationDialog - Accounts:', accountsWithIds.map(acc => ({
-    id: acc.id,
+    account_id: acc.account_id,
     uniqueId: acc.uniqueId,
     name: acc.name,
     type: acc.type
@@ -151,7 +151,7 @@ export function PlaidAccountConfirmationDialog({
       // Map uniqueIds back to actual Plaid account IDs for the API call
       const selectedAccounts = accountsWithIds
         .filter(acc => selectedAccountIds.has(acc.uniqueId))
-        .map(acc => acc.id);
+        .map(acc => acc.account_id);
       
       console.log('Confirming accounts:', selectedAccounts);
       
@@ -159,8 +159,8 @@ export function PlaidAccountConfirmationDialog({
       const mappedPriorities: Record<string, number> = {};
       Object.entries(priorities).forEach(([uniqueId, priority]) => {
         const account = accountsWithIds.find(acc => acc.uniqueId === uniqueId);
-        if (account?.id) {
-          mappedPriorities[account.id] = priority;
+        if (account?.account_id) {
+          mappedPriorities[account.account_id] = priority;
         }
       });
       
@@ -170,8 +170,8 @@ export function PlaidAccountConfirmationDialog({
       const mappedCreditCardData: Record<string, CreditCardData> = {};
       Object.entries(creditCardData).forEach(([uniqueId, data]) => {
         const account = accountsWithIds.find(acc => acc.uniqueId === uniqueId);
-        if (account?.id) {
-          mappedCreditCardData[account.id] = data;
+        if (account?.account_id) {
+          mappedCreditCardData[account.account_id] = data;
         }
       });
       
