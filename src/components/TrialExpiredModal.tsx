@@ -391,7 +391,7 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
                 <div className="space-y-3 pt-2 border-t">
                   {/* Signature Features Section */}
                   <div>
-                    <h4 className="text-xs font-semibold text-primary mb-2">Signature Features</h4>
+                    <h4 className="text-xs font-semibold text-primary mb-2">Signature Features Included</h4>
                     <ul className="space-y-1.5">
                       {plan.features
                         .filter(f => ['Amazon payout forecasting', 'Smart purchase planning', 'Safe spending power', 'Buying opportunity projection'].includes(f.text))
