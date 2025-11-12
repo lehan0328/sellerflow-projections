@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -22,10 +23,12 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Building2, CreditCard, AlertCircle, Zap } from "lucide-react";
+import { Building2, CreditCard, AlertCircle, Zap, Calendar as CalendarIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Calendar } from "@/components/ui/calendar";
 import { usePlanLimits } from "@/hooks/usePlanLimits";
+import { format } from "date-fns";
 
 interface PlaidAccount {
   id: string; // Plaid uses 'id' not 'account_id'
@@ -40,12 +43,21 @@ interface PlaidAccount {
   };
 }
 
+interface CreditCardData {
+  statementBalance?: string;
+  dueDate?: string;
+}
+
 interface PlaidAccountConfirmationDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   accounts: PlaidAccount[];
   institutionName: string;
-  onConfirm: (selectedAccounts: string[], priorities: Record<string, number>) => Promise<void>;
+  onConfirm: (
+    selectedAccounts: string[], 
+    priorities: Record<string, number>,
+    creditCardData: Record<string, CreditCardData>
+  ) => Promise<void>;
 }
 
 export function PlaidAccountConfirmationDialog({
@@ -66,6 +78,7 @@ export function PlaidAccountConfirmationDialog({
   // Initialize with empty selection
   const [selectedAccountIds, setSelectedAccountIds] = useState<Set<string>>(new Set());
   const [priorities, setPriorities] = useState<Record<string, number>>({});
+  const [creditCardData, setCreditCardData] = useState<Record<string, CreditCardData>>({});
   const [isAdding, setIsAdding] = useState(false);
 
   // Auto-select all accounts when dialog opens
@@ -115,6 +128,21 @@ export function PlaidAccountConfirmationDialog({
     setPriorities({ ...priorities, [uniqueId]: nextPriority });
   };
 
+  const updateCreditCardData = (uniqueId: string, field: keyof CreditCardData, value: string) => {
+    setCreditCardData(prev => ({
+      ...prev,
+      [uniqueId]: {
+        ...prev[uniqueId],
+        [field]: value
+      }
+    }));
+  };
+
+  const parseLocalDate = (dateString: string): Date => {
+    const [year, month, day] = dateString.split('-').map(Number);
+    return new Date(year, month - 1, day);
+  };
+
   const handleConfirm = async () => {
     setIsAdding(true);
     try {
@@ -136,7 +164,18 @@ export function PlaidAccountConfirmationDialog({
       
       console.log('Mapped priorities:', mappedPriorities);
       
-      await onConfirm(selectedAccounts, mappedPriorities);
+      // Map credit card data back to Plaid account IDs
+      const mappedCreditCardData: Record<string, CreditCardData> = {};
+      Object.entries(creditCardData).forEach(([uniqueId, data]) => {
+        const account = accountsWithIds.find(acc => acc.uniqueId === uniqueId);
+        if (account?.id) {
+          mappedCreditCardData[account.id] = data;
+        }
+      });
+      
+      console.log('Mapped credit card data:', mappedCreditCardData);
+      
+      await onConfirm(selectedAccounts, mappedPriorities, mappedCreditCardData);
       onOpenChange(false);
     } catch (error) {
       console.error('Error adding accounts:', error);
@@ -289,87 +328,157 @@ export function PlaidAccountConfirmationDialog({
                   const priority = priorities[account.uniqueId] || 3;
                   
                   return (
-                    <div
-                      key={account.uniqueId}
-                      className="flex items-center space-x-3 p-3 rounded-md border bg-card hover:bg-muted/50 transition-colors"
-                    >
-                      <Checkbox
-                        id={`credit-checkbox-${account.uniqueId}`}
-                        checked={isSelected}
-                        onCheckedChange={() => toggleAccount(account.uniqueId)}
-                      />
-                      <div className="flex-1">
-                        <p className="font-medium text-sm">{account.name}</p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {account.balances?.current != null || account.balances?.available != null || account.balances?.limit != null ? (
-                            <span className="flex flex-wrap gap-2">
-                              {account.balances?.current != null && (
-                                <span>
-                                  Balance: <span className="font-medium text-foreground">${account.balances.current.toFixed(2)}</span>
-                                </span>
-                              )}
-                              {account.balances?.available != null && (
-                                <span>
-                                  • Available: <span className="font-medium text-green-600 dark:text-green-400">${account.balances.available.toFixed(2)}</span>
-                                </span>
-                              )}
-                              {account.balances?.limit != null && (
-                                <span>
-                                  • Limit: <span className="font-medium text-foreground">${account.balances.limit.toFixed(2)}</span>
-                                </span>
-                              )}
-                            </span>
-                          ) : (
-                            <span className="text-muted-foreground/70">Balance details will be synced after connection</span>
-                          )}
-                        </p>
-                      </div>
-                      {isSelected && (
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <Badge 
-                              variant="outline"
-                              className="cursor-pointer hover:bg-primary/10 hover:border-primary transition-all flex items-center gap-1.5 px-3 py-1 select-none"
+                    <div key={account.uniqueId} className="space-y-2">
+                      <div className="flex items-center space-x-3 p-3 rounded-md border bg-card hover:bg-muted/50 transition-colors">
+                        <Checkbox
+                          id={`credit-checkbox-${account.uniqueId}`}
+                          checked={isSelected}
+                          onCheckedChange={() => toggleAccount(account.uniqueId)}
+                        />
+                        <div className="flex-1">
+                          <p className="font-medium text-sm">{account.name}</p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {account.balances?.current != null || account.balances?.available != null || account.balances?.limit != null ? (
+                              <span className="flex flex-wrap gap-2">
+                                {account.balances?.current != null && (
+                                  <span>
+                                    Balance: <span className="font-medium text-foreground">${account.balances.current.toFixed(2)}</span>
+                                  </span>
+                                )}
+                                {account.balances?.available != null && (
+                                  <span>
+                                    • Available: <span className="font-medium text-green-600 dark:text-green-400">${account.balances.available.toFixed(2)}</span>
+                                  </span>
+                                )}
+                                {account.balances?.limit != null && (
+                                  <span>
+                                    • Limit: <span className="font-medium text-foreground">${account.balances.limit.toFixed(2)}</span>
+                                  </span>
+                                )}
+                              </span>
+                            ) : (
+                              <span className="text-muted-foreground/70">Balance details will be synced after connection</span>
+                            )}
+                          </p>
+                        </div>
+                        {isSelected && (
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Badge 
+                                variant="outline"
+                                className="cursor-pointer hover:bg-primary/10 hover:border-primary transition-all flex items-center gap-1.5 px-3 py-1 select-none"
+                              >
+                                {priority !== 3 ? (
+                                  <>Priority: {priority} ▼</>
+                                ) : (
+                                  <>Set Priority ▼</>
+                                )}
+                              </Badge>
+                            </PopoverTrigger>
+                            <PopoverContent 
+                              className="w-64 p-2 bg-popover border shadow-lg z-[200]" 
+                              align="end"
+                              sideOffset={5}
                             >
-                              {priority !== 3 ? (
-                                <>Priority: {priority} ▼</>
-                              ) : (
-                                <>Set Priority ▼</>
-                              )}
-                            </Badge>
-                          </PopoverTrigger>
-                          <PopoverContent 
-                            className="w-64 p-2 bg-popover border shadow-lg z-[200]" 
-                            align="end"
-                            sideOffset={5}
-                          >
-                            <div className="space-y-1">
-                              {[1, 2, 3, 4, 5].map((p) => (
-                                <button
-                                  key={p}
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    console.log('Setting priority:', p, 'for account:', account.uniqueId);
-                                    setPriorities({ ...priorities, [account.uniqueId]: p });
-                                  }}
-                                  className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
-                                    priority === p 
-                                      ? 'bg-primary text-primary-foreground font-medium' 
-                                      : 'hover:bg-accent hover:text-accent-foreground'
-                                  }`}
-                                >
-                                  <div className="font-semibold">{p} - {getPriorityLabel(p).split(' - ')[0]}</div>
-                                  <div className="text-xs opacity-80">{getPriorityLabel(p).split(' - ')[1]}</div>
-                                </button>
-                              ))}
+                              <div className="space-y-1">
+                                {[1, 2, 3, 4, 5].map((p) => (
+                                  <button
+                                    key={p}
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      console.log('Setting priority:', p, 'for account:', account.uniqueId);
+                                      setPriorities({ ...priorities, [account.uniqueId]: p });
+                                    }}
+                                    className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
+                                      priority === p 
+                                        ? 'bg-primary text-primary-foreground font-medium' 
+                                        : 'hover:bg-accent hover:text-accent-foreground'
+                                    }`}
+                                  >
+                                    <div className="font-semibold">{p} - {getPriorityLabel(p).split(' - ')[0]}</div>
+                                    <div className="text-xs opacity-80">{getPriorityLabel(p).split(' - ')[1]}</div>
+                                  </button>
+                                ))}
+                              </div>
+                              <p className="text-xs text-muted-foreground mt-2 px-1">
+                                Set based on favorable terms or cash back rewards
+                              </p>
+                            </PopoverContent>
+                          </Popover>
+                        )}
+                      </div>
+                      
+                      {/* Optional Credit Card Details - Only shown when selected */}
+                      {isSelected && (
+                        <Collapsible className="w-full px-3">
+                          <CollapsibleTrigger className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1">
+                            <span>Add statement details (optional)</span>
+                            <span className="text-[10px]">▼</span>
+                          </CollapsibleTrigger>
+                          <CollapsibleContent className="mt-3 space-y-3">
+                            <div className="space-y-2">
+                              <Label htmlFor={`statement-${account.uniqueId}`} className="text-xs">
+                                Statement Balance
+                              </Label>
+                              <div className="relative">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">$</span>
+                                <Input
+                                  id={`statement-${account.uniqueId}`}
+                                  type="number"
+                                  step="0.01"
+                                  min="0"
+                                  placeholder="0.00"
+                                  value={creditCardData[account.uniqueId]?.statementBalance || ''}
+                                  onChange={(e) => updateCreditCardData(account.uniqueId, 'statementBalance', e.target.value)}
+                                  className="pl-7 h-9 text-sm"
+                                />
+                              </div>
+                              <p className="text-[10px] text-muted-foreground">
+                                Current statement balance (you can add this later in settings)
+                              </p>
                             </div>
-                            <p className="text-xs text-muted-foreground mt-2 px-1">
-                              Set based on favorable terms or cash back rewards
-                            </p>
-                          </PopoverContent>
-                        </Popover>
+                            
+                            <div className="space-y-2">
+                              <Label htmlFor={`duedate-${account.uniqueId}`} className="text-xs">
+                                Payment Due Date
+                              </Label>
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <Button
+                                    variant="outline"
+                                    className="w-full justify-start text-left font-normal h-9 text-sm"
+                                  >
+                                    <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+                                    {creditCardData[account.uniqueId]?.dueDate 
+                                      ? format(parseLocalDate(creditCardData[account.uniqueId].dueDate!), "PPP") 
+                                      : <span className="text-muted-foreground">Pick a date</span>
+                                    }
+                                  </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0 bg-popover border shadow-lg z-[200]" align="start">
+                                  <Calendar
+                                    mode="single"
+                                    selected={creditCardData[account.uniqueId]?.dueDate ? parseLocalDate(creditCardData[account.uniqueId].dueDate!) : undefined}
+                                    onSelect={(date) => {
+                                      if (date) {
+                                        const year = date.getFullYear();
+                                        const month = String(date.getMonth() + 1).padStart(2, '0');
+                                        const day = String(date.getDate()).padStart(2, '0');
+                                        updateCreditCardData(account.uniqueId, 'dueDate', `${year}-${month}-${day}`);
+                                      }
+                                    }}
+                                    initialFocus
+                                  />
+                                </PopoverContent>
+                              </Popover>
+                              <p className="text-[10px] text-muted-foreground">
+                                Next payment due date (you can add this later in settings)
+                              </p>
+                            </div>
+                          </CollapsibleContent>
+                        </Collapsible>
                       )}
                     </div>
                   );

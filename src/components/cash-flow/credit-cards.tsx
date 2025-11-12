@@ -131,7 +131,11 @@ export function CreditCards() {
     }
   };
 
-  const handleConfirmAccounts = async (selectedAccountIds: string[], priorities: Record<string, number>) => {
+  const handleConfirmAccounts = async (
+    selectedAccountIds: string[], 
+    priorities: Record<string, number>,
+    creditCardData: Record<string, { statementBalance?: string; dueDate?: string }>
+  ) => {
     if (!pendingPlaidData) return;
     
     const { publicToken, metadata } = pendingPlaidData;
@@ -147,7 +151,8 @@ export function CreditCards() {
             accounts: metadata.accounts.filter((acc: any) => selectedAccountIds.includes(acc.account_id))
           },
           selectedAccountIds,
-          priorities
+          priorities,
+          creditCardData
         }
       });
       

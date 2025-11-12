@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { publicToken, metadata, selectedAccountIds, priorities } = await req.json();
+    const { publicToken, metadata, selectedAccountIds, priorities, creditCardData } = await req.json();
     
     const PLAID_CLIENT_ID = Deno.env.get('PLAID_CLIENT_ID');
     const PLAID_SECRET = Deno.env.get('PLAID_SECRET');
@@ -250,8 +250,18 @@ serve(async (req) => {
         const cardPriority = priorities?.[account.account_id] || null;
         console.log(`Credit card priority for ${account.name}: ${cardPriority || 'not set'}`);
         
+        // Get user-provided credit card data (statement balance and due date)
+        const userCardData = creditCardData?.[account.account_id];
+        const userStatementBalance = userCardData?.statementBalance ? parseFloat(userCardData.statementBalance) : null;
+        const userDueDate = userCardData?.dueDate || null;
+        
+        console.log(`User provided data for ${account.name}:`, {
+          statementBalance: userStatementBalance,
+          dueDate: userDueDate
+        });
+        
         // Prepare credit card data for insertion
-        const creditCardData = {
+        const cardDataToInsert = {
           user_id: user.id,
           account_id: accountId,
           institution_name: metadata.institution.name,
@@ -264,9 +274,10 @@ serve(async (req) => {
           encrypted_access_token: access_token,
           encrypted_plaid_item_id: item_id,
           plaid_account_id: account.account_id,
-          statement_balance: cardLiabilities?.last_statement_balance || 0,
+          // Prioritize user-provided data, fall back to liabilities data
+          statement_balance: userStatementBalance !== null ? userStatementBalance : (cardLiabilities?.last_statement_balance || 0),
           minimum_payment: cardLiabilities?.minimum_payment_amount || 0,
-          payment_due_date: cardLiabilities?.next_payment_due_date || null,
+          payment_due_date: userDueDate || cardLiabilities?.next_payment_due_date || null,
           statement_close_date: cardLiabilities?.last_statement_issue_date || null,
           priority: cardPriority,
           last_sync: new Date().toISOString(),
@@ -287,7 +298,7 @@ serve(async (req) => {
         // Store as credit card with encrypted access token
         const { data: cardData, error: insertError } = await supabaseAdmin
           .from('credit_cards')
-          .insert(creditCardData)
+          .insert(cardDataToInsert)
           .select('id')
           .single();
 

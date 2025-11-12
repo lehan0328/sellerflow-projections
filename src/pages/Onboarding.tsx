@@ -232,7 +232,11 @@ export default function Onboarding() {
   };
 
   // Handle confirmed Plaid accounts
-  const handleConfirmPlaidAccounts = async (selectedAccounts: string[], priorities: Record<string, number>) => {
+  const handleConfirmPlaidAccounts = async (
+    selectedAccounts: string[], 
+    priorities: Record<string, number>,
+    creditCardData: Record<string, { statementBalance?: string; dueDate?: string }>
+  ) => {
     if (!plaidPublicToken || !plaidMetadata) return;
     
     try {
@@ -244,7 +248,8 @@ export default function Onboarding() {
           publicToken: plaidPublicToken, 
           metadata: plaidMetadata,
           selectedAccountIds: selectedAccounts,
-          priorities
+          priorities,
+          creditCardData
         }
       });
 

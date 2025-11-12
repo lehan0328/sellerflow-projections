@@ -277,7 +277,11 @@ export function BankAccounts({ useAvailableBalance, onToggleBalance }: { useAvai
     return "destructive";
   };
 
-  const handleConfirmPlaidAccounts = async (selectedAccountIds: string[], priorities?: Record<string, number>) => {
+  const handleConfirmPlaidAccounts = async (
+    selectedAccountIds: string[], 
+    priorities?: Record<string, number>,
+    creditCardData?: Record<string, { statementBalance?: string; dueDate?: string }>
+  ) => {
     if (!plaidPublicToken || !plaidMetadata) return;
     
     try {
@@ -287,7 +291,8 @@ export function BankAccounts({ useAvailableBalance, onToggleBalance }: { useAvai
           publicToken: plaidPublicToken, 
           metadata: plaidMetadata,
           selectedAccountIds,
-          priorities
+          priorities,
+          creditCardData
         }
       });
       
