@@ -129,13 +129,13 @@ serve(async (req) => {
     }
 
     // Get transactions from Plaid
-    // For initial sync, get last 30 days. For regular sync, get last 14 days
+    // For initial sync, get last 30 days. For regular sync, get last 2 days (cron runs every 6 hours)
     const today = new Date();
     const endDate = new Date(today);
     endDate.setDate(today.getDate() + 1); // Add 1 day to ensure we get all of today's transactions
     
     const startDate = new Date(today);
-    startDate.setDate(today.getDate() - (isInitialSync ? 30 : 14));
+    startDate.setDate(today.getDate() - (isInitialSync ? 30 : 2));
     
     const response = await fetch(`https://${PLAID_ENV}.plaid.com/transactions/get`, {
       method: 'POST',
