@@ -88,6 +88,12 @@ export const usePlanLimits = () => {
       return 'enterprise';
     }
     
+    // Check for enterprise tier strings (tier1, tier2, tier3, tier4, tier5)
+    if (tier === 'tier1' || tier === 'tier2' || tier === 'tier3' || tier === 'tier4' || tier === 'tier5') {
+      console.log('[usePlanLimits] Enterprise tier detected:', tier);
+      return 'enterprise';
+    }
+    
     // Check for other known product IDs from PRICING_PLANS
     if (productId === 'prod_TAcNEuRnBTaX61') return 'starter';
     if (productId === 'prod_TAcNnoGuq5Mr7X') return 'growing';
