@@ -42,8 +42,15 @@ Deno.serve(async (req) => {
       throw new Error('Failed to fetch profile');
     }
 
-    // Check if user already has a referral code
-    if (profile.my_referral_code) {
+    // Check if user already has a referral code in the unified table
+    const { data: existingReferralCode } = await supabase
+      .from('referral_codes')
+      .select('code')
+      .eq('owner_id', user.id)
+      .eq('code_type', 'user')
+      .maybeSingle();
+
+    if (existingReferralCode || profile.my_referral_code) {
       return new Response(
         JSON.stringify({ 
           success: false, 
@@ -85,17 +92,17 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Check for uniqueness and add suffix if needed
+    // Check for uniqueness in the unified referral_codes table
     let finalCode = baseCode;
     let suffix = 1;
     let isUnique = false;
 
     while (!isUnique && suffix <= 999) {
       const { data: existingCode } = await supabase
-        .from('profiles')
-        .select('my_referral_code')
-        .eq('my_referral_code', finalCode)
-        .single();
+        .from('referral_codes')
+        .select('code')
+        .eq('code', finalCode)
+        .maybeSingle();
 
       if (!existingCode) {
         isUnique = true;
