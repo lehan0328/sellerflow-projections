@@ -31,10 +31,17 @@ export const SignUp = () => {
   });
   const [referralCodeStatus, setReferralCodeStatus] = useState<'idle' | 'validating' | 'valid' | 'invalid'>('idle');
 
-  // Check for referral code in URL parameters
+  // Check for referral code or affiliate code in URL parameters
   useEffect(() => {
     const refCode = searchParams.get('ref') || searchParams.get('referral');
-    if (refCode) {
+    const affCode = searchParams.get('aff');
+    
+    if (affCode) {
+      // Affiliate code takes priority
+      const upperCode = affCode.toUpperCase().trim();
+      setSignUpData(prev => ({ ...prev, referralCode: upperCode }));
+    } else if (refCode) {
+      // Regular referral code
       const upperCode = refCode.toUpperCase().trim();
       setSignUpData(prev => ({ ...prev, referralCode: upperCode }));
     }
@@ -132,9 +139,17 @@ export const SignUp = () => {
       hear_about_us: signUpData.hearAboutUs,
     };
 
-    // Only include referral code if it's valid
-    if (signUpData.referralCode && referralCodeStatus === 'valid') {
-      metadata.referral_code = signUpData.referralCode.toUpperCase();
+    // Check if this is an affiliate code or regular referral code
+    if (signUpData.referralCode) {
+      const affCode = searchParams.get('aff');
+      
+      if (affCode) {
+        // This is an affiliate code - store it for affiliate tracking
+        metadata.affiliate_code = signUpData.referralCode.toUpperCase();
+      } else if (referralCodeStatus === 'valid') {
+        // This is a regular referral code - only include if valid
+        metadata.referral_code = signUpData.referralCode.toUpperCase();
+      }
     }
 
     const { data, error } = await supabase.auth.signUp({

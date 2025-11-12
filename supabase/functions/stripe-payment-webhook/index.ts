@@ -145,7 +145,7 @@ serve(async (req) => {
       }
     }
 
-    // Handle payment succeeded events (reactivate account)
+    // Handle payment succeeded events (reactivate account + affiliate commission)
     if (event.type === "invoice.payment_succeeded") {
       const invoice = event.data.object as Stripe.Invoice;
       const customerEmail = invoice.customer_email;
@@ -186,6 +186,94 @@ serve(async (req) => {
             console.error("Error activating account:", error);
           } else {
             console.log("Account activated for user:", targetUser.id);
+          }
+
+          // Check if this user was referred by an affiliate
+          const { data: referral } = await supabaseAdmin
+            .from('affiliate_referrals')
+            .select('id, affiliate_id, status')
+            .eq('referred_user_id', targetUser.id)
+            .single();
+
+          if (referral && referral.status === 'trial') {
+            console.log("Converting affiliate referral to paid for user:", targetUser.id);
+
+            // Get subscription amount from invoice
+            const subscriptionAmount = invoice.amount_paid / 100; // Convert from cents to dollars
+
+            // Get affiliate's commission rate
+            const { data: affiliate } = await supabaseAdmin
+              .from('affiliates')
+              .select('commission_rate')
+              .eq('id', referral.affiliate_id)
+              .single();
+
+            if (affiliate) {
+              const commissionAmount = subscriptionAmount * (affiliate.commission_rate / 100);
+
+              // Update referral record to 'active' and set commission
+              await supabaseAdmin
+                .from('affiliate_referrals')
+                .update({
+                  status: 'active',
+                  conversion_date: new Date().toISOString(),
+                  subscription_amount: subscriptionAmount,
+                  commission_amount: commissionAmount
+                })
+                .eq('id', referral.id);
+
+              // Update affiliate's pending commission and paid referrals count
+              await supabaseAdmin.rpc('increment_affiliate_commission', {
+                p_affiliate_id: referral.affiliate_id,
+                p_commission_amount: commissionAmount
+              });
+
+              console.log("Affiliate commission calculated:", {
+                affiliateId: referral.affiliate_id,
+                subscriptionAmount,
+                commissionRate: affiliate.commission_rate,
+                commissionAmount
+              });
+            }
+          }
+        }
+      }
+    }
+
+    // Handle subscription cancellations (affiliate churn)
+    if (event.type === "customer.subscription.deleted") {
+      const subscription = event.data.object as Stripe.Subscription;
+      const customer = await stripe.customers.retrieve(subscription.customer as string);
+      const customerEmail = (customer as Stripe.Customer).email;
+
+      if (customerEmail) {
+        console.log("Subscription cancelled for customer:", customerEmail);
+
+        const { data: user } = await supabaseAdmin.auth.admin.listUsers();
+        const targetUser = user?.users.find(u => u.email === customerEmail);
+
+        if (targetUser) {
+          // Check if this was an affiliate referral
+          const { data: referral } = await supabaseAdmin
+            .from('affiliate_referrals')
+            .select('id, affiliate_id, status, commission_amount')
+            .eq('referred_user_id', targetUser.id)
+            .eq('status', 'active')
+            .single();
+
+          if (referral) {
+            console.log("Marking affiliate referral as churned for user:", targetUser.id);
+
+            // Update referral status to churned
+            await supabaseAdmin
+              .from('affiliate_referrals')
+              .update({
+                status: 'churned',
+                churn_date: new Date().toISOString()
+              })
+              .eq('id', referral.id);
+
+            // The handle_affiliate_churn trigger will automatically adjust pending commission
           }
         }
       }

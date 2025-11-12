@@ -2702,6 +2702,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_affiliate_commission: {
+        Args: { p_affiliate_id: string; p_commission_amount: number }
+        Returns: undefined
+      }
       insert_secure_amazon_account: {
         Args: {
           p_access_token?: string
