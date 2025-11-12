@@ -351,6 +351,11 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
                       <Badge variant="default" className="text-xs">Recommended</Badge>
                     )}
                   </div>
+                  {plan.name === 'Professional' && (
+                    <div className="text-xs font-semibold text-primary mb-2">
+                      ✨ Every feature included
+                    </div>
+                  )}
                   <div className="mb-3">
                     {isYearly ? (
                       <>

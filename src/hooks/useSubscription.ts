@@ -84,8 +84,8 @@ export const PRICING_PLANS = {
   },
   professional: {
     name: "Professional",
-    price: 89,
-    yearlyPrice: 890,
+    price: 97,
+    yearlyPrice: 970,
     product_id: "prod_TAcQOfzGbqPowf",
     price_id: "price_1SEHBHB28kMY3UsenQEY0qoT",
     yearly_price_id: "price_1SEHZfB28kMY3UseZKmLEcPk",
