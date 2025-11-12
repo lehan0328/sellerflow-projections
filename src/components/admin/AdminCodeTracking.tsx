@@ -114,19 +114,17 @@ export function AdminCodeTracking() {
         }
       });
 
-      // Add affiliate codes (only codes with actual usage)
+      // Add affiliate codes (show all, even with 0 uses)
       affiliateCounts.forEach((stats, code) => {
-        if (stats.total > 0) {
-          allCodes.push({
-            code,
-            type: 'affiliate',
-            totalUses: stats.total,
-            activeSubscriptions: stats.active,
-            discountAmount: '10% off',
-            duration: '3 months',
-            status: stats.status,
-          });
-        }
+        allCodes.push({
+          code,
+          type: 'affiliate',
+          totalUses: stats.total,
+          activeSubscriptions: stats.active,
+          discountAmount: '10% off',
+          duration: '3 months',
+          status: stats.status,
+        });
       });
 
       // Sort by total uses
