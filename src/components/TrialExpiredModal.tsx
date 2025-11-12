@@ -22,7 +22,14 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
   const [hasReferredDiscount, setHasReferredDiscount] = useState(false);
   
   // Use unified Amazon revenue hook
-  const { last30DaysNetPayouts: currentRevenue, isLoading: revenueLoading } = useAmazonRevenue();
+  const { last30DaysNetPayouts: currentRevenue, isLoading: revenueLoading, refetch: refetchRevenue } = useAmazonRevenue();
+
+  // Force fresh data fetch when modal opens
+  useEffect(() => {
+    if (open) {
+      refetchRevenue();
+    }
+  }, [open, refetchRevenue]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -327,10 +334,19 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
           {/* Current Revenue Display */}
           <div className="mb-4 p-3 rounded-lg bg-muted/50 border">
             <div className="text-xs text-muted-foreground mb-1">Your Amazon Payout (Last 30 Days)</div>
-            <div className="text-xl font-bold">
-              ${currentRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </div>
-            <div className="text-xs text-muted-foreground mt-1">After Amazon fees</div>
+            {revenueLoading ? (
+              <div className="space-y-2">
+                <div className="h-7 w-32 bg-muted animate-pulse rounded" />
+                <div className="h-3 w-24 bg-muted animate-pulse rounded" />
+              </div>
+            ) : (
+              <>
+                <div className="text-xl font-bold">
+                  ${currentRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </div>
+                <div className="text-xs text-muted-foreground mt-1">After Amazon fees</div>
+              </>
+            )}
           </div>
 
           {/* Display all three plans */}

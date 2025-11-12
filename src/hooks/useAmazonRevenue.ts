@@ -43,7 +43,8 @@ export const useAmazonRevenue = (): AmazonRevenue & { refetch: () => void } => {
   // Fetch Amazon payouts (NET amounts after fees)
   const { data: payouts = [], isLoading: payoutsLoading, refetch: refetchPayouts } = useQuery({
     queryKey: ['amazon-revenue-payouts'],
-    staleTime: 10 * 60 * 1000, // 10 minutes - payouts don't change frequently
+    staleTime: 5 * 60 * 1000, // 5 minutes - reduced for more responsive updates
+    refetchOnMount: 'always', // Always fetch fresh data on component mount
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return [];
@@ -66,7 +67,8 @@ export const useAmazonRevenue = (): AmazonRevenue & { refetch: () => void } => {
   // Fetch Amazon transactions (GROSS amounts before fees)
   const { data: transactions = [], isLoading: transactionsLoading, refetch: refetchTransactions } = useQuery({
     queryKey: ['amazon-revenue-transactions'],
-    staleTime: 10 * 60 * 1000, // 10 minutes - transactions don't change frequently
+    staleTime: 5 * 60 * 1000, // 5 minutes - reduced for more responsive updates
+    refetchOnMount: 'always', // Always fetch fresh data on component mount
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return [];
