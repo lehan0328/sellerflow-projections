@@ -150,7 +150,6 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
       { text: "1 Amazon connection", included: true },
       { text: "AI PDF extractor", included: true },
       { text: "AI PO autofill", included: true },
-      { text: "Document storage", included: true },
       { text: "2 additional users", included: true },
       { text: "Advance forecasting workflow", included: true },
       { text: "365 day cashflow projection", included: true },

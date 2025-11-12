@@ -287,7 +287,7 @@ const App = () => (
             } />
             <Route path="/document-storage" element={
               <ProtectedRoute>
-                <PlanProtectedRoute minimumPlan="growing">
+                <PlanProtectedRoute minimumPlan="professional">
                   <DocumentStorage />
                 </PlanProtectedRoute>
               </ProtectedRoute>
