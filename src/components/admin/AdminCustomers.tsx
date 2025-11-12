@@ -412,8 +412,18 @@ export const AdminCustomers = () => {
       return { label: 'Paid', variant: 'default' as const };
     }
     
-    // Check trial status (active trial period)
+    // Check trial status - either trial_end is set and in future, OR user is newly created (last 7 days) without Stripe customer
+    const createdAt = new Date(customer.created_at);
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    
+    // Trial if trial_end exists and is in future
     if (customer.trial_end && new Date(customer.trial_end) > now) {
+      return { label: 'Trial', variant: 'secondary' as const };
+    }
+    
+    // Trial if created within last 7 days and no Stripe customer (new signup in trial)
+    if (createdAt > sevenDaysAgo && !customer.stripe_customer_id) {
       return { label: 'Trial', variant: 'secondary' as const };
     }
     
