@@ -316,7 +316,9 @@ export const useSubscription = () => {
         const { data: { session: refreshedSession }, error: refreshError } = await supabase.auth.refreshSession();
         
         if (refreshError || !refreshedSession) {
-          console.error('[SUBSCRIPTION] Session refresh failed:', refreshError);
+          console.error('[SUBSCRIPTION] Session refresh failed, clearing local session:', refreshError);
+          // Clear the invalid session from local storage
+          await supabase.auth.signOut();
           throw new Error("Session expired. Please log in again.");
         }
         
@@ -477,6 +479,14 @@ export const useSubscription = () => {
       }
     } catch (error) {
       console.error("Error checking subscription:", error);
+      
+      // If error message indicates session expired, clear session completely
+      if (error instanceof Error && error.message.includes("Session expired")) {
+        console.log('[SUBSCRIPTION] Clearing invalid session and forcing redirect');
+        await supabase.auth.signOut();
+        // ProtectedRoute will detect no session and redirect to /auth
+      }
+      
       const state = {
         subscribed: false,
         product_id: null,
