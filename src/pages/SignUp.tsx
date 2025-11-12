@@ -80,6 +80,19 @@ export const SignUp = () => {
     try {
       const upperCode = code.toUpperCase();
       
+      // Check if it's a custom admin code
+      const { data: customCodeData } = await supabase
+        .from('custom_discount_codes')
+        .select('code, discount_percentage, duration_months')
+        .eq('code', upperCode)
+        .eq('is_active', true)
+        .single();
+
+      if (customCodeData) {
+        setReferralCodeStatus('valid');
+        return;
+      }
+      
       // Check if it's a user referral code in profiles table
       const { data: profileData } = await supabase
         .from('profiles')

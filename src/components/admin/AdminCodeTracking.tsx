@@ -1,13 +1,18 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Gift, Users, TrendingUp, DollarSign } from "lucide-react";
+import { Gift, Users, TrendingUp, DollarSign, Plus, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 
 interface CodeUsage {
+  id?: string;
   code: string;
-  type: 'referral' | 'affiliate';
+  type: 'referral' | 'affiliate' | 'custom';
   totalUses: number;
   activeSubscriptions: number;
   discountAmount: string;
@@ -25,6 +30,12 @@ export function AdminCodeTracking() {
     activeConversions: 0,
     conversionRate: 0,
   });
+  const [newCode, setNewCode] = useState({
+    code: '',
+    discountPercentage: 10,
+    durationMonths: 3,
+  });
+  const [isCreating, setIsCreating] = useState(false);
 
   useEffect(() => {
     fetchCodeTracking();
@@ -97,8 +108,48 @@ export function AdminCodeTracking() {
         });
       }
 
+      // Fetch custom admin codes
+      const { data: customCodes } = await supabase
+        .from('custom_discount_codes')
+        .select('*')
+        .eq('is_active', true);
+
+      // Count usage for custom codes (check profiles table for referral_code matches)
+      const customCodeUsage = new Map<string, { total: number; active: number; id: string; discount: number; duration: number }>();
+      
+      for (const customCode of customCodes || []) {
+        const { data: usageData } = await supabase
+          .from('profiles')
+          .select('referral_code, stripe_customer_id')
+          .eq('referral_code', customCode.code);
+
+        const totalUses = usageData?.length || 0;
+        const activeUses = usageData?.filter(p => p.stripe_customer_id).length || 0;
+
+        customCodeUsage.set(customCode.code, {
+          total: totalUses,
+          active: activeUses,
+          id: customCode.id,
+          discount: customCode.discount_percentage,
+          duration: customCode.duration_months,
+        });
+      }
+
       // Combine into CodeUsage array
       const allCodes: CodeUsage[] = [];
+
+      // Add custom admin codes first
+      customCodeUsage.forEach((stats, code) => {
+        allCodes.push({
+          id: stats.id,
+          code,
+          type: 'custom',
+          totalUses: stats.total,
+          activeSubscriptions: stats.active,
+          discountAmount: `${stats.discount}% off`,
+          duration: `${stats.duration} months`,
+        });
+      });
 
       // Add referral codes (only codes with actual usage)
       referralCounts.forEach((stats, code) => {
@@ -146,6 +197,71 @@ export function AdminCodeTracking() {
       console.error('Error fetching code tracking:', error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleCreateCode = async () => {
+    if (!newCode.code.trim()) {
+      toast.error('Please enter a code');
+      return;
+    }
+
+    if (newCode.code.length < 3 || newCode.code.length > 20) {
+      toast.error('Code must be between 3 and 20 characters');
+      return;
+    }
+
+    setIsCreating(true);
+    try {
+      const { error } = await supabase
+        .from('custom_discount_codes')
+        .insert({
+          code: newCode.code.toUpperCase().trim(),
+          discount_percentage: newCode.discountPercentage,
+          duration_months: newCode.durationMonths,
+        });
+
+      if (error) {
+        if (error.code === '23505') {
+          toast.error('This code already exists');
+        } else {
+          toast.error('Failed to create code');
+        }
+        return;
+      }
+
+      toast.success('Code created successfully');
+      setNewCode({ code: '', discountPercentage: 10, durationMonths: 3 });
+      fetchCodeTracking();
+    } catch (error) {
+      console.error('Error creating code:', error);
+      toast.error('Failed to create code');
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  const handleDeleteCode = async (codeId: string, codeName: string) => {
+    if (!confirm(`Are you sure you want to delete the code "${codeName}"?`)) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('custom_discount_codes')
+        .delete()
+        .eq('id', codeId);
+
+      if (error) {
+        toast.error('Failed to delete code');
+        return;
+      }
+
+      toast.success('Code deleted successfully');
+      fetchCodeTracking();
+    } catch (error) {
+      console.error('Error deleting code:', error);
+      toast.error('Failed to delete code');
     }
   };
 
@@ -229,6 +345,60 @@ export function AdminCodeTracking() {
         </Card>
       </div>
 
+      {/* Create Custom Code */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Create Custom Discount Code</CardTitle>
+          <CardDescription>Add a new custom code with custom discount percentage</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="code">Code</Label>
+              <Input
+                id="code"
+                placeholder="SAVE20"
+                value={newCode.code}
+                onChange={(e) => setNewCode({ ...newCode, code: e.target.value.toUpperCase() })}
+                maxLength={20}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="discount">Discount %</Label>
+              <Input
+                id="discount"
+                type="number"
+                min="1"
+                max="100"
+                value={newCode.discountPercentage}
+                onChange={(e) => setNewCode({ ...newCode, discountPercentage: parseInt(e.target.value) || 10 })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="duration">Duration (months)</Label>
+              <Input
+                id="duration"
+                type="number"
+                min="1"
+                max="12"
+                value={newCode.durationMonths}
+                onChange={(e) => setNewCode({ ...newCode, durationMonths: parseInt(e.target.value) || 3 })}
+              />
+            </div>
+            <div className="flex items-end">
+              <Button 
+                onClick={handleCreateCode} 
+                disabled={isCreating}
+                className="w-full"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                {isCreating ? 'Creating...' : 'Create Code'}
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Codes Table */}
       <Card>
         <CardHeader>
@@ -249,8 +419,8 @@ export function AdminCodeTracking() {
                     <div className="space-y-1">
                       <div className="flex items-center gap-3">
                         <span className="font-mono font-bold text-lg">{code.code}</span>
-                        <Badge variant={code.type === 'affiliate' ? 'default' : 'secondary'}>
-                          {code.type === 'affiliate' ? 'Affiliate' : 'User Referral'}
+                        <Badge variant={code.type === 'custom' ? 'default' : code.type === 'affiliate' ? 'default' : 'secondary'}>
+                          {code.type === 'custom' ? 'Custom Admin Code' : code.type === 'affiliate' ? 'Affiliate' : 'User Referral'}
                         </Badge>
                         {code.status && (
                           <Badge variant={code.status === 'approved' ? 'default' : 'outline'}>
@@ -280,6 +450,17 @@ export function AdminCodeTracking() {
                         </p>
                         <p className="text-xs text-muted-foreground">Conversion</p>
                       </div>
+                      {code.type === 'custom' && code.id && (
+                        <div>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => handleDeleteCode(code.id!, code.code)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}

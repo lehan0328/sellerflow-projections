@@ -1179,6 +1179,39 @@ export type Database = {
         }
         Relationships: []
       }
+      custom_discount_codes: {
+        Row: {
+          code: string
+          created_at: string | null
+          created_by: string | null
+          discount_percentage: number
+          duration_months: number
+          id: string
+          is_active: boolean
+          updated_at: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          created_by?: string | null
+          discount_percentage: number
+          duration_months?: number
+          id?: string
+          is_active?: boolean
+          updated_at?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          created_by?: string | null
+          discount_percentage?: number
+          duration_months?: number
+          id?: string
+          is_active?: boolean
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       customers: {
         Row: {
           account_id: string | null
