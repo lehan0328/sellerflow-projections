@@ -100,29 +100,33 @@ export function AdminCodeTracking() {
       // Combine into CodeUsage array
       const allCodes: CodeUsage[] = [];
 
-      // Add referral codes
+      // Add referral codes (only codes with actual usage)
       referralCounts.forEach((stats, code) => {
-        allCodes.push({
-          code,
-          type: 'referral',
-          totalUses: stats.total,
-          activeSubscriptions: stats.active,
-          discountAmount: '30% off',
-          duration: '3 months',
-        });
+        if (stats.total > 0) {
+          allCodes.push({
+            code,
+            type: 'referral',
+            totalUses: stats.total,
+            activeSubscriptions: stats.active,
+            discountAmount: '10% off',
+            duration: '3 months',
+          });
+        }
       });
 
-      // Add affiliate codes
+      // Add affiliate codes (only codes with actual usage)
       affiliateCounts.forEach((stats, code) => {
-        allCodes.push({
-          code,
-          type: 'affiliate',
-          totalUses: stats.total,
-          activeSubscriptions: stats.active,
-          discountAmount: '30% off',
-          duration: '3 months',
-          status: stats.status,
-        });
+        if (stats.total > 0) {
+          allCodes.push({
+            code,
+            type: 'affiliate',
+            totalUses: stats.total,
+            activeSubscriptions: stats.active,
+            discountAmount: '10% off',
+            duration: '3 months',
+            status: stats.status,
+          });
+        }
       });
 
       // Sort by total uses
