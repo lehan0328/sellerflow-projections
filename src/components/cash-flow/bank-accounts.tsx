@@ -308,11 +308,14 @@ export function BankAccounts({ useAvailableBalance, onToggleBalance }: { useAvai
       
       for (const account of selectedAccounts) {
         try {
+          // Determine account type: credit cards vs bank accounts
+          const isCreditCard = account.type === 'credit' || account.subtype === 'credit card' || account.subtype === 'credit';
+          
           await supabase.functions.invoke('sync-plaid-transactions', {
             body: { 
               accountId: account.id,
               isInitialSync: true,
-              accountType: 'bank'
+              accountType: isCreditCard ? 'credit' : 'bank'
             }
           });
         } catch (syncError) {
