@@ -101,7 +101,7 @@ export function OverdueTransactionsModal({ open, onOpenChange, onUpdate }: Overd
     }
   };
 
-  const formatCurrency = (amount: number) => `$${amount.toLocaleString()}`;
+  const formatCurrency = (amount: number) => `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   const formatDate = (date: Date) => new Date(date).toLocaleDateString('en-US', { 
     month: 'short', 
     day: 'numeric', 
