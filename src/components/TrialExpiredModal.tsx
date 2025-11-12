@@ -137,7 +137,7 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
     ],
     growing: [
       { text: "Up to $50k monthly Amazon payout", included: true },
-      { text: "4 bank/credit card connections", included: true },
+      { text: "3 bank/credit card connections", included: true },
       { text: "1 Amazon connection", included: true },
       { text: "AI insights", included: true },
       { text: "AI PDF extractor", included: true },
@@ -152,7 +152,7 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
     ],
     professional: [
       { text: "Up to $100k monthly Amazon payout", included: true },
-      { text: "7 bank/credit card connections", included: true },
+      { text: "4 bank/credit card connections", included: true },
       { text: "1 Amazon connection", included: true },
       { text: "AI insights", included: true },
       { text: "AI PDF extractor", included: true },
@@ -162,7 +162,6 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
       { text: "365 day cashflow projection", included: true },
       { text: "Bank transaction matching", included: true },
       { text: "Scenario planning", included: true },
-      { text: "Advanced analytics", included: true },
       { text: "Priority support", included: true },
     ],
     enterprise_tier1: [
