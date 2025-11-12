@@ -43,12 +43,11 @@ export function AdminCodeTracking() {
 
   const fetchCodeTracking = async () => {
     try {
-      // Fetch all referral codes from profiles
-      const { data: referralData } = await supabase
+      // Fetch all user-owned referral codes from profiles
+      const { data: userOwnedCodes } = await supabase
         .from('profiles')
-        .select('referral_code, email')
-        .not('referral_code', 'is', null)
-        .neq('referral_code', '');
+        .select('my_referral_code, first_name, last_name, email')
+        .not('my_referral_code', 'is', null);
 
       // Fetch affiliate codes from affiliates table
       const { data: affiliateData } = await supabase
@@ -66,20 +65,29 @@ export function AdminCodeTracking() {
           .map((sub: any) => sub.customer_email) || []
       );
 
-      // Count referral code usage
+      // Count referral code usage - for each user-owned code, count who used it
       const referralCounts = new Map<string, { total: number; active: number; emails: Set<string> }>();
-      referralData?.forEach((profile) => {
-        const code = profile.referral_code!.toUpperCase();
-        if (!referralCounts.has(code)) {
-          referralCounts.set(code, { total: 0, active: 0, emails: new Set() });
+      
+      for (const owner of userOwnedCodes || []) {
+        const code = owner.my_referral_code!.toUpperCase();
+        
+        // Find all users who signed up with this referral code
+        const { data: usersWhoUsedCode } = await supabase
+          .from('profiles')
+          .select('referral_code, email, stripe_customer_id')
+          .eq('referral_code', code);
+
+        const totalUses = usersWhoUsedCode?.length || 0;
+        const activeUses = usersWhoUsedCode?.filter(u => u.email && activeSubscriptionEmails.has(u.email)).length || 0;
+
+        if (totalUses > 0) {
+          referralCounts.set(code, {
+            total: totalUses,
+            active: activeUses,
+            emails: new Set(usersWhoUsedCode?.map(u => u.email || '') || [])
+          });
         }
-        const stats = referralCounts.get(code)!;
-        stats.total++;
-        stats.emails.add(profile.email || '');
-        if (profile.email && activeSubscriptionEmails.has(profile.email)) {
-          stats.active++;
-        }
-      });
+      }
 
       // Process affiliate codes
       const affiliateCounts = new Map<string, { total: number; active: number; status: string; emails: Set<string> }>();

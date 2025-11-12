@@ -96,11 +96,11 @@ export const SignUp = () => {
         return;
       }
       
-      // Check if it's a user referral code in profiles table
+      // Check if it's a user-owned referral code in profiles table
       const { data: profileData } = await supabase
         .from('profiles')
-        .select('referral_code')
-        .eq('referral_code', upperCode)
+        .select('my_referral_code')
+        .eq('my_referral_code', upperCode)
         .single();
 
       if (profileData) {

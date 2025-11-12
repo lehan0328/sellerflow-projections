@@ -18,34 +18,41 @@ export const useReferrals = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Get referral code (don't auto-create)
-      const { data: codeData } = await supabase
-        .from('referral_codes')
-        .select('*')
+      // Get user's own referral code from profiles
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('my_referral_code')
         .eq('user_id', user.id)
         .single();
 
-      if (codeData) {
-        setReferralCode(codeData.code);
+      if (profileData?.my_referral_code) {
+        setReferralCode(profileData.my_referral_code);
+
+        // Get referrals - users who signed up with this code
+        const { data: referralsData } = await supabase
+          .from('profiles')
+          .select('user_id, email, first_name, last_name, created_at, stripe_customer_id')
+          .eq('referral_code', profileData.my_referral_code)
+          .order('created_at', { ascending: false });
+
+        // Map to expected format with status
+        const mappedReferrals = referralsData?.map(ref => ({
+          id: ref.user_id,
+          email: ref.email,
+          name: `${ref.first_name || ''} ${ref.last_name || ''}`.trim() || 'N/A',
+          created_at: ref.created_at,
+          status: ref.stripe_customer_id ? 'active' : 'trial',
+        })) || [];
+
+        setReferrals(mappedReferrals);
       }
 
-      // Get referrals
-      const { data: referralsData } = await supabase
-        .from('referrals')
-        .select('*')
-        .eq('referrer_id', user.id)
-        .order('created_at', { ascending: false });
-
-      setReferrals(referralsData || []);
-
-      // Get rewards
-      const { data: rewardsData } = await supabase
-        .from('referral_rewards')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
-
-      setRewards(rewardsData);
+      // Calculate rewards based on active referrals
+      const activeReferralCount = referrals.filter(r => r.status === 'active').length;
+      setRewards({
+        active_referrals: activeReferralCount,
+        discount_earned: activeReferralCount >= 3 ? 10 : 0,
+      });
     } catch (error: any) {
       console.error('Error fetching referral data:', error);
       toast({
@@ -60,54 +67,20 @@ export const useReferrals = () => {
 
   const copyReferralLink = () => {
     if (!referralCode) return;
-    navigator.clipboard.writeText(referralCode);
+    const referralLink = `${window.location.origin}/signup?ref=${referralCode}`;
+    navigator.clipboard.writeText(referralLink);
     toast({
       title: 'Copied!',
-      description: 'Referral code copied to clipboard',
+      description: 'Referral link copied to clipboard',
     });
   };
 
   const createReferralCode = async (code: string): Promise<{ success: boolean; error?: string }> => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        return { success: false, error: 'User not authenticated' };
-      }
-
-      // Validate code format (alphanumeric, 3-20 chars)
-      const codeRegex = /^[A-Z0-9]{3,20}$/;
-      if (!codeRegex.test(code)) {
-        return { 
-          success: false, 
-          error: 'Code must be 3-20 characters, uppercase letters and numbers only' 
-        };
-      }
-
-      // Try to create the code
-      const { data, error } = await supabase
-        .from('referral_codes')
-        .insert({ user_id: user.id, code })
-        .select()
-        .single();
-
-      if (error) {
-        // Check if it's a duplicate code error
-        if (error.code === '23505' || error.message.includes('unique')) {
-          return { success: false, error: 'This referral code is already taken. Please try another one.' };
-        }
-        return { success: false, error: error.message };
-      }
-
-      setReferralCode(data.code);
-      toast({
-        title: 'Success!',
-        description: 'Your referral code has been created',
-      });
-      
-      return { success: true };
-    } catch (error: any) {
-      return { success: false, error: error.message };
-    }
+    // Referral codes are now auto-generated, this function is deprecated
+    return { 
+      success: false, 
+      error: 'Referral codes are automatically generated. Your code is: ' + referralCode 
+    };
   };
 
   return {

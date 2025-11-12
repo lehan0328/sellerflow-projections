@@ -1804,6 +1804,7 @@ export type Database = {
           max_team_members: number
           monthly_amazon_revenue: string | null
           monthly_revenue: string | null
+          my_referral_code: string | null
           payment_failure_date: string | null
           plan_override: string | null
           plan_override_reason: string | null
@@ -1834,6 +1835,7 @@ export type Database = {
           max_team_members?: number
           monthly_amazon_revenue?: string | null
           monthly_revenue?: string | null
+          my_referral_code?: string | null
           payment_failure_date?: string | null
           plan_override?: string | null
           plan_override_reason?: string | null
@@ -1864,6 +1866,7 @@ export type Database = {
           max_team_members?: number
           monthly_amazon_revenue?: string | null
           monthly_revenue?: string | null
+          my_referral_code?: string | null
           payment_failure_date?: string | null
           plan_override?: string | null
           plan_override_reason?: string | null

@@ -21,32 +21,9 @@ const REWARD_TIERS = [
 ];
 
 export default function ReferralDashboard() {
-  const { loading, referralCode, referrals, rewards, copyReferralLink, createReferralCode } = useReferrals();
+  const { loading, referralCode, referrals, rewards, copyReferralLink } = useReferrals();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [customCode, setCustomCode] = useState('');
-  const [codeError, setCodeError] = useState('');
-  const [creating, setCreating] = useState(false);
-
-  const handleCreateCode = async () => {
-    if (!customCode.trim()) {
-      setCodeError('Please enter a referral code');
-      return;
-    }
-
-    setCreating(true);
-    setCodeError('');
-    
-    const result = await createReferralCode(customCode.toUpperCase().trim());
-    
-    if (!result.success) {
-      setCodeError(result.error || 'Failed to create code');
-    } else {
-      setCustomCode('');
-    }
-    
-    setCreating(false);
-  };
 
   const handleApplyDiscount = async () => {
     try {
@@ -286,13 +263,9 @@ export default function ReferralDashboard() {
         <Card className="relative overflow-hidden border-primary/20 bg-gradient-to-br from-card via-card/80 to-primary/5 backdrop-blur">
           <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-radial from-primary/20 to-transparent blur-2xl" />
           <CardHeader className="relative">
-            <CardTitle className="text-xl">
-              {referralCode ? 'Your Referral Code' : 'Create Your Referral Code'}
-            </CardTitle>
+            <CardTitle className="text-xl">Your Referral Code</CardTitle>
             <CardDescription>
-              {referralCode 
-                ? 'Share this code with fellow Amazon sellers - they\'ll enter it during signup' 
-                : 'Choose a unique code that your friends will use during signup (cannot be changed later)'}
+              Share this code with fellow Amazon sellers - they'll enter it during signup to get 10% off!
             </CardDescription>
           </CardHeader>
           <CardContent className="relative space-y-4">
@@ -306,68 +279,24 @@ export default function ReferralDashboard() {
                   </div>
                   <Button onClick={copyReferralLink} className="bg-gradient-primary hover-scale h-auto py-4">
                     <Copy className="h-5 w-5 mr-2" />
-                    Copy Code
+                    Copy Link
                   </Button>
                 </div>
                 <div className="text-sm text-muted-foreground text-center sm:text-left">
                   💡 Your friends enter this code during signup to unlock rewards for both of you!
                 </div>
                 <div className="text-xs text-muted-foreground text-center sm:text-left pt-2 border-t border-border/50">
-                  🎁 <strong>New user benefit:</strong> Anyone who signs up with your code gets an instant 10% discount!
+                  🎁 <strong>New user benefit:</strong> Anyone who signs up with your code gets an instant 10% discount for 3 months!
                 </div>
               </>
             ) : (
-              <>
-                <div className="space-y-3">
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    <div className="flex-1">
-                      <Input
-                        placeholder="Enter your custom code (e.g., JOHN2024)"
-                        value={customCode}
-                        onChange={(e) => {
-                          setCustomCode(e.target.value.toUpperCase());
-                          setCodeError('');
-                        }}
-                        onKeyDown={(e) => e.key === 'Enter' && handleCreateCode()}
-                        maxLength={20}
-                        className="h-12 text-lg font-mono uppercase"
-                        disabled={creating}
-                      />
-                      <p className="text-xs text-muted-foreground mt-2">
-                        3-20 characters, uppercase letters and numbers only
-                      </p>
-                    </div>
-                    <Button 
-                      onClick={handleCreateCode} 
-                      className="bg-gradient-primary hover-scale h-12"
-                      disabled={creating || !customCode.trim()}
-                    >
-                      {creating ? 'Creating...' : 'Create Code'}
-                    </Button>
-                  </div>
-                  
-                  {codeError && (
-                    <Alert variant="destructive">
-                      <AlertCircle className="h-4 w-4" />
-                      <AlertDescription>{codeError}</AlertDescription>
-                    </Alert>
-                  )}
-                  
-                  <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-                    <div className="flex gap-2 text-sm text-blue-600 dark:text-blue-400">
-                      <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
-                      <div className="space-y-1">
-                        <p className="font-medium">⚠️ Important:</p>
-                        <ul className="list-disc list-inside space-y-1 text-xs">
-                          <li>Your code cannot be changed once created</li>
-                          <li>Choose something memorable and unique</li>
-                          <li>Anyone using your code gets 10% off instantly</li>
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </>
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Referral Code Not Found</AlertTitle>
+                <AlertDescription>
+                  Your referral code is automatically generated when you create your account. Please contact support if you don't see your code.
+                </AlertDescription>
+              </Alert>
             )}
           </CardContent>
         </Card>
