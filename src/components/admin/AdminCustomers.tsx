@@ -519,7 +519,9 @@ export const AdminCustomers = () => {
           new Date(customer.created_at).toLocaleDateString('en-US'),
           status.label,
           customer.stripe_plan_name || formatPlanName(customer.plan_override) || '-',
-          customer.referral_code || customer.affiliate_code || (customer.discount_redeemed_at ? '10% off' : '-'),
+          customer.referral_code || customer.affiliate_code 
+            ? `${customer.referral_code || customer.affiliate_code} (${customer.referral_code ? 'User Referral' : 'Affiliate'})`
+            : (customer.discount_redeemed_at ? '10% off' : '-'),
           `$${(customer.amazon_revenue || 0).toLocaleString('en-US')}`,
           customer.renewal_date ? new Date(customer.renewal_date).toLocaleDateString('en-US') : '-',
           customer.last_paid_date ? new Date(customer.last_paid_date).toLocaleDateString('en-US') : '-',
@@ -704,7 +706,7 @@ export const AdminCustomers = () => {
                 <TableHead>Joined</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>{viewMode === 'churned' ? 'Last Plan' : 'Plan'}</TableHead>
-                <TableHead>Discount</TableHead>
+                <TableHead>Code Used</TableHead>
                 <TableHead>Renewal Date</TableHead>
                 <TableHead>Last Paid</TableHead>
                 {viewMode === 'churned' && <TableHead>Churn Date</TableHead>}
@@ -815,14 +817,20 @@ export const AdminCustomers = () => {
                             <span className="text-sm font-medium">
                               {customer.referral_code || customer.affiliate_code}
                             </span>
-                            <span className="text-xs text-muted-foreground">
-                              {customer.referral_code ? 'Referral' : 'Affiliate'} - 10% off
-                            </span>
+                            {customer.referral_code ? (
+                              <Badge variant="secondary" className="text-xs w-fit">
+                                User Referral · 10% off
+                              </Badge>
+                            ) : (
+                              <Badge variant="default" className="text-xs w-fit">
+                                Affiliate/Influencer · 10% off
+                              </Badge>
+                            )}
                           </div>
                         ) : customer.plan_override === 'referred_user_discount' ? (
-                          <span className="text-sm">10% off (legacy)</span>
+                          <span className="text-sm text-muted-foreground">10% off (legacy)</span>
                         ) : customer.discount_redeemed_at ? (
-                          <span className="text-sm">10% off</span>
+                          <span className="text-sm text-muted-foreground">10% off</span>
                         ) : (
                           <span className="text-muted-foreground">-</span>
                         )}
