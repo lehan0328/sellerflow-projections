@@ -338,16 +338,26 @@ export function PlaidAccountConfirmationDialog({
                               )}
                             </Badge>
                           </PopoverTrigger>
-                          <PopoverContent className="w-64 p-2 z-[100]" align="end">
+                          <PopoverContent 
+                            className="w-64 p-2 bg-popover border shadow-lg z-[200]" 
+                            align="end"
+                            sideOffset={5}
+                          >
                             <div className="space-y-1">
                               {[1, 2, 3, 4, 5].map((p) => (
                                 <button
                                   key={p}
-                                  onClick={() => setPriorities({ ...priorities, [account.uniqueId]: p })}
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    console.log('Setting priority:', p, 'for account:', account.uniqueId);
+                                    setPriorities({ ...priorities, [account.uniqueId]: p });
+                                  }}
                                   className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
                                     priority === p 
-                                      ? 'bg-primary text-primary-foreground' 
-                                      : 'hover:bg-muted'
+                                      ? 'bg-primary text-primary-foreground font-medium' 
+                                      : 'hover:bg-accent hover:text-accent-foreground'
                                   }`}
                                 >
                                   <div className="font-semibold">{p} - {getPriorityLabel(p).split(' - ')[0]}</div>
