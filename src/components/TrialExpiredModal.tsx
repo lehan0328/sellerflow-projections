@@ -127,7 +127,7 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
       { text: "1 Amazon connection", included: true },
       { text: "Advance forecasting workflow", included: true },
       { text: "365 day cashflow projection", included: true },
-      { text: "Amazon payout forecasting", included: true },
+      { text: "Advanced amazon payout forecasting", included: true },
       { text: "Smart purchase planning", included: true },
       { text: "Safe spending power", included: true },
       { text: "Buying opportunity projection", included: true },
@@ -148,7 +148,7 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
       { text: "2 additional users", included: true },
       { text: "Advance forecasting workflow", included: true },
       { text: "365 day cashflow projection", included: true },
-      { text: "Amazon payout forecasting", included: true },
+      { text: "Advanced amazon payout forecasting", included: true },
       { text: "Smart purchase planning", included: true },
       { text: "Safe spending power", included: true },
       { text: "Buying opportunity projection", included: true },
@@ -166,7 +166,7 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
       { text: "5 additional users", included: true },
       { text: "Advance forecasting workflow", included: true },
       { text: "365 day cashflow projection", included: true },
-      { text: "Amazon payout forecasting", included: true },
+      { text: "Advanced amazon payout forecasting", included: true },
       { text: "Smart purchase planning", included: true },
       { text: "Safe spending power", included: true },
       { text: "Buying opportunity projection", included: true },
@@ -394,7 +394,7 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
                     <h4 className="text-xs font-semibold text-primary mb-2">Signature Features Included</h4>
                     <ul className="space-y-1.5">
                       {plan.features
-                        .filter(f => ['Amazon payout forecasting', 'Smart purchase planning', 'Safe spending power', 'Buying opportunity projection'].includes(f.text))
+                        .filter(f => ['Advanced amazon payout forecasting', 'Smart purchase planning', 'Safe spending power', 'Buying opportunity projection'].includes(f.text))
                         .map((feature, index) => (
                           <li key={index} className="flex items-start gap-2">
                             {feature.included ? (
@@ -416,7 +416,7 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
                   {/* Other Features */}
                   <ul className="space-y-1.5">
                     {plan.features
-                      .filter(f => !['Amazon payout forecasting', 'Smart purchase planning', 'Safe spending power', 'Buying opportunity projection'].includes(f.text))
+                      .filter(f => !['Advanced amazon payout forecasting', 'Smart purchase planning', 'Safe spending power', 'Buying opportunity projection'].includes(f.text))
                       .map((feature, index) => (
                         <li key={index} className="flex items-start gap-2">
                           {feature.included ? (
