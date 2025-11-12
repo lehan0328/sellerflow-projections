@@ -23,6 +23,7 @@ interface CodeUsage {
 
 export function AdminCodeTracking() {
   const [codes, setCodes] = useState<CodeUsage[]>([]);
+  const [allCodes, setAllCodes] = useState<CodeUsage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [stats, setStats] = useState({
     totalCodes: 0,
@@ -36,10 +37,20 @@ export function AdminCodeTracking() {
     durationMonths: 3,
   });
   const [isCreating, setIsCreating] = useState(false);
+  const [filterType, setFilterType] = useState<'all' | 'user' | 'affiliate' | 'custom'>('all');
 
   useEffect(() => {
     fetchCodeTracking();
   }, []);
+
+  // Apply filter when filterType changes
+  useEffect(() => {
+    if (filterType === 'all') {
+      setCodes(allCodes);
+    } else {
+      setCodes(allCodes.filter(code => code.type === filterType));
+    }
+  }, [filterType, allCodes]);
 
   const fetchCodeTracking = async () => {
     try {
@@ -101,6 +112,7 @@ export function AdminCodeTracking() {
       const totalUses = allCodesData.reduce((sum, code) => sum + code.totalUses, 0);
       const activeConversions = allCodesData.reduce((sum, code) => sum + code.activeSubscriptions, 0);
       
+      setAllCodes(allCodesData);
       setCodes(allCodesData);
       setStats({
         totalCodes: allCodesData.length,
@@ -321,8 +333,26 @@ export function AdminCodeTracking() {
       {/* Codes Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Code Usage Details</CardTitle>
-          <CardDescription>All referral and affiliate codes with usage statistics</CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Code Usage Details</CardTitle>
+              <CardDescription>All referral and affiliate codes with usage statistics</CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              <Label htmlFor="filter" className="text-sm">Filter by:</Label>
+              <select
+                id="filter"
+                value={filterType}
+                onChange={(e) => setFilterType(e.target.value as 'all' | 'user' | 'affiliate' | 'custom')}
+                className="px-3 py-2 border rounded-md text-sm bg-background"
+              >
+                <option value="all">All Codes</option>
+                <option value="user">User Referrals</option>
+                <option value="affiliate">Affiliates</option>
+                <option value="custom">Custom Codes</option>
+              </select>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
