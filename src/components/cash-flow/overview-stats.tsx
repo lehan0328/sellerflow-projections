@@ -516,7 +516,7 @@ export function OverviewStats({
         {/* Cash & Credit - Side by Side */}
         <div className="grid grid-cols-2 gap-4 border-t pt-4">
           {/* Cash */}
-          <div>
+          <div className="border-r border-border pr-4">
             <div className="flex items-center gap-1.5 mb-1">
               <p className="text-sm font-medium text-muted-foreground">Cash</p>
               {!balanceMatches && accounts.length > 0 && <Button variant="ghost" size="sm" onClick={handleSyncRequest} disabled={isSyncing} className="h-4 w-4 p-0 text-orange-400 hover:text-orange-600" title={`Bank balance differs by ${formatCurrency(balanceDifference)}. Click to sync.`}>
