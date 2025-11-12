@@ -78,13 +78,29 @@ export const SignUp = () => {
     setReferralCodeStatus('validating');
 
     try {
-      const { data, error } = await supabase
-        .from('referral_codes')
-        .select('code')
-        .eq('code', code.toUpperCase())
+      const upperCode = code.toUpperCase();
+      
+      // Check if it's a user referral code in profiles table
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('referral_code')
+        .eq('referral_code', upperCode)
         .single();
 
-      setReferralCodeStatus(data && !error ? 'valid' : 'invalid');
+      if (profileData) {
+        setReferralCodeStatus('valid');
+        return;
+      }
+
+      // Check if it's an affiliate code in affiliates table
+      const { data: affiliateData } = await supabase
+        .from('affiliates')
+        .select('affiliate_code')
+        .eq('affiliate_code', upperCode)
+        .eq('status', 'approved')
+        .single();
+
+      setReferralCodeStatus(affiliateData ? 'valid' : 'invalid');
     } catch (err) {
       setReferralCodeStatus('invalid');
     }
