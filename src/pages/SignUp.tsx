@@ -83,12 +83,16 @@ export const SignUp = () => {
       const upperCode = code.toUpperCase();
       
       // Check if it's a custom admin code
-      const { data: customCodeData } = await supabase
+      const { data: customCodeData, error: customError } = await supabase
         .from('custom_discount_codes')
         .select('code, discount_percentage, duration_months')
         .eq('code', upperCode)
         .eq('is_active', true)
-        .single();
+        .maybeSingle();
+
+      if (customError && customError.code !== 'PGRST116') {
+        console.error('Error checking custom code:', customError);
+      }
 
       if (customCodeData) {
         setReferralCodeStatus('valid');
@@ -97,11 +101,15 @@ export const SignUp = () => {
       }
       
       // Check if it's a user-owned referral code in profiles table
-      const { data: profileData } = await supabase
+      const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('my_referral_code')
         .eq('my_referral_code', upperCode)
-        .single();
+        .maybeSingle();
+
+      if (profileError && profileError.code !== 'PGRST116') {
+        console.error('Error checking profile code:', profileError);
+      }
 
       if (profileData) {
         setReferralCodeStatus('valid');
@@ -110,12 +118,16 @@ export const SignUp = () => {
       }
 
       // Check if it's an affiliate code in affiliates table
-      const { data: affiliateData } = await supabase
+      const { data: affiliateData, error: affiliateError } = await supabase
         .from('affiliates')
         .select('affiliate_code')
         .eq('affiliate_code', upperCode)
         .eq('status', 'approved')
-        .single();
+        .maybeSingle();
+
+      if (affiliateError && affiliateError.code !== 'PGRST116') {
+        console.error('Error checking affiliate code:', affiliateError);
+      }
 
       if (affiliateData) {
         setReferralCodeStatus('valid');
@@ -125,6 +137,7 @@ export const SignUp = () => {
         setReferralCodeType(null);
       }
     } catch (err) {
+      console.error('Unexpected error validating referral code:', err);
       setReferralCodeStatus('invalid');
       setReferralCodeType(null);
     }
