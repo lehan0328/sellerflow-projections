@@ -19,7 +19,10 @@ export const hasPlanAccess = (
     'starter': 1,
     'growing': 2,
     'professional': 3,
-    'enterprise': 4
+    'enterprise': 4,
+    'tier1': 4,
+    'tier2': 4,
+    'tier3': 4
   };
   
   const userPlanLevel = planHierarchy[userPlan as string];
