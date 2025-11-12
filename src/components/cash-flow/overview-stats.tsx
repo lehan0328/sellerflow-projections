@@ -468,14 +468,13 @@ export function OverviewStats({
     paymentDate.setHours(0, 0, 0, 0);
     return income.status === 'pending' && paymentDate < today;
   }).length;
-  
+
   // Calculate overdue credit card transactions
   const overdueCreditCardCount = vendorTransactions.filter(tx => {
     const dueDate = new Date(tx.dueDate);
     dueDate.setHours(0, 0, 0, 0);
     return tx.status === 'pending' && dueDate < today && tx.creditCardId;
   }).length;
-  
   const totalOverdueCount = overdueVendorCount + overdueIncomeCount;
   return <div className="p-5 pb-6 h-full overflow-y-auto flex flex-col border border-border rounded-lg bg-background/10 backdrop-blur-sm">
       <h2 className="text-xl font-bold text-foreground mb-4">Overview</h2>
@@ -497,7 +496,7 @@ export function OverviewStats({
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
               <div className="text-center">
-                <p className="text-xs text-muted-foreground mb-1">Income</p>
+                <p className="text-xs text-muted-foreground mb-1">Inflow</p>
                 <p className="text-lg font-bold text-green-600">{formatCurrency(todaysIncome)}</p>
               </div>
               <div className="text-center">
