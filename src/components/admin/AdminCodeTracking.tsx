@@ -59,15 +59,9 @@ export function AdminCodeTracking() {
 
       if (profilesError) throw profilesError;
 
-      // Get active subscriptions
-      const { data: subscriptionData } = await supabase.functions.invoke('get-admin-subscriptions', {
-        body: {}
-      });
-
+      // Consider users with stripe_customer_id as active subscribers
       const activeSubscriptionEmails = new Set(
-        subscriptionData?.subscriptions
-          ?.filter((sub: any) => sub.status === 'active')
-          .map((sub: any) => sub.customer_email) || []
+        profiles?.filter(p => p.stripe_customer_id).map(p => p.email) || []
       );
 
       // Process all codes from unified table
