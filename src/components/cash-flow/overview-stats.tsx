@@ -542,7 +542,7 @@ export function OverviewStats({
           <div>
             <p className="text-sm font-medium text-muted-foreground mb-1">Available Credit</p>
             <p className="text-2xl font-bold text-foreground mb-1.5 text-center">{formatCurrency(netAvailableCredit)}</p>
-            {totalCreditLimit === 0 ? <p className="text-sm text-muted-foreground italic">No credit cards linked</p> : <>
+            {totalCreditLimit === 0 ? <p className="text-sm text-muted-foreground italic text-center">No credit cards linked</p> : <>
                 <p className="text-sm text-muted-foreground text-center mb-1">Pending: {formatCurrency(pendingCreditTotal)}</p>
                 <p className="text-sm text-muted-foreground mb-2 text-center">{creditUtilization.toFixed(1)}% utilization</p>
               </>}
