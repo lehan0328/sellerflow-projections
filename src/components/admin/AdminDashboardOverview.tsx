@@ -158,9 +158,16 @@ export function AdminDashboardOverview() {
       
       const totalReferrals = validReferralUsers.length;
       
-      // Active referrals = users who converted to paid (have stripe_customer_id and not in trial)
+      // Active referrals = users with referral code who have active subscriptions
+      // Cross-reference with Stripe subscription data
+      const activeSubscriptionEmails = new Set(
+        subscriptionData?.subscriptions
+          ?.filter((sub: any) => sub.status === 'active')
+          .map((sub: any) => sub.customer_email) || []
+      );
+      
       const activeReferrals = validReferralUsers.filter(u => 
-        u.stripe_customer_id && (!u.trial_end || new Date(u.trial_end) < now)
+        u.email && activeSubscriptionEmails.has(u.email)
       ).length;
 
       setMetrics({
