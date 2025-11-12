@@ -1,14 +1,22 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Moon, Sun, ChevronDown } from "lucide-react";
+import { Moon, Sun, ChevronDown, Menu, X } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
 import { useTheme } from "next-themes";
 import aurenIcon from "@/assets/auren-icon-blue.png";
+import { useIsMobile } from "@/hooks/use-mobile";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 
 interface PublicHeaderProps {
   activePage?: string;
@@ -17,6 +25,8 @@ interface PublicHeaderProps {
 export const PublicHeader = ({ activePage }: PublicHeaderProps) => {
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const isMobile = useIsMobile();
 
   return (
     <nav className="border-b bg-background/60 backdrop-blur-xl sticky top-0 z-50 animate-fade-in">
@@ -33,6 +43,18 @@ export const PublicHeader = ({ activePage }: PublicHeaderProps) => {
             </span>
             </span>
           </Link>
+          
+          {/* Mobile Menu Button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setMobileMenuOpen(true)}
+            className="md:hidden"
+          >
+            <Menu className="h-6 w-6" />
+          </Button>
+
+          {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-6">
             <Link to="/features" onClick={() => window.scrollTo(0, 0)} className={`${activePage === 'features' ? 'text-foreground font-semibold' : 'text-muted-foreground hover:text-foreground'} transition-all duration-300 story-link font-medium`}>
               Features
@@ -118,6 +140,140 @@ export const PublicHeader = ({ activePage }: PublicHeaderProps) => {
           </div>
         </div>
       </div>
+
+      {/* Mobile Menu Sheet */}
+      <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+        <SheetContent side="right" className="w-[300px] sm:w-[400px]">
+          <SheetHeader>
+            <SheetTitle className="text-left">Menu</SheetTitle>
+          </SheetHeader>
+          
+          <div className="flex flex-col gap-6 mt-8">
+            {/* Navigation Links */}
+            <div className="flex flex-col gap-4">
+              <Link 
+                to="/features" 
+                onClick={() => { window.scrollTo(0, 0); setMobileMenuOpen(false); }}
+                className={`${activePage === 'features' ? 'text-foreground font-semibold' : 'text-muted-foreground'} text-lg py-2 hover:text-foreground transition-colors`}
+              >
+                Features
+              </Link>
+              <Link 
+                to="/pricing" 
+                onClick={() => setMobileMenuOpen(false)}
+                className={`${activePage === 'pricing' ? 'text-foreground font-semibold' : 'text-muted-foreground'} text-lg py-2 hover:text-foreground transition-colors`}
+              >
+                Pricing
+              </Link>
+              <Link 
+                to="/#testimonials" 
+                onClick={() => setMobileMenuOpen(false)}
+                className={`${activePage === 'reviews' ? 'text-foreground font-semibold' : 'text-muted-foreground'} text-lg py-2 hover:text-foreground transition-colors`}
+              >
+                Reviews
+              </Link>
+              <Link 
+                to="/blog" 
+                onClick={() => { window.scrollTo(0, 0); setMobileMenuOpen(false); }}
+                className={`${activePage === 'blog' ? 'text-foreground font-semibold' : 'text-muted-foreground'} text-lg py-2 hover:text-foreground transition-colors`}
+              >
+                Blog
+              </Link>
+              <Link 
+                to="/partners" 
+                onClick={() => setMobileMenuOpen(false)}
+                className={`${activePage === 'partners' ? 'text-foreground font-semibold' : 'text-muted-foreground'} text-lg py-2 hover:text-foreground transition-colors`}
+              >
+                Partners
+              </Link>
+              <Link 
+                to="/contact" 
+                onClick={() => setMobileMenuOpen(false)}
+                className={`${activePage === 'contact' ? 'text-foreground font-semibold' : 'text-muted-foreground'} text-lg py-2 hover:text-foreground transition-colors`}
+              >
+                Contact
+              </Link>
+              <Link 
+                to="/docs" 
+                onClick={() => setMobileMenuOpen(false)}
+                className={`${activePage === 'docs' ? 'text-foreground font-semibold' : 'text-muted-foreground'} text-lg py-2 hover:text-foreground transition-colors`}
+              >
+                Docs
+              </Link>
+              
+              {/* Coming Soon Items */}
+              <div className="border-t pt-4 mt-2">
+                <p className="text-sm font-medium text-muted-foreground mb-3">Coming Soon</p>
+                <div className="flex flex-col gap-3 pl-4">
+                  <Link 
+                    to="/inventory" 
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Inventory
+                  </Link>
+                  <Link 
+                    to="/reimbursements" 
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Reimbursements
+                  </Link>
+                  <Link 
+                    to="/advanced-analytics" 
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Analytics
+                  </Link>
+                  <Link 
+                    to="/accounting" 
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Accounting
+                  </Link>
+                  <Link 
+                    to="/platforms" 
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Walmart, Shopify & More
+                  </Link>
+                </div>
+              </div>
+            </div>
+
+            {/* Theme Toggle & CTAs */}
+            <div className="border-t pt-6 mt-auto flex flex-col gap-3">
+              <Button
+                variant="ghost"
+                className="justify-start"
+                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              >
+                <Sun className="h-5 w-5 mr-2 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+                <Moon className="absolute h-5 w-5 ml-2 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+                <span>Toggle Theme</span>
+              </Button>
+              
+              <Button 
+                variant="outline" 
+                className="w-full border-primary/20 hover:border-primary/40" 
+                onClick={() => { navigate('/auth'); setMobileMenuOpen(false); }}
+              >
+                Sign In
+              </Button>
+              
+              <Button 
+                className="w-full bg-gradient-primary"
+                onClick={() => { navigate('/signup'); setMobileMenuOpen(false); }}
+              >
+                Start Free Trial
+              </Button>
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
     </nav>
   );
 };
