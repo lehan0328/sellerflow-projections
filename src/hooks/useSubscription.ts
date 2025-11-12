@@ -72,7 +72,6 @@ export const PRICING_PLANS = {
       "✨ Payout Forecasting",
       "AI insights",
       "AI PDF extractor",
-      "Document storage",
       "2 additional users",
       "Advanced forecasting workflow",
       "90-day cashflow projection",

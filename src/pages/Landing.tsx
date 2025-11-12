@@ -308,7 +308,7 @@ const Landing = () => {
   }, {
     feature: "Document Storage",
     starter: false,
-    growing: true,
+    growing: false,
     professional: true,
     enterprise: true
   }, {
