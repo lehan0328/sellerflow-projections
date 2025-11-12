@@ -281,7 +281,7 @@ export function PlaidAccountConfirmationDialog({
                 ⚠️ Plaid does not capture extended spending limits. Manually adjust credit limits after saving if needed.
               </p>
               <p className="mt-1.5 text-xs text-muted-foreground italic">
-                You can manually add missing payment dates and statement info after connecting
+                You can manually add now or after connecting if your bank is listed with limited data
               </p>
             </div>
           </div>
