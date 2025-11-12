@@ -43,18 +43,23 @@ export function AdminCodeTracking() {
 
   const fetchCodeTracking = async () => {
     try {
-      // Fetch all user-owned referral codes from profiles
-      const { data: userOwnedCodes } = await supabase
-        .from('profiles')
-        .select('my_referral_code, first_name, last_name, email')
-        .not('my_referral_code', 'is', null);
+      setIsLoading(true);
 
-      // Fetch affiliate codes from affiliates table
-      const { data: affiliateData } = await supabase
-        .from('affiliates')
-        .select('affiliate_code, status, user_id');
+      // Fetch all codes from unified referral_codes table
+      const { data: allCodes, error: codesError } = await supabase
+        .from("referral_codes")
+        .select("*");
 
-      // Get subscription data to check active subscriptions
+      if (codesError) throw codesError;
+
+      // Fetch usage data from profiles
+      const { data: profiles, error: profilesError } = await supabase
+        .from("profiles")
+        .select("referral_code, stripe_customer_id, email, created_at");
+
+      if (profilesError) throw profilesError;
+
+      // Get active subscriptions
       const { data: subscriptionData } = await supabase.functions.invoke('get-admin-subscriptions', {
         body: {}
       });
@@ -65,142 +70,51 @@ export function AdminCodeTracking() {
           .map((sub: any) => sub.customer_email) || []
       );
 
-      // Count referral code usage - for each user-owned code, count who used it
-      const referralCounts = new Map<string, { total: number; active: number; emails: Set<string> }>();
-      
-      for (const owner of userOwnedCodes || []) {
-        const code = owner.my_referral_code!.toUpperCase();
-        
-        // Find all users who signed up with this referral code
-        const { data: usersWhoUsedCode } = await supabase
-          .from('profiles')
-          .select('referral_code, email, stripe_customer_id')
-          .eq('referral_code', code);
+      // Process all codes from unified table
+      const codeUsageData: CodeUsage[] = allCodes?.map((codeData) => {
+        const code = codeData.code.toUpperCase();
+        const usageCount = profiles?.filter(
+          (p) => p.referral_code?.toUpperCase() === code
+        ).length || 0;
+        const activeCount = profiles?.filter(
+          (p) =>
+            p.referral_code?.toUpperCase() === code && 
+            p.email && 
+            activeSubscriptionEmails.has(p.email)
+        ).length || 0;
 
-        const totalUses = usersWhoUsedCode?.length || 0;
-        const activeUses = usersWhoUsedCode?.filter(u => u.email && activeSubscriptionEmails.has(u.email)).length || 0;
+        // Map code_type to correct type
+        const typeMap: Record<string, 'referral' | 'affiliate' | 'custom'> = {
+          user: 'referral',
+          affiliate: 'affiliate',
+          custom: 'custom',
+        };
 
-        if (totalUses > 0) {
-          referralCounts.set(code, {
-            total: totalUses,
-            active: activeUses,
-            emails: new Set(usersWhoUsedCode?.map(u => u.email || '') || [])
-          });
-        }
-      }
-
-      // Process affiliate codes
-      const affiliateCounts = new Map<string, { total: number; active: number; status: string; emails: Set<string> }>();
-      
-      for (const affiliate of affiliateData || []) {
-        const code = affiliate.affiliate_code.toUpperCase();
-        
-        // Find users who signed up with this affiliate code
-        const { data: affiliateUsers } = await supabase
-          .from('affiliate_referrals')
-          .select('referred_user_id, status');
-
-        const { data: userProfiles } = await supabase
-          .from('profiles')
-          .select('email')
-          .in('user_id', affiliateUsers?.map(u => u.referred_user_id) || []);
-
-        const userEmails = new Set(userProfiles?.map(p => p.email || '') || []);
-        const activeCount = Array.from(userEmails).filter(email => activeSubscriptionEmails.has(email)).length;
-
-        affiliateCounts.set(code, {
-          total: userEmails.size,
-          active: activeCount,
-          status: affiliate.status,
-          emails: userEmails
-        });
-      }
-
-      // Fetch custom admin codes
-      const { data: customCodes } = await supabase
-        .from('custom_discount_codes')
-        .select('*')
-        .eq('is_active', true);
-
-      // Count usage for custom codes (check profiles table for referral_code matches)
-      const customCodeUsage = new Map<string, { total: number; active: number; id: string; discount: number; duration: number }>();
-      
-      for (const customCode of customCodes || []) {
-        const { data: usageData } = await supabase
-          .from('profiles')
-          .select('referral_code, stripe_customer_id')
-          .eq('referral_code', customCode.code);
-
-        const totalUses = usageData?.length || 0;
-        const activeUses = usageData?.filter(p => p.stripe_customer_id).length || 0;
-
-        customCodeUsage.set(customCode.code, {
-          total: totalUses,
-          active: activeUses,
-          id: customCode.id,
-          discount: customCode.discount_percentage,
-          duration: customCode.duration_months,
-        });
-      }
-
-      // Combine into CodeUsage array
-      const allCodes: CodeUsage[] = [];
-
-      // Add custom admin codes first
-      customCodeUsage.forEach((stats, code) => {
-        allCodes.push({
-          id: stats.id,
+        return {
           code,
-          type: 'custom',
-          totalUses: stats.total,
-          activeSubscriptions: stats.active,
-          discountAmount: `${stats.discount}% off`,
-          duration: `${stats.duration} months`,
-        });
-      });
+          type: typeMap[codeData.code_type] || 'custom',
+          totalUses: usageCount,
+          activeSubscriptions: activeCount,
+          discountAmount: `${codeData.discount_percentage}% off`,
+          duration: `${codeData.duration_months} months`,
+        };
+      }) || [];
 
-      // Add referral codes (only codes with actual usage)
-      referralCounts.forEach((stats, code) => {
-        if (stats.total > 0) {
-          allCodes.push({
-            code,
-            type: 'referral',
-            totalUses: stats.total,
-            activeSubscriptions: stats.active,
-            discountAmount: '10% off',
-            duration: '3 months',
-          });
-        }
-      });
-
-      // Add affiliate codes (show all, even with 0 uses)
-      affiliateCounts.forEach((stats, code) => {
-        allCodes.push({
-          code,
-          type: 'affiliate',
-          totalUses: stats.total,
-          activeSubscriptions: stats.active,
-          discountAmount: '10% off',
-          duration: '3 months',
-          status: stats.status,
-        });
-      });
-
-      // Sort by total uses
-      allCodes.sort((a, b) => b.totalUses - a.totalUses);
-
-      setCodes(allCodes);
+      const allCodesData = codeUsageData;
 
       // Calculate stats
-      const totalUses = allCodes.reduce((sum, code) => sum + code.totalUses, 0);
-      const activeConversions = allCodes.reduce((sum, code) => sum + code.activeSubscriptions, 0);
+      const totalUses = allCodesData.reduce((sum, code) => sum + code.totalUses, 0);
+      const activeConversions = allCodesData.reduce((sum, code) => sum + code.activeSubscriptions, 0);
       
+      setCodes(allCodesData);
       setStats({
-        totalCodes: allCodes.length,
+        totalCodes: allCodesData.length,
         totalUses,
         activeConversions,
         conversionRate: totalUses > 0 ? Math.round((activeConversions / totalUses) * 100) : 0,
       });
+      
+      setIsLoading(false);
     } catch (error) {
       console.error('Error fetching code tracking:', error);
     } finally {

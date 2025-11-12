@@ -115,16 +115,28 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Update user's profile with the generated code
-    const { error: updateError } = await supabase
+    // Insert into unified referral_codes table
+    const { error: insertError } = await supabase
+      .from('referral_codes')
+      .insert({
+        code: finalCode,
+        code_type: 'user',
+        owner_id: user.id,
+        discount_percentage: 10,
+        duration_months: 3,
+        is_active: true
+      });
+
+    if (insertError) {
+      console.error('Insert error:', insertError);
+      throw new Error('Failed to save referral code');
+    }
+
+    // Also update profile for backward compatibility
+    await supabase
       .from('profiles')
       .update({ my_referral_code: finalCode })
       .eq('user_id', user.id);
-
-    if (updateError) {
-      console.error('Update error:', updateError);
-      throw new Error('Failed to save referral code');
-    }
 
     console.log(`Successfully generated referral code: ${finalCode} for user: ${user.id}`);
 

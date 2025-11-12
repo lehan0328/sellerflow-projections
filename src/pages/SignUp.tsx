@@ -82,56 +82,26 @@ export const SignUp = () => {
     try {
       const upperCode = code.toUpperCase();
       
-      // Check if it's a custom admin code
-      const { data: customCodeData, error: customError } = await supabase
-        .from('custom_discount_codes')
-        .select('code, discount_percentage, duration_months')
-        .eq('code', upperCode)
-        .eq('is_active', true)
+      // Check unified referral_codes table
+      const { data: referralCode, error } = await supabase
+        .from("referral_codes")
+        .select("code, code_type, discount_percentage, duration_months")
+        .eq("code", upperCode)
+        .eq("is_active", true)
         .maybeSingle();
 
-      if (customError && customError.code !== 'PGRST116') {
-        console.error('Error checking custom code:', customError);
-      }
-
-      if (customCodeData) {
-        setReferralCodeStatus('valid');
-        setReferralCodeType('custom');
-        return;
-      }
-      
-      // Check if it's a user-owned referral code in profiles table
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('my_referral_code')
-        .eq('my_referral_code', upperCode)
-        .maybeSingle();
-
-      if (profileError && profileError.code !== 'PGRST116') {
-        console.error('Error checking profile code:', profileError);
-      }
-
-      if (profileData) {
-        setReferralCodeStatus('valid');
-        setReferralCodeType('user');
+      if (error && error.code !== 'PGRST116') {
+        console.error("Error validating referral code:", error);
+        setReferralCodeStatus('invalid');
+        setReferralCodeType(null);
         return;
       }
 
-      // Check if it's an affiliate code in affiliates table
-      const { data: affiliateData, error: affiliateError } = await supabase
-        .from('affiliates')
-        .select('affiliate_code')
-        .eq('affiliate_code', upperCode)
-        .eq('status', 'approved')
-        .maybeSingle();
-
-      if (affiliateError && affiliateError.code !== 'PGRST116') {
-        console.error('Error checking affiliate code:', affiliateError);
-      }
-
-      if (affiliateData) {
+      if (referralCode) {
         setReferralCodeStatus('valid');
-        setReferralCodeType('affiliate');
+        // Ensure code_type is one of the expected values
+        const validTypes = ['user', 'affiliate', 'custom'];
+        setReferralCodeType(validTypes.includes(referralCode.code_type) ? referralCode.code_type as 'affiliate' | 'custom' | 'user' : null);
       } else {
         setReferralCodeStatus('invalid');
         setReferralCodeType(null);

@@ -2048,24 +2048,36 @@ export type Database = {
       referral_codes: {
         Row: {
           code: string
+          code_type: string | null
           created_at: string
+          discount_percentage: number
+          duration_months: number
           id: string
+          is_active: boolean
+          owner_id: string | null
           updated_at: string
-          user_id: string
         }
         Insert: {
           code: string
+          code_type?: string | null
           created_at?: string
+          discount_percentage?: number
+          duration_months?: number
           id?: string
+          is_active?: boolean
+          owner_id?: string | null
           updated_at?: string
-          user_id: string
         }
         Update: {
           code?: string
+          code_type?: string | null
           created_at?: string
+          discount_percentage?: number
+          duration_months?: number
           id?: string
+          is_active?: boolean
+          owner_id?: string | null
           updated_at?: string
-          user_id?: string
         }
         Relationships: []
       }
