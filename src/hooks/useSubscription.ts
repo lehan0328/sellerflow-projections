@@ -60,8 +60,8 @@ export const PRICING_PLANS = {
     price: 79,
     yearlyPrice: 790,
     product_id: "prod_TAcNnoGuq5Mr7X",
-    price_id: "price_1SEH8iB28kMY3Usem3k3vElT",
-    yearly_price_id: "price_1SEHZVB28kMY3Use9bH8xPlg",
+    price_id: "price_1SSeo2B28kMY3UseFL1piWcg",
+    yearly_price_id: "price_1SSeqYB28kMY3UsedmvC1SyG",
     features: [
       "Under $50k monthly Amazon payout",
       "3 bank/credit card connections",
@@ -87,8 +87,8 @@ export const PRICING_PLANS = {
     price: 97,
     yearlyPrice: 970,
     product_id: "prod_TAcQOfzGbqPowf",
-    price_id: "price_1SEHBHB28kMY3UsenQEY0qoT",
-    yearly_price_id: "price_1SEHZfB28kMY3UseZKmLEcPk",
+    price_id: "price_1SSeroB28kMY3UseleImRSzb",
+    yearly_price_id: "price_1SSesoB28kMY3UseVpnTVwkK",
     features: [
       "Under $100k monthly Amazon payout",
       "4 bank/credit card connections",

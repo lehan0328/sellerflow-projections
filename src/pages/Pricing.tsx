@@ -131,8 +131,8 @@ export default function Pricing() {
       yearlyPeriod: "/month",
       description: "Up to $50k monthly payout",
       popular: true,
-      priceId: "price_1SEH8iB28kMY3Usem3k3vElT",
-      yearlyPriceId: "price_1SEHZVB28kMY3Use9bH8xPlg",
+      priceId: "price_1SSeo2B28kMY3UseFL1piWcg",
+      yearlyPriceId: "price_1SSeqYB28kMY3UsedmvC1SyG",
       savings: "$158"
     },
     {
@@ -143,8 +143,8 @@ export default function Pricing() {
       yearlyPeriod: "/month",
       description: "Up to $100k monthly payout",
       popular: false,
-      priceId: "price_1SEHBHB28kMY3UsenQEY0qoT",
-      yearlyPriceId: "price_1SEHZfB28kMY3UseZKmLEcPk",
+      priceId: "price_1SSeroB28kMY3UseleImRSzb",
+      yearlyPriceId: "price_1SSesoB28kMY3UseVpnTVwkK",
       savings: "$194"
     },
     {
