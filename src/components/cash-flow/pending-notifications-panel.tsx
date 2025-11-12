@@ -228,23 +228,23 @@ export const PendingNotificationsPanel = ({
                       <X className="h-3 w-3" />
                     </Button>
 
-                    <div className="pr-8">
-                      <div className="flex items-center gap-2 mb-2 flex-nowrap">
-                        <Badge className={cn("text-xs font-medium border whitespace-nowrap", getBadgeTypeColor(notification.type))}>
+                    <div className="pr-8 min-w-0">
+                      <div className="flex items-center gap-2 mb-2 flex-wrap">
+                        <Badge className={cn("text-xs font-medium border whitespace-nowrap shrink-0", getBadgeTypeColor(notification.type))}>
                           {getTypeLabel(notification.type)}
                         </Badge>
                         {notification.category && (
-                          <Badge className={cn("text-xs font-medium border capitalize whitespace-nowrap", getCategoryColor(notification.category))}>
+                          <Badge className={cn("text-xs font-medium border capitalize whitespace-nowrap shrink-0", getCategoryColor(notification.category))}>
                             {notification.category}
                           </Badge>
                         )}
                       </div>
                       
                       <div className="flex items-start justify-between mb-1">
-                        <h4 className="font-semibold text-sm">{notification.title}</h4>
+                        <h4 className="font-semibold text-sm break-words">{notification.title}</h4>
                       </div>
                       
-                      <p className="text-sm opacity-90 mb-2">
+                      <p className="text-sm opacity-90 mb-2 break-words">
                         {notification.message}
                       </p>
                       
