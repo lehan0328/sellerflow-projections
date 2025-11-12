@@ -125,27 +125,27 @@ export default function Pricing() {
     },
     {
       name: "Growing",
-      price: "$59",
-      yearlyPrice: "$49",
+      price: "$79",
+      yearlyPrice: "$66",
       period: "/month",
       yearlyPeriod: "/month",
       description: "Up to $50k monthly payout",
       popular: true,
       priceId: "price_1SEH8iB28kMY3Usem3k3vElT",
       yearlyPriceId: "price_1SEHZVB28kMY3Use9bH8xPlg",
-      savings: "$118"
+      savings: "$158"
     },
     {
       name: "Professional",
-      price: "$89",
-      yearlyPrice: "$74",
+      price: "$97",
+      yearlyPrice: "$81",
       period: "/month",
       yearlyPeriod: "/month",
       description: "Up to $100k monthly payout",
       popular: false,
       priceId: "price_1SEHBHB28kMY3UsenQEY0qoT",
       yearlyPriceId: "price_1SEHZfB28kMY3UseZKmLEcPk",
-      savings: "$178"
+      savings: "$194"
     },
     {
       name: "Enterprise",
@@ -276,7 +276,7 @@ export default function Pricing() {
                         </div>
                         {isYearly && plan.savings && (
                           <p className="text-xs text-muted-foreground">
-                            Billed annually at {plan.yearlyPrice === "$24" ? "$290" : plan.yearlyPrice === "$49" ? "$590" : plan.yearlyPrice === "$74" ? "$890" : ""}/yr
+                            Billed annually at {plan.yearlyPrice === "$24" ? "$290" : plan.yearlyPrice === "$66" ? "$790" : plan.yearlyPrice === "$81" ? "$970" : ""}/yr
                           </p>
                         )}
                         {isYearly && plan.savings && (
