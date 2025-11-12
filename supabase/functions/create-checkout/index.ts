@@ -154,14 +154,14 @@ serve(async (req) => {
         discountCouponId = couponId;
         logStep("Found existing referred user discount coupon");
       } catch (error) {
-        // Create coupon if it doesn't exist (10% off for 12 months)
+        // Create coupon if it doesn't exist (10% off for 3 months)
         logStep("Creating referred user discount coupon");
         await stripe.coupons.create({
           id: couponId,
           name: 'Referred User Discount - 10% Off',
           percent_off: 10,
           duration: 'repeating',
-          duration_in_months: 6,
+          duration_in_months: 3,
         });
         discountCouponId = couponId;
       }

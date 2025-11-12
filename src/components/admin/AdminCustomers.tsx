@@ -522,7 +522,7 @@ export const AdminCustomers = () => {
           customer.referral_code ? 'User Referral' : customer.affiliate_code ? 'Affiliate/Influencer' : '-',
           customer.referral_code || customer.affiliate_code || (customer.plan_override === 'referred_user_discount' || customer.discount_redeemed_at ? 'Legacy' : '-'),
           customer.referral_code || customer.affiliate_code || customer.plan_override === 'referred_user_discount' || customer.discount_redeemed_at ? '10% off' : '-',
-          customer.referral_code || customer.affiliate_code || customer.plan_override === 'referred_user_discount' || customer.discount_redeemed_at ? 'Lifetime' : '-',
+          customer.referral_code || customer.affiliate_code || customer.plan_override === 'referred_user_discount' || customer.discount_redeemed_at ? '3 months' : '-',
           `$${(customer.amazon_revenue || 0).toLocaleString('en-US')}`,
           customer.renewal_date ? new Date(customer.renewal_date).toLocaleDateString('en-US') : '-',
           customer.last_paid_date ? new Date(customer.last_paid_date).toLocaleDateString('en-US') : '-',
@@ -852,7 +852,7 @@ export const AdminCustomers = () => {
                       </TableCell>
                       <TableCell>
                         {customer.referral_code || customer.affiliate_code || customer.plan_override === 'referred_user_discount' || customer.discount_redeemed_at ? (
-                          <span className="text-sm">Lifetime</span>
+                          <span className="text-sm">3 months</span>
                         ) : (
                           <span className="text-muted-foreground">-</span>
                         )}
