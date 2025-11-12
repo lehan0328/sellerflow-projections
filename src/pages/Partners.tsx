@@ -19,6 +19,7 @@ export default function Partners() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
+    channel: "",
     email: "",
     subject: "Affiliate Program Inquiry",
     message: ""
@@ -35,8 +36,8 @@ export default function Partners() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.name.trim() || !formData.email.trim() || !formData.message.trim()) {
-      toast.error("Please fill in all fields");
+    if (!formData.name.trim() || !formData.email.trim() || !formData.channel.trim()) {
+      toast.error("Please fill in all required fields");
       return;
     }
 
@@ -48,20 +49,29 @@ export default function Partners() {
 
     setIsSubmitting(true);
     try {
+      const messageContent = `
+Name: ${formData.name}
+Email: ${formData.email}
+Channel/Page: ${formData.channel}
+
+${formData.message ? `Message:\n${formData.message}` : 'No additional message provided.'}
+      `.trim();
+
       const { error } = await supabase.functions.invoke('send-contact-email', {
         body: {
           name: formData.name,
-          email: formData.email,
-          subject: formData.subject,
-          message: formData.message
+          email: "andy@aurenapp.com",
+          subject: "Affiliate Program Inquiry",
+          message: messageContent
         }
       });
       
       if (error) throw error;
       
-      toast.success("Message sent successfully! We'll get back to you within 24-48 hours.");
+      toast.success("Your inquiry has been sent! We'll get back to you within 24-48 hours.");
       setFormData({
         name: "",
+        channel: "",
         email: "",
         subject: "Affiliate Program Inquiry",
         message: ""
@@ -69,7 +79,7 @@ export default function Partners() {
       setIsDialogOpen(false);
     } catch (error) {
       console.error("Contact form error:", error);
-      toast.error("Failed to send message. Please try emailing support@aurenapp.com directly.");
+      toast.error("Failed to send inquiry. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -568,6 +578,18 @@ export default function Partners() {
             </div>
 
             <div className="space-y-2">
+              <Label htmlFor="channel">Link to your channel/page *</Label>
+              <Input
+                id="channel"
+                type="url"
+                value={formData.channel}
+                onChange={(e) => setFormData({ ...formData, channel: e.target.value })}
+                placeholder="https://"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="email">Email *</Label>
               <Input
                 id="email"
@@ -580,14 +602,13 @@ export default function Partners() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="message">Message *</Label>
+              <Label htmlFor="message">Message (optional)</Label>
               <Textarea
                 id="message"
                 value={formData.message}
                 onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                 placeholder="Tell us about your audience and why you'd like to become an affiliate..."
                 rows={5}
-                required
               />
             </div>
 
