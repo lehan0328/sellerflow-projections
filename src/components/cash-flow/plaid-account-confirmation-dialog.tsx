@@ -324,7 +324,7 @@ export function PlaidAccountConfirmationDialog({
                 Credit Cards ({creditCardAccounts.length})
               </h3>
               <p className="text-xs text-muted-foreground bg-muted/30 p-2 rounded-md border border-muted">
-                <strong>Note:</strong> Not all banks provide statement balance and due date information. This data is crucial for cash flow forecasting as we include it in your projections. You can update this now or later in settings.
+                <strong>Note:</strong> Some credit card companies such as Amex have extended buying power that is not visible in the API. Please update this in settings after adding your account.
               </p>
               <div className="space-y-2 border rounded-lg p-2">
                 {creditCardAccounts.map((account) => {
