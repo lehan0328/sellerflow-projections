@@ -364,16 +364,18 @@ export function PlaidAccountConfirmationDialog({
                         {isSelected && (
                 <Popover modal={true}>
                   <PopoverTrigger asChild>
-                              <Badge 
+                              <Button
+                                type="button"
                                 variant="outline"
-                                className="cursor-pointer hover:bg-primary/10 hover:border-primary transition-all flex items-center gap-1.5 px-3 py-1 select-none"
+                                size="sm"
+                                className="cursor-pointer hover:bg-primary/10 hover:border-primary transition-all flex items-center gap-1.5 px-3 h-7 text-xs select-none"
                               >
                                 {priority !== 3 ? (
                                   <>Priority: {priority} ▼</>
                                 ) : (
                                   <>Set Priority ▼</>
                                 )}
-                              </Badge>
+                              </Button>
                             </PopoverTrigger>
                   <PopoverContent 
                     className="w-64 p-2 bg-popover border shadow-lg z-[9999] opacity-100 pointer-events-auto" 
@@ -447,6 +449,7 @@ export function PlaidAccountConfirmationDialog({
                 <Popover modal={true}>
                   <PopoverTrigger asChild>
                                   <Button
+                                    type="button"
                                     variant="outline"
                                     className="w-full justify-start text-left font-normal h-9 text-sm"
                                   >
