@@ -79,9 +79,12 @@ export const usePlanLimits = () => {
   const mapPlanTier = (tier: string | null, productId: string | null): PlanType => {
     console.log('[usePlanLimits] Mapping plan:', { tier, productId });
     
-    // Check for enterprise product IDs first (prod_TBOi*)
-    if (productId && productId.startsWith('prod_TBOi')) {
-      console.log('[usePlanLimits] Enterprise product detected');
+    // Check for enterprise product IDs first (be explicit about all three)
+    if (productId === 'prod_TBOiOltXIGat2d' || 
+        productId === 'prod_TBOiz4xSwK3cGV' || 
+        productId === 'prod_TBOiTlRX4YLU4g' ||
+        (productId && productId.startsWith('prod_TBOi'))) {
+      console.log('[usePlanLimits] Enterprise product detected:', productId);
       return 'enterprise';
     }
     

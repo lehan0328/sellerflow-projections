@@ -341,11 +341,23 @@ export const useSubscription = () => {
         } else if (finalData.is_trialing) {
           plan = 'professional';
         } else if (finalData.product_id) {
-          const planEntry = Object.entries(PRICING_PLANS).find(
+          // First check PRICING_PLANS (starter, growing, professional)
+          let planEntry = Object.entries(PRICING_PLANS).find(
             ([, planData]) => planData.product_id === finalData.product_id
           );
+          
           if (planEntry) {
             plan = planEntry[0] as PlanTier;
+          } else {
+            // If no match, check ENTERPRISE_TIERS
+            const enterpriseEntry = Object.entries(ENTERPRISE_TIERS).find(
+              ([, tierData]) => tierData.productId === finalData.product_id
+            );
+            
+            if (enterpriseEntry) {
+              plan = enterpriseEntry[0] as PlanTier; // Use the actual tier key (tier1, tier2, tier3)
+              console.log('[SUBSCRIPTION] Enterprise tier detected (retry):', plan);
+            }
           }
         }
 
@@ -407,21 +419,32 @@ export const useSubscription = () => {
         plan = 'professional';
       } else if (data.product_id) {
         // Map product_id to plan tier for regular Stripe subscriptions
-        // Log available product IDs to help debug mismatches
+        // First check PRICING_PLANS (starter, growing, professional)
         const availableProducts = Object.entries(PRICING_PLANS).map(([planName, planData]) => ({
           plan: planName,
           product_id: planData.product_id
         }));
         console.log('[SUBSCRIPTION] Matching product_id:', data.product_id, 'against available:', availableProducts);
         
-        const planEntry = Object.entries(PRICING_PLANS).find(
+        let planEntry = Object.entries(PRICING_PLANS).find(
           ([, planData]) => planData.product_id === data.product_id
         );
+        
         if (planEntry) {
           plan = planEntry[0] as PlanTier;
           console.log('[SUBSCRIPTION] Match found:', plan);
         } else {
-          console.warn('[SUBSCRIPTION] No matching plan found for product_id:', data.product_id, 'Available products:', availableProducts);
+          // If no match, check ENTERPRISE_TIERS
+          const enterpriseEntry = Object.entries(ENTERPRISE_TIERS).find(
+            ([, tierData]) => tierData.productId === data.product_id
+          );
+          
+          if (enterpriseEntry) {
+            plan = enterpriseEntry[0] as PlanTier; // Use the actual tier key (tier1, tier2, tier3)
+            console.log('[SUBSCRIPTION] Enterprise tier detected:', plan, 'Product ID:', data.product_id);
+          } else {
+            console.warn('[SUBSCRIPTION] No matching plan found for product_id:', data.product_id, 'Available products:', availableProducts);
+          }
         }
       }
 

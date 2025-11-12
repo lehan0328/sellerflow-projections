@@ -418,7 +418,9 @@ const UpgradePlan = () => {
                     <Badge className="bg-gradient-primary">
                       {plan === 'lifetime' 
                         ? 'Lifetime Access' 
-                        : PRICING_PLANS[plan]?.name || ENTERPRISE_TIERS[plan as keyof typeof ENTERPRISE_TIERS]?.name || 'Enterprise'}
+                        : plan && (plan === 'tier1' || plan === 'tier2' || plan === 'tier3')
+                        ? `Enterprise - ${ENTERPRISE_TIERS[plan as keyof typeof ENTERPRISE_TIERS]?.name}`
+                        : PRICING_PLANS[plan as keyof typeof PRICING_PLANS]?.name || 'Unknown Plan'}
                     </Badge>
                   </div>
                   
