@@ -536,24 +536,6 @@ export function CreditCards() {
                       <Button
                         size="sm"
                         variant="ghost"
-                        onClick={() => {
-                          // Manually trigger statement update modal
-                          const nextDueDate = card.payment_due_date 
-                            ? addMonths(parseLocalDate(card.payment_due_date), 1)
-                            : addMonths(new Date(), 1);
-                          
-                          setCardForStatementUpdate(card);
-                          setUpdateStatementBalance('');
-                          setUpdateDueDate(format(nextDueDate, 'yyyy-MM-dd'));
-                          setShowStatementUpdateModal(true);
-                        }}
-                        title="Update Statement Balance"
-                      >
-                        <Calendar className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
                         onClick={() => handleEditCard(card)}
                       >
                         <Edit className="h-4 w-4" />
