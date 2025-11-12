@@ -519,9 +519,10 @@ export const AdminCustomers = () => {
           new Date(customer.created_at).toLocaleDateString('en-US'),
           status.label,
           customer.stripe_plan_name || formatPlanName(customer.plan_override) || '-',
-          customer.referral_code || customer.affiliate_code 
-            ? `${customer.referral_code || customer.affiliate_code} (${customer.referral_code ? 'User Referral' : 'Affiliate'})`
-            : (customer.discount_redeemed_at ? '10% off' : '-'),
+          customer.referral_code ? 'User Referral' : customer.affiliate_code ? 'Affiliate/Influencer' : '-',
+          customer.referral_code || customer.affiliate_code || (customer.plan_override === 'referred_user_discount' || customer.discount_redeemed_at ? 'Legacy' : '-'),
+          customer.referral_code || customer.affiliate_code || customer.plan_override === 'referred_user_discount' || customer.discount_redeemed_at ? '10% off' : '-',
+          customer.referral_code || customer.affiliate_code || customer.plan_override === 'referred_user_discount' || customer.discount_redeemed_at ? 'Lifetime' : '-',
           `$${(customer.amazon_revenue || 0).toLocaleString('en-US')}`,
           customer.renewal_date ? new Date(customer.renewal_date).toLocaleDateString('en-US') : '-',
           customer.last_paid_date ? new Date(customer.last_paid_date).toLocaleDateString('en-US') : '-',
@@ -706,7 +707,10 @@ export const AdminCustomers = () => {
                 <TableHead>Joined</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>{viewMode === 'churned' ? 'Last Plan' : 'Plan'}</TableHead>
+                <TableHead>Code Type</TableHead>
                 <TableHead>Code Used</TableHead>
+                <TableHead>Discount</TableHead>
+                <TableHead>Duration</TableHead>
                 <TableHead>Renewal Date</TableHead>
                 <TableHead>Last Paid</TableHead>
                 {viewMode === 'churned' && <TableHead>Churn Date</TableHead>}
@@ -716,7 +720,7 @@ export const AdminCustomers = () => {
             <TableBody>
               {paginatedCustomers.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={12} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={15} className="text-center py-8 text-muted-foreground">
                     No customers found
                   </TableCell>
                 </TableRow>
@@ -813,24 +817,42 @@ export const AdminCustomers = () => {
                       </TableCell>
                       <TableCell>
                         {customer.referral_code || customer.affiliate_code ? (
-                          <div className="flex flex-col gap-1">
-                            <span className="text-sm font-medium">
-                              {customer.referral_code || customer.affiliate_code}
-                            </span>
-                            {customer.referral_code ? (
-                              <Badge variant="secondary" className="text-xs w-fit">
-                                User Referral · 10% off
-                              </Badge>
-                            ) : (
-                              <Badge variant="default" className="text-xs w-fit">
-                                Affiliate/Influencer · 10% off
-                              </Badge>
-                            )}
-                          </div>
+                          customer.referral_code ? (
+                            <Badge variant="secondary" className="text-xs">
+                              User Referral
+                            </Badge>
+                          ) : (
+                            <Badge variant="default" className="text-xs">
+                              Affiliate/Influencer
+                            </Badge>
+                          )
+                        ) : (
+                          <span className="text-muted-foreground">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {customer.referral_code || customer.affiliate_code ? (
+                          <span className="text-sm font-medium">
+                            {customer.referral_code || customer.affiliate_code}
+                          </span>
                         ) : customer.plan_override === 'referred_user_discount' ? (
-                          <span className="text-sm text-muted-foreground">10% off (legacy)</span>
+                          <span className="text-sm text-muted-foreground">Legacy</span>
                         ) : customer.discount_redeemed_at ? (
-                          <span className="text-sm text-muted-foreground">10% off</span>
+                          <span className="text-sm text-muted-foreground">Legacy</span>
+                        ) : (
+                          <span className="text-muted-foreground">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {customer.referral_code || customer.affiliate_code || customer.plan_override === 'referred_user_discount' || customer.discount_redeemed_at ? (
+                          <span className="text-sm">10% off</span>
+                        ) : (
+                          <span className="text-muted-foreground">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {customer.referral_code || customer.affiliate_code || customer.plan_override === 'referred_user_discount' || customer.discount_redeemed_at ? (
+                          <span className="text-sm">Lifetime</span>
                         ) : (
                           <span className="text-muted-foreground">-</span>
                         )}
