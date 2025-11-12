@@ -30,6 +30,7 @@ export const SignUp = () => {
     hearAboutUs: '',
   });
   const [referralCodeStatus, setReferralCodeStatus] = useState<'idle' | 'validating' | 'valid' | 'invalid'>('idle');
+  const [referralCodeType, setReferralCodeType] = useState<'user' | 'affiliate' | 'custom' | null>(null);
 
   // Check for referral code or affiliate code in URL parameters
   useEffect(() => {
@@ -72,6 +73,7 @@ export const SignUp = () => {
   const validateReferralCode = useCallback(async (code: string) => {
     if (!code || code.length < 3) {
       setReferralCodeStatus('idle');
+      setReferralCodeType(null);
       return;
     }
 
@@ -90,6 +92,7 @@ export const SignUp = () => {
 
       if (customCodeData) {
         setReferralCodeStatus('valid');
+        setReferralCodeType('custom');
         return;
       }
       
@@ -102,6 +105,7 @@ export const SignUp = () => {
 
       if (profileData) {
         setReferralCodeStatus('valid');
+        setReferralCodeType('user');
         return;
       }
 
@@ -113,9 +117,16 @@ export const SignUp = () => {
         .eq('status', 'approved')
         .single();
 
-      setReferralCodeStatus(affiliateData ? 'valid' : 'invalid');
+      if (affiliateData) {
+        setReferralCodeStatus('valid');
+        setReferralCodeType('affiliate');
+      } else {
+        setReferralCodeStatus('invalid');
+        setReferralCodeType(null);
+      }
     } catch (err) {
       setReferralCodeStatus('invalid');
+      setReferralCodeType(null);
     }
   }, []);
 
@@ -168,16 +179,15 @@ export const SignUp = () => {
       hear_about_us: signUpData.hearAboutUs,
     };
 
-    // Check if this is an affiliate code or regular referral code
-    if (signUpData.referralCode) {
-      const affCode = searchParams.get('aff');
+    // Store the referral code based on its validated type
+    if (signUpData.referralCode && referralCodeStatus === 'valid' && referralCodeType) {
+      const upperCode = signUpData.referralCode.toUpperCase();
       
-      if (affCode) {
-        // This is an affiliate code - store it for affiliate tracking
-        metadata.affiliate_code = signUpData.referralCode.toUpperCase();
-      } else if (referralCodeStatus === 'valid') {
-        // This is a regular referral code - only include if valid
-        metadata.referral_code = signUpData.referralCode.toUpperCase();
+      if (referralCodeType === 'affiliate') {
+        metadata.affiliate_code = upperCode;
+      } else if (referralCodeType === 'user' || referralCodeType === 'custom') {
+        // Both user referral codes and custom codes go to referral_code field
+        metadata.referral_code = upperCode;
       }
     }
 
