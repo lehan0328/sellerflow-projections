@@ -3,7 +3,7 @@ import { Dialog, DialogDescription, DialogHeader, DialogTitle, DialogPortal } fr
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Button } from "@/components/ui/button";
 import { PRICING_PLANS, ENTERPRISE_TIERS } from "@/hooks/useSubscription";
-import { AlertCircle, Check, X, LogOut } from "lucide-react";
+import { AlertCircle, Check, X, LogOut, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
@@ -398,7 +398,7 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
                         .map((feature, index) => (
                           <li key={index} className="flex items-start gap-2">
                             {feature.included ? (
-                              <Check className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
+                              <Sparkles className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
                             ) : (
                               <X className="h-3.5 w-3.5 text-muted-foreground/40 shrink-0 mt-0.5" />
                             )}
@@ -409,6 +409,9 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
                         ))}
                     </ul>
                   </div>
+
+                  {/* Separator */}
+                  <div className="border-t my-3"></div>
 
                   {/* Other Features */}
                   <ul className="space-y-1.5">
