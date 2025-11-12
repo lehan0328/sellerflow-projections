@@ -362,8 +362,8 @@ export function PlaidAccountConfirmationDialog({
                           </p>
                         </div>
                         {isSelected && (
-                          <Popover>
-                            <PopoverTrigger asChild>
+                <Popover modal={true}>
+                  <PopoverTrigger asChild>
                               <Badge 
                                 variant="outline"
                                 className="cursor-pointer hover:bg-primary/10 hover:border-primary transition-all flex items-center gap-1.5 px-3 py-1 select-none"
@@ -375,11 +375,11 @@ export function PlaidAccountConfirmationDialog({
                                 )}
                               </Badge>
                             </PopoverTrigger>
-                            <PopoverContent 
-                              className="w-64 p-2 bg-popover border shadow-lg z-[200]" 
-                              align="end"
-                              sideOffset={5}
-                            >
+                  <PopoverContent 
+                    className="w-64 p-2 bg-popover border shadow-lg z-[9999] opacity-100 pointer-events-auto" 
+                    align="end"
+                    sideOffset={5}
+                  >
                               <div className="space-y-1">
                                 {[1, 2, 3, 4, 5].map((p) => (
                                   <button
@@ -444,8 +444,8 @@ export function PlaidAccountConfirmationDialog({
                               <Label htmlFor={`duedate-${account.uniqueId}`} className="text-xs">
                                 Payment Due Date
                               </Label>
-                              <Popover>
-                                <PopoverTrigger asChild>
+                <Popover modal={true}>
+                  <PopoverTrigger asChild>
                                   <Button
                                     variant="outline"
                                     className="w-full justify-start text-left font-normal h-9 text-sm"
@@ -457,7 +457,7 @@ export function PlaidAccountConfirmationDialog({
                                     }
                                   </Button>
                                 </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0 bg-popover border shadow-lg z-[200]" align="start">
+                                <PopoverContent className="w-auto p-0 bg-popover border shadow-lg z-[9999] opacity-100 pointer-events-auto" align="start">
                                   <Calendar
                                     mode="single"
                                     selected={creditCardData[account.uniqueId]?.dueDate ? parseLocalDate(creditCardData[account.uniqueId].dueDate!) : undefined}
