@@ -84,9 +84,9 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
 
       // Determine appropriate plan based on revenue and get higher plans
       if (revenueNum <= 10000) {
-        recommendedPlanData = { type: 'standard', plan: PRICING_PLANS.starter };
+        recommendedPlanData = { type: 'standard', plan: PRICING_PLANS.growing };
         higherPlans = [
-          { type: 'standard', plan: PRICING_PLANS.growing },
+          { type: 'standard', plan: PRICING_PLANS.starter },
           { type: 'standard', plan: PRICING_PLANS.professional },
         ];
       } else if (revenueNum <= 50000) {
