@@ -1,4 +1,5 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useVendorTransactions } from "@/hooks/useVendorTransactions";
@@ -21,6 +22,8 @@ export function OverdueTransactionsModal({ open, onOpenChange, onUpdate }: Overd
   const { incomeItems, updateIncome, deleteIncome } = useIncome();
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [changingDateId, setChangingDateId] = useState<string | null>(null);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<{ id: string; type: 'vendor' | 'income'; name: string } | null>(null);
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -54,6 +57,8 @@ export function OverdueTransactionsModal({ open, onOpenChange, onUpdate }: Overd
     try {
       await deleteTransaction(id);
       onUpdate?.();
+      setDeleteConfirmOpen(false);
+      setItemToDelete(null);
     } finally {
       setProcessingId(null);
     }
@@ -74,9 +79,26 @@ export function OverdueTransactionsModal({ open, onOpenChange, onUpdate }: Overd
     try {
       await deleteIncome(id);
       onUpdate?.();
+      setDeleteConfirmOpen(false);
+      setItemToDelete(null);
     } finally {
       setProcessingId(null);
     }
+  };
+
+  const confirmDelete = () => {
+    if (!itemToDelete) return;
+    
+    if (itemToDelete.type === 'vendor') {
+      handleDeleteVendor(itemToDelete.id);
+    } else {
+      handleDeleteIncome(itemToDelete.id);
+    }
+  };
+
+  const openDeleteConfirm = (id: string, type: 'vendor' | 'income', name: string) => {
+    setItemToDelete({ id, type, name });
+    setDeleteConfirmOpen(true);
   };
 
   const handleChangeVendorDate = async (id: string, newDate: Date) => {
@@ -179,7 +201,7 @@ export function OverdueTransactionsModal({ open, onOpenChange, onUpdate }: Overd
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleDeleteVendor(tx.id)}
+                          onClick={() => openDeleteConfirm(tx.id, 'vendor', tx.vendorName)}
                           disabled={processingId === tx.id}
                         >
                           <Trash2 className="h-4 w-4 text-destructive" />
@@ -243,7 +265,7 @@ export function OverdueTransactionsModal({ open, onOpenChange, onUpdate }: Overd
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleDeleteIncome(income.id)}
+                          onClick={() => openDeleteConfirm(income.id, 'income', income.description)}
                           disabled={processingId === income.id}
                         >
                           <Trash2 className="h-4 w-4 text-destructive" />
@@ -256,6 +278,24 @@ export function OverdueTransactionsModal({ open, onOpenChange, onUpdate }: Overd
             )}
           </TabsContent>
         </Tabs>
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Transaction</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to permanently delete "{itemToDelete?.name}"? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setItemToDelete(null)}>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </DialogContent>
     </Dialog>
   );
