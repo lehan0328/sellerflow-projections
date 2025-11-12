@@ -162,7 +162,7 @@ export function BankAccounts({ useAvailableBalance, onToggleBalance }: { useAvai
 
       if (error) throw error;
 
-      toast.success(`Synced ${data.count || 0} transactions. Balance updated!`);
+      toast.success(`Synced ${data.count || 0} transactions. Balance extracted from account data (no extra fees)!`);
       
       // Force refetch to show updated balance
       await refetch();
@@ -366,7 +366,12 @@ export function BankAccounts({ useAvailableBalance, onToggleBalance }: { useAvai
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <Building2 className="h-5 w-5 text-primary" />
-              <CardTitle>Bank Accounts</CardTitle>
+              <div>
+                <CardTitle>Bank Accounts</CardTitle>
+                <p className="text-xs text-muted-foreground mt-1">
+                  💡 Balances are automatically extracted from transaction sync responses
+                </p>
+              </div>
             </div>
             <div className="flex items-center gap-3">
               <Button 

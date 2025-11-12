@@ -26,7 +26,7 @@ interface AddAccountModalProps {
 export const AddAccountModal = ({ open, onOpenChange }: AddAccountModalProps) => {
   const [linkToken, setLinkToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [connectionMethod, setConnectionMethod] = useState<'stripe' | 'plaid' | 'amazon'>('stripe');
+  const [connectionMethod, setConnectionMethod] = useState<'plaid' | 'amazon'>('plaid');
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [showAddonDialog, setShowAddonDialog] = useState(false);
   const [addonType, setAddonType] = useState<'bank_connection' | 'amazon_connection'>('bank_connection');
@@ -40,59 +40,8 @@ export const AddAccountModal = ({ open, onOpenChange }: AddAccountModalProps) =>
   const { canAddBankConnection, canAddAmazonConnection, planLimits, currentUsage } = usePlanLimits();
   const { triggerLimitCheck } = useLimitCheck();
 
-  // Stripe Financial Connections handler
-  const handleStripeConnect = async () => {
-    if (!canAddBankConnection) {
-      toast.error(`Limit reached! You have ${currentUsage.bankConnections}/${planLimits.bankConnections} financial connections. Please delete a connection or purchase add-ons.`);
-      setAddonType('bank_connection');
-      setShowAddonDialog(true);
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('create-stripe-link-session');
-      
-      if (error) throw error;
-      
-      // Open Stripe Financial Connections in a new window
-      const stripeWindow = window.open(
-        `https://connect.stripe.com/setup/e/${data.clientSecret}`,
-        '_blank',
-        'width=500,height=600'
-      );
-
-      // Poll for completion
-      const checkInterval = setInterval(async () => {
-        if (stripeWindow?.closed) {
-          clearInterval(checkInterval);
-          
-          // Exchange session for accounts
-          const { data: accounts, error: exchangeError } = await supabase.functions.invoke(
-            'exchange-stripe-session',
-            {
-              body: { sessionId: data.sessionId }
-            }
-          );
-
-          if (exchangeError) {
-            toast.error("Connection error: " + exchangeError.message);
-          } else {
-            toast.success(`Successfully connected ${accounts.accounts.length} account(s)`);
-            refetchBankAccounts();
-            refetchCreditCards();
-            triggerLimitCheck(); // Check limits after successful connection
-            onOpenChange(false);
-          }
-          setIsLoading(false);
-        }
-      }, 1000);
-    } catch (error: any) {
-      console.error('Error connecting with Stripe:', error);
-      toast.error("Connection failed: " + error.message);
-      setIsLoading(false);
-    }
-  };
+  // Bank connection now handled via Plaid Link integration
+  // Stripe Financial Connections has been removed - see handlePlaidConnect() for current implementation
 
   // Plaid link token creation
   const handlePlaidConnect = async () => {
@@ -197,11 +146,7 @@ export const AddAccountModal = ({ open, onOpenChange }: AddAccountModalProps) =>
         </DialogHeader>
 
         <Tabs value={connectionMethod} onValueChange={(v) => setConnectionMethod(v as any)} className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="stripe" disabled={!canAddBankConnection}>
-              <Building2 className="h-4 w-4 mr-1" />
-              Stripe
-            </TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="plaid" disabled={!canAddBankConnection}>
               <CreditCard className="h-4 w-4 mr-1" />
               Plaid
@@ -211,46 +156,6 @@ export const AddAccountModal = ({ open, onOpenChange }: AddAccountModalProps) =>
               Amazon
             </TabsTrigger>
           </TabsList>
-
-          <TabsContent value="stripe" className="space-y-4 mt-4">
-            <Card className="border-primary/20 bg-primary/5">
-              <CardContent className="p-4">
-                <div className="flex items-start space-x-3">
-                  <div className="p-2 rounded-lg bg-primary/10 text-primary">
-                    <Building2 className="h-5 w-5" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-medium">Stripe Financial Connections</h3>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Connect your bank accounts securely through Stripe. 
-                      Supports 12,000+ financial institutions.
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-2 italic">
-                      Note: Only bank accounts supported (credit card details not available via Stripe).
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {!canAddBankConnection && (
-              <Alert className="border-warning/30 bg-warning/5">
-                <AlertTriangle className="h-4 w-4" />
-                <AlertDescription>
-                  You've reached your plan limit for bank connections.
-                  <span className="font-semibold"> Go to Settings to purchase add-ons or upgrade.</span>
-                </AlertDescription>
-              </Alert>
-            )}
-
-            <Button 
-              onClick={handleStripeConnect}
-              disabled={isLoading || !canAddBankConnection}
-              className="w-full"
-            >
-              {isLoading ? "Connecting..." : "Connect with Stripe"}
-            </Button>
-          </TabsContent>
 
           <TabsContent value="plaid" className="space-y-4 mt-4">
             <Card className="border-blue-200 bg-blue-50">

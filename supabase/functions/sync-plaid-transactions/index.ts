@@ -228,44 +228,42 @@ serve(async (req) => {
 
     console.log(`Successfully synced ${insertedCount} transactions`);
 
-    // Fetch current balance from Plaid to update the account
-    const balanceResponse = await fetch(`https://${PLAID_ENV}.plaid.com/accounts/balance/get`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        client_id: PLAID_CLIENT_ID,
-        secret: PLAID_SECRET,
-        access_token: accessToken,
-        options: {
-          account_ids: account.plaid_account_id ? [account.plaid_account_id] : undefined,
-        },
-      }),
-    });
+    // Extract balance from transaction response (no separate API call needed)
+    console.log('💰 Extracting balance from transaction response...');
+    let latestBalance = null;
+    let latestAvailableBalance = null;
 
-    const balanceData = await balanceResponse.json();
-    console.log('📊 Fetched balance from Plaid:', balanceData);
-    
-    // Update account balance and last_sync
-    const updateData: any = { last_sync: new Date().toISOString() };
-    
-    if (balanceData.accounts && balanceData.accounts.length > 0) {
-      const accountBalance = balanceData.accounts[0].balances;
-      if (accountBalance.current !== null && accountBalance.current !== undefined) {
-        updateData.balance = accountBalance.current;
-        console.log('💰 Updating account balance to:', accountBalance.current);
-      }
-      if (accountBalance.available !== null && accountBalance.available !== undefined) {
-        updateData.available_balance = accountBalance.available;
-        console.log('💵 Updating available balance to:', accountBalance.available);
+    if (transactionsData.accounts && transactionsData.accounts.length > 0) {
+      const accountData = transactionsData.accounts[0];
+      if (accountData.balances) {
+        latestBalance = accountData.balances.current;
+        latestAvailableBalance = accountData.balances.available;
+        console.log('💰 Extracted balance from transaction response:', { 
+          current: latestBalance, 
+          available: latestAvailableBalance 
+        });
       }
     }
-    
+
+    // Update account with balance and last_sync timestamp
+    const updateData: any = { last_sync: new Date().toISOString() };
+
+    if (latestBalance !== null) {
+      updateData.balance = latestBalance;
+      console.log('💰 Updating account balance to:', latestBalance);
+    }
+
+    if (latestAvailableBalance !== null) {
+      updateData.available_balance = latestAvailableBalance;
+      console.log('💵 Updating available balance to:', latestAvailableBalance);
+    }
+
     await supabase
       .from(tableName)
       .update(updateData)
       .eq('id', accountId);
+
+    console.log('✅ Balance updated successfully from transaction data (no extra API fees)');
 
     return new Response(
       JSON.stringify({ 
