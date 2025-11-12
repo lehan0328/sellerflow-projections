@@ -13,7 +13,8 @@ import {
   Settings,
   UserPlus,
   Megaphone,
-  LayoutDashboard
+  LayoutDashboard,
+  Tag
 } from "lucide-react";
 import { AdminCustomers } from "@/components/admin/AdminCustomers";
 import { AdminSupportTickets } from "@/components/admin/AdminSupportTickets";
@@ -28,6 +29,7 @@ import { AdminSignupDashboard } from "@/components/admin/AdminSignupDashboard";
 import { AdminSendUpdate } from "@/components/admin/AdminSendUpdate";
 import { AdminDashboardOverview } from "@/components/admin/AdminDashboardOverview";
 import { AdminStaffDirectory } from "@/components/admin/AdminStaffDirectory";
+import { AdminCodeTracking } from "@/components/admin/AdminCodeTracking";
 
 const Admin = () => {
   const { isAdmin, userRole } = useAdmin();
@@ -52,6 +54,7 @@ const Admin = () => {
           { value: "signups", label: "Signup Analytics", icon: UserPlus, rolesAllowed: ['admin'] },
           { value: "customers", label: "Customers", icon: Users, rolesAllowed: ['admin'] },
           { value: "subscriptions", label: "Subscriptions", icon: CreditCard, rolesAllowed: ['admin'] },
+          { value: "code-tracking", label: "Code Tracking", icon: Tag, rolesAllowed: ['admin'] },
           { value: "send-update", label: "Send Update", icon: Megaphone, rolesAllowed: ['admin'] },
           { value: "support-dashboard", label: "Support Dashboard", icon: MessageSquare, rolesAllowed: ['admin'] },
           { value: "forecast-accuracy", label: "Forecast Accuracy", icon: Target, rolesAllowed: ['admin'] },
@@ -227,6 +230,10 @@ const Admin = () => {
 
             <TabsContent value="forecast-accuracy" className="m-0">
               <AdminForecastAccuracy />
+            </TabsContent>
+
+            <TabsContent value="code-tracking" className="m-0">
+              <AdminCodeTracking />
             </TabsContent>
 
             <TabsContent value="plan-override" className="m-0">
