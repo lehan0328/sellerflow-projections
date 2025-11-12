@@ -726,8 +726,8 @@ export default function Analytics() {
     });
     return Object.entries(monthlyData).map(([month, data]) => ({
       month,
-      income: data.income,
-      expenses: data.expenses,
+      Income: data.income,
+      Expenses: data.expenses,
       net: data.income - data.expenses
     }));
   }, [incomeItems, bankTransactions, dbTransactions, amazonPayouts]);
@@ -1669,18 +1669,18 @@ export default function Analytics() {
                     content={({ active, payload }) => {
                       if (active && payload && payload.length) {
                         const data = payload[0].payload;
-                        const net = data.income - data.expenses;
+                        const net = data.Income - data.Expenses;
                         return (
                           <div className="bg-background border border-border rounded-lg p-3 shadow-lg">
                             <p className="font-semibold mb-2 text-foreground">{data.month}</p>
                             <div className="space-y-1 text-sm">
                               <div className="flex justify-between gap-4">
                                 <span className="text-green-600">Income:</span>
-                                <span className="font-medium text-foreground">{formatCurrency(data.income)}</span>
+                                <span className="font-medium text-foreground">{formatCurrency(data.Income)}</span>
                               </div>
                               <div className="flex justify-between gap-4">
                                 <span className="text-red-600">Expenses:</span>
-                                <span className="font-medium text-foreground">{formatCurrency(data.expenses)}</span>
+                                <span className="font-medium text-foreground">{formatCurrency(data.Expenses)}</span>
                               </div>
                               <div className="flex justify-between gap-4 pt-1 border-t border-border">
                                 <span className={net >= 0 ? "text-green-600 font-semibold" : "text-red-600 font-semibold"}>Net:</span>
@@ -1694,8 +1694,8 @@ export default function Analytics() {
                     }}
                   />
                   <Legend />
-                  <Area type="monotone" dataKey="income" stackId="1" stroke="#10b981" fill="#10b981" fillOpacity={0.6} />
-                  <Area type="monotone" dataKey="expenses" stackId="2" stroke="#ef4444" fill="#ef4444" fillOpacity={0.6} />
+                  <Area type="monotone" dataKey="Income" stackId="1" stroke="#10b981" fill="#10b981" fillOpacity={0.6} />
+                  <Area type="monotone" dataKey="Expenses" stackId="2" stroke="#ef4444" fill="#ef4444" fillOpacity={0.6} />
                 </AreaChart>
               </ResponsiveContainer>
             </CardContent>
@@ -1725,17 +1725,17 @@ export default function Analytics() {
                             <div className="space-y-1 text-sm">
                               <div className="flex justify-between gap-4">
                                 <span className="text-green-600">Income:</span>
-                                <span className="font-medium text-foreground">{formatCurrency(data.income)}</span>
+                                <span className="font-medium text-foreground">{formatCurrency(data.Income)}</span>
                               </div>
                               <div className="flex justify-between gap-4">
                                 <span className="text-red-600">Expenses:</span>
-                                <span className="font-medium text-foreground">{formatCurrency(data.expenses)}</span>
+                                <span className="font-medium text-foreground">{formatCurrency(data.Expenses)}</span>
                               </div>
                               <div className="flex justify-between gap-4 pt-1 border-t border-border">
                                 <span className={data.net >= 0 ? "text-green-600 font-semibold" : "text-red-600 font-semibold"}>Net:</span>
                                 <span className={data.net >= 0 ? "text-green-600 font-bold" : "text-red-600 font-bold"}>{formatCurrency(data.net)}</span>
                               </div>
-                              {data.expenses === 0 && (
+                              {data.Expenses === 0 && (
                                 <div className="text-xs text-orange-600 mt-1 pt-1 border-t border-border">
                                   ⚠ No expenses recorded for this month
                                 </div>
@@ -1751,7 +1751,7 @@ export default function Analytics() {
                     {cashFlowData.map((entry, index) => (
                       <Cell 
                         key={`cell-${index}`} 
-                        fill={entry.expenses === 0 ? '#f97316' : (entry.net >= 0 ? '#10b981' : '#ef4444')} 
+                        fill={entry.Expenses === 0 ? '#f97316' : (entry.net >= 0 ? '#10b981' : '#ef4444')} 
                       />
                     ))}
                   </Bar>
