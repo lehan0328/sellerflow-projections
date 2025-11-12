@@ -41,78 +41,57 @@ export default function AdminReferrals() {
     try {
       setLoading(true);
 
-      // Fetch all referral codes with user info
-      const { data: codes, error: codesError } = await supabase
-        .from("referral_codes")
-        .select("user_id, code, created_at");
-
-      if (codesError) throw codesError;
-
-      // Fetch all referral rewards
-      const { data: rewards, error: rewardsError } = await supabase
-        .from("referral_rewards")
-        .select("*");
-
-      if (rewardsError) throw rewardsError;
-
-      // Fetch all referrals grouped by referrer
-      const { data: referralCounts, error: countsError } = await supabase
-        .from("referrals")
-        .select("referrer_id, status");
-
-      if (countsError) throw countsError;
-
-      // Fetch user profiles
+      // Fetch all profiles with user-owned referral codes
       const { data: profiles, error: profilesError } = await supabase
         .from("profiles")
-        .select("user_id, first_name, last_name");
+        .select("user_id, my_referral_code, referral_code, first_name, last_name, email, stripe_customer_id, created_at")
+        .not("my_referral_code", "is", null);
 
       if (profilesError) throw profilesError;
 
-      // Aggregate data
-      const referralMap = new Map<string, { total: number; active: number }>();
-      referralCounts?.forEach((ref) => {
-        const current = referralMap.get(ref.referrer_id) || { total: 0, active: 0 };
-        current.total++;
-        if (ref.status === "active") current.active++;
-        referralMap.set(ref.referrer_id, current);
-      });
+      // For each code owner, count who used their code
+      const combinedData: ReferralData[] = [];
 
-      // Combine all data
-      const combinedData: ReferralData[] = codes?.map((code) => {
-        const reward = rewards?.find((r) => r.user_id === code.user_id);
-        const profile = profiles?.find((p) => p.user_id === code.user_id);
-        const refCount = referralMap.get(code.user_id) || { total: 0, active: 0 };
+      for (const owner of profiles || []) {
+        const ownedCode = owner.my_referral_code!.toUpperCase();
         
-        const fullName = `${profile?.first_name || ''} ${profile?.last_name || ''}`.trim();
+        // Find all users who signed up with this code
+        const { data: referrers } = await supabase
+          .from("profiles")
+          .select("user_id, referral_code, stripe_customer_id, email")
+          .eq("referral_code", ownedCode);
 
-        return {
-          user_id: code.user_id,
-          user_email: fullName || code.user_id.slice(0, 8) + "...",
-          referral_code: code.code,
-          code_created_at: code.created_at,
-          total_referrals: refCount.total,
-          active_referrals: refCount.active,
-          tier_level: reward?.tier_level || 0,
-          discount_percentage: reward?.discount_percentage || 0,
-          cash_bonus: reward?.cash_bonus || 0,
-          pending_cash_bonus: reward?.pending_cash_bonus || 0,
-          total_cash_earned: reward?.total_cash_earned || 0,
-          discount_end_date: reward?.discount_end_date || null,
-        };
-      }) || [];
+        const totalReferrals = referrers?.length || 0;
+        const activeReferrals = referrers?.filter(r => r.stripe_customer_id).length || 0;
+        
+        const fullName = `${owner.first_name || ''} ${owner.last_name || ''}`.trim();
+
+        combinedData.push({
+          user_id: owner.user_id,
+          user_email: fullName || owner.email || owner.user_id.slice(0, 8) + "...",
+          referral_code: ownedCode,
+          code_created_at: owner.created_at || new Date().toISOString(),
+          total_referrals: totalReferrals,
+          active_referrals: activeReferrals,
+          tier_level: 0,
+          discount_percentage: 10,
+          cash_bonus: 0,
+          pending_cash_bonus: 0,
+          total_cash_earned: 0,
+          discount_end_date: null,
+        });
+      }
 
       setReferrals(combinedData.sort((a, b) => b.active_referrals - a.active_referrals));
 
       // Calculate stats
-      const totalCashPaid = combinedData.reduce((sum, r) => sum + Number(r.total_cash_earned || 0), 0);
-      const pendingCash = combinedData.reduce((sum, r) => sum + Number(r.pending_cash_bonus || 0), 0);
+      const totalReferralsCount = combinedData.reduce((sum, r) => sum + r.total_referrals, 0);
 
       setStats({
         totalUsers: combinedData.length,
-        totalReferrals: referralCounts?.length || 0,
-        totalCashPaid,
-        pendingCash,
+        totalReferrals: totalReferralsCount,
+        totalCashPaid: 0,
+        pendingCash: 0,
       });
     } catch (error: any) {
       console.error("Error fetching referral data:", error);
