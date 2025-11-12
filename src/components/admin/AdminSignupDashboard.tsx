@@ -48,7 +48,15 @@ export function AdminSignupDashboard() {
 
   const fetchAllTimeData = async () => {
     try {
-      // Fetch all-time signups, excluding admin/staff users
+      // Fetch all profiles
+      const { data: allData, error: allError } = await supabase
+        .from('profiles')
+        .select('user_id, email, first_name, last_name, company, monthly_amazon_revenue, referral_code, hear_about_us, created_at')
+        .order('created_at', { ascending: false });
+
+      if (allError) throw allError;
+
+      // Fetch admin emails to exclude
       const { data: adminEmails, error: adminError } = await supabase
         .from('admin_permissions')
         .select('email');
@@ -57,15 +65,11 @@ export function AdminSignupDashboard() {
 
       const adminEmailList = adminEmails?.map(a => a.email) || [];
 
-      const { data: allData, error: allError } = await supabase
-        .from('profiles')
-        .select('user_id, email, first_name, last_name, company, monthly_amazon_revenue, referral_code, hear_about_us, created_at')
-        .not('email', 'in', `(${adminEmailList.map(e => `"${e}"`).join(',')})`)
-        .order('created_at', { ascending: false });
-
-      if (allError) throw allError;
-
-      const allSignupsData = allData || [];
+      // Filter out admin/staff users client-side
+      const allSignupsData = (allData || []).filter(profile => 
+        !adminEmailList.includes(profile.email)
+      );
+      
       setAllSignups(allSignupsData);
 
       // Calculate all-time metrics
