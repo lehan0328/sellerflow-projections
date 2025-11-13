@@ -2857,6 +2857,22 @@ const Dashboard = () => {
                 status: "completed",
               });
             }}
+            expenses={transactions.filter(t => t.type === 'expense').map(t => ({
+              id: t.id,
+              description: t.description,
+              amount: t.amount,
+              paymentDate: t.transactionDate,
+              status: t.status === 'completed' ? 'paid' : 'pending',
+              category: t.category || '',
+              creditCardId: t.creditCardId
+            }))}
+            onEditExpense={(expense) => {
+              // Handle edit expense
+              console.log('Edit expense:', expense);
+            }}
+            onDeleteExpense={async (expense) => {
+              await deleteTransaction(expense.id);
+            }}
           />
         );
 
