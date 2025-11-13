@@ -5,6 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Plus } from "lucide-react";
 import { useCategories } from "@/hooks/useCategories";
 import { AddCategoryDialog } from "./add-category-dialog";
 import { toast } from "sonner";
@@ -137,29 +139,41 @@ export function PayeeForm({
             {/* Category Selection */}
             <div className="space-y-2">
               <Label htmlFor="category">Category *</Label>
-              <select
-                id="category"
-                value={formData.category}
-                onChange={(e) => {
-                  if (e.target.value === "_add_new_") {
+              <Select 
+                value={formData.category} 
+                onValueChange={(value) => {
+                  if (value === "__add_new__") {
                     setShowAddCategory(true);
                   } else {
-                    handleInputChange("category", e.target.value);
+                    handleInputChange("category", value);
                   }
                 }}
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 required
               >
-                <option value="">Select a category</option>
-                {expenseCategories.map((cat) => (
-                  <option key={cat.id} value={cat.name}>
-                    {cat.name}
-                  </option>
-                ))}
-                <option value="_add_new_" className="font-semibold text-primary">
-                  + Add New Category
-                </option>
-              </select>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <div className="border-b pb-1 mb-1">
+                    <SelectItem value="__add_new__" className="text-primary font-medium">
+                      <div className="flex items-center gap-2">
+                        <Plus className="h-4 w-4" />
+                        Add New Category
+                      </div>
+                    </SelectItem>
+                  </div>
+                  {expenseCategories.map(category => (
+                    <SelectItem key={category.id} value={category.name}>
+                      <div className="flex items-center justify-between w-full">
+                        <span>{category.name}</span>
+                        {category.is_default && (
+                          <span className="text-xs text-muted-foreground ml-2">(default)</span>
+                        )}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Payment Method */}
