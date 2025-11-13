@@ -1498,12 +1498,15 @@ const Dashboard = () => {
     }
 
     // For one-time expenses, create as 'expense' type transaction (not purchase_order)
+    const paymentDate = expenseData.paymentDate || new Date();
+    const isPaymentDatePassed = startOfDay(paymentDate) <= startOfDay(new Date());
+    
     await addTransaction({
       type: "expense",
       amount: amount,
       description: expenseData.description || "Expense",
-      transactionDate: expenseData.paymentDate || new Date(),
-      status: "completed",
+      transactionDate: paymentDate,
+      status: isPaymentDatePassed ? "completed" : "pending",
       category: expenseData.category || null,
       creditCardId: expenseData.creditCardId || null,
     });
