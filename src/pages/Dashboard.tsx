@@ -94,6 +94,7 @@ import { VendorManagement } from "@/components/settings/vendor-management";
 import { AmazonManagement } from "@/components/settings/amazon-management";
 import { BankAccountManagement } from "@/components/settings/bank-account-management";
 import { CustomerManagement } from "@/components/settings/customer-management";
+import { PayeeManagement } from "@/components/settings/payee-management";
 import { RecurringExpenseManagement } from "@/components/settings/recurring-expense-management";
 import { DataExport } from "@/components/settings/data-export";
 import { CategoryManagement } from "@/components/settings/category-management";
@@ -158,7 +159,7 @@ const Dashboard = () => {
     return state?.activeSection || "overview";
   });
   const [settingsSection, setSettingsSection] = useState("profile");
-  const [profilesTab, setProfilesTab] = useState<"vendors" | "customers">(
+  const [profilesTab, setProfilesTab] = useState<"vendors" | "customers" | "payees">(
     "vendors"
   );
   const { user } = useAuth();
@@ -3427,10 +3428,10 @@ const Dashboard = () => {
             <Tabs
               value={profilesTab}
               onValueChange={(value) =>
-                setProfilesTab(value as "vendors" | "customers")
+                setProfilesTab(value as "vendors" | "customers" | "payees")
               }
             >
-              <TabsList className="grid w-full max-w-md grid-cols-2">
+              <TabsList className="grid w-full max-w-2xl mx-auto grid-cols-3">
                 <TabsTrigger value="vendors" className="gap-2">
                   <TrendingDown className="h-4 w-4" />
                   Vendors
@@ -3438,6 +3439,10 @@ const Dashboard = () => {
                 <TabsTrigger value="customers" className="gap-2">
                   <Users className="h-4 w-4" />
                   Customers
+                </TabsTrigger>
+                <TabsTrigger value="payees" className="gap-2">
+                  <User className="h-4 w-4" />
+                  Payees
                 </TabsTrigger>
               </TabsList>
 
@@ -3447,6 +3452,10 @@ const Dashboard = () => {
 
               <TabsContent value="customers" className="mt-6">
                 <CustomerManagement />
+              </TabsContent>
+
+              <TabsContent value="payees" className="mt-6">
+                <PayeeManagement />
               </TabsContent>
             </Tabs>
           </div>
