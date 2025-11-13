@@ -12,6 +12,16 @@ const logStep = (step: string, details?: any) => {
   console.log(`[CHECK-SUBSCRIPTION] ${step}${detailsStr}`);
 };
 
+// Timeout wrapper for async operations
+const withTimeout = <T>(promise: Promise<T>, timeoutMs: number, operationName: string): Promise<T> => {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) => 
+      setTimeout(() => reject(new Error(`${operationName} timed out after ${timeoutMs}ms`)), timeoutMs)
+    )
+  ]);
+};
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -106,7 +116,11 @@ serve(async (req) => {
     }
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
-    const customers = await stripe.customers.list({ email: user.email, limit: 1 });
+    const customers = await withTimeout(
+      stripe.customers.list({ email: user.email, limit: 1 }),
+      10000,
+      "Stripe customers.list"
+    );
     
     if (customers.data.length === 0) {
       logStep("No customer found - checking trial status");
@@ -163,9 +177,13 @@ serve(async (req) => {
     }
 
     // Fetch customer with discount info
-    const customer = await stripe.customers.retrieve(customerId, {
-      expand: ['discount.coupon']
-    });
+    const customer = await withTimeout(
+      stripe.customers.retrieve(customerId, {
+        expand: ['discount.coupon']
+      }),
+      10000,
+      "Stripe customers.retrieve"
+    );
     logStep("Customer retrieved", { 
       hasDiscount: !!(customer as any).discount,
       customerDiscountType: typeof (customer as any).discount 
@@ -173,11 +191,15 @@ serve(async (req) => {
 
     // Check for ALL subscriptions (including canceled) with full discount expansion
     logStep("Fetching ALL subscriptions for customer");
-    const allSubscriptions = await stripe.subscriptions.list({
-      customer: customerId,
-      limit: 100, // Increased limit to catch all
-      expand: ['data.discount.coupon', 'data.latest_invoice', 'data.default_payment_method', 'data.items.data.price'],
-    });
+    const allSubscriptions = await withTimeout(
+      stripe.subscriptions.list({
+        customer: customerId,
+        limit: 100, // Increased limit to catch all
+        expand: ['data.discount.coupon', 'data.latest_invoice', 'data.default_payment_method', 'data.items.data.price'],
+      }),
+      15000,
+      "Stripe subscriptions.list"
+    );
     
     // Separate main subscription from addon subscriptions
     const mainSubscriptions = allSubscriptions.data.filter(sub => 
@@ -507,10 +529,20 @@ serve(async (req) => {
     });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    logStep("ERROR in check-subscription", { message: errorMessage });
-    return new Response(JSON.stringify({ error: errorMessage }), {
+    const isTimeout = errorMessage.includes('timed out');
+    logStep("ERROR in check-subscription", { 
+      message: errorMessage,
+      isTimeout,
+      type: error instanceof Error ? error.constructor.name : typeof error
+    });
+    
+    return new Response(JSON.stringify({ 
+      error: isTimeout ? 'Request timeout - please try again' : errorMessage,
+      subscribed: false,
+      is_timeout: isTimeout
+    }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
+      status: isTimeout ? 408 : 500,
     });
   }
 });
