@@ -159,11 +159,13 @@ export const IncomeForm = ({
 
   const handlePayeeSelect = (payee: Payee) => {
     setSelectedPayeeId(payee.id);
+    const newPaymentMethod = (payee.payment_method === "credit-card" ? "credit-card" : "bank-transfer") as "bank-transfer" | "credit-card";
     setFormData(prev => ({
       ...prev,
       description: payee.name,
       category: payee.category || prev.category,
-      paymentMethod: (payee.payment_method === "credit-card" ? "credit-card" : "bank-transfer") as "bank-transfer" | "credit-card"
+      paymentMethod: newPaymentMethod,
+      creditCardId: newPaymentMethod === "bank-transfer" ? "" : prev.creditCardId
     }));
     setPayeeSearchTerm(payee.name);
     setShowPayeeDropdown(false);
@@ -810,17 +812,6 @@ export const IncomeForm = ({
                     ))}
                   </SelectContent>
                 </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="notes">Notes (Optional)</Label>
-                <Textarea
-                  id="notes"
-                  placeholder="Additional notes or details"
-                  value={formData.notes}
-                  onChange={(e) => handleInputChange("notes", e.target.value)}
-                  rows={3}
-                />
               </div>
               
               <div className="flex space-x-3 pt-4">
