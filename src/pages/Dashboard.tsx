@@ -2009,6 +2009,18 @@ const Dashboard = () => {
       date: t.transactionDate,
     }));
 
+  // Convert expenses to calendar events
+  const expenseEvents: CashFlowEvent[] = transactions
+    .filter((t) => t.type === "expense")
+    .map((t) => ({
+      id: `expense-${t.id}`,
+      type: "outflow" as const,
+      amount: t.amount,
+      description: t.description,
+      vendor: "Expense",
+      date: t.transactionDate,
+    }));
+
   // Generate recurring transaction events for calendar (show next 12 months)
   const recurringEvents: CashFlowEvent[] = useMemo(() => {
     const events: CashFlowEvent[] = [];
@@ -2182,6 +2194,7 @@ const Dashboard = () => {
   const allCalendarEvents = [
     ...calendarEvents,
     ...vendorPaymentEvents,
+    ...expenseEvents,
     ...vendorEvents,
     ...incomeEvents,
     ...creditCardEvents,
@@ -2214,11 +2227,15 @@ const Dashboard = () => {
     }
 
     // Income: customer_payment, sales_order
-    // Expenses: purchase_order, vendor_payment
+    // Expenses: purchase_order, vendor_payment, expense
     const isIncome =
       transaction.type === "customer_payment" ||
       transaction.type === "sales_order";
-    return isIncome ? total + amount : total - amount;
+    const isExpense =
+      transaction.type === "expense" ||
+      transaction.type === "purchase_order" ||
+      transaction.type === "vendor_payment";
+    return isIncome ? total + amount : isExpense ? total - amount : total;
   }, 0);
 
   // Use bank account balance if connected, otherwise calculate from user settings + transactions
@@ -2241,7 +2258,9 @@ const Dashboard = () => {
     .filter(
       (t) =>
         startOfDay(t.transactionDate).getTime() === today.getTime() &&
-        (t.type === "purchase_order" || t.type === "vendor_payment") &&
+        (t.type === "purchase_order" || 
+         t.type === "vendor_payment" ||
+         t.type === "expense") &&
         t.status === "completed"
     )
     .reduce((sum, t) => sum + Number(t.amount), 0);
