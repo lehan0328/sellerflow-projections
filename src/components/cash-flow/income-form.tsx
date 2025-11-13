@@ -62,7 +62,7 @@ export const IncomeForm = ({
   initialType = "income"
 }: IncomeFormProps) => {
   const { categories: incomeCategories, addCategory: addIncomeCategory, refetch: refetchIncomeCategories } = useCategories('income', isRecurring);
-  const { categories: expenseCategories, addCategory: addExpenseCategory } = useCategories('expense', isRecurring);
+  const { categories: expenseCategories, addCategory: addExpenseCategory, refetch: refetchExpenseCategories } = useCategories('expense', isRecurring);
   const { creditCards } = useCreditCards();
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [formData, setFormData] = useState({
@@ -869,6 +869,7 @@ export const IncomeForm = ({
           onOpenChange={setShowPayeeForm}
           onAddPayee={handleAddPayeeFromForm}
           existingPayees={payees}
+          onCategoryAdded={refetchExpenseCategories}
         />
       )}
     </Dialog>

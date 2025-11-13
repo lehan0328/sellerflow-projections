@@ -20,6 +20,7 @@ interface PayeeFormProps {
   }) => Promise<void>;
   existingPayees: Array<{ name: string }>;
   initialPayeeName?: string;
+  onCategoryAdded?: () => void;
 }
 
 export function PayeeForm({
@@ -28,6 +29,7 @@ export function PayeeForm({
   onAddPayee,
   existingPayees,
   initialPayeeName = "",
+  onCategoryAdded,
 }: PayeeFormProps) {
   const [formData, setFormData] = useState({
     name: initialPayeeName,
@@ -100,6 +102,7 @@ export function PayeeForm({
     try {
       const newCategory = await addCategory(categoryName);
       if (newCategory) {
+        onCategoryAdded?.();
         setFormData(prev => ({ ...prev, category: newCategory.name }));
         setShowAddCategory(false);
         toast.success("Category added successfully");
