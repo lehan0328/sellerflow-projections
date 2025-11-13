@@ -60,7 +60,7 @@ const UpgradePlan = () => {
   const location = useLocation();
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  const { subscribed, plan, subscription_end, is_trialing, trial_end, discount, discount_ever_redeemed, billing_interval, current_period_start, price_amount, currency, createCheckout, purchaseAddon, purchaseAddons, openCustomerPortal, removePlanOverride, checkSubscription, paymentMethod, isLoading, payment_failed, upgradeSubscription, ...subscriptionData } = useSubscription();
+  const { subscribed, plan, subscription_end, is_trialing, trial_end, trial_start, discount, discount_ever_redeemed, billing_interval, current_period_start, price_amount, currency, createCheckout, purchaseAddon, purchaseAddons, openCustomerPortal, removePlanOverride, checkSubscription, paymentMethod, isLoading, payment_failed, upgradeSubscription, ...subscriptionData } = useSubscription();
   const { calculatePostTrialCost } = useTrialAddonUsage();
   const { planLimits, currentUsage } = usePlanLimits();
   const [showCancellationFlow, setShowCancellationFlow] = useState(false);
@@ -717,10 +717,12 @@ const UpgradePlan = () => {
                           </Badge>
                         </div>
                       </div>
-                      {trial_end && (
+                      {trial_end && trial_start && (
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <Calendar className="h-4 w-4" />
-                          <span>Trial ends {new Date(trial_end).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
+                          <span>
+                            {new Date(trial_start).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} - {new Date(trial_end).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                          </span>
                         </div>
                       )}
                       <p className="text-sm text-muted-foreground">

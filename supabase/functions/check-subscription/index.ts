@@ -461,7 +461,7 @@ serve(async (req) => {
     // Check if user ever redeemed a discount and get plan_tier with trial dates
     const { data: profileData } = await supabaseClient
       .from('profiles')
-      .select('discount_redeemed_at, plan_tier, trial_end')
+      .select('discount_redeemed_at, plan_tier, trial_end, trial_start')
       .eq('user_id', user.id)
       .single();
 
@@ -490,6 +490,7 @@ serve(async (req) => {
       is_override: false,
       is_trialing: isTrialing,
       trial_end: subscriptionTrialEnd,
+      trial_start: profileData?.trial_start,
       plan_tier: planTier,
       billing_interval: billingInterval,
       current_period_start: currentPeriodStart,

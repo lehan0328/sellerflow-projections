@@ -174,6 +174,7 @@ export interface SubscriptionState {
   isLoading: boolean;
   is_trialing?: boolean;
   trial_end?: string | null;
+  trial_start?: string | null;
   trial_expired?: boolean;
   billing_interval?: string | null;
   current_period_start?: string | null;
@@ -211,6 +212,7 @@ export const useSubscription = () => {
     isLoading: true,
     is_trialing: false,
     trial_end: null,
+    trial_start: null,
   });
   const [paymentMethod, setPaymentMethod] = useState<{ brand: string; last4: string } | null>(null);
 
