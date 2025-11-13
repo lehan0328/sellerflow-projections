@@ -248,8 +248,10 @@ export const IncomeForm = ({
     // Call the appropriate submit function based on type
     if (formData.type === "expense" && onSubmitExpense) {
       await onSubmitExpense(data);
+      toast.success("Expense added successfully!");
     } else {
       await onSubmitIncome(data);
+      toast.success("Income added successfully!");
     }
     
     // Only close and reset if successful (the hook will show the appropriate toast)
@@ -834,7 +836,7 @@ export const IncomeForm = ({
                   type="submit" 
                   className="flex-1 bg-gradient-primary"
                 >
-                  {editingIncome ? 'Update' : 'Add'} {isRecurring ? 'Recurring ' : ''}{formData.isRecurring ? (formData.type === "expense" ? "Expense" : "Income") : "Income"}
+                  {editingIncome ? 'Update' : 'Add'} {isRecurring ? 'Recurring ' : ''}{formData.type === "expense" ? "Expense" : "Income"}
                 </Button>
               </div>
             </form>
