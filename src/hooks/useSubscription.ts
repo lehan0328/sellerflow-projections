@@ -194,10 +194,12 @@ export interface SubscriptionState {
 
 // Cache configuration
 const CACHE_KEY = 'auren_subscription_cache';
+const CACHE_VERSION = 2; // Increment to bust cache after backend changes
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes (checks are less frequent now)
 
 interface CachedSubscription extends SubscriptionState {
   cachedAt: number;
+  version?: number;
 }
 
 export const useSubscription = () => {
@@ -220,6 +222,14 @@ export const useSubscription = () => {
       if (!cached) return null;
       
       const parsed: CachedSubscription = JSON.parse(cached);
+      
+      // Bust cache if version changed (backend updates)
+      if (!parsed.version || parsed.version !== CACHE_VERSION) {
+        console.log('[Subscription] Cache version mismatch, clearing cache');
+        localStorage.removeItem(CACHE_KEY);
+        return null;
+      }
+      
       const age = Date.now() - parsed.cachedAt;
       
       // Return cached data if less than 5 minutes old
@@ -241,6 +251,7 @@ export const useSubscription = () => {
       const cached: CachedSubscription = {
         ...state,
         cachedAt: Date.now(),
+        version: CACHE_VERSION,
       };
       localStorage.setItem(CACHE_KEY, JSON.stringify(cached));
     } catch (error) {

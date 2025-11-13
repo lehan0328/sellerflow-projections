@@ -458,14 +458,30 @@ serve(async (req) => {
       }
     }
 
-    // Check if user ever redeemed a discount and get plan_tier
+    // Check if user ever redeemed a discount and get plan_tier with trial dates
     const { data: profileData } = await supabaseClient
       .from('profiles')
-      .select('discount_redeemed_at, plan_tier')
+      .select('discount_redeemed_at, plan_tier, trial_end')
       .eq('user_id', user.id)
       .single();
 
     const planTier = profileData?.plan_tier || 'starter';
+    
+    // CRITICAL: Check profile trial dates if no active Stripe subscription
+    // This handles users who have a Stripe customer ID but are on profile-based trial
+    if (!hasActiveSub && profileData?.trial_end) {
+      const profileTrialEnd = new Date(profileData.trial_end);
+      const profileIsTrialing = profileTrialEnd > new Date();
+      
+      if (profileIsTrialing) {
+        logStep('User is on profile-based trial (has Stripe customer but no subscription)', {
+          trial_end: profileData.trial_end,
+          is_trialing: profileIsTrialing
+        });
+        isTrialing = true;
+        subscriptionTrialEnd = profileData.trial_end;
+      }
+    }
 
     return new Response(JSON.stringify({
       subscribed: hasActiveSub,
