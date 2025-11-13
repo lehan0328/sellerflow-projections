@@ -162,6 +162,10 @@ export function CategoryManagement() {
             <div className="space-y-2">
               {purchaseOrderCategories.isLoading ? (
                 <p className="text-sm text-muted-foreground">Loading...</p>
+              ) : purchaseOrderCategories.categories.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  Default categories: Inventory, Equipment, Supplies
+                </p>
               ) : (
                 purchaseOrderCategories.categories.map((category) => (
                   <div
