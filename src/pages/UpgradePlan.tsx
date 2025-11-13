@@ -1426,12 +1426,19 @@ const UpgradePlan = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                {is_trialing && (
+                  <div className="bg-muted/50 border border-muted-foreground/20 rounded-lg p-4 text-center">
+                    <p className="text-sm text-muted-foreground">
+                      Add-ons are available after your trial ends
+                    </p>
+                  </div>
+                )}
                 {addons.map((addon) => (
                   <div 
                     key={addon.key}
                     className={`flex items-center justify-between p-4 border rounded-lg transition-all ${
                       addonQuantities[addon.key] > 0 ? 'border-primary bg-primary/5' : ''
-                    }`}
+                    } ${is_trialing ? 'opacity-50' : ''}`}
                   >
                     <div className="flex-1">
                       <div className="flex items-center gap-3">
@@ -1454,7 +1461,7 @@ const UpgradePlan = () => {
                             ...prev, 
                             [addon.key]: Math.max(0, prev[addon.key] - 1) 
                           }))}
-                          disabled={addonQuantities[addon.key] <= 0}
+                          disabled={addonQuantities[addon.key] <= 0 || is_trialing}
                         >
                           <Minus className="h-4 w-4" />
                         </Button>
@@ -1468,6 +1475,7 @@ const UpgradePlan = () => {
                             ...prev, 
                             [addon.key]: prev[addon.key] + 1 
                           }))}
+                          disabled={is_trialing}
                         >
                           <Plus className="h-4 w-4" />
                         </Button>
