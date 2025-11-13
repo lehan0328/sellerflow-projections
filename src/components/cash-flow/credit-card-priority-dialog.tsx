@@ -67,7 +67,7 @@ export function CreditCardPriorityDialog({
             <div className="text-sm text-blue-900 dark:text-blue-100">
               <p className="font-medium mb-1">What is card priority?</p>
               <p className="text-blue-700 dark:text-blue-300">
-                When forecasting credit card payments, higher priority cards (1-2) will be paid off first to maximize rewards and minimize interest charges.
+                Priority determines which cards to use first for purchases to maximize rewards and cashback. Use highest priority cards for everyday spending.
               </p>
             </div>
           </div>
@@ -83,7 +83,7 @@ export function CreditCardPriorityDialog({
                   <div className="flex flex-col items-start">
                     <span className="font-semibold">1 - Highest Priority</span>
                     <span className="text-xs text-muted-foreground">
-                      Pay off first (best rewards/lowest interest)
+                      Use first (best rewards/cashback)
                     </span>
                   </div>
                 </SelectItem>
@@ -91,7 +91,7 @@ export function CreditCardPriorityDialog({
                   <div className="flex flex-col items-start">
                     <span className="font-semibold">2 - High Priority</span>
                     <span className="text-xs text-muted-foreground">
-                      Pay off second
+                      Use second (good rewards)
                     </span>
                   </div>
                 </SelectItem>
@@ -99,7 +99,7 @@ export function CreditCardPriorityDialog({
                   <div className="flex flex-col items-start">
                     <span className="font-semibold">3 - Normal Priority</span>
                     <span className="text-xs text-muted-foreground">
-                      Standard payment order
+                      Standard usage
                     </span>
                   </div>
                 </SelectItem>
@@ -107,7 +107,7 @@ export function CreditCardPriorityDialog({
                   <div className="flex flex-col items-start">
                     <span className="font-semibold">4 - Low Priority</span>
                     <span className="text-xs text-muted-foreground">
-                      Pay off later
+                      Use less often
                     </span>
                   </div>
                 </SelectItem>
@@ -115,7 +115,7 @@ export function CreditCardPriorityDialog({
                   <div className="flex flex-col items-start">
                     <span className="font-semibold">5 - Lowest Priority</span>
                     <span className="text-xs text-muted-foreground">
-                      Pay off last (lowest rewards/highest interest)
+                      Use last (lowest rewards)
                     </span>
                   </div>
                 </SelectItem>

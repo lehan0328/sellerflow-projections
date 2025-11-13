@@ -192,11 +192,11 @@ export function PlaidAccountConfirmationDialog({
   // Priority descriptions for tooltips
   const getPriorityLabel = (priority: number) => {
     switch (priority) {
-      case 1: return "Highest - Pay first";
-      case 2: return "High - Pay second";
-      case 3: return "Normal - Standard order";
-      case 4: return "Low - Pay later";
-      case 5: return "Lowest - Pay last";
+      case 1: return "Highest - Use first (best rewards)";
+      case 2: return "High - Use second (good rewards)";
+      case 3: return "Normal - Standard use";
+      case 4: return "Low - Use less often";
+      case 5: return "Lowest - Use last (lowest rewards)";
       default: return "Normal";
     }
   };
@@ -412,7 +412,7 @@ export function PlaidAccountConfirmationDialog({
                                 ))}
                               </div>
                               <p className="text-xs text-muted-foreground mt-2 px-1">
-                                Set based on favorable terms or cash back rewards
+                                Which card to use first for maximum rewards
                               </p>
                             </PopoverContent>
                           </Popover>
