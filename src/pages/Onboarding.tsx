@@ -253,19 +253,40 @@ export default function Onboarding() {
         }
       });
 
-      if (error) throw error;
-
-      toast.success(data.message || "Bank accounts connected successfully!");
-      setShowPlaidConfirmation(false);
-      setPlaidPublicToken(null);
-      setPlaidMetadata(null);
-      setIsConnecting(false);
+      // Check for network error
+      if (error) {
+        console.error("Network error:", error);
+        throw new Error("Network error connecting to bank");
+      }
       
-      // Move to reserve step after bank connection
-      setCurrentStep('reserve');
-    } catch (error) {
+      // Check if edge function returned an error
+      if (data?.error) {
+        console.error("Edge function error:", data.error);
+        throw new Error(data.error);
+      }
+      
+      // Handle partial success
+      if (data?.success) {
+        if (data.failedAccounts?.length > 0) {
+          const failedNames = data.failedAccounts.map((f: any) => f.name).join(', ');
+          toast.success(data.message, {
+            description: `Warning: Could not add ${failedNames}`,
+          });
+        } else {
+          toast.success(data.message || "Bank accounts connected successfully!");
+        }
+        
+        setShowPlaidConfirmation(false);
+        setPlaidPublicToken(null);
+        setPlaidMetadata(null);
+        setCurrentStep('reserve');
+      } else {
+        throw new Error("Failed to connect accounts");
+      }
+    } catch (error: any) {
       console.error("Error exchanging token:", error);
-      toast.error("Failed to connect accounts");
+      toast.error(error.message || "Failed to connect accounts");
+    } finally {
       setIsConnecting(false);
     }
   };
