@@ -110,7 +110,7 @@ export const usePlanLimits = () => {
     return 'starter';
   };
   
-  const currentPlan: PlanType = mapPlanTier(subscription.plan, subscription.product_id);
+  const currentPlan: PlanType = mapPlanTier(subscription.plan_tier || subscription.plan, subscription.product_id);
   const basePlanLimits = PLAN_LIMITS[currentPlan];
   
   // Add purchased addons to plan limits
