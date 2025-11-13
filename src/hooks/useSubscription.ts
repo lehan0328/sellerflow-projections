@@ -328,10 +328,31 @@ export const useSubscription = () => {
         const { data: { session: refreshedSession }, error: refreshError } = await supabase.auth.refreshSession();
         
         if (refreshError || !refreshedSession) {
-          console.error('[SUBSCRIPTION] Session refresh failed, clearing local session:', refreshError);
+          console.error('[SUBSCRIPTION] Session refresh failed, clearing session and state:', refreshError);
           // Clear the invalid session from local storage
           await supabase.auth.signOut();
-          throw new Error("Session expired. Please log in again.");
+          clearCache();
+          // Set state to logged out instead of throwing error
+          const loggedOutState = {
+            subscribed: false,
+            product_id: null,
+            subscription_end: null,
+            plan: null,
+            isLoading: false,
+            is_trialing: false,
+            trial_end: null,
+            trial_expired: false,
+            billing_interval: null,
+            current_period_start: null,
+            price_amount: null,
+            currency: null,
+            discount: null,
+            discount_ever_redeemed: false,
+            payment_failed: false,
+            is_expired: false,
+          };
+          setSubscriptionState(loggedOutState);
+          return;
         }
         
         // Retry with refreshed token
