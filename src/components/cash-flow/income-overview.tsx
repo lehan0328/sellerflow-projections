@@ -202,9 +202,58 @@ export const IncomeOverview = ({ incomeItems, bankTransactions = [], onCollectTo
   const pendingAmount = filteredAndSortedIncomes
     .filter(i => i.status === 'pending')
     .reduce((sum, income) => sum + income.amount, 0);
+  const pendingCount = filteredAndSortedIncomes.filter(i => i.status === 'pending').length;
 
   return (
-    <Card className="shadow-card h-[700px] flex flex-col">
+    <div className="space-y-6">
+      {/* Summary Cards */}
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card className="border-l-4 border-l-green-500">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Income</CardTitle>
+            <div className="p-2 bg-green-100 dark:bg-green-900/20 rounded-lg">
+              <TrendingUp className="h-4 w-4 text-green-600 dark:text-green-400" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-green-600 dark:text-green-400">{formatCurrency(totalExpected)}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {filteredAndSortedIncomes.length} income{filteredAndSortedIncomes.length !== 1 ? 's' : ''}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-l-4 border-l-amber-500">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Pending</CardTitle>
+            <div className="p-2 bg-amber-100 dark:bg-amber-900/20 rounded-lg">
+              <Calendar className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-amber-600 dark:text-amber-400">{pendingCount}</div>
+            <p className="text-xs text-muted-foreground mt-1">Awaiting receipt</p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-l-4 border-l-primary">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">This Period</CardTitle>
+            <div className="p-2 bg-primary/10 rounded-lg">
+              <DollarSign className="h-4 w-4 text-primary" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold">{formatCurrency(totalExpected)}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {dateRange === "3days" ? "Last 3 days" : dateRange === "7days" ? "Last 7 days" : dateRange === "30days" ? "Last 30 days" : "All time"}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Main Income Details Card */}
+      <Card className="shadow-card h-[700px] flex flex-col border-t-4 border-t-primary">
       <CardHeader className="flex-shrink-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
@@ -509,5 +558,6 @@ export const IncomeOverview = ({ incomeItems, bankTransactions = [], onCollectTo
         </AlertDialogContent>
       </AlertDialog>
     </Card>
+    </div>
   );
 };

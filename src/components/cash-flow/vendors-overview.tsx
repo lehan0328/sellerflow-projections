@@ -456,8 +456,59 @@ export const VendorsOverview = ({
     dueDate.setHours(0, 0, 0, 0);
     return dueDate < today;
   }).reduce((sum, tx) => sum + (tx.amount || 0), 0);
+  
+  const pendingCount = filteredAndSortedTransactions.filter(tx => 
+    tx.status === 'pending' || (tx.status !== 'completed' && tx.status !== 'paid')
+  ).length;
 
-  return <Card className="shadow-card h-[700px] flex flex-col">
+  return (
+    <div className="space-y-6">
+      {/* Summary Cards */}
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card className="border-l-4 border-l-blue-500">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Payables</CardTitle>
+            <div className="p-2 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
+              <Building2 className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">{formatCurrency(totalOwed)}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {filteredAndSortedTransactions.length} transaction{filteredAndSortedTransactions.length !== 1 ? 's' : ''}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-l-4 border-l-amber-500">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Pending</CardTitle>
+            <div className="p-2 bg-amber-100 dark:bg-amber-900/20 rounded-lg">
+              <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-amber-600 dark:text-amber-400">{pendingCount}</div>
+            <p className="text-xs text-muted-foreground mt-1">Awaiting payment</p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-l-4 border-l-destructive">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Overdue</CardTitle>
+            <div className="p-2 bg-destructive/10 rounded-lg">
+              <Calendar className="h-4 w-4 text-destructive" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-destructive">{formatCurrency(overdueAmount)}</div>
+            <p className="text-xs text-muted-foreground mt-1">Past due date</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Main Vendor Details Card */}
+      <Card className="shadow-card h-[700px] flex flex-col border-t-4 border-t-primary">
       <CardHeader className="flex-shrink-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
@@ -800,5 +851,7 @@ export const VendorsOverview = ({
           onReverseAll={handleReverseEntirePayment}
         />
       )}
-    </Card>;
+    </Card>
+    </div>
+  );
 };
