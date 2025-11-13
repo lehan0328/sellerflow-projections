@@ -671,8 +671,7 @@ export default function DocumentStorage() {
     // Search in line items
     const lineItemMatch = doc.line_items?.some(item => 
       item.description?.toLowerCase().includes(searchLower) ||
-      item.sku?.toLowerCase().includes(searchLower) ||
-      item.category?.toLowerCase().includes(searchLower)
+      item.product_name?.toLowerCase().includes(searchLower)
     ) || false;
     
     const matchesSearch = nameMatch || displayNameMatch || notesMatch || descriptionMatch || lineItemMatch;
