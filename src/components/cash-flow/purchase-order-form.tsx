@@ -68,7 +68,7 @@ export const PurchaseOrderForm = ({
 }: PurchaseOrderFormProps) => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { categories, addCategory, refetch: refetchCategories } = useCategories('expense', false);
+  const { categories, addCategory, refetch: refetchCategories } = useCategories('purchase_order', false);
   const {
     creditCards
   } = useCreditCards();
@@ -1510,7 +1510,7 @@ export const PurchaseOrderForm = ({
         category: capitalizedName
       }));
     }}
-    type="expense"
+    type="purchase_order"
   />
 
   {/* Delete All Vendors Confirmation Dialog */}

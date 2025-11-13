@@ -8,7 +8,7 @@ interface AddCategoryDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onAddCategory: (name: string) => Promise<void>;
-  type: 'expense' | 'income';
+  type: 'expense' | 'income' | 'purchase_order';
 }
 
 export function AddCategoryDialog({ open, onOpenChange, onAddCategory, type }: AddCategoryDialogProps) {
@@ -36,7 +36,7 @@ export function AddCategoryDialog({ open, onOpenChange, onAddCategory, type }: A
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-sm z-[60]">
         <DialogHeader>
-          <DialogTitle>Add New {type === 'expense' ? 'Expense' : 'Income'} Category</DialogTitle>
+          <DialogTitle>Add New {type === 'expense' ? 'Expense' : type === 'purchase_order' ? 'Purchase Order' : 'Income'} Category</DialogTitle>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
