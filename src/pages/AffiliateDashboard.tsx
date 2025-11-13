@@ -351,19 +351,30 @@ export default function AffiliateDashboard() {
                     {referrals.slice(0, 10).map((referral, idx) => (
                       <div key={referral.id} className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-muted/50 to-muted/30 border border-primary/10 hover:border-primary/30 transition-all hover-scale backdrop-blur-sm" style={{ animationDelay: `${idx * 0.1}s` }}>
                         <div>
-                          <p className="font-semibold text-lg">${referral.subscription_amount}/mo</p>
-                          <p className="text-sm text-muted-foreground flex items-center gap-1">
-                            <DollarSign className="h-3 w-3" />
-                            Commission: ${referral.commission_amount}
+                          <p className="font-semibold text-lg">
+                            {referral.referred_user?.email || 'User'}
                           </p>
+                          {referral.referred_user?.company_name && (
+                            <p className="text-sm text-muted-foreground">{referral.referred_user.company_name}</p>
+                          )}
+                          {referral.status === 'active' && (
+                            <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                              <DollarSign className="h-3 w-3" />
+                              Commission: ${referral.commission_amount}/mo
+                            </p>
+                          )}
                         </div>
                         <div className="text-right">
                           <div className={`px-3 py-1 rounded-full text-xs font-semibold backdrop-blur-sm ${
                             referral.status === 'active' 
-                              ? 'bg-green-500/20 text-green-400 border border-green-500/30' 
+                              ? 'bg-green-500/20 text-green-400 border border-green-500/30'
+                              : referral.status === 'trial'
+                              ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                              : referral.status === 'churned'
+                              ? 'bg-red-500/20 text-red-400 border border-red-500/30'
                               : 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
                           }`}>
-                            {referral.status}
+                            {referral.status.toUpperCase()}
                           </div>
                           <p className="text-xs text-muted-foreground mt-1">
                             {new Date(referral.created_at).toLocaleDateString()}
