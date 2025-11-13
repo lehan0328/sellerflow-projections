@@ -45,13 +45,13 @@ export const PRICING_PLANS = {
       "✨ Safe Spending Power",
       "✨ Buying Opportunity Projection",
       "✨ Payout Forecasting",
+      "AI insights",
+      "AI PDF extractor",
       "Advanced forecasting workflow",
       "90-day cashflow projection",
       "Bank transaction matching",
       "Email support",
       "❌ Additional users",
-      "❌ AI insights",
-      "❌ AI PDF extractor",
       "❌ Scenario planning"
     ]
   },
