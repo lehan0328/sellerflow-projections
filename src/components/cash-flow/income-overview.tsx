@@ -203,6 +203,12 @@ export const IncomeOverview = ({ incomeItems, bankTransactions = [], onCollectTo
     .filter(i => i.status === 'pending')
     .reduce((sum, income) => sum + income.amount, 0);
   const pendingCount = filteredAndSortedIncomes.filter(i => i.status === 'pending').length;
+  const thisMonthAmount = filteredAndSortedIncomes.filter(income => {
+    if (!income.paymentDate) return false;
+    const today = new Date();
+    const paymentDate = new Date(income.paymentDate);
+    return paymentDate.getMonth() === today.getMonth() && paymentDate.getFullYear() === today.getFullYear();
+  }).reduce((sum, income) => sum + income.amount, 0);
 
   return (
     <div className="space-y-6">
@@ -238,16 +244,14 @@ export const IncomeOverview = ({ incomeItems, bankTransactions = [], onCollectTo
 
         <Card className="border-l-4 border-l-primary">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">This Period</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">This Month</CardTitle>
             <div className="p-2 bg-primary/10 rounded-lg">
-              <DollarSign className="h-4 w-4 text-primary" />
+              <Calendar className="h-4 w-4 text-primary" />
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{formatCurrency(totalExpected)}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {dateRange === "3days" ? "Last 3 days" : dateRange === "7days" ? "Last 7 days" : dateRange === "30days" ? "Last 30 days" : "All time"}
-            </p>
+            <div className="text-3xl font-bold text-primary">{formatCurrency(thisMonthAmount)}</div>
+            <p className="text-xs text-muted-foreground mt-1">Expected this month</p>
           </CardContent>
         </Card>
       </div>
