@@ -3,7 +3,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus } from "lucide-react";
@@ -37,7 +36,6 @@ export function PayeeForm({
     name: initialPayeeName,
     category: "",
     payment_method: "bank-transfer",
-    notes: "",
   });
 
   const [showAddCategory, setShowAddCategory] = useState(false);
@@ -78,7 +76,6 @@ export function PayeeForm({
         name: formData.name.trim(),
         category: formData.category || undefined,
         payment_method: formData.payment_method || undefined,
-        notes: formData.notes.trim() || undefined,
       });
 
       // Reset form
@@ -86,7 +83,6 @@ export function PayeeForm({
         name: "",
         category: "",
         payment_method: "bank-transfer",
-        notes: "",
       });
       onOpenChange(false);
       toast.success("Payee added successfully");
@@ -197,18 +193,6 @@ export function PayeeForm({
                   </Label>
                 </div>
               </RadioGroup>
-            </div>
-
-            {/* Notes */}
-            <div className="space-y-2">
-              <Label htmlFor="notes">Notes</Label>
-              <Textarea
-                id="notes"
-                value={formData.notes}
-                onChange={(e) => handleInputChange("notes", e.target.value)}
-                placeholder="Optional notes about this payee"
-                className="min-h-[80px]"
-              />
             </div>
 
             {/* Action Buttons */}
