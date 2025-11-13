@@ -37,7 +37,7 @@ export function PayeeForm({
   });
 
   const [showAddCategory, setShowAddCategory] = useState(false);
-  const { categories: expenseCategories, addCategory } = useCategories('expense', false);
+  const { categories: expenseCategories, addCategory } = useCategories('income', false);
 
   useEffect(() => {
     if (initialPayeeName) {
@@ -217,7 +217,7 @@ export function PayeeForm({
         open={showAddCategory}
         onOpenChange={setShowAddCategory}
         onAddCategory={handleAddNewCategory}
-        type="expense"
+        type="income"
       />
     </>
   );
