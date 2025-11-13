@@ -448,13 +448,11 @@ export const VendorsOverview = ({
   };
 
   const totalOwed = filteredAndSortedTransactions.reduce((sum, tx) => sum + (tx.amount || 0), 0);
-  const overdueAmount = filteredAndSortedTransactions.filter(tx => {
+  const thisMonthAmount = filteredAndSortedTransactions.filter(tx => {
     if (!tx.dueDate || tx.status === 'completed' || tx.status === 'paid') return false;
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
     const dueDate = new Date(tx.dueDate);
-    dueDate.setHours(0, 0, 0, 0);
-    return dueDate < today;
+    return dueDate.getMonth() === today.getMonth() && dueDate.getFullYear() === today.getFullYear();
   }).reduce((sum, tx) => sum + (tx.amount || 0), 0);
   
   const pendingCount = filteredAndSortedTransactions.filter(tx => 
@@ -493,16 +491,16 @@ export const VendorsOverview = ({
           </CardContent>
         </Card>
 
-        <Card className="border-l-4 border-l-destructive">
+        <Card className="border-l-4 border-l-primary">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Overdue</CardTitle>
-            <div className="p-2 bg-destructive/10 rounded-lg">
-              <Calendar className="h-4 w-4 text-destructive" />
+            <CardTitle className="text-sm font-medium text-muted-foreground">This Month</CardTitle>
+            <div className="p-2 bg-primary/10 rounded-lg">
+              <Calendar className="h-4 w-4 text-primary" />
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-destructive">{formatCurrency(overdueAmount)}</div>
-            <p className="text-xs text-muted-foreground mt-1">Past due date</p>
+            <div className="text-3xl font-bold text-primary">{formatCurrency(thisMonthAmount)}</div>
+            <p className="text-xs text-muted-foreground mt-1">Due this month</p>
           </CardContent>
         </Card>
       </div>
@@ -522,10 +520,10 @@ export const VendorsOverview = ({
               <span className="text-muted-foreground">Total Owed:</span>
               <span className="font-semibold">{formatCurrency(totalOwed)}</span>
             </div>
-            {overdueAmount > 0 && <div className="flex items-center space-x-2">
-                <AlertTriangle className="h-4 w-4 text-destructive" />
-                <span className="text-destructive font-semibold">
-                  {formatCurrency(overdueAmount)} Overdue
+            {thisMonthAmount > 0 && <div className="flex items-center space-x-2">
+                <Calendar className="h-4 w-4 text-primary" />
+                <span className="text-primary font-semibold">
+                  {formatCurrency(thisMonthAmount)} This Month
                 </span>
               </div>}
             </div>
