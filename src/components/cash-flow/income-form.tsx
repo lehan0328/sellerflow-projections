@@ -228,7 +228,7 @@ export const IncomeForm = ({
             ) : (
               <TrendingDown className="h-5 w-5 text-red-600" />
             )}
-            {editingIncome ? `Edit ${formData.type === "expense" ? "Expense" : "Income"}` : (isRecurring ? `Add Recurring ${formData.type === "expense" ? "Expense" : "Income"}` : 'Add Income')}
+            {editingIncome ? `Edit ${formData.type === "expense" ? "Expense" : "Income"}` : (isRecurring ? `Add Recurring ${formData.type === "expense" ? "Expense" : "Income"}` : `Add ${formData.type === "expense" ? "Expense" : "Income"}`)}
           </DialogTitle>
         </DialogHeader>
         
