@@ -44,14 +44,14 @@ export function usePayees() {
       }
 
       const { data, error } = await supabase
-        .from('payees')
+        .from('payees' as any)
         .select('*')
         .eq('account_id', profile.account_id)
-        .order('name', { ascending: true });
+        .order('name', { ascending: true }) as any;
 
       if (error) throw error;
 
-      setPayees(data || []);
+      setPayees((data || []) as Payee[]);
     } catch (error) {
       console.error("Error fetching payees:", error);
       toast.error("Failed to load payees");
@@ -86,7 +86,7 @@ export function usePayees() {
       }
 
       const { data, error } = await supabase
-        .from('payees')
+        .from('payees' as any)
         .insert([
           {
             user_id: user.id,
@@ -98,12 +98,14 @@ export function usePayees() {
           },
         ])
         .select()
-        .single();
+        .single() as any;
 
       if (error) throw error;
 
-      setPayees((prev) => [...prev, data].sort((a, b) => a.name.localeCompare(b.name)));
-      return data;
+      if (data) {
+        setPayees((prev) => [...prev, data as Payee].sort((a, b) => a.name.localeCompare(b.name)));
+        return data as Payee;
+      }
     } catch (error) {
       console.error("Error adding payee:", error);
       toast.error("Failed to add payee");
@@ -114,18 +116,20 @@ export function usePayees() {
   const updatePayee = async (id: string, updates: Partial<Omit<Payee, 'id' | 'user_id' | 'account_id' | 'created_at' | 'updated_at'>>) => {
     try {
       const { data, error } = await supabase
-        .from('payees')
+        .from('payees' as any)
         .update(updates)
         .eq('id', id)
         .select()
-        .single();
+        .single() as any;
 
       if (error) throw error;
 
-      setPayees((prev) =>
-        prev.map((payee) => (payee.id === id ? data : payee)).sort((a, b) => a.name.localeCompare(b.name))
-      );
-      return data;
+      if (data) {
+        setPayees((prev) =>
+          prev.map((payee) => (payee.id === id ? data as Payee : payee)).sort((a, b) => a.name.localeCompare(b.name))
+        );
+        return data as Payee;
+      }
     } catch (error) {
       console.error("Error updating payee:", error);
       toast.error("Failed to update payee");
@@ -136,9 +140,9 @@ export function usePayees() {
   const deletePayee = async (id: string) => {
     try {
       const { error } = await supabase
-        .from('payees')
+        .from('payees' as any)
         .delete()
-        .eq('id', id);
+        .eq('id', id) as any;
 
       if (error) throw error;
 
