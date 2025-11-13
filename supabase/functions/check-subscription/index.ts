@@ -60,16 +60,17 @@ serve(async (req) => {
     const user = userData.user;
     logStep("User authenticated", { userId: user.id, email: user.email });
 
-    // Check for plan override and trial status
+    // Check for plan override, trial status, and plan_tier
     const { data: profile } = await supabaseClient
       .from('profiles')
-      .select('plan_override, discount_redeemed_at, trial_end')
+      .select('plan_override, discount_redeemed_at, trial_end, trial_start, plan_tier')
       .eq('user_id', user.id)
       .single();
 
-    // Check if trial has expired
+    // Check if trial has expired and determine trial status
     const trialEnd = profile?.trial_end ? new Date(profile.trial_end) : null;
     const isTrialExpired = trialEnd ? trialEnd < new Date() : false;
+    const isTrialing = trialEnd && trialEnd > new Date();
 
     // Check for LIFETIME ACCESS grants only (tier-based or explicit lifetime)
     // Regular plan names (professional, enterprise, growing, starter) are NOT lifetime
@@ -87,8 +88,10 @@ serve(async (req) => {
         return new Response(JSON.stringify({
           subscribed: true,
           plan: normalizedPlan,
+          plan_tier: 'enterprise',  // Lifetime access gets enterprise tier
           subscription_end: null,
           is_override: true,
+          is_trialing: false,
           discount_ever_redeemed: !!profile.discount_redeemed_at
         }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -125,11 +128,19 @@ serve(async (req) => {
         isTrialing: !isTrialExpired && !!trialEnd
       });
       
+      // Get plan_tier from profile for trial users
+      const { data: profileWithTier } = await supabaseClient
+        .from('profiles')
+        .select('plan_tier, discount_redeemed_at, trial_end')
+        .eq('user_id', user.id)
+        .single();
+      
       return new Response(JSON.stringify({ 
         subscribed: false,
         trial_expired: isTrialExpired,
         is_trialing: !isTrialExpired && !!trialEnd,
         trial_end: profileData?.trial_end,
+        plan_tier: profileWithTier?.plan_tier || 'starter',
         discount_ever_redeemed: !!profileData?.discount_redeemed_at
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -447,12 +458,14 @@ serve(async (req) => {
       }
     }
 
-    // Check if user ever redeemed a discount
+    // Check if user ever redeemed a discount and get plan_tier
     const { data: profileData } = await supabaseClient
       .from('profiles')
-      .select('discount_redeemed_at')
+      .select('discount_redeemed_at, plan_tier')
       .eq('user_id', user.id)
       .single();
+
+    const planTier = profileData?.plan_tier || 'starter';
 
     return new Response(JSON.stringify({
       subscribed: hasActiveSub,
@@ -461,6 +474,7 @@ serve(async (req) => {
       is_override: false,
       is_trialing: isTrialing,
       trial_end: subscriptionTrialEnd,
+      plan_tier: planTier,
       billing_interval: billingInterval,
       current_period_start: currentPeriodStart,
       price_amount: priceAmount,

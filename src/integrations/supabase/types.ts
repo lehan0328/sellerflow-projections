@@ -1808,6 +1808,7 @@ export type Database = {
           payment_failure_date: string | null
           plan_override: string | null
           plan_override_reason: string | null
+          plan_tier: string | null
           referral_code: string | null
           stripe_customer_id: string | null
           trial_end: string | null
@@ -1839,6 +1840,7 @@ export type Database = {
           payment_failure_date?: string | null
           plan_override?: string | null
           plan_override_reason?: string | null
+          plan_tier?: string | null
           referral_code?: string | null
           stripe_customer_id?: string | null
           trial_end?: string | null
@@ -1870,6 +1872,7 @@ export type Database = {
           payment_failure_date?: string | null
           plan_override?: string | null
           plan_override_reason?: string | null
+          plan_tier?: string | null
           referral_code?: string | null
           stripe_customer_id?: string | null
           trial_end?: string | null

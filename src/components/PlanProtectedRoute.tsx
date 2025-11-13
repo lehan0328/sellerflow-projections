@@ -16,8 +16,10 @@ export function PlanProtectedRoute({
 }: PlanProtectedRouteProps) {
   const subscription = useSubscription();
 
-  // Allow access if user has required plan OR is in trial
-  const hasAccess = hasPlanAccess(subscription.plan, minimumPlan) || subscription.is_trialing;
+  // Allow access if: (user's plan_tier >= required tier) OR (user is in trial)
+  // Use plan_tier for clean separation between trial status and plan level
+  const userPlanTier = subscription.plan_tier || 'starter';
+  const hasAccess = hasPlanAccess(userPlanTier as any, minimumPlan) || subscription.is_trialing;
 
   if (!hasAccess) {
     return <Navigate to={redirectTo} replace />;

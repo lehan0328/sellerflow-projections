@@ -171,6 +171,7 @@ export interface SubscriptionState {
   product_id: string | null;
   subscription_end: string | null;
   plan: PlanTier | null;
+  plan_tier?: 'professional' | 'growing' | 'starter' | 'enterprise';
   isLoading: boolean;
   is_trialing?: boolean;
   trial_end?: string | null;
@@ -333,10 +334,19 @@ export const useSubscription = () => {
         // Use the retry data
         const finalData = retryData;
         
-        // Continue with finalData instead of data
+        // Continue with finalData - use plan_tier from backend if available
         let plan: PlanTier | null = null;
         if (finalData.is_override && finalData.plan) {
           plan = finalData.plan as PlanTier;
+        } else if (finalData.plan_tier) {
+          // Use explicit plan_tier from backend (for trial and paid users)
+          const tierMap: Record<string, PlanTier> = {
+            'professional': 'professional',
+            'growing': 'growing',
+            'starter': 'starter',
+            'enterprise': 'tier1' // Map enterprise to tier1 for compatibility
+          };
+          plan = tierMap[finalData.plan_tier] || 'starter';
         } else if (finalData.is_trialing) {
           plan = 'professional';
         } else if (finalData.product_id) {
@@ -370,6 +380,7 @@ export const useSubscription = () => {
           product_id: finalData.product_id,
           subscription_end: finalData.subscription_end,
           plan,
+          plan_tier: finalData.plan_tier,
           isLoading: false,
           is_trialing: finalData.is_trialing || false,
           trial_end: finalData.trial_end || null,
@@ -409,12 +420,21 @@ export const useSubscription = () => {
       }
 
       console.log('[SUBSCRIPTION] Processing subscription data:', data);
-      // Handle plan override (lifetime access, special cases)
+      // Handle plan detection: use plan_tier from backend if available, otherwise derive from product_id
       let plan: PlanTier | null = null;
       if (data.is_override && data.plan) {
         plan = data.plan as PlanTier;
+      } else if (data.plan_tier) {
+        // Use explicit plan_tier from backend (for trial and paid users)
+        const tierMap: Record<string, PlanTier> = {
+          'professional': 'professional',
+          'growing': 'growing',
+          'starter': 'starter',
+          'enterprise': 'tier1' // Map enterprise to tier1 for compatibility
+        };
+        plan = tierMap[data.plan_tier] || 'starter';
       } else if (data.is_trialing) {
-        // All trial users are on the Professional plan
+        // Fallback: trial users are professional
         plan = 'professional';
       } else if (data.product_id) {
         // Map product_id to plan tier for regular Stripe subscriptions
@@ -469,6 +489,7 @@ export const useSubscription = () => {
         product_id: data.product_id,
         subscription_end: data.subscription_end,
         plan,
+        plan_tier: data.plan_tier,
         isLoading: false,
         is_trialing: data.is_trialing || false,
         trial_end: data.trial_end || null,
