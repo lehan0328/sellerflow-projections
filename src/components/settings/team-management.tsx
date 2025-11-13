@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { profileQueryKey } from "@/lib/cacheConfig";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -88,7 +89,7 @@ export function TeamManagement() {
 
   // Fetch user's profile to get account_id and role
   const { data: profile } = useQuery({
-    queryKey: ['profile', user?.id],
+    queryKey: profileQueryKey(user?.id),
     staleTime: 10 * 60 * 1000, // 10 minutes - profile rarely changes
     queryFn: async () => {
       const { data, error } = await supabase

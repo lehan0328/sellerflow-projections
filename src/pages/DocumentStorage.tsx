@@ -17,6 +17,7 @@ import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { profileQueryKey } from "@/lib/cacheConfig";
 import { toast } from "sonner";
 import { useVendors } from "@/hooks/useVendors";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -76,7 +77,7 @@ export default function DocumentStorage() {
 
   // Fetch user's account_id
   const { data: profile, isLoading: isLoadingProfile, refetch: refetchProfile } = useQuery({
-    queryKey: ['profile', user?.id],
+    queryKey: profileQueryKey(user?.id),
     queryFn: async () => {
       if (!user?.id) return null;
       console.log('[DocumentStorage] Fetching profile for user:', user.id);

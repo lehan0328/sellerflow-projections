@@ -36,6 +36,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { profileQueryKey } from "@/lib/cacheConfig";
 import { UpgradeConfirmDialog } from "@/components/UpgradeConfirmDialog";
 import { toast } from "sonner";
 import { useLocation } from "react-router-dom";
@@ -136,7 +137,7 @@ const UpgradePlan = () => {
 
   // Fetch profile to get trial dates and discount status
   const { data: profile } = useQuery({
-    queryKey: ['profile', user?.id],
+    queryKey: profileQueryKey(user?.id),
     queryFn: async () => {
       if (!user?.id) return null;
       const { data, error } = await supabase

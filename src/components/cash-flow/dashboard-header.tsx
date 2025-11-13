@@ -6,10 +6,11 @@ import { DemoUserMenu } from "./demo-user-menu";
 import { PendingNotificationsPanel } from "./pending-notifications-panel";
 import aurenIcon from "@/assets/auren-icon-blue.png";
 import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
+import { profileCompanyQueryKey } from "@/lib/cacheConfig";
 import { format, isBefore, startOfDay } from "date-fns";
 import { useSidebar } from "@/components/ui/sidebar";
 import { useTheme } from "next-themes";
@@ -48,7 +49,7 @@ export function DashboardHeader({
 
   // Fetch user profile for display name - only fetch company
   const { data: profile, isLoading: profileLoading } = useQuery({
-    queryKey: ['profile-company', user?.id],
+    queryKey: profileCompanyQueryKey(user?.id),
     staleTime: 10 * 60 * 1000, // 10 minutes - user profile rarely changes
     queryFn: async () => {
       if (!user?.id) return null;

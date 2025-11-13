@@ -10,6 +10,7 @@ import { CancellationFlow } from "@/components/subscription/CancellationFlow";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
+import { profileQueryKey } from "@/lib/cacheConfig";
 
 export default function SubscriptionManagement() {
   const { user } = useAuth();
@@ -36,7 +37,7 @@ export default function SubscriptionManagement() {
 
   // Fetch user's account_id
   const { data: profile } = useQuery({
-    queryKey: ['profile', user?.id],
+    queryKey: profileQueryKey(user?.id),
     queryFn: async () => {
       if (!user?.id) return null;
       const { data, error } = await supabase

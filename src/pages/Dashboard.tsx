@@ -49,6 +49,7 @@ import { useTheme } from "next-themes";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { Badge } from "@/components/ui/badge";
+import { profileQueryKey } from "@/lib/cacheConfig";
 import { DashboardHeader } from "@/components/cash-flow/dashboard-header";
 import { FloatingMenu } from "@/components/cash-flow/floating-menu";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
@@ -182,7 +183,7 @@ const Dashboard = () => {
 
   // Fetch user profile
   const { data: profile, isLoading: profileLoading } = useQuery({
-    queryKey: ["profile", user?.id],
+    queryKey: profileQueryKey(user?.id),
     queryFn: async () => {
       if (!user?.id) return null;
       const { data, error } = await supabase
@@ -218,7 +219,7 @@ const Dashboard = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["profile", user?.id] });
+      queryClient.invalidateQueries({ queryKey: profileQueryKey(user?.id) });
       toast({
         title: "Success",
         description: "Settings updated successfully",

@@ -9,6 +9,7 @@ import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useUserSettings } from "@/hooks/useUserSettings";
 import { useAdmin } from "@/hooks/useAdmin";
+import { profileQueryKey } from "@/lib/cacheConfig";
 export function UserMenu() {
   const navigate = useNavigate();
   const {
@@ -26,7 +27,7 @@ export function UserMenu() {
   const {
     data: profile
   } = useQuery({
-    queryKey: ['profile', user?.id],
+    queryKey: profileQueryKey(user?.id),
     staleTime: 10 * 60 * 1000, // 10 minutes - user profile rarely changes
     queryFn: async () => {
       if (!user?.id) return null;
