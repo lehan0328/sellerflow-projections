@@ -86,7 +86,7 @@ export const IncomeForm = ({
   useEffect(() => {
     if (editingIncome) {
       setFormData({
-        type: "income",
+        type: editingIncome.type || initialType,
         customer: editingIncome.customer || "",
         customerId: editingIncome.customerId || "",
         transactionName: editingIncome.transactionName || "",
@@ -104,7 +104,7 @@ export const IncomeForm = ({
       setCustomerSearchTerm(editingIncome.customer || "");
     } else {
       setFormData({
-        type: "income",
+        type: initialType,
         customer: "",
         customerId: "",
         transactionName: "",
@@ -121,7 +121,7 @@ export const IncomeForm = ({
       });
       setCustomerSearchTerm("");
     }
-  }, [editingIncome, isRecurring]);
+  }, [editingIncome, isRecurring, initialType]);
 
   const handleCustomerSelect = (customer: Customer) => {
     setFormData(prev => ({
