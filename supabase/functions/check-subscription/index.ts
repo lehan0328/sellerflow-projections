@@ -115,7 +115,7 @@ serve(async (req) => {
       // Check if trial has expired
       const { data: profileData } = await supabaseClient
         .from('profiles')
-        .select('discount_redeemed_at, trial_end')
+        .select('discount_redeemed_at, trial_end, trial_start')
         .eq('user_id', user.id)
         .single();
       
@@ -131,7 +131,7 @@ serve(async (req) => {
       // Get plan_tier from profile for trial users
       const { data: profileWithTier } = await supabaseClient
         .from('profiles')
-        .select('plan_tier, discount_redeemed_at, trial_end')
+        .select('plan_tier, discount_redeemed_at, trial_end, trial_start')
         .eq('user_id', user.id)
         .single();
       
@@ -140,6 +140,7 @@ serve(async (req) => {
         trial_expired: isTrialExpired,
         is_trialing: !isTrialExpired && !!trialEnd,
         trial_end: profileData?.trial_end,
+        trial_start: profileData?.trial_start,
         plan_tier: profileWithTier?.plan_tier || 'starter',
         discount_ever_redeemed: !!profileData?.discount_redeemed_at
       }), {
