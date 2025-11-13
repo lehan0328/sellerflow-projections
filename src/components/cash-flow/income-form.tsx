@@ -15,7 +15,7 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { CustomerForm } from "./customer-form";
-import { VendorForm } from "./vendor-form";
+import { PayeeForm } from "./payee-form";
 import { useCreditCards } from "@/hooks/useCreditCards";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
@@ -27,10 +27,11 @@ interface Customer {
   category?: string;
 }
 
-interface Vendor {
+interface Payee {
   id: string;
   name: string;
   category?: string;
+  payment_method?: string;
 }
 
 interface IncomeFormProps {
@@ -42,8 +43,8 @@ interface IncomeFormProps {
   editingIncome?: any;
   customers?: Customer[];
   onAddCustomer?: (customerData: any) => void;
-  vendors?: Vendor[];
-  onAddVendor?: (vendorData: any) => void;
+  payees?: Payee[];
+  onAddPayee?: (payeeData: any) => void;
   initialType?: "income" | "expense";
 }
 
@@ -56,8 +57,8 @@ export const IncomeForm = ({
   editingIncome,
   customers = [],
   onAddCustomer,
-  vendors = [],
-  onAddVendor,
+  payees = [],
+  onAddPayee,
   initialType = "income"
 }: IncomeFormProps) => {
   const { categories: incomeCategories, addCategory: addIncomeCategory } = useCategories('income', isRecurring);
@@ -85,10 +86,10 @@ export const IncomeForm = ({
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
   const [customerSearchTerm, setCustomerSearchTerm] = useState("");
   const [showCustomerForm, setShowCustomerForm] = useState(false);
-  const [showVendorDropdown, setShowVendorDropdown] = useState(false);
-  const [vendorSearchTerm, setVendorSearchTerm] = useState("");
-  const [showVendorForm, setShowVendorForm] = useState(false);
-  const [selectedVendorId, setSelectedVendorId] = useState("");
+  const [showPayeeDropdown, setShowPayeeDropdown] = useState(false);
+  const [payeeSearchTerm, setPayeeSearchTerm] = useState("");
+  const [showPayeeForm, setShowPayeeForm] = useState(false);
+  const [selectedPayeeId, setSelectedPayeeId] = useState("");
 
   // Filter customers based on search term and sort alphabetically
   const filteredCustomers = customers
@@ -97,10 +98,10 @@ export const IncomeForm = ({
     )
     .sort((a, b) => a.name.localeCompare(b.name));
 
-  // Filter vendors based on search term and sort alphabetically
-  const filteredVendors = vendors
-    .filter(vendor =>
-      vendor.name.toLowerCase().includes(vendorSearchTerm.toLowerCase())
+  // Filter payees based on search term and sort alphabetically
+  const filteredPayees = payees
+    .filter(payee =>
+      payee.name.toLowerCase().includes(payeeSearchTerm.toLowerCase())
     )
     .sort((a, b) => a.name.localeCompare(b.name));
 
@@ -156,15 +157,15 @@ export const IncomeForm = ({
     setShowCustomerDropdown(false);
   };
 
-  const handleVendorSelect = (vendor: Vendor) => {
-    setSelectedVendorId(vendor.id);
+  const handlePayeeSelect = (payee: Payee) => {
+    setSelectedPayeeId(payee.id);
     setFormData(prev => ({
       ...prev,
-      description: vendor.name,
-      category: vendor.category || prev.category
+      description: payee.name,
+      category: payee.category || prev.category
     }));
-    setVendorSearchTerm(vendor.name);
-    setShowVendorDropdown(false);
+    setPayeeSearchTerm(payee.name);
+    setShowPayeeDropdown(false);
   };
 
   const handleAddCustomerFromForm = async (customerData: any) => {
@@ -193,28 +194,30 @@ export const IncomeForm = ({
     setShowCustomerForm(false);
   };
 
-  const handleAddVendorFromForm = async (vendorData: any) => {
-    if (onAddVendor) {
+  const handleAddPayeeFromForm = async (payeeData: any) => {
+    if (onAddPayee) {
       try {
-        const newVendor = await onAddVendor({
-          name: vendorData.name,
-          category: vendorData.category || ''
+        const newPayee = await onAddPayee({
+          name: payeeData.name,
+          category: payeeData.category || '',
+          payment_method: payeeData.payment_method,
+          notes: payeeData.notes
         });
         
-        // Auto-select the new vendor and import their category
-        setSelectedVendorId(`temp-${Date.now()}`);
+        // Auto-select the new payee and import their category
+        setSelectedPayeeId(`temp-${Date.now()}`);
         setFormData(prev => ({
           ...prev,
-          description: vendorData.name,
-          category: vendorData.category || ''
+          description: payeeData.name,
+          category: payeeData.category || ''
         }));
         
-        setVendorSearchTerm(vendorData.name);
+        setPayeeSearchTerm(payeeData.name);
       } catch (error) {
-        console.error('Error adding vendor:', error);
+        console.error('Error adding payee:', error);
       }
     }
-    setShowVendorForm(false);
+    setShowPayeeForm(false);
   };
 
 
@@ -360,48 +363,48 @@ export const IncomeForm = ({
           </div>
         )}
         
-        {/* Step 1: Vendor Selection (for expenses) */}
-        {!selectedVendorId && !formData.isRecurring && formData.type === "expense" && (
+        {/* Step 1: Payee Selection (for expenses) */}
+        {!selectedPayeeId && !formData.isRecurring && formData.type === "expense" && (
           <div className="space-y-4">
             <div className="text-center py-4">
               <h3 className="text-lg font-semibold mb-2">Select a Payee</h3>
-              <p className="text-sm text-muted-foreground">Choose a vendor/payee to add expense</p>
+              <p className="text-sm text-muted-foreground">Choose a payee to add expense</p>
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="vendor">Payee *</Label>
+              <Label htmlFor="payee">Payee *</Label>
               <div className="flex gap-2">
                 <div className="relative flex-1">
                   <div className="relative">
                     <Input
-                      placeholder="Search or select payee/vendor..."
-                      value={vendorSearchTerm}
+                      placeholder="Search or select payee..."
+                      value={payeeSearchTerm}
                       onChange={(e) => {
-                        setVendorSearchTerm(e.target.value);
-                        if (e.target.value) setShowVendorDropdown(true);
+                        setPayeeSearchTerm(e.target.value);
+                        if (e.target.value) setShowPayeeDropdown(true);
                       }}
-                      onClick={() => setShowVendorDropdown(true)}
+                      onClick={() => setShowPayeeDropdown(true)}
                       className="pr-8"
                     />
                     <Search className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   </div>
                   
-                  {showVendorDropdown && (
+                  {showPayeeDropdown && (
                     <div className="absolute z-50 w-full mt-1 bg-background border border-border rounded-md shadow-lg max-h-48 overflow-y-auto">
-                      {filteredVendors.length === 0 ? (
+                      {filteredPayees.length === 0 ? (
                         <div className="p-3 text-sm text-muted-foreground text-center">
-                          {vendorSearchTerm ? 'No vendors found matching your search' : 'No vendors available'}
+                          {payeeSearchTerm ? 'No payees found matching your search' : 'No payees available'}
                         </div>
                       ) : (
-                        filteredVendors.map((vendor) => (
+                        filteredPayees.map((payee) => (
                           <div
-                            key={vendor.id}
+                            key={payee.id}
                             className="p-2 hover:bg-accent cursor-pointer border-b last:border-b-0"
-                            onClick={() => handleVendorSelect(vendor)}
+                            onClick={() => handlePayeeSelect(payee)}
                           >
-                            <div className="font-medium text-sm">{vendor.name}</div>
-                            {vendor.category && (
-                              <div className="text-xs text-muted-foreground mt-0.5">{vendor.category}</div>
+                            <div className="font-medium text-sm">{payee.name}</div>
+                            {payee.category && (
+                              <div className="text-xs text-muted-foreground mt-0.5">{payee.category}</div>
                             )}
                           </div>
                         ))
@@ -410,11 +413,11 @@ export const IncomeForm = ({
                   )}
                 </div>
                 
-                {onAddVendor && (
+                {onAddPayee && (
                   <Button 
                     type="button" 
                     variant="outline" 
-                    onClick={() => setShowVendorForm(true)}
+                    onClick={() => setShowPayeeForm(true)}
                     className="px-3"
                   >
                     <Plus className="h-4 w-4" />
@@ -432,7 +435,7 @@ export const IncomeForm = ({
         )}
 
         {/* Step 2: Income/Expense Details */}
-        {(formData.customerId || selectedVendorId || formData.isRecurring || (formData.type === "expense" && selectedVendorId)) && (
+        {(formData.customerId || selectedPayeeId || formData.isRecurring || (formData.type === "expense" && selectedPayeeId)) && (
           <>
             {/* Selected Customer Display - only show if not recurring */}
             {formData.customerId && !formData.isRecurring && (
@@ -858,13 +861,13 @@ export const IncomeForm = ({
         />
       )}
 
-      {/* Vendor Form Modal */}
-      {onAddVendor && (
-        <VendorForm 
-          open={showVendorForm}
-          onOpenChange={setShowVendorForm}
-          onAddVendor={handleAddVendorFromForm}
-          existingVendors={vendors}
+      {/* Payee Form Modal */}
+      {onAddPayee && (
+        <PayeeForm 
+          open={showPayeeForm}
+          onOpenChange={setShowPayeeForm}
+          onAddPayee={handleAddPayeeFromForm}
+          existingPayees={payees}
         />
       )}
     </Dialog>
