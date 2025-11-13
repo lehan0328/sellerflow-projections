@@ -7,7 +7,7 @@ import { PlanTier } from "@/hooks/useSubscription";
  * @returns true if the user's plan qualifies, false otherwise
  */
 export const hasPlanAccess = (
-  userPlan: PlanTier | null | undefined,
+  userPlan: PlanTier | 'professional' | 'growing' | 'starter' | 'enterprise' | null | undefined,
   minimumPlan: 'starter' | 'growing' | 'professional'
 ): boolean => {
   // Always return consistent result - false if no plan
