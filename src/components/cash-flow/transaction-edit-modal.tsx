@@ -39,7 +39,6 @@ export const TransactionEditModal = ({ open, onOpenChange, transaction, onSucces
   const [formData, setFormData] = useState({
     amount: 0,
     dueDate: '',
-    transactionDate: '',
     description: '',
     remarks: ''
   });
@@ -50,7 +49,6 @@ export const TransactionEditModal = ({ open, onOpenChange, transaction, onSucces
       setFormData({
         amount: transaction.amount || 0,
         dueDate: transaction.dueDate ? formatDateInputLocal(transaction.dueDate) : '',
-        transactionDate: transaction.transactionDate ? formatDateInputLocal(transaction.transactionDate) : '',
         description: transaction.description || '',
         remarks: transaction.remarks || ''
       });
@@ -71,10 +69,6 @@ export const TransactionEditModal = ({ open, onOpenChange, transaction, onSucces
 
       if (formData.dueDate) {
         updates.due_date = formatDateForDB(parseDateInputLocal(formData.dueDate));
-      }
-
-      if (formData.transactionDate) {
-        updates.transaction_date = formatDateForDB(parseDateInputLocal(formData.transactionDate));
       }
 
       const { error } = await supabase
@@ -129,16 +123,6 @@ export const TransactionEditModal = ({ open, onOpenChange, transaction, onSucces
               placeholder="0.00"
               value={formData.amount}
               onChange={(e) => handleInputChange("amount", parseFloat(e.target.value) || 0)}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="transactionDate">Transaction Date</Label>
-            <Input
-              id="transactionDate"
-              type="date"
-              value={formData.transactionDate}
-              onChange={(e) => handleInputChange("transactionDate", e.target.value)}
             />
           </div>
 
