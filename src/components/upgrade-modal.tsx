@@ -32,7 +32,7 @@ export const UpgradeModal = ({ open, onOpenChange, feature = "connections", curr
     navigate('/dashboard?view=settings&section=addons');
   };
 
-  const currentPlan = subscription.plan || 'starter';
+  const currentPlan = subscription.plan_tier || subscription.plan || 'starter';
   const nextPlans = Object.entries(PRICING_PLANS).filter(([key]) => {
     if (currentPlan === 'starter') return key === 'growing' || key === 'professional';
     if (currentPlan === 'growing') return key === 'professional';
