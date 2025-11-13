@@ -22,6 +22,7 @@ interface Customer {
   company?: string;
   created_at: string;
   plan_override?: string;
+  plan_tier?: string;
   discount_redeemed_at?: string;
   trial_end?: string;
   churn_date?: string;
@@ -90,7 +91,7 @@ export const AdminCustomers = () => {
       // Fetch all customer profiles (admin/staff are now excluded at database level)
       const { data: profiles, error } = await supabase
         .from('profiles')
-        .select('user_id, first_name, last_name, company, created_at, plan_override, discount_redeemed_at, trial_end, churn_date, account_status, payment_failure_date, stripe_customer_id, account_id, is_account_owner, monthly_amazon_revenue')
+        .select('user_id, first_name, last_name, company, created_at, plan_override, plan_tier, discount_redeemed_at, trial_end, churn_date, account_status, payment_failure_date, stripe_customer_id, account_id, is_account_owner, monthly_amazon_revenue')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -528,7 +529,7 @@ export const AdminCustomers = () => {
           customer.company || '-',
           new Date(customer.created_at).toLocaleDateString('en-US'),
           status.label,
-          customer.stripe_plan_name || formatPlanName(customer.plan_override) || '-',
+          customer.stripe_plan_name || formatPlanName(customer.plan_tier || customer.plan_override) || '-',
           customer.referral_code ? 'User Referral' : customer.affiliate_code ? 'Affiliate/Influencer' : '-',
           customer.referral_code || customer.affiliate_code || (customer.plan_override === 'referred_user_discount' || customer.discount_redeemed_at ? 'Legacy' : '-'),
           customer.referral_code || customer.affiliate_code || customer.plan_override === 'referred_user_discount' || customer.discount_redeemed_at ? '10% off' : '-',
@@ -812,7 +813,11 @@ export const AdminCustomers = () => {
                                 </span>
                               )}
                             </>
-                          ) : customer.plan_override && ['starter', 'growing', 'professional', 'admin'].includes(customer.plan_override) ? (
+                          ) : customer.plan_tier ? (
+                            <Badge variant="outline" className="text-xs capitalize">
+                              {formatPlanName(customer.plan_tier)}
+                            </Badge>
+                          ) : customer.plan_override && ['starter', 'growing', 'professional', 'admin', 'enterprise', 'tier1', 'tier2', 'tier3'].includes(customer.plan_override) ? (
                             <Badge variant="outline" className="text-xs capitalize">
                               {formatPlanName(customer.plan_override)}
                             </Badge>
