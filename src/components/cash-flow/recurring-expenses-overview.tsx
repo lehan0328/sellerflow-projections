@@ -1,10 +1,9 @@
 import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Repeat, Pencil, Filter, Trash2, Search, ArrowUpDown, CreditCard, Landmark, Calendar } from "lucide-react";
+import { Plus, Repeat, Pencil, Filter, Trash2, Search, ArrowUpDown, CreditCard, Landmark } from "lucide-react";
 import { useRecurringExpenses, RecurringExpense } from "@/hooks/useRecurringExpenses";
 import { useCreditCards } from "@/hooks/useCreditCards";
-import { RecurringExpenseScheduleDialog } from "./recurring-expense-schedule-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -34,7 +33,6 @@ export const RecurringExpensesOverview = () => {
   const [deletingExpense, setDeletingExpense] = useState<RecurringExpense | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [viewScheduleExpense, setViewScheduleExpense] = useState<RecurringExpense | null>(null);
   const [formData, setFormData] = useState<{
     name: string;
     transaction_name: string;
@@ -397,14 +395,6 @@ export const RecurringExpensesOverview = () => {
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => setViewScheduleExpense(item)}
-                      title="View Schedule"
-                    >
-                      <Calendar className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
                       onClick={() => handleEdit(item)}
                     >
                       <Pencil className="h-4 w-4" />
@@ -579,14 +569,6 @@ export const RecurringExpensesOverview = () => {
       </AlertDialogContent>
     </AlertDialog>
 
-    {/* View Schedule Dialog */}
-    {viewScheduleExpense && (
-      <RecurringExpenseScheduleDialog
-        open={!!viewScheduleExpense}
-        onOpenChange={(open) => !open && setViewScheduleExpense(null)}
-        recurringExpense={viewScheduleExpense}
-      />
-    )}
     </>
   );
 };
