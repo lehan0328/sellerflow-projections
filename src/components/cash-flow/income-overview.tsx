@@ -2,13 +2,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Combobox } from "@/components/ui/combobox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { DollarSign, Calendar, TrendingUp, Plus, Edit, Search, ArrowUpDown, Trash2, Link2, ExternalLink } from "lucide-react";
+import { DollarSign, Calendar, TrendingUp, Plus, Edit, Search, ArrowUpDown, Trash2, Link2, ExternalLink, Filter, CreditCard } from "lucide-react";
 import { format } from "date-fns";
 import { cn, formatCurrency } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
@@ -49,6 +50,8 @@ export const IncomeOverview = ({ incomeItems, bankTransactions = [], onCollectTo
   const [dateRange, setDateRange] = useState<string>("all");
   const [customFromDate, setCustomFromDate] = useState<Date | undefined>();
   const [customToDate, setCustomToDate] = useState<Date | undefined>();
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'received' | 'pending'>('all');
   
   // State for confirmation dialogs
   const [confirmingIncome, setConfirmingIncome] = useState<IncomeItem | null>(null);
@@ -78,6 +81,12 @@ export const IncomeOverview = ({ incomeItems, bankTransactions = [], onCollectTo
         income.source.toLowerCase().includes(searchTerm.toLowerCase());
       
       if (!matchesSearch) return false;
+
+      // Category filter
+      if (categoryFilter !== 'all' && income.category !== categoryFilter) return false;
+
+      // Status filter
+      if (statusFilter !== 'all' && income.status !== statusFilter) return false;
 
       // Date range filter
       if (dateRange !== "all" && dateRange !== "custom") {
@@ -113,7 +122,7 @@ export const IncomeOverview = ({ incomeItems, bankTransactions = [], onCollectTo
 
       return 0;
     });
-  }, [incomeItems, searchTerm, sortBy, sortOrder, dateRange, customFromDate, customToDate]);
+  }, [incomeItems, searchTerm, sortBy, sortOrder, dateRange, customFromDate, customToDate, categoryFilter, statusFilter]);
 
   const handleCollectToday = (income: IncomeItem) => {
     // Update income status to received - this will be handled by the parent component
@@ -210,6 +219,12 @@ export const IncomeOverview = ({ incomeItems, bankTransactions = [], onCollectTo
     return paymentDate.getMonth() === today.getMonth() && paymentDate.getFullYear() === today.getFullYear();
   }).reduce((sum, income) => sum + income.amount, 0);
 
+  // Get unique categories for filter
+  const uniqueCategories = useMemo(() => {
+    const categories = Array.from(new Set(incomeItems.map(i => i.category).filter(Boolean)));
+    return categories.sort();
+  }, [incomeItems]);
+
   return (
     <div className="space-y-6">
       {/* Summary Cards */}
@@ -296,11 +311,40 @@ export const IncomeOverview = ({ incomeItems, bankTransactions = [], onCollectTo
           <div className="relative flex-1 max-w-sm">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
             <Input
-              placeholder="Search income or amounts..."
+              placeholder="Search income..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
             />
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            <Filter className="h-4 w-4 text-muted-foreground" />
+            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="z-50 bg-popover text-popover-foreground border border-border shadow-lg">
+                <SelectItem value="all">All</SelectItem>
+                {uniqueCategories.map(cat => (
+                  <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <Filter className="h-4 w-4 text-muted-foreground" />
+            <Select value={statusFilter} onValueChange={(value: any) => setStatusFilter(value)}>
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="z-50 bg-popover text-popover-foreground border border-border shadow-lg">
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="received">Received</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           
           <div className="flex items-center space-x-2">
@@ -309,7 +353,7 @@ export const IncomeOverview = ({ incomeItems, bankTransactions = [], onCollectTo
               <SelectTrigger className="w-32">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-50 bg-popover text-popover-foreground border border-border shadow-lg">
                 <SelectItem value="all">All Dates</SelectItem>
                 <SelectItem value="3days">3 Days</SelectItem>
                 <SelectItem value="7days">7 Days</SelectItem>
@@ -346,25 +390,26 @@ export const IncomeOverview = ({ incomeItems, bankTransactions = [], onCollectTo
 
           <div className="flex items-center space-x-2">
             <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
-            <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
+            <Select 
+              value={`${sortBy}-${sortOrder}`} 
+              onValueChange={(value) => {
+                const [newSortBy, newSortOrder] = value.split('-') as [typeof sortBy, typeof sortOrder];
+                setSortBy(newSortBy);
+                setSortOrder(newSortOrder);
+              }}
+            >
               <SelectTrigger className="w-40">
-                <SelectValue placeholder="Sort by..." />
+                <SelectValue />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="description">Description</SelectItem>
-                <SelectItem value="amount">Amount</SelectItem>
-                <SelectItem value="source">Source</SelectItem>
-                <SelectItem value="paymentDate">Payment Date</SelectItem>
+              <SelectContent className="z-50 bg-popover text-popover-foreground border border-border shadow-lg">
+                <SelectItem value="paymentDate-asc">Date (Old)</SelectItem>
+                <SelectItem value="paymentDate-desc">Date (New)</SelectItem>
+                <SelectItem value="amount-asc">Amount (Low)</SelectItem>
+                <SelectItem value="amount-desc">Amount (High)</SelectItem>
+                <SelectItem value="description-asc">Name (A-Z)</SelectItem>
+                <SelectItem value="description-desc">Name (Z-A)</SelectItem>
               </SelectContent>
             </Select>
-            
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-            >
-              {sortOrder === 'asc' ? '↑' : '↓'}
-            </Button>
           </div>
         </div>
       </CardHeader>

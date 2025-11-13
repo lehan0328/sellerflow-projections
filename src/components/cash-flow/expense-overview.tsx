@@ -4,11 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { DollarSign, TrendingDown, Search, Edit, Trash2, Calendar, Receipt, CreditCard } from "lucide-react";
+import { Combobox } from "@/components/ui/combobox";
+import { DollarSign, TrendingDown, Search, Edit, Trash2, Calendar, Receipt, CreditCard, Filter, ArrowUpDown } from "lucide-react";
 import { format } from "date-fns";
 import { cn, formatCurrency } from "@/lib/utils";
 import { useState, useMemo } from "react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 
 interface ExpenseItem {
   id: string;
@@ -31,6 +34,11 @@ export const ExpenseOverview = ({ expenses, onEditExpense, onDeleteExpense }: Ex
   const [sortBy, setSortBy] = useState<'description' | 'amount' | 'paymentDate'>('paymentDate');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [dateRange, setDateRange] = useState<string>("30days");
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'paid'>('all');
+  const [paymentMethodFilter, setPaymentMethodFilter] = useState<'all' | 'cash' | 'credit'>('all');
+  const [customFromDate, setCustomFromDate] = useState<Date | undefined>();
+  const [customToDate, setCustomToDate] = useState<Date | undefined>();
 
   // Filter and sort expenses
   const filteredAndSortedExpenses = useMemo(() => {
@@ -45,13 +53,29 @@ export const ExpenseOverview = ({ expenses, onEditExpense, onDeleteExpense }: Ex
       
       if (!matchesSearch) return false;
 
+      // Category filter
+      if (categoryFilter !== 'all' && expense.category !== categoryFilter) return false;
+
+      // Status filter
+      if (statusFilter !== 'all' && expense.status !== statusFilter) return false;
+
+      // Payment method filter
+      if (paymentMethodFilter === 'cash' && expense.creditCardId) return false;
+      if (paymentMethodFilter === 'credit' && !expense.creditCardId) return false;
+
       // Date range filter
       if (dateRange !== "all") {
-        const now = new Date();
-        const days = dateRange === "3days" ? 3 : dateRange === "7days" ? 7 : 30;
-        const fromDate = new Date(now.setDate(now.getDate() - days));
         const expenseDate = new Date(expense.paymentDate);
-        if (expenseDate < fromDate) return false;
+        
+        if (dateRange === "custom") {
+          if (customFromDate && expenseDate < customFromDate) return false;
+          if (customToDate && expenseDate > customToDate) return false;
+        } else {
+          const now = new Date();
+          const days = dateRange === "3days" ? 3 : dateRange === "7days" ? 7 : 30;
+          const fromDate = new Date(now.setDate(now.getDate() - days));
+          if (expenseDate < fromDate) return false;
+        }
       }
 
       return true;
@@ -73,7 +97,7 @@ export const ExpenseOverview = ({ expenses, onEditExpense, onDeleteExpense }: Ex
     });
 
     return filtered;
-  }, [expenses, searchTerm, sortBy, sortOrder, dateRange]);
+  }, [expenses, searchTerm, sortBy, sortOrder, dateRange, categoryFilter, statusFilter, paymentMethodFilter, customFromDate, customToDate]);
 
   // Calculate summary stats
   const totalExpenses = useMemo(() => {
@@ -92,6 +116,12 @@ export const ExpenseOverview = ({ expenses, onEditExpense, onDeleteExpense }: Ex
       return paymentDate.getMonth() === today.getMonth() && paymentDate.getFullYear() === today.getFullYear();
     }).reduce((sum, expense) => sum + expense.amount, 0);
   }, [filteredAndSortedExpenses]);
+
+  // Get unique categories for filter
+  const uniqueCategories = useMemo(() => {
+    const categories = Array.from(new Set(expenses.map(e => e.category).filter(Boolean)));
+    return categories.sort();
+  }, [expenses]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -153,44 +183,137 @@ export const ExpenseOverview = ({ expenses, onEditExpense, onDeleteExpense }: Ex
       {/* Filters and Table */}
       <Card className="border-t-4 border-t-primary">
         <CardHeader className="pb-3">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div className="space-y-1">
-              <CardTitle className="text-xl flex items-center gap-2">
-                <Receipt className="h-5 w-5 text-primary" />
-                Expense Details
-              </CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Track and manage all your business expenses
-              </p>
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <CardTitle className="text-xl flex items-center gap-2">
+                  <Receipt className="h-5 w-5 text-primary" />
+                  Expense Details
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Track and manage all your business expenses
+                </p>
+              </div>
             </div>
-            <div className="flex flex-col gap-2 md:flex-row md:items-center">
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div className="relative flex-1 md:w-64">
-                      <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        placeholder="Search by description, category..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-9 h-9"
-                      />
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent>Search expenses by description or category</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              <Select value={dateRange} onValueChange={setDateRange}>
-                <SelectTrigger className="w-full md:w-[140px] h-9">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="3days">Last 3 days</SelectItem>
-                  <SelectItem value="7days">Last 7 days</SelectItem>
-                  <SelectItem value="30days">Last 30 days</SelectItem>
-                  <SelectItem value="all">All time</SelectItem>
-                </SelectContent>
-              </Select>
+            
+            <div className="flex items-center space-x-4">
+              <div className="relative flex-1 max-w-sm">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                <Input
+                  placeholder="Search expenses..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <Filter className="h-4 w-4 text-muted-foreground" />
+                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                  <SelectTrigger className="w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="z-50 bg-popover text-popover-foreground border border-border shadow-lg">
+                    <SelectItem value="all">All</SelectItem>
+                    {uniqueCategories.map(cat => (
+                      <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Filter className="h-4 w-4 text-muted-foreground" />
+                <Select value={statusFilter} onValueChange={(value: any) => setStatusFilter(value)}>
+                  <SelectTrigger className="w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="z-50 bg-popover text-popover-foreground border border-border shadow-lg">
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="paid">Paid</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <CreditCard className="h-4 w-4 text-muted-foreground" />
+                <Select value={paymentMethodFilter} onValueChange={(value: any) => setPaymentMethodFilter(value)}>
+                  <SelectTrigger className="w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="z-50 bg-popover text-popover-foreground border border-border shadow-lg">
+                    <SelectItem value="all">All Payments</SelectItem>
+                    <SelectItem value="cash">Cash Only</SelectItem>
+                    <SelectItem value="credit">Credit Only</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+                <Select value={dateRange} onValueChange={setDateRange}>
+                  <SelectTrigger className="w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="z-50 bg-popover text-popover-foreground border border-border shadow-lg">
+                    <SelectItem value="all">All Dates</SelectItem>
+                    <SelectItem value="3days">3 Days</SelectItem>
+                    <SelectItem value="7days">7 Days</SelectItem>
+                    <SelectItem value="30days">30 Days</SelectItem>
+                    <SelectItem value="custom">Custom</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {dateRange === "custom" && (
+                <>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" size="sm" className={cn(!customFromDate && "text-muted-foreground")}>
+                        {customFromDate ? format(customFromDate, "MMM dd") : "From"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <CalendarComponent mode="single" selected={customFromDate} onSelect={setCustomFromDate} initialFocus className="pointer-events-auto" />
+                    </PopoverContent>
+                  </Popover>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" size="sm" className={cn(!customToDate && "text-muted-foreground")}>
+                        {customToDate ? format(customToDate, "MMM dd") : "To"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <CalendarComponent mode="single" selected={customToDate} onSelect={setCustomToDate} initialFocus className="pointer-events-auto" />
+                    </PopoverContent>
+                  </Popover>
+                </>
+              )}
+
+              <div className="flex items-center space-x-2">
+                <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
+                <Select 
+                  value={`${sortBy}-${sortOrder}`} 
+                  onValueChange={(value) => {
+                    const [newSortBy, newSortOrder] = value.split('-') as [typeof sortBy, typeof sortOrder];
+                    setSortBy(newSortBy);
+                    setSortOrder(newSortOrder);
+                  }}
+                >
+                  <SelectTrigger className="w-40">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="z-50 bg-popover text-popover-foreground border border-border shadow-lg">
+                    <SelectItem value="paymentDate-asc">Date (Old)</SelectItem>
+                    <SelectItem value="paymentDate-desc">Date (New)</SelectItem>
+                    <SelectItem value="amount-asc">Amount (Low)</SelectItem>
+                    <SelectItem value="amount-desc">Amount (High)</SelectItem>
+                    <SelectItem value="description-asc">Name (A-Z)</SelectItem>
+                    <SelectItem value="description-desc">Name (Z-A)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
         </CardHeader>
