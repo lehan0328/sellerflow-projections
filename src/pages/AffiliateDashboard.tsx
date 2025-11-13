@@ -251,7 +251,9 @@ export default function AffiliateDashboard() {
                 </CardHeader>
                 <CardContent className="relative">
                   <div className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">{affiliate.total_referrals}</div>
-                  <p className="text-xs text-muted-foreground mt-1">{affiliate.monthly_referrals} this month</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    <span className="text-blue-400 font-semibold">{affiliate.trial_referrals || 0} in trial</span> • {affiliate.monthly_referrals} this month
+                  </p>
                 </CardContent>
               </Card>
 
