@@ -232,8 +232,8 @@ export const IncomeForm = ({
           </DialogTitle>
         </DialogHeader>
         
-        {/* Step 1: Customer Selection (skip for recurring) */}
-        {!formData.customerId && !formData.isRecurring && (
+        {/* Step 1: Customer Selection (skip for recurring and expenses) */}
+        {!formData.customerId && !formData.isRecurring && formData.type === "income" && (
           <div className="space-y-4">
             <div className="text-center py-4">
               <h3 className="text-lg font-semibold mb-2">Select a Customer</h3>
@@ -304,7 +304,7 @@ export const IncomeForm = ({
         )}
 
         {/* Step 2: Income/Expense Details */}
-        {(formData.customerId || formData.isRecurring) && (
+        {(formData.customerId || formData.isRecurring || formData.type === "expense") && (
           <>
             {/* Selected Customer Display - only show if not recurring */}
             {formData.customerId && !formData.isRecurring && (
