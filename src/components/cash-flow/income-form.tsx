@@ -162,7 +162,8 @@ export const IncomeForm = ({
     setFormData(prev => ({
       ...prev,
       description: payee.name,
-      category: payee.category || prev.category
+      category: payee.category || prev.category,
+      paymentMethod: (payee.payment_method === "credit-card" ? "credit-card" : "bank-transfer") as "bank-transfer" | "credit-card"
     }));
     setPayeeSearchTerm(payee.name);
     setShowPayeeDropdown(false);
