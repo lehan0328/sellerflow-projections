@@ -28,10 +28,18 @@ export const useAffiliates = () => {
       setAffiliate(affiliateData);
 
       if (affiliateData) {
-        // Get affiliate referrals
+        // Get affiliate referrals with user profile data
         const { data: referralsData } = await supabase
           .from('affiliate_referrals')
-          .select('*')
+          .select(`
+            *,
+            referred_user:profiles!affiliate_referrals_referred_user_id_fkey(
+              email,
+              first_name,
+              last_name,
+              company_name
+            )
+          `)
           .eq('affiliate_id', affiliateData.id)
           .order('created_at', { ascending: false });
 
