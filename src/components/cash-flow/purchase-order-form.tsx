@@ -596,7 +596,7 @@ export const PurchaseOrderForm = ({
     if (!file) return;
 
     // Check if user has access to PDF extractor (growing, professional plans)
-    const hasAccess = hasPlanAccess(subscription.plan, 'growing');
+    const hasAccess = hasPlanAccess(subscription.plan_tier || subscription.plan, 'growing');
     if (!hasAccess) {
       setShowUpgradeModal(true);
       return;
