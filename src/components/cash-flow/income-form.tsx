@@ -15,6 +15,7 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { CustomerForm } from "./customer-form";
+import { VendorForm } from "./vendor-form";
 import { useCreditCards } from "@/hooks/useCreditCards";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
@@ -23,6 +24,12 @@ interface Customer {
   name: string;
   paymentTerms?: string;
   netTermsDays?: number;
+  category?: string;
+}
+
+interface Vendor {
+  id: string;
+  name: string;
   category?: string;
 }
 
@@ -35,6 +42,8 @@ interface IncomeFormProps {
   editingIncome?: any;
   customers?: Customer[];
   onAddCustomer?: (customerData: any) => void;
+  vendors?: Vendor[];
+  onAddVendor?: (vendorData: any) => void;
   initialType?: "income" | "expense";
 }
 
@@ -47,6 +56,8 @@ export const IncomeForm = ({
   editingIncome,
   customers = [],
   onAddCustomer,
+  vendors = [],
+  onAddVendor,
   initialType = "income"
 }: IncomeFormProps) => {
   const { categories: incomeCategories, addCategory: addIncomeCategory } = useCategories('income', isRecurring);
@@ -74,11 +85,22 @@ export const IncomeForm = ({
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
   const [customerSearchTerm, setCustomerSearchTerm] = useState("");
   const [showCustomerForm, setShowCustomerForm] = useState(false);
+  const [showVendorDropdown, setShowVendorDropdown] = useState(false);
+  const [vendorSearchTerm, setVendorSearchTerm] = useState("");
+  const [showVendorForm, setShowVendorForm] = useState(false);
+  const [selectedVendorId, setSelectedVendorId] = useState("");
 
   // Filter customers based on search term and sort alphabetically
   const filteredCustomers = customers
     .filter(customer =>
       customer.name.toLowerCase().includes(customerSearchTerm.toLowerCase())
+    )
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  // Filter vendors based on search term and sort alphabetically
+  const filteredVendors = vendors
+    .filter(vendor =>
+      vendor.name.toLowerCase().includes(vendorSearchTerm.toLowerCase())
     )
     .sort((a, b) => a.name.localeCompare(b.name));
 
@@ -134,6 +156,17 @@ export const IncomeForm = ({
     setShowCustomerDropdown(false);
   };
 
+  const handleVendorSelect = (vendor: Vendor) => {
+    setSelectedVendorId(vendor.id);
+    setFormData(prev => ({
+      ...prev,
+      description: vendor.name,
+      category: vendor.category || prev.category
+    }));
+    setVendorSearchTerm(vendor.name);
+    setShowVendorDropdown(false);
+  };
+
   const handleAddCustomerFromForm = async (customerData: any) => {
     if (onAddCustomer) {
       try {
@@ -158,6 +191,30 @@ export const IncomeForm = ({
       }
     }
     setShowCustomerForm(false);
+  };
+
+  const handleAddVendorFromForm = async (vendorData: any) => {
+    if (onAddVendor) {
+      try {
+        const newVendor = await onAddVendor({
+          name: vendorData.name,
+          category: vendorData.category || ''
+        });
+        
+        // Auto-select the new vendor and import their category
+        setSelectedVendorId(`temp-${Date.now()}`);
+        setFormData(prev => ({
+          ...prev,
+          description: vendorData.name,
+          category: vendorData.category || ''
+        }));
+        
+        setVendorSearchTerm(vendorData.name);
+      } catch (error) {
+        console.error('Error adding vendor:', error);
+      }
+    }
+    setShowVendorForm(false);
   };
 
 
@@ -302,9 +359,80 @@ export const IncomeForm = ({
             </div>
           </div>
         )}
+        
+        {/* Step 1: Vendor Selection (for expenses) */}
+        {!selectedVendorId && !formData.isRecurring && formData.type === "expense" && (
+          <div className="space-y-4">
+            <div className="text-center py-4">
+              <h3 className="text-lg font-semibold mb-2">Select a Payee</h3>
+              <p className="text-sm text-muted-foreground">Choose a vendor/payee to add expense</p>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="vendor">Payee *</Label>
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <div className="relative">
+                    <Input
+                      placeholder="Search or select payee/vendor..."
+                      value={vendorSearchTerm}
+                      onChange={(e) => {
+                        setVendorSearchTerm(e.target.value);
+                        if (e.target.value) setShowVendorDropdown(true);
+                      }}
+                      onClick={() => setShowVendorDropdown(true)}
+                      className="pr-8"
+                    />
+                    <Search className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  </div>
+                  
+                  {showVendorDropdown && (
+                    <div className="absolute z-50 w-full mt-1 bg-background border border-border rounded-md shadow-lg max-h-48 overflow-y-auto">
+                      {filteredVendors.length === 0 ? (
+                        <div className="p-3 text-sm text-muted-foreground text-center">
+                          {vendorSearchTerm ? 'No vendors found matching your search' : 'No vendors available'}
+                        </div>
+                      ) : (
+                        filteredVendors.map((vendor) => (
+                          <div
+                            key={vendor.id}
+                            className="p-2 hover:bg-accent cursor-pointer border-b last:border-b-0"
+                            onClick={() => handleVendorSelect(vendor)}
+                          >
+                            <div className="font-medium text-sm">{vendor.name}</div>
+                            {vendor.category && (
+                              <div className="text-xs text-muted-foreground mt-0.5">{vendor.category}</div>
+                            )}
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  )}
+                </div>
+                
+                {onAddVendor && (
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => setShowVendorForm(true)}
+                    className="px-3"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            </div>
+            
+            <div className="flex justify-end pt-4">
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                Cancel
+              </Button>
+            </div>
+          </div>
+        )}
 
         {/* Step 2: Income/Expense Details */}
-        {(formData.customerId || formData.isRecurring || formData.type === "expense") && (
+        {(formData.customerId || selectedVendorId || formData.isRecurring || (formData.type === "expense" && selectedVendorId)) && (
           <>
             {/* Selected Customer Display - only show if not recurring */}
             {formData.customerId && !formData.isRecurring && (
@@ -722,11 +850,23 @@ export const IncomeForm = ({
       />
       
       {/* Customer Form Modal */}
-      <CustomerForm 
-        open={showCustomerForm}
-        onOpenChange={setShowCustomerForm}
-        onAddCustomer={handleAddCustomerFromForm}
-      />
+      {onAddCustomer && (
+        <CustomerForm 
+          open={showCustomerForm}
+          onOpenChange={setShowCustomerForm}
+          onAddCustomer={handleAddCustomerFromForm}
+        />
+      )}
+
+      {/* Vendor Form Modal */}
+      {onAddVendor && (
+        <VendorForm 
+          open={showVendorForm}
+          onOpenChange={setShowVendorForm}
+          onAddVendor={handleAddVendorFromForm}
+          existingVendors={vendors}
+        />
+      )}
     </Dialog>
   );
 };

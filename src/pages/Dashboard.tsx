@@ -3534,6 +3534,8 @@ const Dashboard = () => {
               initialType="expense"
               customers={customers}
               onAddCustomer={addCustomer}
+              vendors={vendors}
+              onAddVendor={addVendor}
             />
           )}
 
