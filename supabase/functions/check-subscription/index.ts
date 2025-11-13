@@ -70,7 +70,6 @@ serve(async (req) => {
     // Check if trial has expired and determine trial status
     const trialEnd = profile?.trial_end ? new Date(profile.trial_end) : null;
     const isTrialExpired = trialEnd ? trialEnd < new Date() : false;
-    const isTrialing = trialEnd && trialEnd > new Date();
 
     // Check for LIFETIME ACCESS grants only (tier-based or explicit lifetime)
     // Regular plan names (professional, enterprise, growing, starter) are NOT lifetime
@@ -91,7 +90,7 @@ serve(async (req) => {
           plan_tier: 'enterprise',  // Lifetime access gets enterprise tier
           subscription_end: null,
           is_override: true,
-          is_trialing: false,
+          is_trialing: trialEnd ? trialEnd > new Date() : false,
           discount_ever_redeemed: !!profile.discount_redeemed_at
         }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
