@@ -79,7 +79,12 @@ const DebugProjections = () => {
 
     // Add vendor transactions (purchase orders)
     vendorTransactions
-      .filter(tx => tx.type === 'purchase_order' && tx.status !== 'completed')
+      .filter(tx => {
+        if (tx.type !== 'purchase_order' || tx.status === 'completed') return false;
+        // Skip credit card purchases - they're already in credit card balance
+        if (tx.creditCardId) return false;
+        return true;
+      })
       .forEach(tx => {
         const eventDate = tx.dueDate || tx.transactionDate;
         events.push({
