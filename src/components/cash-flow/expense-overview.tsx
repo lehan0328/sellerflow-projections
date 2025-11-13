@@ -84,6 +84,15 @@ export const ExpenseOverview = ({ expenses, onEditExpense, onDeleteExpense }: Ex
     return filteredAndSortedExpenses.filter(e => e.status === 'pending').length;
   }, [filteredAndSortedExpenses]);
 
+  const thisMonthAmount = useMemo(() => {
+    const today = new Date();
+    return filteredAndSortedExpenses.filter(expense => {
+      if (!expense.paymentDate) return false;
+      const paymentDate = new Date(expense.paymentDate);
+      return paymentDate.getMonth() === today.getMonth() && paymentDate.getFullYear() === today.getFullYear();
+    }).reduce((sum, expense) => sum + expense.amount, 0);
+  }, [filteredAndSortedExpenses]);
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'paid':
@@ -129,16 +138,14 @@ export const ExpenseOverview = ({ expenses, onEditExpense, onDeleteExpense }: Ex
 
         <Card className="border-l-4 border-l-primary">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">This Period</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">This Month</CardTitle>
             <div className="p-2 bg-primary/10 rounded-lg">
               <Calendar className="h-4 w-4 text-primary" />
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{formatCurrency(totalExpenses)}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {dateRange === "3days" ? "Last 3 days" : dateRange === "7days" ? "Last 7 days" : "Last 30 days"}
-            </p>
+            <div className="text-3xl font-bold text-primary">{formatCurrency(thisMonthAmount)}</div>
+            <p className="text-xs text-muted-foreground mt-1">Due this month</p>
           </CardContent>
         </Card>
       </div>
