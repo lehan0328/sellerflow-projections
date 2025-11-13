@@ -1,4 +1,4 @@
-import { addDays, addWeeks, addMonths, addYears, startOfDay, isBefore, isAfter, getDay } from 'date-fns';
+import { addDays, addWeeks, addMonths, addYears, startOfDay, isBefore, isAfter, getDay, isSameDay } from 'date-fns';
 
 export type RecurringFrequency = 'daily' | 'weekly' | 'bi-weekly' | 'monthly' | '2-months' | '3-months' | 'weekdays';
 
@@ -15,11 +15,16 @@ export interface RecurringTransaction {
 
 /**
  * Generate all occurrence dates for a recurring transaction within a date range
+ * @param transaction - The recurring transaction
+ * @param rangeStart - Start of the date range
+ * @param rangeEnd - End of the date range
+ * @param exceptions - Optional array of dates to exclude (skipped dates)
  */
 export function generateRecurringDates(
   transaction: RecurringTransaction,
   rangeStart: Date,
-  rangeEnd: Date
+  rangeEnd: Date,
+  exceptions?: Date[]
 ): Date[] {
   if (!transaction.is_active) return [];
 
@@ -91,6 +96,15 @@ export function generateRecurringDates(
         // Unknown frequency, stop
         return dates;
     }
+  }
+
+  // Filter out exception dates
+  if (exceptions && exceptions.length > 0) {
+    return dates.filter(date => 
+      !exceptions.some(exception => 
+        isSameDay(startOfDay(date), startOfDay(exception))
+      )
+    );
   }
 
   return dates;
