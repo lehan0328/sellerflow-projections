@@ -4,10 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { DollarSign, TrendingDown, Search, Edit, Trash2, Calendar } from "lucide-react";
+import { DollarSign, TrendingDown, Search, Edit, Trash2, Calendar, Receipt, CreditCard } from "lucide-react";
 import { format } from "date-fns";
 import { cn, formatCurrency } from "@/lib/utils";
 import { useState, useMemo } from "react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface ExpenseItem {
   id: string;
@@ -86,11 +87,11 @@ export const ExpenseOverview = ({ expenses, onEditExpense, onDeleteExpense }: Ex
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'paid':
-        return 'bg-green-100 text-green-800 border-green-200';
+        return 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-400 dark:border-emerald-800';
       case 'pending':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+        return 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950 dark:text-amber-400 dark:border-amber-800';
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return 'bg-muted text-muted-foreground border-border';
     }
   };
 
@@ -98,38 +99,44 @@ export const ExpenseOverview = ({ expenses, onEditExpense, onDeleteExpense }: Ex
     <div className="space-y-6">
       {/* Summary Cards */}
       <div className="grid gap-4 md:grid-cols-3">
-        <Card>
+        <Card className="border-l-4 border-l-red-500">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Expenses</CardTitle>
+            <div className="p-2 bg-red-100 dark:bg-red-900/20 rounded-lg">
+              <DollarSign className="h-4 w-4 text-red-600 dark:text-red-400" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">{formatCurrency(totalExpenses)}</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="text-3xl font-bold text-red-600 dark:text-red-400">{formatCurrency(totalExpenses)}</div>
+            <p className="text-xs text-muted-foreground mt-1">
               {filteredAndSortedExpenses.length} expense{filteredAndSortedExpenses.length !== 1 ? 's' : ''}
             </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-l-4 border-l-amber-500">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending</CardTitle>
-            <TrendingDown className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-muted-foreground">Pending</CardTitle>
+            <div className="p-2 bg-amber-100 dark:bg-amber-900/20 rounded-lg">
+              <TrendingDown className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{pendingExpenses}</div>
-            <p className="text-xs text-muted-foreground">Awaiting payment</p>
+            <div className="text-3xl font-bold text-amber-600 dark:text-amber-400">{pendingExpenses}</div>
+            <p className="text-xs text-muted-foreground mt-1">Awaiting payment</p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-l-4 border-l-primary">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">This Period</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-muted-foreground">This Period</CardTitle>
+            <div className="p-2 bg-primary/10 rounded-lg">
+              <Calendar className="h-4 w-4 text-primary" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(totalExpenses)}</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="text-3xl font-bold">{formatCurrency(totalExpenses)}</div>
+            <p className="text-xs text-muted-foreground mt-1">
               {dateRange === "3days" ? "Last 3 days" : dateRange === "7days" ? "Last 7 days" : "Last 30 days"}
             </p>
           </CardContent>
@@ -137,22 +144,37 @@ export const ExpenseOverview = ({ expenses, onEditExpense, onDeleteExpense }: Ex
       </div>
 
       {/* Filters and Table */}
-      <Card>
-        <CardHeader>
+      <Card className="border-t-4 border-t-primary">
+        <CardHeader className="pb-3">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <CardTitle>Expense Details</CardTitle>
+            <div className="space-y-1">
+              <CardTitle className="text-xl flex items-center gap-2">
+                <Receipt className="h-5 w-5 text-primary" />
+                Expense Details
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Track and manage all your business expenses
+              </p>
+            </div>
             <div className="flex flex-col gap-2 md:flex-row md:items-center">
-              <div className="relative flex-1 md:w-64">
-                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search expenses..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-8"
-                />
-              </div>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="relative flex-1 md:w-64">
+                      <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Search by description, category..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-9 h-9"
+                      />
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>Search expenses by description or category</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
               <Select value={dateRange} onValueChange={setDateRange}>
-                <SelectTrigger className="w-full md:w-[140px]">
+                <SelectTrigger className="w-full md:w-[140px] h-9">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -165,95 +187,145 @@ export const ExpenseOverview = ({ expenses, onEditExpense, onDeleteExpense }: Ex
             </div>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-0">
           {filteredAndSortedExpenses.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <TrendingDown className="mx-auto h-12 w-12 mb-4 opacity-50" />
-              <p className="text-lg font-medium mb-1">No expenses found</p>
-              <p className="text-sm">Your expenses will appear here</p>
+            <div className="text-center py-12 text-muted-foreground border border-dashed rounded-lg">
+              <div className="flex flex-col items-center gap-2">
+                <div className="p-4 bg-muted/50 rounded-full">
+                  <Receipt className="h-8 w-8 opacity-50" />
+                </div>
+                <p className="text-lg font-medium text-foreground">No expenses found</p>
+                <p className="text-sm">Your expenses will appear here once added</p>
+              </div>
             </div>
           ) : (
-            <div className="rounded-md border">
+            <div className="rounded-lg border overflow-hidden">
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead>
+                  <TableRow className="bg-muted/50">
+                    <TableHead className="font-semibold">
                       <Button
                         variant="ghost"
+                        size="sm"
                         onClick={() => {
                           setSortBy('description');
                           setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
                         }}
-                        className="hover:bg-transparent"
+                        className="hover:bg-transparent -ml-3 h-8 font-semibold"
                       >
                         Description
                       </Button>
                     </TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead>
+                    <TableHead className="font-semibold">Category</TableHead>
+                    <TableHead className="font-semibold">
                       <Button
                         variant="ghost"
+                        size="sm"
                         onClick={() => {
                           setSortBy('amount');
                           setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
                         }}
-                        className="hover:bg-transparent"
+                        className="hover:bg-transparent -ml-3 h-8 font-semibold"
                       >
                         Amount
                       </Button>
                     </TableHead>
-                    <TableHead>
+                    <TableHead className="font-semibold">
                       <Button
                         variant="ghost"
+                        size="sm"
                         onClick={() => {
                           setSortBy('paymentDate');
                           setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
                         }}
-                        className="hover:bg-transparent"
+                        className="hover:bg-transparent -ml-3 h-8 font-semibold"
                       >
-                        Due Date
+                        Payment Date
                       </Button>
                     </TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead className="font-semibold">Payment Method</TableHead>
+                    <TableHead className="font-semibold">Status</TableHead>
+                    <TableHead className="text-right font-semibold">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredAndSortedExpenses.map((expense) => (
-                    <TableRow key={expense.id}>
-                      <TableCell className="font-medium">{expense.description}</TableCell>
+                    <TableRow 
+                      key={expense.id}
+                      className="hover:bg-muted/30 transition-colors"
+                    >
                       <TableCell>
-                        <Badge variant="outline">{expense.category || 'Uncategorized'}</Badge>
+                        <div className="flex items-center gap-2">
+                          <div className="p-1.5 bg-red-100 dark:bg-red-900/20 rounded">
+                            <Receipt className="h-3.5 w-3.5 text-red-600 dark:text-red-400" />
+                          </div>
+                          <span className="font-medium">{expense.description}</span>
+                        </div>
                       </TableCell>
-                      <TableCell className="font-medium text-red-600">
+                      <TableCell>
+                        <Badge variant="secondary" className="font-normal">
+                          {expense.category || 'Uncategorized'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="font-semibold text-red-600 dark:text-red-400">
                         {formatCurrency(expense.amount)}
                       </TableCell>
-                      <TableCell>{format(new Date(expense.paymentDate), 'MMM dd, yyyy')}</TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {format(new Date(expense.paymentDate), 'MMM dd, yyyy')}
+                      </TableCell>
                       <TableCell>
-                        <Badge className={cn("border", getStatusColor(expense.status))}>
+                        {expense.creditCardId ? (
+                          <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                            <CreditCard className="h-3.5 w-3.5" />
+                            <span>Credit Card</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                            <DollarSign className="h-3.5 w-3.5" />
+                            <span>Cash</span>
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={cn("border font-medium", getStatusColor(expense.status))}>
                           {expense.status}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
+                        <div className="flex justify-end gap-1">
                           {onEditExpense && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => onEditExpense(expense)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => onEditExpense(expense)}
+                                    className="h-8 w-8 p-0"
+                                  >
+                                    <Edit className="h-3.5 w-3.5" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Edit expense</TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
                           )}
                           {onDeleteExpense && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => onDeleteExpense(expense)}
-                              className="text-destructive hover:text-destructive"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => onDeleteExpense(expense)}
+                                    className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Delete expense</TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
                           )}
                         </div>
                       </TableCell>

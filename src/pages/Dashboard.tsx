@@ -1508,6 +1508,9 @@ const Dashboard = () => {
       creditCardId: expenseData.creditCardId || null,
     });
 
+    // Refetch transactions to update the UI
+    await refetchTransactions();
+
     toast({
       title: "Expense added!",
       description: `${expenseData.description} has been recorded`,
