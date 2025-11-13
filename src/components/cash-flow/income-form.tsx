@@ -781,22 +781,6 @@ export const IncomeForm = ({
                         }
                         return null;
                       })()}
-
-                      {!formData.isRecurring && (
-                        <Alert>
-                          <AlertDescription className="text-sm">
-                            Note: This expense will be recorded on the selected credit card.
-                          </AlertDescription>
-                        </Alert>
-                      )}
-
-                      {formData.isRecurring && (
-                        <Alert>
-                          <AlertDescription className="text-sm">
-                            Note: Your card will be charged when this expense is due, not now. This only tracks which card will be used for future charges.
-                          </AlertDescription>
-                        </Alert>
-                      )}
                     </>
                   )}
                 </div>
