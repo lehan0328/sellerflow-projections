@@ -130,6 +130,11 @@ const App = () => (
           <Route path="/docs/getting-started" element={<DocsGettingStarted />} />
           <Route path="/docs/amazon-integration" element={<DocsAmazonIntegration />} />
           <Route path="/docs/faq" element={<DocsFAQ />} />
+          <Route path="/guides" element={
+            <ProtectedRoute>
+              <Guides />
+            </ProtectedRoute>
+          } />
           <Route path="/guides/purchase-orders" element={
             <ProtectedRoute>
               <GuidesPurchaseOrders />
