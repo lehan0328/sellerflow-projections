@@ -462,6 +462,34 @@ export const IncomeForm = ({
               </div>
             )}
             
+            {/* Selected Payee Display - only show if not recurring */}
+            {selectedPayeeId && !formData.isRecurring && (
+              <div className="p-3 bg-accent/20 rounded-lg border">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <Input
+                      value={formData.description}
+                      onChange={(e) => handleInputChange("description", e.target.value)}
+                      placeholder="Payee name"
+                      className="font-medium bg-transparent border-none shadow-none p-0 h-auto focus-visible:ring-0"
+                    />
+                  </div>
+                  <Button 
+                    type="button" 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => {
+                      setSelectedPayeeId(null);
+                      setFormData(prev => ({ ...prev, description: "" }));
+                      setPayeeSearchTerm("");
+                    }}
+                  >
+                    Change Payee
+                  </Button>
+                </div>
+              </div>
+            )}
+            
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Type toggle for recurring entries */}
               {formData.isRecurring && (
@@ -543,7 +571,7 @@ export const IncomeForm = ({
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Receiving Date *</Label>
+                    <Label>Due Date *</Label>
                     <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
                       <PopoverTrigger asChild>
                         <Button
