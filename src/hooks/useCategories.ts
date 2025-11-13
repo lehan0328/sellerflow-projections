@@ -5,12 +5,12 @@ import { useToast } from "@/hooks/use-toast";
 export interface Category {
   id: string;
   name: string;
-  type: 'expense' | 'income';
+  type: 'expense' | 'income' | 'purchase_order';
   is_default: boolean;
   is_recurring?: boolean;
 }
 
-export function useCategories(type: 'expense' | 'income', isRecurring?: boolean) {
+export function useCategories(type: 'expense' | 'income' | 'purchase_order', isRecurring?: boolean) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();

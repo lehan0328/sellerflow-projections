@@ -20,6 +20,7 @@ export function CategoryManagement() {
   // Regular categories
   const expenseCategories = useCategories('expense', false);
   const incomeCategories = useCategories('income', false);
+  const purchaseOrderCategories = useCategories('purchase_order', false);
   
   // Recurring categories
   const recurringExpenseCategories = useCategories('expense', true);
@@ -27,10 +28,11 @@ export function CategoryManagement() {
   
   const [newExpenseCategory, setNewExpenseCategory] = useState("");
   const [newIncomeCategory, setNewIncomeCategory] = useState("");
+  const [newPurchaseOrderCategory, setNewPurchaseOrderCategory] = useState("");
   const [newRecurringExpenseCategory, setNewRecurringExpenseCategory] = useState("");
   const [newRecurringIncomeCategory, setNewRecurringIncomeCategory] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [categoryToDelete, setCategoryToDelete] = useState<{ id: string; name: string; type: 'expense' | 'income'; isRecurring: boolean } | null>(null);
+  const [categoryToDelete, setCategoryToDelete] = useState<{ id: string; name: string; type: 'expense' | 'income' | 'purchase_order'; isRecurring: boolean } | null>(null);
 
   const handleAddExpenseCategory = async () => {
     if (!newExpenseCategory.trim()) return;
@@ -42,6 +44,12 @@ export function CategoryManagement() {
     if (!newIncomeCategory.trim()) return;
     await incomeCategories.addCategory(newIncomeCategory.trim(), false);
     setNewIncomeCategory("");
+  };
+
+  const handleAddPurchaseOrderCategory = async () => {
+    if (!newPurchaseOrderCategory.trim()) return;
+    await purchaseOrderCategories.addCategory(newPurchaseOrderCategory.trim(), false);
+    setNewPurchaseOrderCategory("");
   };
 
   const handleAddRecurringExpenseCategory = async () => {
@@ -56,7 +64,7 @@ export function CategoryManagement() {
     setNewRecurringIncomeCategory("");
   };
 
-  const handleDeleteClick = (id: string, name: string, type: 'expense' | 'income', isRecurring: boolean) => {
+  const handleDeleteClick = (id: string, name: string, type: 'expense' | 'income' | 'purchase_order', isRecurring: boolean) => {
     setCategoryToDelete({ id, name, type, isRecurring });
     setDeleteDialogOpen(true);
   };
@@ -73,8 +81,10 @@ export function CategoryManagement() {
     } else {
       if (categoryToDelete.type === 'expense') {
         await expenseCategories.deleteCategory(categoryToDelete.id);
-      } else {
+      } else if (categoryToDelete.type === 'income') {
         await incomeCategories.deleteCategory(categoryToDelete.id);
+      } else if (categoryToDelete.type === 'purchase_order') {
+        await purchaseOrderCategories.deleteCategory(categoryToDelete.id);
       }
     }
     
@@ -92,8 +102,9 @@ export function CategoryManagement() {
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="expense" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="expense">Expense Categories</TabsTrigger>
+            <TabsTrigger value="purchase-order">Purchase Order Categories</TabsTrigger>
             <TabsTrigger value="income">Income Categories</TabsTrigger>
             <TabsTrigger value="recurring-expense">Recurring Expenses</TabsTrigger>
             <TabsTrigger value="recurring-income">Recurring Income</TabsTrigger>
@@ -126,6 +137,42 @@ export function CategoryManagement() {
                       variant="ghost"
                       size="icon"
                       onClick={() => handleDeleteClick(category.id, category.name, 'expense', false)}
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
+                ))
+              )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="purchase-order" className="space-y-4">
+            <div className="flex gap-2">
+              <Input
+                placeholder="New purchase order category"
+                value={newPurchaseOrderCategory}
+                onChange={(e) => setNewPurchaseOrderCategory(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleAddPurchaseOrderCategory()}
+              />
+              <Button onClick={handleAddPurchaseOrderCategory} size="icon">
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+
+            <div className="space-y-2">
+              {purchaseOrderCategories.isLoading ? (
+                <p className="text-sm text-muted-foreground">Loading...</p>
+              ) : (
+                purchaseOrderCategories.categories.map((category) => (
+                  <div
+                    key={category.id}
+                    className="flex items-center justify-between p-3 rounded-lg border bg-card min-h-[52px]"
+                  >
+                    <span className="text-sm font-medium">{category.name}</span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleDeleteClick(category.id, category.name, 'purchase_order', false)}
                     >
                       <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
