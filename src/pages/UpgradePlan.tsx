@@ -1503,11 +1503,11 @@ const UpgradePlan = () => {
                         <Button
                           size="lg"
                           onClick={handleCheckoutAddons}
-                          disabled={isLoading}
+                          disabled={isLoading || is_trialing}
                           className="bg-gradient-primary"
                         >
                           <ShoppingCart className="h-4 w-4 mr-2" />
-                          Checkout Now
+                          {is_trialing ? 'Available After Trial' : 'Checkout Now'}
                         </Button>
                       </div>
                     </div>
