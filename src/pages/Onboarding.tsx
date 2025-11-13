@@ -1165,7 +1165,10 @@ export default function Onboarding() {
       <PlaidAccountConfirmationDialog
         open={showPlaidConfirmation}
         onOpenChange={setShowPlaidConfirmation}
-        accounts={plaidMetadata?.accounts || []}
+        accounts={plaidMetadata?.accounts?.map((acc: any) => ({
+          ...acc,
+          account_id: acc.id || acc.account_id
+        })) || []}
         institutionName={plaidMetadata?.institution?.name || ''}
         onConfirm={handleConfirmPlaidAccounts}
       />
