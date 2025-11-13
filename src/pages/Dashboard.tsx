@@ -113,6 +113,7 @@ import { LimitEnforcementModal } from "@/components/LimitEnforcementModal";
 import { LimitCheckProvider } from "@/contexts/LimitCheckContext";
 
 import { useVendors, type Vendor } from "@/hooks/useVendors";
+import { usePayees } from "@/hooks/usePayees";
 import { useTransactions } from "@/hooks/useTransactions";
 import { useVendorTransactions } from "@/hooks/useVendorTransactions";
 import { useBankAccounts } from "@/hooks/useBankAccounts";
@@ -417,6 +418,7 @@ const Dashboard = () => {
     cleanupOrphanedVendors,
     refetch: refetchVendors,
   } = useVendors();
+  const { payees, addPayee } = usePayees();
   const {
     transactions,
     addTransaction,
@@ -3534,8 +3536,8 @@ const Dashboard = () => {
               initialType="expense"
               customers={customers}
               onAddCustomer={addCustomer}
-              vendors={vendors}
-              onAddVendor={addVendor}
+              payees={payees}
+              onAddPayee={addPayee}
             />
           )}
 
