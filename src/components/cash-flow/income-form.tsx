@@ -61,7 +61,7 @@ export const IncomeForm = ({
   onAddPayee,
   initialType = "income"
 }: IncomeFormProps) => {
-  const { categories: incomeCategories, addCategory: addIncomeCategory } = useCategories('income', isRecurring);
+  const { categories: incomeCategories, addCategory: addIncomeCategory, refetch: refetchIncomeCategories } = useCategories('income', isRecurring);
   const { categories: expenseCategories, addCategory: addExpenseCategory } = useCategories('expense', isRecurring);
   const { creditCards } = useCreditCards();
   const [showAddCategory, setShowAddCategory] = useState(false);
@@ -854,11 +854,12 @@ export const IncomeForm = ({
       
       {/* Customer Form Modal */}
       {onAddCustomer && (
-        <CustomerForm 
-          open={showCustomerForm}
-          onOpenChange={setShowCustomerForm}
-          onAddCustomer={handleAddCustomerFromForm}
-        />
+      <CustomerForm
+        open={showCustomerForm}
+        onOpenChange={setShowCustomerForm}
+        onAddCustomer={handleAddCustomerFromForm}
+        onCategoryAdded={refetchIncomeCategories}
+      />
       )}
 
       {/* Payee Form Modal */}

@@ -16,9 +16,10 @@ interface CustomerFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onAddCustomer: (customer: any) => void;
+  onCategoryAdded?: () => void;
 }
 
-export const CustomerForm = ({ open, onOpenChange, onAddCustomer }: CustomerFormProps) => {
+export const CustomerForm = ({ open, onOpenChange, onAddCustomer, onCategoryAdded }: CustomerFormProps) => {
   const { categories, addCategory, refetch: refetchCategories } = useCategories('income', false);
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [formData, setFormData] = useState({
@@ -131,6 +132,7 @@ export const CustomerForm = ({ open, onOpenChange, onAddCustomer }: CustomerForm
         onAddCategory={async (name) => {
           await addCategory(name);
           await refetchCategories();
+          onCategoryAdded?.();
           setFormData(prev => ({
             ...prev,
             category: name
