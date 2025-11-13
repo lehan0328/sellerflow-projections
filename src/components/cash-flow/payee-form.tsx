@@ -54,6 +54,11 @@ export function PayeeForm({
       return;
     }
 
+    if (!formData.category) {
+      toast.error("Please select a category");
+      return;
+    }
+
     // Check for duplicates
     const isDuplicate = existingPayees.some(
       (payee) => payee.name.toLowerCase() === formData.name.trim().toLowerCase()
@@ -96,6 +101,7 @@ export function PayeeForm({
       const newCategory = await addCategory(categoryName);
       if (newCategory) {
         setFormData(prev => ({ ...prev, category: newCategory.name }));
+        setShowAddCategory(false);
         toast.success("Category added successfully");
       }
     } catch (error) {
@@ -127,30 +133,29 @@ export function PayeeForm({
 
             {/* Category Selection */}
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="category">Category</Label>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowAddCategory(true)}
-                  className="h-auto p-0 text-xs text-primary hover:text-primary/80"
-                >
-                  + Add New Category
-                </Button>
-              </div>
+              <Label htmlFor="category">Category *</Label>
               <select
                 id="category"
                 value={formData.category}
-                onChange={(e) => handleInputChange("category", e.target.value)}
+                onChange={(e) => {
+                  if (e.target.value === "_add_new_") {
+                    setShowAddCategory(true);
+                  } else {
+                    handleInputChange("category", e.target.value);
+                  }
+                }}
                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                required
               >
-                <option value="">Select a category (optional)</option>
+                <option value="">Select a category</option>
                 {expenseCategories.map((cat) => (
                   <option key={cat.id} value={cat.name}>
                     {cat.name}
                   </option>
                 ))}
+                <option value="_add_new_" className="font-semibold text-primary">
+                  + Add New Category
+                </option>
               </select>
             </div>
 
