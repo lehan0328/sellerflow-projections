@@ -43,6 +43,8 @@ interface Customer {
   account_id?: string;
   is_account_owner?: boolean;
   team_members?: Customer[];
+  amazon_accounts_count?: number;
+  bank_accounts_count?: number;
 }
 
 interface ConversionMetrics {
@@ -177,6 +179,20 @@ export const AdminCustomers = () => {
             calculatedRenewalDate = lastPaid.toISOString();
           }
 
+          // Count Amazon accounts for this user/account
+          const { count: amazonCount } = await supabase
+            .from('amazon_accounts')
+            .select('*', { count: 'exact', head: true })
+            .eq('is_active', true)
+            .or(`user_id.eq.${profile.user_id},account_id.eq.${profile.account_id || profile.user_id}`);
+
+          // Count Bank accounts for this user/account  
+          const { count: bankCount } = await supabase
+            .from('bank_accounts')
+            .select('*', { count: 'exact', head: true })
+            .eq('is_active', true)
+            .or(`user_id.eq.${profile.user_id},account_id.eq.${profile.account_id || profile.user_id}`);
+
           return {
             ...profile,
             email: emailData?.emails?.[profile.user_id] || 'Unknown',
@@ -189,6 +205,8 @@ export const AdminCustomers = () => {
             role: userRole?.role,
             account_owner_company: accountOwnerCompany,
             referral_code: referralData?.referral_code,
+            amazon_accounts_count: amazonCount || 0,
+            bank_accounts_count: bankCount || 0,
             affiliate_code: affiliateData?.affiliate_code,
             team_members: []
           };
@@ -510,8 +528,8 @@ export const AdminCustomers = () => {
         'Joined',
         'Status',
         'Plan',
-        'Discount',
-        'Amazon Payouts (30d)',
+        'Amazon Accounts',
+        'Bank Accounts',
         'Renewal Date',
         'Last Paid',
         'Churn Date',
@@ -533,11 +551,8 @@ export const AdminCustomers = () => {
           new Date(customer.created_at).toLocaleDateString('en-US'),
           status.label,
           customer.stripe_plan_name || formatPlanName(customer.plan_tier || customer.plan_override) || '-',
-          customer.referral_code ? 'User Referral' : customer.affiliate_code ? 'Affiliate/Influencer' : '-',
-          customer.referral_code || customer.affiliate_code || (customer.plan_override === 'referred_user_discount' || customer.discount_redeemed_at ? 'Legacy' : '-'),
-          customer.referral_code || customer.affiliate_code || customer.plan_override === 'referred_user_discount' || customer.discount_redeemed_at ? '10% off' : '-',
-          customer.referral_code || customer.affiliate_code || customer.plan_override === 'referred_user_discount' || customer.discount_redeemed_at ? '3 months' : '-',
-          `$${(customer.amazon_revenue || 0).toLocaleString('en-US')}`,
+          customer.amazon_accounts_count || 0,
+          customer.bank_accounts_count || 0,
           customer.renewal_date ? new Date(customer.renewal_date).toLocaleDateString('en-US') : '-',
           customer.last_paid_date ? new Date(customer.last_paid_date).toLocaleDateString('en-US') : '-',
           customer.churn_date ? new Date(customer.churn_date).toLocaleDateString('en-US') : '-',
@@ -721,6 +736,8 @@ export const AdminCustomers = () => {
                 <TableHead>Joined</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>{viewMode === 'churned' ? 'Last Plan' : 'Plan'}</TableHead>
+                <TableHead>Amazon</TableHead>
+                <TableHead>Bank</TableHead>
                 <TableHead>Renewal Date</TableHead>
                 <TableHead>Last Paid</TableHead>
                 {viewMode === 'churned' && <TableHead>Churn Date</TableHead>}
@@ -730,7 +747,7 @@ export const AdminCustomers = () => {
             <TableBody>
               {paginatedCustomers.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={11} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={13} className="text-center py-8 text-muted-foreground">
                     No customers found
                   </TableCell>
                 </TableRow>
@@ -831,6 +848,30 @@ export const AdminCustomers = () => {
                           )}
                         </div>
                       </TableCell>
+                      {/* Amazon Accounts Column */}
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          {customer.amazon_accounts_count !== undefined && customer.amazon_accounts_count > 0 ? (
+                            <Badge variant="default" className="text-xs">
+                              {customer.amazon_accounts_count}
+                            </Badge>
+                          ) : (
+                            <span className="text-muted-foreground text-sm">-</span>
+                          )}
+                        </div>
+                      </TableCell>
+                      {/* Bank Accounts Column */}
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          {customer.bank_accounts_count !== undefined && customer.bank_accounts_count > 0 ? (
+                            <Badge variant="default" className="text-xs">
+                              {customer.bank_accounts_count}
+                            </Badge>
+                          ) : (
+                            <span className="text-muted-foreground text-sm">-</span>
+                          )}
+                        </div>
+                      </TableCell>
                       <TableCell>
                         {customer.renewal_date ? (
                           <span className="text-sm">
@@ -925,6 +966,36 @@ export const AdminCustomers = () => {
                             <Badge variant="outline" className="text-xs capitalize">
                               {member.role || 'staff'}
                             </Badge>
+                          </TableCell>
+                          {/* Amazon Accounts for Team Member */}
+                          <TableCell>
+                            <div className="flex items-center gap-1">
+                              {member.amazon_accounts_count !== undefined && member.amazon_accounts_count > 0 ? (
+                                <Badge variant="default" className="text-xs">
+                                  {member.amazon_accounts_count}
+                                </Badge>
+                              ) : (
+                                <span className="text-muted-foreground text-sm">-</span>
+                              )}
+                            </div>
+                          </TableCell>
+                          {/* Bank Accounts for Team Member */}
+                          <TableCell>
+                            <div className="flex items-center gap-1">
+                              {member.bank_accounts_count !== undefined && member.bank_accounts_count > 0 ? (
+                                <Badge variant="default" className="text-xs">
+                                  {member.bank_accounts_count}
+                                </Badge>
+                              ) : (
+                                <span className="text-muted-foreground text-sm">-</span>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <span className="text-muted-foreground">-</span>
+                          </TableCell>
+                          <TableCell>
+                            <span className="text-muted-foreground">-</span>
                           </TableCell>
                           {viewMode === 'churned' && (
                             <TableCell>
