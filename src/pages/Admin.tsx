@@ -14,7 +14,8 @@ import {
   UserPlus,
   Megaphone,
   LayoutDashboard,
-  Tag
+  Tag,
+  Shield
 } from "lucide-react";
 import { AdminCustomers } from "@/components/admin/AdminCustomers";
 import { AdminSupportTickets } from "@/components/admin/AdminSupportTickets";
@@ -30,6 +31,7 @@ import { AdminSendUpdate } from "@/components/admin/AdminSendUpdate";
 import { AdminDashboardOverview } from "@/components/admin/AdminDashboardOverview";
 import { AdminStaffDirectory } from "@/components/admin/AdminStaffDirectory";
 import { AdminCodeTracking } from "@/components/admin/AdminCodeTracking";
+import { AdminStripeAudit } from "@/components/admin/AdminStripeAudit";
 
 const Admin = () => {
   const { isAdmin, userRole } = useAdmin();
@@ -52,6 +54,7 @@ const Admin = () => {
           { value: "signups", label: "Signup Analytics", icon: UserPlus, rolesAllowed: ['admin'] },
           { value: "customers", label: "Customers", icon: Users, rolesAllowed: ['admin'] },
           { value: "subscriptions", label: "Subscriptions", icon: CreditCard, rolesAllowed: ['admin'] },
+          { value: "stripe-audit", label: "Stripe Audit", icon: Shield, rolesAllowed: ['admin'] },
           { value: "code-tracking", label: "Code Tracking", icon: Tag, rolesAllowed: ['admin'] },
           { value: "send-update", label: "Send Update", icon: Megaphone, rolesAllowed: ['admin'] },
           { value: "support-dashboard", label: "Support Dashboard", icon: MessageSquare, rolesAllowed: ['admin'] },
@@ -200,6 +203,10 @@ const Admin = () => {
 
             <TabsContent value="subscriptions" className="m-0">
               <AdminSubscriptions />
+            </TabsContent>
+
+            <TabsContent value="stripe-audit" className="m-0">
+              <AdminStripeAudit />
             </TabsContent>
 
             <TabsContent value="send-update" className="m-0">
