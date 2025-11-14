@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Gift, Users, TrendingUp, DollarSign, Plus, Trash2, Eye } from "lucide-react";
@@ -44,6 +45,8 @@ export function AdminCodeTracking() {
   const [showUsersDialog, setShowUsersDialog] = useState(false);
   const [selectedCode, setSelectedCode] = useState<string>('');
   const [codeUsers, setCodeUsers] = useState<Array<{email: string; created_at: string; hasSubscription: boolean}>>([]);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [codeToDelete, setCodeToDelete] = useState<{id: string; name: string} | null>(null);
 
   useEffect(() => {
     fetchCodeTracking();
@@ -209,15 +212,18 @@ export function AdminCodeTracking() {
   };
 
   const handleDeleteCode = async (codeId: string, codeName: string) => {
-    if (!confirm(`Are you sure you want to delete the code "${codeName}"?\n\nNote: Users who already used this code will keep their existing discounts. This action cannot be undone.`)) {
-      return;
-    }
+    setCodeToDelete({ id: codeId, name: codeName });
+    setShowDeleteDialog(true);
+  };
+
+  const confirmDeleteCode = async () => {
+    if (!codeToDelete) return;
 
     try {
       const { error } = await supabase
         .from('referral_codes')
         .delete()
-        .eq('id', codeId);
+        .eq('id', codeToDelete.id);
 
       if (error) {
         toast.error('Failed to delete code');
@@ -226,6 +232,8 @@ export function AdminCodeTracking() {
 
       toast.success('Code deleted successfully');
       fetchCodeTracking();
+      setShowDeleteDialog(false);
+      setCodeToDelete(null);
     } catch (error) {
       console.error('Error deleting code:', error);
       toast.error('Failed to delete code');
@@ -515,6 +523,26 @@ export function AdminCodeTracking() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Code "{codeToDelete?.name}"?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. The code will be permanently deleted.
+              <br /><br />
+              <strong>Note:</strong> Users who already used this code will keep their existing discounts.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setCodeToDelete(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteCode} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete Code
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
