@@ -2714,11 +2714,13 @@ const Dashboard = () => {
               onNavigate={() => handleSectionChange("match-transactions")}
             />
 
-            {/* Session Health & Account Status */}
-            <div className="space-y-3">
-              <AccountStatusWidget />
-              <DataTroubleshootingPanel />
-            </div>
+            {/* Session Health & Account Status - Admin Only */}
+            {isWebsiteAdmin && (
+              <div className="space-y-3">
+                <AccountStatusWidget />
+                <DataTroubleshootingPanel />
+              </div>
+            )}
 
             {/* Main Layout: Stats Sidebar + Cash Flow Visualization */}
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-3 lg:h-[620px]">
