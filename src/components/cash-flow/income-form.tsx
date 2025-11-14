@@ -10,7 +10,7 @@ import { AddCategoryDialog } from "./add-category-dialog";
 import { Plus, TrendingUp, TrendingDown, CreditCard, AlertCircle } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, Search } from "lucide-react";
+import { CalendarIcon, Search, Landmark } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -407,10 +407,23 @@ export const IncomeForm = ({
                             className="p-2 hover:bg-accent cursor-pointer border-b last:border-b-0"
                             onClick={() => handlePayeeSelect(payee)}
                           >
-                            <div className="font-medium text-sm">{payee.name}</div>
-                            {payee.category && (
-                              <div className="text-xs text-muted-foreground mt-0.5">{payee.category}</div>
-                            )}
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex-1">
+                                <div className="font-medium text-sm">{payee.name}</div>
+                                {payee.category && (
+                                  <div className="text-xs text-muted-foreground mt-0.5">{payee.category}</div>
+                                )}
+                              </div>
+                              {payee.payment_method && (
+                                <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                                  {payee.payment_method === 'credit-card' ? (
+                                    <CreditCard className="h-3 w-3" />
+                                  ) : (
+                                    <Landmark className="h-3 w-3" />
+                                  )}
+                                </div>
+                              )}
+                            </div>
                           </div>
                         ))
                       )}

@@ -11,7 +11,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { CalendarIcon, Plus, Trash2, Search, Upload, Loader2, FileText } from "lucide-react";
+import { CalendarIcon, Plus, Trash2, Search, Upload, Loader2, FileText, CreditCard, Landmark } from "lucide-react";
 import { format, addDays, parse } from "date-fns";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
@@ -742,8 +742,12 @@ export const PurchaseOrderForm = ({
                                   {vendor.category && <div className="text-xs text-muted-foreground">{vendor.category}</div>}
                                 </div>
                                 {vendor.paymentMethod && (
-                                  <div className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground whitespace-nowrap">
-                                    {vendor.paymentMethod === 'credit-card' ? '💳 Card' : '🏦 Bank'}
+                                  <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                                    {vendor.paymentMethod === 'credit-card' ? (
+                                      <CreditCard className="h-3 w-3" />
+                                    ) : (
+                                      <Landmark className="h-3 w-3" />
+                                    )}
                                   </div>
                                 )}
                               </div>
