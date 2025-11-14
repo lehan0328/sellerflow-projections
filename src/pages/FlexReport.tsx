@@ -284,7 +284,7 @@ const FlexReport = () => {
         } else if (el.textContent?.includes('Cash Flow Management')) {
           el.className = el.className.replace('bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent', 'text-blue-600');
         } else if (el.textContent?.includes('$')) {
-          el.className = el.className.replace('bg-gradient-to-r from-emerald-600 via-green-600 to-emerald-600 bg-clip-text text-transparent', 'text-emerald-600');
+          el.className = el.className.replace('bg-gradient-to-r from-blue-600 via-blue-700 to-blue-600 bg-clip-text text-transparent', 'text-blue-600');
         } else if (el.textContent?.includes('Auren')) {
           el.className = el.className.replace('bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 bg-clip-text text-transparent', 'text-blue-600');
         }
@@ -332,7 +332,7 @@ const FlexReport = () => {
           } else if (el.textContent?.includes('Cash Flow Management')) {
             el.className = el.className.replace('bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent', 'text-blue-600');
           } else if (el.textContent?.includes('$')) {
-            el.className = el.className.replace('bg-gradient-to-r from-emerald-600 via-green-600 to-emerald-600 bg-clip-text text-transparent', 'text-emerald-600');
+            el.className = el.className.replace('bg-gradient-to-r from-blue-600 via-blue-700 to-blue-600 bg-clip-text text-transparent', 'text-blue-600');
           } else if (el.textContent?.includes('Auren')) {
             el.className = el.className.replace('bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 bg-clip-text text-transparent', 'text-blue-600');
           }
@@ -378,7 +378,7 @@ const FlexReport = () => {
     }
   };
   return <div className="h-screen overflow-auto bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 p-2 md:p-4">
-      <div className="max-w-4xl mx-auto scale-[0.85] origin-top">
+      <div className="max-w-3xl mx-auto scale-[0.85] origin-top">
         {/* Action Buttons */}
         <div className="flex items-center justify-between mb-4">
           <Button variant="outline" onClick={() => navigate('/dashboard')} className="gap-2">
@@ -403,11 +403,11 @@ const FlexReport = () => {
         </div>
 
         {/* Flex Report Card */}
-        <Card ref={reportRef} className="relative overflow-hidden bg-gradient-to-br from-white via-blue-50/30 to-purple-50/30 shadow-2xl border-0 backdrop-blur-sm">
+        <Card ref={reportRef} className="relative overflow-hidden bg-gradient-to-br from-white via-blue-50/30 to-blue-50/30 shadow-2xl border-0 backdrop-blur-sm">
           {/* Background Gradient Decoration */}
-          <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-gradient-to-br from-blue-400/20 to-purple-400/20 rounded-full blur-3xl -z-0" />
-          <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-gradient-to-tr from-purple-400/20 to-blue-400/20 rounded-full blur-3xl -z-0" />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-to-br from-emerald-400/10 to-blue-400/10 rounded-full blur-3xl -z-0" />
+          <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-gradient-to-br from-blue-400/20 to-blue-500/20 rounded-full blur-3xl -z-0" />
+          <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-gradient-to-tr from-blue-400/20 to-blue-500/20 rounded-full blur-3xl -z-0" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-to-br from-blue-400/10 to-blue-500/10 rounded-full blur-3xl -z-0" />
           
           {/* Auren Watermark */}
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden">
@@ -451,13 +451,13 @@ const FlexReport = () => {
             </div>
 
             {/* Primary Metric - Available to Spend */}
-            <div className="mb-4 text-center bg-gradient-to-br from-emerald-50 to-green-50 backdrop-blur-sm rounded-2xl p-5 border border-emerald-200/50 shadow-lg relative">
-              <div className="absolute top-3 right-3 flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 border-2 border-emerald-600 rounded-full">
-                <div className="w-1.5 h-1.5 bg-emerald-600 rounded-full"></div>
-                <span className="text-[10px] font-black text-emerald-700 uppercase tracking-wider">Live Verified</span>
+            <div className="mb-4 text-center bg-gradient-to-br from-blue-50 to-blue-100 backdrop-blur-sm rounded-2xl p-5 border border-blue-200/50 shadow-lg relative">
+              <div className="absolute top-3 right-3 flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 border-2 border-blue-600 rounded-full">
+                <div className="w-1.5 h-1.5 bg-blue-600 rounded-full"></div>
+                <span className="text-[10px] font-black text-blue-700 uppercase tracking-wider">Live Verified</span>
               </div>
               <p className="text-xs text-slate-600 mb-2 uppercase tracking-widest font-semibold">Available to Spend</p>
-              <div className={`text-4xl md:text-5xl font-black bg-gradient-to-r from-emerald-600 via-green-600 to-emerald-600 bg-clip-text text-transparent mb-3 drop-shadow-sm transition-all duration-300 leading-tight ${!visibility.safeSpending ? 'blur-lg' : ''}`}>
+              <div className={`text-4xl md:text-5xl font-black bg-gradient-to-r from-blue-600 via-blue-700 to-blue-600 bg-clip-text text-transparent mb-3 drop-shadow-sm transition-all duration-300 leading-tight ${!visibility.safeSpending ? 'blur-lg' : ''}`}>
                 {formatCurrency(safeSpendingData?.safe_spending_limit || 0)}
               </div>
               <p className="text-slate-600 text-xs font-medium mb-2">Safe spending power for your business</p>
@@ -474,13 +474,13 @@ const FlexReport = () => {
                   <span className="text-xs font-bold">{Math.abs(percentageChanges.safeSpending)}% vs last month</span>
                 </div>
               )}
-              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-100/50 border border-emerald-300 rounded-lg">
-                <BadgeCheck className="w-3 h-3 text-emerald-700" />
-                <span className="text-xs font-bold text-emerald-800 uppercase tracking-wide">Verified by Live Bank Account</span>
+              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-100/50 border border-blue-300 rounded-lg">
+                <BadgeCheck className="w-3 h-3 text-blue-700" />
+                <span className="text-xs font-bold text-blue-800 uppercase tracking-wide">Verified by Live Bank Account</span>
               </div>
               <button
                 onClick={() => toggleVisibility('safeSpending')}
-                className="absolute bottom-4 right-4 p-2 rounded-lg hover:bg-emerald-100/50 transition-colors z-10"
+                className="absolute bottom-4 right-4 p-2 rounded-lg hover:bg-blue-100/50 transition-colors z-10"
               >
                 {visibility.safeSpending ? (
                   <Eye className="w-5 h-5 text-blue-600" />
@@ -524,18 +524,18 @@ const FlexReport = () => {
               </div>
 
               {/* Available Credit */}
-              <div className="group bg-gradient-to-br from-purple-50 via-purple-100 to-purple-50 rounded-2xl p-4 border-2 border-purple-200/60 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm relative">
-                <div className="absolute top-3 right-3 flex items-center gap-1 px-2.5 py-1 bg-purple-50 border-2 border-purple-600 rounded-full">
-                  <div className="w-1 h-1 bg-purple-600 rounded-full"></div>
-                  <span className="text-[10px] font-black text-purple-700 uppercase tracking-wider">Verified</span>
+              <div className="group bg-gradient-to-br from-blue-50 via-blue-100 to-blue-50 rounded-2xl p-4 border-2 border-blue-200/60 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm relative">
+                <div className="absolute top-3 right-3 flex items-center gap-1 px-2.5 py-1 bg-blue-50 border-2 border-blue-600 rounded-full">
+                  <div className="w-1 h-1 bg-blue-600 rounded-full"></div>
+                  <span className="text-[10px] font-black text-blue-700 uppercase tracking-wider">Verified</span>
                 </div>
                 <div className="flex items-center gap-2 mb-2">
-                  <div className="p-2 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl shadow-md group-hover:scale-110 transition-transform duration-300">
+                  <div className="p-2 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-md group-hover:scale-110 transition-transform duration-300">
                     <CreditCard className="w-4 h-4 text-white" />
                   </div>
                   <p className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Available Credit</p>
                 </div>
-                <p className={`text-2xl font-black text-purple-700 drop-shadow-sm transition-all duration-300 ${!visibility.availableCredit ? 'blur-lg' : ''}`}>{formatCurrency(totalAvailableCredit)}</p>
+                <p className={`text-2xl font-black text-blue-700 drop-shadow-sm transition-all duration-300 ${!visibility.availableCredit ? 'blur-lg' : ''}`}>{formatCurrency(totalAvailableCredit)}</p>
                 {showPercentageChange && (
                   <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg mt-1 ${percentageChanges.availableCredit >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                     <TrendingUp className={`w-2.5 h-2.5 ${percentageChanges.availableCredit >= 0 ? '' : 'rotate-180'}`} />
@@ -544,7 +544,7 @@ const FlexReport = () => {
                 )}
                 <button
                   onClick={() => toggleVisibility('availableCredit')}
-                  className="absolute bottom-4 right-4 p-2 rounded-lg hover:bg-purple-100/50 transition-colors z-10"
+                  className="absolute bottom-4 right-4 p-2 rounded-lg hover:bg-blue-100/50 transition-colors z-10"
                 >
                   {visibility.availableCredit ? (
                     <Eye className="w-4 h-4 text-blue-600" />
@@ -576,7 +576,7 @@ const FlexReport = () => {
                 )}
                 <button
                   onClick={() => toggleVisibility('purchaseOrders')}
-                  className="absolute bottom-4 right-4 p-2 rounded-lg hover:bg-orange-100/50 transition-colors z-10"
+                  className="absolute bottom-4 right-4 p-2 rounded-lg hover:bg-blue-100/50 transition-colors z-10"
                 >
                   {visibility.purchaseOrders ? (
                     <Eye className="w-4 h-4 text-blue-600" />
@@ -588,24 +588,24 @@ const FlexReport = () => {
 
 
               {/* Amazon Revenue (30d) */}
-              <div className="group bg-gradient-to-br from-violet-50 via-purple-100 to-violet-50 rounded-2xl p-4 border-2 border-purple-300/60 shadow-lg hover:shadow-2xl transition-all duration-300 backdrop-blur-sm relative ring-2 ring-purple-200/30">
-                <div className="absolute top-3 right-3 flex items-center gap-1 px-2.5 py-1 bg-purple-50 border-2 border-purple-600 rounded-full">
-                  <div className="w-1 h-1 bg-purple-600 rounded-full animate-pulse"></div>
-                  <span className="text-[10px] font-black text-purple-700 uppercase tracking-wider">Verified</span>
+              <div className="group bg-gradient-to-br from-blue-50 via-blue-100 to-blue-50 rounded-2xl p-4 border-2 border-blue-300/60 shadow-lg hover:shadow-2xl transition-all duration-300 backdrop-blur-sm relative ring-2 ring-blue-200/30">
+                <div className="absolute top-3 right-3 flex items-center gap-1 px-2.5 py-1 bg-blue-50 border-2 border-blue-600 rounded-full">
+                  <div className="w-1 h-1 bg-blue-600 rounded-full animate-pulse"></div>
+                  <span className="text-[10px] font-black text-blue-700 uppercase tracking-wider">Verified</span>
                 </div>
                 <div className="flex items-center gap-2 mb-2">
                   <div className="relative">
-                    <div className="p-2 bg-gradient-to-br from-purple-500 to-violet-600 rounded-xl shadow-md group-hover:scale-110 transition-transform duration-300">
+                    <div className="p-2 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-md group-hover:scale-110 transition-transform duration-300">
                       <Zap className="w-4 h-4 text-white" />
                     </div>
-                    <Sparkles className="absolute -top-1 -right-1 w-3 h-3 text-purple-500 animate-pulse" />
+                    <Sparkles className="absolute -top-1 -right-1 w-3 h-3 text-blue-500 animate-pulse" />
                   </div>
                   <div className="flex flex-col">
                     <p className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Forecasted 90 Day Payout</p>
-                    <span className="text-[9px] font-bold text-purple-600 uppercase tracking-wider">Core Feature</span>
+                    <span className="text-[9px] font-bold text-blue-600 uppercase tracking-wider">Core Feature</span>
                   </div>
                 </div>
-                <p className={`text-2xl font-black text-purple-700 drop-shadow-sm transition-all duration-300 ${!visibility.amazonRevenue ? 'blur-lg' : ''}`}>{formatCurrency(forecasted90DayPayout)}</p>
+                <p className={`text-2xl font-black text-blue-700 drop-shadow-sm transition-all duration-300 ${!visibility.amazonRevenue ? 'blur-lg' : ''}`}>{formatCurrency(forecasted90DayPayout)}</p>
                 {showPercentageChange && (
                   <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg mt-1 ${percentageChanges.amazonRevenue >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                     <TrendingUp className={`w-2.5 h-2.5 ${percentageChanges.amazonRevenue >= 0 ? '' : 'rotate-180'}`} />
@@ -614,7 +614,7 @@ const FlexReport = () => {
                 )}
                 <button
                   onClick={() => toggleVisibility('amazonRevenue')}
-                  className="absolute bottom-4 right-4 p-2 rounded-lg hover:bg-purple-100/50 transition-colors z-10"
+                  className="absolute bottom-4 right-4 p-2 rounded-lg hover:bg-blue-100/50 transition-colors z-10"
                 >
                   {visibility.amazonRevenue ? (
                     <Eye className="w-4 h-4 text-blue-600" />
@@ -648,7 +648,7 @@ const FlexReport = () => {
                 )}
                 <button
                   onClick={() => toggleVisibility('totalPayouts')}
-                  className="absolute bottom-4 right-4 p-2 rounded-lg hover:bg-orange-100/50 transition-colors z-10"
+                  className="absolute bottom-4 right-4 p-2 rounded-lg hover:bg-blue-100/50 transition-colors z-10"
                 >
                   {visibility.totalPayouts ? (
                     <Eye className="w-4 h-4 text-blue-600" />
@@ -659,18 +659,18 @@ const FlexReport = () => {
               </div>
 
               {/* Payout Growth Rate */}
-              <div className="group bg-gradient-to-br from-green-50 via-green-100 to-green-50 rounded-2xl p-4 border-2 border-green-200/60 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm relative">
-                <div className="absolute top-3 right-3 flex items-center gap-1 px-2.5 py-1 bg-green-50 border-2 border-green-600 rounded-full">
-                  <div className="w-1 h-1 bg-green-600 rounded-full"></div>
-                  <span className="text-[10px] font-black text-green-700 uppercase tracking-wider">Verified</span>
+              <div className="group bg-gradient-to-br from-blue-50 via-blue-100 to-blue-50 rounded-2xl p-4 border-2 border-blue-200/60 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm relative">
+                <div className="absolute top-3 right-3 flex items-center gap-1 px-2.5 py-1 bg-blue-50 border-2 border-blue-600 rounded-full">
+                  <div className="w-1 h-1 bg-blue-600 rounded-full"></div>
+                  <span className="text-[10px] font-black text-blue-700 uppercase tracking-wider">Verified</span>
                 </div>
                 <div className="flex items-center gap-2 mb-2">
-                  <div className="p-2 bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-md group-hover:scale-110 transition-transform duration-300">
+                  <div className="p-2 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-md group-hover:scale-110 transition-transform duration-300">
                     <TrendingUp className="w-4 h-4 text-white" />
                   </div>
                   <p className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Payout Growth Rate (1y)</p>
                 </div>
-                <p className={`text-2xl font-black ${payoutGrowthRate >= 0 ? 'text-green-700' : 'text-red-700'} drop-shadow-sm transition-all duration-300 ${!visibility.payoutGrowthRate ? 'blur-lg' : ''}`}>
+                <p className={`text-2xl font-black ${payoutGrowthRate >= 0 ? 'text-blue-700' : 'text-red-700'} drop-shadow-sm transition-all duration-300 ${!visibility.payoutGrowthRate ? 'blur-lg' : ''}`}>
                   {payoutGrowthRate >= 0 ? '+' : ''}{payoutGrowthRate.toFixed(1)}%
                 </p>
                 {showPercentageChange && (
@@ -680,7 +680,7 @@ const FlexReport = () => {
                 )}
                 <button
                   onClick={() => toggleVisibility('payoutGrowthRate')}
-                  className="absolute bottom-4 right-4 p-2 rounded-lg hover:bg-green-100/50 transition-colors z-10"
+                  className="absolute bottom-4 right-4 p-2 rounded-lg hover:bg-blue-100/50 transition-colors z-10"
                 >
                   {visibility.payoutGrowthRate ? (
                     <Eye className="w-4 h-4 text-blue-600" />
