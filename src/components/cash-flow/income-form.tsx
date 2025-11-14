@@ -158,7 +158,7 @@ export const IncomeForm = ({
           paymentMethod: "credit-card",
           creditCardId: newestCard.id
         }));
-        toast.success(`Credit card "${newestCard.account_name || newestCard.institution_name}" selected`);
+        // Removed toast notification to prevent confusion
       }
     }
     setPreviousCreditCardCount(creditCards.length);
@@ -245,10 +245,12 @@ export const IncomeForm = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate credit card selection for expenses with credit card payment
-    if (formData.type === "expense" && formData.paymentMethod === "credit-card" && !formData.creditCardId) {
-      toast.error("Please select a credit card");
-      return;
+    // Enhanced validation for credit card selection
+    if (formData.type === "expense" && formData.paymentMethod === "credit-card") {
+      if (!formData.creditCardId || formData.creditCardId === "") {
+        toast.error("Please select a specific credit card from the dropdown");
+        return;
+      }
     }
     
     const data = {
@@ -261,7 +263,13 @@ export const IncomeForm = ({
       creditCardId: (formData.type === "expense" && formData.paymentMethod === "credit-card") ? formData.creditCardId : undefined
     };
     
-    console.log("Submitting:", data);
+    // Debug logging to track submission data
+    console.log("=== FORM SUBMISSION DEBUG ===");
+    console.log("Form Data:", formData);
+    console.log("Payment Method:", formData.paymentMethod);
+    console.log("Credit Card ID:", formData.creditCardId);
+    console.log("Final Data Being Submitted:", data);
+    console.log("===========================");
     
     // Call the appropriate submit function based on type
     if (formData.type === "expense" && onSubmitExpense) {
@@ -753,34 +761,62 @@ export const IncomeForm = ({
                           value={formData.creditCardId}
                           onValueChange={(value) => handleInputChange("creditCardId", value)}
                         >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Choose a credit card" />
+                          <SelectTrigger className={cn(
+                            !formData.creditCardId && "border-destructive focus:ring-destructive"
+                          )}>
+                            <SelectValue placeholder={`Choose a credit card (${creditCards.length} available)`} />
                           </SelectTrigger>
                           <SelectContent>
-                            {creditCards.map(card => {
-                              const availableCredit = (card.credit_limit || 0) - (card.balance || 0);
-                              const amount = parseFloat(formData.amount) || 0;
-                              const isInsufficient = amount > availableCredit;
-                              
-                              return (
-                                <SelectItem key={card.id} value={card.id}>
-                                  <div className="flex items-center justify-between w-full">
-                                    <div className="flex items-center gap-2">
-                                      <CreditCard className="h-4 w-4" />
-                                      <span>{card.account_name}</span>
+                            {creditCards.length === 0 ? (
+                              <div className="p-3 text-sm text-muted-foreground text-center">
+                                No credit cards found. Please add one first.
+                              </div>
+                            ) : (
+                              creditCards.map(card => {
+                                const availableCredit = (card.credit_limit || 0) - (card.balance || 0);
+                                const amount = parseFloat(formData.amount) || 0;
+                                const isInsufficient = amount > availableCredit;
+                                
+                                return (
+                                  <SelectItem key={card.id} value={card.id}>
+                                    <div className="flex items-center justify-between w-full">
+                                      <div className="flex items-center gap-2">
+                                        <CreditCard className="h-4 w-4" />
+                                        <span>{card.account_name}</span>
+                                      </div>
+                                      <span className={cn(
+                                        "text-xs ml-2",
+                                        isInsufficient ? "text-destructive" : "text-muted-foreground"
+                                      )}>
+                                        ${availableCredit.toLocaleString()} available
+                                      </span>
                                     </div>
-                                    <span className={cn(
-                                      "text-xs ml-2",
-                                      isInsufficient ? "text-destructive" : "text-muted-foreground"
-                                    )}>
-                                      ${availableCredit.toLocaleString()} available
-                                    </span>
-                                  </div>
-                                </SelectItem>
-                              );
-                            })}
+                                  </SelectItem>
+                                );
+                              })
+                            )}
                           </SelectContent>
                         </Select>
+                        {!formData.creditCardId && (
+                          <p className="text-xs text-destructive flex items-center gap-1">
+                            <AlertCircle className="h-3 w-3" />
+                            You must select a specific credit card to continue
+                          </p>
+                        )}
+                        {formData.creditCardId && (() => {
+                          const selectedCard = creditCards.find(c => c.id === formData.creditCardId);
+                          if (selectedCard) {
+                            const availableCredit = (selectedCard.credit_limit || 0) - (selectedCard.balance || 0);
+                            return (
+                              <div className="flex items-center gap-2 text-xs text-muted-foreground bg-background p-2 rounded border">
+                                <CreditCard className="h-4 w-4 text-primary" />
+                                <span className="font-medium">{selectedCard.account_name}</span>
+                                <span className="ml-auto">${availableCredit.toLocaleString()} available</span>
+                              </div>
+                            );
+                          }
+                          return null;
+                        })()}
                       </div>
 
                       {formData.creditCardId && formData.amount && (() => {
@@ -853,6 +889,7 @@ export const IncomeForm = ({
                 <Button 
                   type="submit" 
                   className="flex-1 bg-gradient-primary"
+                  disabled={formData.type === "expense" && formData.paymentMethod === "credit-card" && !formData.creditCardId}
                 >
                   {editingIncome ? 'Update' : 'Add'} {isRecurring ? 'Recurring ' : ''}{formData.type === "expense" ? "Expense" : "Income"}
                 </Button>
