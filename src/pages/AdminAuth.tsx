@@ -67,8 +67,7 @@ const AdminAuth = () => {
       });
 
       if (error) {
-        console.error('[ADMIN_LOGIN] Authentication error:', error);
-        const errorMsg = error.message.toLowerCase().includes('invalid') 
+        const errorMsg = error.message.toLowerCase().includes('invalid')
           ? "Invalid email or password. Please check your credentials and try again."
           : error.message;
         
@@ -81,7 +80,6 @@ const AdminAuth = () => {
       }
 
       if (!data.session?.user) {
-        console.error('[ADMIN_LOGIN] No session created');
         toast.error("Unable to create session", {
           description: "Please try again or contact support",
           duration: 5000,
@@ -91,13 +89,10 @@ const AdminAuth = () => {
       }
 
       // Now check if user has admin access through any method
-      console.log('[ADMIN_LOGIN] Checking admin access for:', data.session.user.email);
       
       // 1. Check if website admin (hardcoded emails)
       const { data: isWebsiteAdmin, error: rpcError } = await supabase
         .rpc('is_website_admin');
-
-      console.log('[ADMIN_LOGIN] Website admin check:', { isWebsiteAdmin, rpcError });
 
       if (isWebsiteAdmin) {
         toast.success("Welcome back!", {
@@ -110,8 +105,6 @@ const AdminAuth = () => {
       // 2. Check admin_permissions table using security definer function
       const { data: adminPerms, error: permsError } = await supabase
         .rpc('check_admin_permission', { user_email: data.session.user.email });
-
-      console.log('[ADMIN_LOGIN] Admin permissions check:', { adminPerms, permsError, email: data.session.user.email });
 
       if (adminPerms && adminPerms.length > 0 && adminPerms[0].has_permission) {
         toast.success("Welcome back!", {
@@ -128,8 +121,6 @@ const AdminAuth = () => {
         .eq('user_id', data.session.user.id)
         .in('role', ['admin', 'staff'])
         .maybeSingle();
-
-      console.log('[ADMIN_LOGIN] User role check:', { userRole, roleError, userId: data.session.user.id });
 
       if (userRole) {
         toast.success("Welcome back!", {

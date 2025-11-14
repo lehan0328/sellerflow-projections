@@ -33,7 +33,7 @@ const Guides = () => {
   };
 
   useEffect(() => {
-    console.log("🎯 Guides page mounted successfully!");
+    // Page mounted
   }, []);
 
   type Guide = string | { title: string; path: string };

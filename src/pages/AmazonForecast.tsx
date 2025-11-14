@@ -237,8 +237,6 @@ export default function AmazonForecast() {
       } else {
         toast.info("No forecasts needed rollover");
       }
-      
-      console.log('Rollover results:', results);
     } catch (error: any) {
       console.error("Rollover error:", error);
       toast.dismiss();
@@ -261,11 +259,6 @@ export default function AmazonForecast() {
     let avgPayout = 0;
     let avgPayoutLabel = '';
     
-    console.log('[AmazonForecast] Calculating avg payout - Total confirmed payouts:', confirmedPayouts.length);
-    confirmedPayouts.forEach(p => {
-      console.log('  - Payout:', p.payout_date, '$' + p.total_amount, p.marketplace_name);
-    });
-    
     if (confirmedPayouts.length > 0) {
       let filteredPayouts = confirmedPayouts;
       
@@ -276,12 +269,8 @@ export default function AmazonForecast() {
         filteredPayouts = confirmedPayouts.filter(p => new Date(p.payout_date) >= twelveMonthsAgo);
         avgPayoutLabel = 'Last 12 months';
         
-        console.log('[AmazonForecast] 12-month filter - Payouts in range:', filteredPayouts.length);
-        
         const periodTotal = filteredPayouts.reduce((sum, p) => sum + Number(p.total_amount || 0), 0);
         avgPayout = periodTotal / 365; // Average per day over 365 days
-        
-        console.log('[AmazonForecast] Period total: $' + periodTotal, 'Avg per day: $' + avgPayout.toFixed(2));
       } else {
         // Specific month (YYYY-MM format)
         const [year, month] = avgPayoutPeriod.split('-').map(Number);
@@ -292,8 +281,6 @@ export default function AmazonForecast() {
         
         const monthDate = new Date(year, month - 1, 1);
         avgPayoutLabel = format(monthDate, 'MMMM yyyy');
-        
-        console.log('[AmazonForecast] Month filter (' + avgPayoutLabel + ') - Payouts in range:', filteredPayouts.length);
         
         // Calculate days to divide by
         const now = new Date();
@@ -310,23 +297,18 @@ export default function AmazonForecast() {
             const closeDate = new Date(lastClosedPayout.raw_settlement_data.FinancialEventGroupEnd);
             daysToUse = closeDate.getDate(); // Get day-of-month (1-31)
             avgPayoutLabel = avgPayoutLabel + ' (MTD)';
-            console.log('[AmazonForecast] Current month - using day-of-month from last close:', daysToUse, 'Close date:', closeDate);
           } else {
             // Fallback to regular MTD if no close date available
             daysToUse = now.getDate();
             avgPayoutLabel = avgPayoutLabel + ' (MTD)';
-            console.log('[AmazonForecast] Current month - fallback to days elapsed:', daysToUse);
           }
         } else {
           // For past months: use total days in that month
           daysToUse = new Date(year, month, 0).getDate();
-          console.log('[AmazonForecast] Past month - using total days:', daysToUse);
         }
         
         const periodTotal = filteredPayouts.reduce((sum, p) => sum + Number(p.total_amount || 0), 0);
         avgPayout = daysToUse > 0 ? periodTotal / daysToUse : 0;
-        
-        console.log('[AmazonForecast] Period total: $' + periodTotal, 'Days:', daysToUse, 'Avg per day: $' + avgPayout.toFixed(2));
       }
     }
     

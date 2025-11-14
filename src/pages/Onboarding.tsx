@@ -96,21 +96,17 @@ export default function Onboarding() {
       // Clear the stored redirect URI
       sessionStorage.removeItem('plaid_oauth_redirect_uri');
       try {
-        console.log("Plaid Link success:", metadata);
-        
         // Show confirmation dialog with account selection
         setPlaidPublicToken(public_token);
         setPlaidMetadata(metadata);
         setShowPlaidConfirmation(true);
         setLinkToken(null);
       } catch (error) {
-        console.error("Error handling Plaid success:", error);
         toast.error("Failed to process account connection");
         setIsConnecting(false);
       }
     },
     onExit: (err: any, metadata: any) => {
-      console.log("Plaid Link exit:", { err, metadata });
       if (err) {
         toast.error("Failed to connect account");
       }
@@ -363,8 +359,6 @@ export default function Onboarding() {
         .maybeSingle();
 
       if (profile?.account_id) {
-        console.log('💾 Saving forecast preference:', forecastingEnabled);
-        
         // If forecasting is requested, verify Amazon account has sufficient data
         if (forecastingEnabled && !amazonSkipped && !isAmazonSyncComplete) {
           toast.error("Cannot enable forecasting: Amazon sync is not complete. Please wait for sync to finish.");
@@ -387,12 +381,9 @@ export default function Onboarding() {
           .select();
 
         if (settingsError) {
-          console.error('❌ Error saving settings:', settingsError);
           toast.error('Failed to save forecast settings');
           return;
         }
-
-        console.log('✅ Settings saved successfully:', settingsData);
 
         // Invalidate cache to ensure sidebar and components show updated state
         await queryClient.invalidateQueries({ queryKey: ['user-settings'] });
@@ -572,20 +563,15 @@ export default function Onboarding() {
 
               <Button 
                 onClick={async () => {
-                  console.log('=== STARTING AMAZON CONNECTION FLOW (Onboarding) ===');
                   try {
                     // Get current session
-                    console.log('Step 1: Getting session...');
                     const { data: { session } } = await supabase.auth.getSession();
-                    console.log('Session:', session ? 'Found' : 'Not found');
                     
                     if (!session) {
-                      console.error('No session found');
                       toast.error('Please log in to connect your Amazon account.');
                       return;
                     }
 
-                    console.log('Step 2: Fetching Amazon SP-API Application ID from edge function...');
                     toast.info('Fetching Amazon connection details...');
 
                     // Get Amazon SP-API Application ID from backend with auth token
@@ -595,20 +581,14 @@ export default function Onboarding() {
                       },
                     });
                     
-                    console.log('Edge function response:', { data, error });
-                    
                     if (error) {
-                      console.error('Error fetching SP-API Application ID:', error);
                       toast.error(`Failed to get Amazon credentials: ${error.message}`);
                       return;
                     }
                     
                     const applicationId = data?.clientId; // This should be SP-API Application ID
                     
-                    console.log('Amazon SP-API Application ID received:', applicationId);
-                    
                     if (!applicationId || applicationId === 'undefined' || applicationId === '') {
-                      console.error('Invalid SP-API Application ID:', applicationId);
                       toast.error('Amazon SP-API Application ID is not configured. Please contact support.');
                       return;
                     }
@@ -621,21 +601,13 @@ export default function Onboarding() {
                     
                     // Include onboarding flag in redirect URI so callback knows to return to onboarding
                     const redirectUri = `${window.location.origin}/amazon-oauth-callback?from=onboarding`;
-                    console.log('Step 3: Building authorization URL...');
-                    console.log('Redirect URI:', redirectUri);
-                    console.log('Selected marketplace:', selectedMarketplace);
-                    console.log('Region:', region);
-                    console.log('Consent URL:', consentBaseUrl);
                     
                     // Construct Amazon authorization URL with region-specific consent URL
                     // IMPORTANT: Use application_id (SP-API App ID), not client_id
                     // State contains marketplace_id (needed by backend)
                     const authUrl = `${consentBaseUrl}?application_id=${applicationId}&state=${selectedMarketplace}&redirect_uri=${encodeURIComponent(redirectUri)}`;
                     
-                    console.log('Amazon OAuth URL:', authUrl);
-                    
                     toast.info('Redirecting to Amazon Seller Central...');
-                    console.log('Step 4: Redirecting to Amazon...');
                     
                     // Open in same window to preserve session and avoid popup blockers
                     window.location.href = authUrl;

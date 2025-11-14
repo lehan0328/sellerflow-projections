@@ -512,12 +512,6 @@ export default function Analytics() {
       start,
       end
     } = getDateRange(vendorDateRange);
-    console.log('📊 Purchase Order Analytics Debug:', {
-      dateRange: vendorDateRange,
-      start: start.toISOString(),
-      end: end.toISOString(),
-      totalVendorTransactions: vendorTransactions.length
-    });
 
     // Add amounts from vendor transactions (purchase orders) - ONLY include if due date is in the selected range
     vendorTransactions.forEach(tx => {
@@ -527,7 +521,6 @@ export default function Analytics() {
         categoryTotals[tx.category] = (categoryTotals[tx.category] || 0) + tx.amount;
       }
     });
-    console.log('📊 Purchase Order Category totals:', categoryTotals);
     return Object.entries(categoryTotals).map(([category, total]) => ({
       name: category,
       value: total
@@ -541,12 +534,6 @@ export default function Analytics() {
       start,
       end
     } = getDateRange(vendorDateRange);
-    console.log('📊 Recurring Expense Analytics Debug:', {
-      dateRange: vendorDateRange,
-      start: start.toISOString(),
-      end: end.toISOString(),
-      totalRecurringExpenses: recurringExpenses.length
-    });
 
     // Add amounts from recurring expenses within the date range
     recurringExpenses.forEach(expense => {
@@ -559,7 +546,6 @@ export default function Analytics() {
         categoryTotals[expense.category] = (categoryTotals[expense.category] || 0) + totalAmount;
       }
     });
-    console.log('📊 Recurring Expense Category totals:', categoryTotals);
     return Object.entries(categoryTotals).map(([category, total]) => ({
       name: category,
       value: total
@@ -606,12 +592,6 @@ export default function Analytics() {
         vendorTotals[vendorName] = (vendorTotals[vendorName] || 0) + tx.amount;
       }
     });
-    console.log('📊 Vendor totals:', vendorTotals);
-    console.log('📊 All vendors:', vendors.map(v => v.name));
-    console.log('📊 Transactions in range:', vendorTransactions.filter(tx => {
-      const txDate = new Date(tx.dueDate || tx.transactionDate);
-      return txDate >= start && txDate <= end;
-    }));
     return Object.entries(vendorTotals).map(([name, amount]) => ({
       name,
       amount
@@ -863,7 +843,6 @@ export default function Analytics() {
     const addSection = async (selector: string, spaceBefore = 5) => {
       const element = document.querySelector(selector) as HTMLElement;
       if (!element) {
-        console.log(`Section not found: ${selector}`);
         return;
       }
       
@@ -891,7 +870,7 @@ export default function Analytics() {
         pdf.addImage(canvas.toDataURL('image/png'), 'PNG', margin, currentY, imgWidth, imgHeight, undefined, 'FAST');
         currentY += imgHeight;
       } catch (error) {
-        console.error(`Error capturing section ${selector}:`, error);
+        // Error capturing section
       }
     };
     
@@ -917,7 +896,6 @@ export default function Analytics() {
         description: "PDF report generated successfully"
       });
     } catch (error) {
-      console.error('Error generating PDF:', error);
       toast({
         title: "Error",
         description: "Failed to generate PDF report",
@@ -937,7 +915,7 @@ export default function Analytics() {
     try {
       pdf.addImage(logoImg, 'PNG', 10, pageHeight - 12, 8, 8);
     } catch (e) {
-      console.log('Could not add logo to PDF');
+      // Could not add logo
     }
     
     // Add "Powered by Auren" text

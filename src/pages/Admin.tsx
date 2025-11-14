@@ -35,8 +35,6 @@ const Admin = () => {
   const { isAdmin, userRole } = useAdmin();
   const [searchParams] = useSearchParams();
   
-  console.log('[ADMIN] User permissions:', { isAdmin, userRole });
-  
   const tabSections = useMemo(() => {
     const allSections = [
       {
@@ -86,14 +84,6 @@ const Admin = () => {
       
       // Admin role sees everything
       return true;
-    });
-    
-    console.log('[ADMIN] Filtered sections:', { 
-      isAdmin, 
-      userRole, 
-      totalSections: allSections.length, 
-      filteredSections: filtered.length,
-      sectionTitles: filtered.map(s => s.title)
     });
     
     return filtered;

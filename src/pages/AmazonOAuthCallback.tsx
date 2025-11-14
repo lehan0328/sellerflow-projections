@@ -34,23 +34,11 @@ const AmazonOAuthCallback = () => {
           throw new Error('No authorization code received from Amazon');
         }
 
-        console.log('Amazon OAuth callback received:', {
-          hasCode: !!spapi_oauth_code,
-          state,
-          selling_partner_id
-        });
-
         // Get current user
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) {
           throw new Error('You must be logged in to connect Amazon');
         }
-
-        console.log('Calling exchange-amazon-token with:', {
-          code: spapi_oauth_code?.substring(0, 10) + '...',
-          selling_partner_id,
-          marketplace_id: state,
-        });
 
         // Exchange the authorization code for access/refresh tokens
         const { data: exchangeData, error: exchangeError } = await supabase.functions.invoke('exchange-amazon-token', {
@@ -61,16 +49,13 @@ const AmazonOAuthCallback = () => {
             code: spapi_oauth_code,
             selling_partner_id: selling_partner_id,
             marketplace_id: state, // State should contain marketplace_id
-            account_name: `Amazon Store - ${selling_partner_id.slice(0, 8)}`
-          }
-        });
-
-        console.log('Exchange response:', JSON.stringify({ exchangeData, exchangeError }, null, 2));
-
-        if (exchangeError || !exchangeData?.success) {
-          console.error('Exchange failed:', { exchangeError, exchangeData });
-          throw new Error(exchangeError?.message || exchangeData?.error || 'Failed to connect Amazon account');
+          account_name: `Amazon Store - ${selling_partner_id.slice(0, 8)}`
         }
+      });
+
+      if (exchangeError || !exchangeData?.success) {
+        throw new Error(exchangeError?.message || exchangeData?.error || 'Failed to connect Amazon account');
+      }
         
         setStatus('success');
         

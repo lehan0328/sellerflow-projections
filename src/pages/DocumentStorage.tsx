@@ -80,7 +80,6 @@ export default function DocumentStorage() {
     queryKey: profileQueryKey(user?.id),
     queryFn: async () => {
       if (!user?.id) return null;
-      console.log('[DocumentStorage] Fetching profile for user:', user.id);
       const { data, error } = await supabase
         .from('profiles')
         .select('account_id')
@@ -88,10 +87,8 @@ export default function DocumentStorage() {
         .maybeSingle();
       
       if (error) {
-        console.error('[DocumentStorage] Error fetching profile:', error);
         throw error;
       }
-      console.log('[DocumentStorage] Profile loaded:', data);
       return data;
     },
     enabled: !!user?.id,
@@ -103,11 +100,8 @@ export default function DocumentStorage() {
     queryKey: ['documents', profile?.account_id, includeUntracked],
     queryFn: async () => {
       if (!profile?.account_id) {
-        console.log('[DocumentStorage] No account_id found in profile');
         return [];
       }
-      
-      console.log('[DocumentStorage] Fetching documents for account:', profile.account_id);
       
       // Fetch all metadata first
       const { data: metadata, error: metadataError } = await supabase
@@ -126,12 +120,9 @@ export default function DocumentStorage() {
         .eq('account_id', profile.account_id);
 
       if (metadataError) {
-        console.error('[DocumentStorage] Error fetching metadata:', metadataError);
         throw metadataError;
       }
       
-      console.log('[DocumentStorage] Fetched metadata:', metadata?.length || 0, 'documents');
-
       // Always fetch storage files to verify existence
       let files: any[] = [];
       try {
@@ -154,7 +145,7 @@ export default function DocumentStorage() {
           offset += pageSize;
         }
       } catch (error) {
-        console.warn('Could not fetch storage files:', error);
+        // Could not fetch storage files
       }
 
       // Create a map of storage files for quick lookup
