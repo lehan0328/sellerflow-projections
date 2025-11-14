@@ -1,5 +1,8 @@
 project_id = "ruvdqtqyfzaxlobmxgaj"
 
+[functions.verify-recaptcha]
+verify_jwt = false
+
 [functions.get-admin-staff-list]
 verify_jwt = true
 

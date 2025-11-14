@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useGoogleReCaptcha } from 'react-google-recaptcha-v3';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,6 +14,7 @@ import { EnterpriseSetupModal } from "@/components/EnterpriseSetupModal";
 export const Auth = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { executeRecaptcha } = useGoogleReCaptcha();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -135,8 +137,26 @@ export const Auth = () => {
       return;
     }
 
+    if (!executeRecaptcha) {
+      toast.error('reCAPTCHA not ready. Please try again.');
+      return;
+    }
+
     setLoading(true);
     try {
+      // Generate reCAPTCHA token
+      const recaptchaToken = await executeRecaptcha('signin');
+
+      // Verify reCAPTCHA token with edge function
+      const { data: verifyData, error: verifyError } = await supabase.functions.invoke('verify-recaptcha', {
+        body: { token: recaptchaToken }
+      });
+
+      if (verifyError || !verifyData?.success) {
+        toast.error('Security verification failed. Please try again.');
+        return;
+      }
+
       const { data, error } = await supabase.auth.signInWithPassword({
         email: signInData.email,
         password: signInData.password,

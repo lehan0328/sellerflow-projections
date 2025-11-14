@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
+import { useGoogleReCaptcha } from 'react-google-recaptcha-v3';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,6 +16,7 @@ import { toast } from "sonner";
 export const SignUp = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { executeRecaptcha } = useGoogleReCaptcha();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
@@ -189,8 +191,26 @@ export const SignUp = () => {
       return;
     }
 
+    if (!executeRecaptcha) {
+      toast.error('reCAPTCHA not ready. Please try again.');
+      return;
+    }
+
     setLoading(true);
     try {
+      // Generate reCAPTCHA token
+      const recaptchaToken = await executeRecaptcha('signup');
+
+      // Verify reCAPTCHA token with edge function
+      const { data: verifyData, error: verifyError } = await supabase.functions.invoke('verify-recaptcha', {
+        body: { token: recaptchaToken }
+      });
+
+      if (verifyError || !verifyData?.success) {
+        toast.error('Security verification failed. Please try again.');
+        return;
+      }
+
       const redirectUrl = `${window.location.origin}/auth`;
       
     const metadata: Record<string, any> = {
