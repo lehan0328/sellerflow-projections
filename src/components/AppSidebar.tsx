@@ -118,13 +118,6 @@ export function AppSidebar({
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   const handleSectionClick = (sectionId: string, section?: any) => {
-    console.log('[APPSIDEBAR] Subscription data:', {
-      plan: subscription.plan,
-      plan_tier: subscription.plan_tier,
-      is_trialing: subscription.is_trialing,
-      isLoading: subscription.isLoading
-    });
-    
     // Always allow navigation during loading to prevent blocked interactions
     if (!subscription.isLoading) {
       // Scenario Planning: Professional + Trial only

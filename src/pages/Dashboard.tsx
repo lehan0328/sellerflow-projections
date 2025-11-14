@@ -270,14 +270,12 @@ const Dashboard = () => {
 
   const handleClearAllData = async () => {
     try {
-      console.log("🗑️ Dashboard - calling resetAccount");
       toast({
         title: "Clearing data...",
         description: "This may take a moment",
       });
       await resetAccount();
     } catch (error) {
-      console.error("Error clearing data:", error);
       toast({
         title: "Error",
         description:
@@ -1305,7 +1303,6 @@ const Dashboard = () => {
 
     // Refresh safe spending calculations with a delay to ensure DB changes propagate
     setTimeout(() => {
-      console.log("🔄 Manually refreshing safe spending after income deletion");
       refetchSafeSpending();
     }, 500);
   };
@@ -1752,7 +1749,6 @@ const Dashboard = () => {
   };
 
   const handleEditTransaction = (transaction: any) => {
-    console.log("Editing transaction:", transaction);
 
     // Route to appropriate edit form based on transaction type
     if (transaction.type === "inflow") {
@@ -1794,15 +1790,6 @@ const Dashboard = () => {
         `Unknown transaction type: ${transaction.type}\nTransaction: ${transaction.description}`
       );
     }
-  };
-
-  const handleUpdateCashBalance = async () => {
-    // This function syncs with real bank account balance from connected accounts
-    console.log(
-      "Syncing cash balance - Bank account balance:",
-      bankAccountBalance
-    );
-    console.log("Cash balance is now managed through Plaid integration");
   };
 
   const handleManualMatchConfirm = async (
@@ -2223,8 +2210,6 @@ const Dashboard = () => {
         (payout.status as string) === "forecasted"
           ? new Date(new Date(displayDate).setDate(displayDate.getDate() + 1))
           : displayDate;
-      const checkDate = new Date(displayDate);
-      console.log("displayDate", displayDate, "amount", payout.total_amount)
       return {
         id: `amazon-payout-${payout.id}`,
         type: "inflow" as const,
@@ -2736,7 +2721,6 @@ const Dashboard = () => {
                   <OverviewStats
                     totalCash={displayCash}
                     events={allCalendarEvents}
-                    onUpdateCashBalance={handleUpdateCashBalance}
                     onTransactionUpdate={() => {
                       refetchVendorTransactions();
                       refetchSafeSpending();

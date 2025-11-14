@@ -78,8 +78,6 @@ export const useBankAccounts = () => {
         // Use the balance from Plaid directly - it's already accurate
         const trueAvailable = account.available_balance ?? account.balance;
         
-        console.log(`Account ${account.account_name}: Balance: $${account.balance}, Available: $${trueAvailable}, Pending noted: $${pendingAmount}`);
-        
         return {
           ...account,
           available_balance: trueAvailable
