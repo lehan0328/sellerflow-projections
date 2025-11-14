@@ -66,7 +66,6 @@ export const useIncome = () => {
         .from('income')
         .select('*')
         .eq('account_id', profile.account_id)
-        .eq('archived', false)
         .order('payment_date', { ascending: false });
 
       if (error) {
@@ -195,15 +194,6 @@ export const useIncome = () => {
       if (updates.source !== undefined) updateData.source = updates.source;
       if (updates.status !== undefined) {
         updateData.status = updates.status;
-        // Automatically archive only when status is 'received' AND payment date is in the past (overdue)
-        if (updates.status === 'received') {
-          const income = incomeItems.find(item => item.id === id);
-          const today = new Date();
-          today.setHours(0, 0, 0, 0);
-          if (income && income.paymentDate < today) {
-            updateData.archived = true;
-          }
-        }
       }
       if (updates.category !== undefined) updateData.category = updates.category;
       if (updates.isRecurring !== undefined) updateData.is_recurring = updates.isRecurring;
@@ -222,13 +212,6 @@ export const useIncome = () => {
         console.error('Error updating income:', error);
         toast.error('Failed to update income');
         return false;
-      }
-
-      // If archived, remove from local state instead of updating
-      if (data.archived) {
-        setIncomeItems(prev => prev.filter(item => item.id !== id));
-        toast.success('Income marked as received and archived');
-        return true;
       }
 
       const updatedItem: IncomeItem = {

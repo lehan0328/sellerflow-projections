@@ -47,7 +47,6 @@ export const useTransactions = () => {
       const { data, error } = await supabase
         .from('transactions')
         .select('*')
-        .eq('archived', false)
         .order('created_at', { ascending: false });
 
       if (error) throw error;

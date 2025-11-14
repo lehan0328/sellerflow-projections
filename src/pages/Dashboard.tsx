@@ -1742,7 +1742,7 @@ const Dashboard = () => {
     toast({
       title: "Vendor transaction deleted",
       description:
-        "The vendor has been removed and archived to deleted transactions.",
+        "The vendor has been removed and moved to deleted transactions.",
     });
 
     setEditingVendor(null);
@@ -1799,11 +1799,10 @@ const Dashboard = () => {
     if (!manualMatchDialog.transaction) return;
 
     try {
-      // Archive the bank transaction
+      // Update the bank transaction with match info
       const { error: archiveError } = await supabase
         .from("bank_transactions")
         .update({
-          archived: true,
           matched_transaction_id: matchId,
           matched_type: matchType,
           updated_at: new Date().toISOString(),
@@ -1829,7 +1828,7 @@ const Dashboard = () => {
 
       toast({
         title: "Transaction matched",
-        description: "Bank transaction has been matched and archived.",
+        description: "Bank transaction has been matched.",
       });
 
       await Promise.all([
@@ -2837,10 +2836,10 @@ const Dashboard = () => {
                                 match.type === "vendor" &&
                                 match.matchedVendorTransaction
                               ) {
-                                // Mark the vendor transaction as paid and archive
+                                // Mark the vendor transaction as paid
                                 await supabase
                                   .from("transactions")
-                                  .update({ status: "completed", archived: true })
+                                  .update({ status: "completed" })
                                   .eq("id", match.matchedVendorTransaction.id);
 
                                 await addTransaction({
@@ -2995,10 +2994,10 @@ const Dashboard = () => {
                 match.type === "vendor" &&
                 match.matchedVendorTransaction
               ) {
-                // Mark the vendor transaction as paid and archive
+                // Mark the vendor transaction as paid
                 await supabase
                   .from("transactions")
-                  .update({ status: "completed", archived: true })
+                  .update({ status: "completed" })
                   .eq("id", match.matchedVendorTransaction.id);
 
                 await addTransaction({

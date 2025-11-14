@@ -52,8 +52,7 @@ export const useBankAccounts = () => {
       const { data: pendingTransactions, error: pendingError } = await supabase
         .from("bank_transactions")
         .select("bank_account_id, amount")
-        .eq("pending", true)
-        .eq("archived", false);
+        .eq("pending", true);
 
       if (pendingError) {
         console.error("Error fetching pending transactions:", pendingError);
