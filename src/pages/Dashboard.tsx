@@ -74,6 +74,7 @@ import {
 } from "@/components/dashboard/DashboardSkeleton";
 import { PurchaseOrderForm } from "@/components/cash-flow/purchase-order-form";
 import { VendorOrderEditModal } from "@/components/cash-flow/vendor-order-edit-modal";
+import { TransactionEditModal } from "@/components/cash-flow/transaction-edit-modal";
 import { IncomeForm } from "@/components/cash-flow/income-form";
 import { RecurringExpensesOverview } from "@/components/cash-flow/recurring-expenses-overview";
 import { ReferralDashboardContent } from "@/components/ReferralDashboardContent";
@@ -385,6 +386,7 @@ const Dashboard = () => {
   const [showRecurringIncomeForm, setShowRecurringIncomeForm] = useState(false);
   const [editingIncome, setEditingIncome] = useState<any>(null);
   const [showEditIncomeForm, setShowEditIncomeForm] = useState(false);
+  const [editingExpense, setEditingExpense] = useState<any>(null);
   const [creditCardNotificationData, setCreditCardNotificationData] = useState<{
     open: boolean;
     cardName: string | null;
@@ -2937,8 +2939,11 @@ const Dashboard = () => {
               creditCardId: t.creditCardId
             }))}
             onEditExpense={(expense) => {
-              // Handle edit expense
-              console.log('Edit expense:', expense);
+              // Find the full transaction data
+              const transaction = transactions.find(t => t.id === expense.id);
+              if (transaction) {
+                setEditingExpense(transaction);
+              }
             }}
             onDeleteExpense={async (expense) => {
               await deleteTransaction(expense.id);
@@ -3737,6 +3742,19 @@ const Dashboard = () => {
               status: i.status,
             }))}
             onMatch={handleManualMatchConfirm}
+          />
+
+          {/* Transaction Edit Modal for Expenses */}
+          <TransactionEditModal
+            open={!!editingExpense}
+            onOpenChange={(open) => {
+              if (!open) setEditingExpense(null);
+            }}
+            transaction={editingExpense}
+            onSuccess={() => {
+              refetchTransactions();
+              setEditingExpense(null);
+            }}
           />
 
           {/* Limit Enforcement Modal */}
