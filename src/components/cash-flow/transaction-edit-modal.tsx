@@ -183,111 +183,114 @@ export const TransactionEditModal = ({ open, onOpenChange, transaction, onSucces
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold">Edit Transaction</DialogTitle>
           <DialogDescription>Update transaction details for {transaction.vendorName}</DialogDescription>
         </DialogHeader>
         
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="description">Payee</Label>
-            <Input
-              id="description"
-              placeholder="Payee name"
-              value={formData.description}
-              readOnly
-              className="bg-muted cursor-not-allowed"
-            />
-          </div>
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
+          <div className="space-y-4 overflow-y-auto pr-2 flex-1">
+            <div className="space-y-2">
+              <Label htmlFor="description">Payee</Label>
+              <Input
+                id="description"
+                placeholder="Payee name"
+                value={formData.description}
+                readOnly
+                className="bg-muted cursor-not-allowed"
+              />
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="amount">Amount ($)</Label>
-            <Input
-              id="amount"
-              type="number"
-              step="0.01"
-              placeholder="0.00"
-              value={formData.amount}
-              onChange={(e) => handleInputChange("amount", parseFloat(e.target.value) || 0)}
-            />
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="amount">Amount ($)</Label>
+              <Input
+                id="amount"
+                type="number"
+                step="0.01"
+                placeholder="0.00"
+                value={formData.amount}
+                onChange={(e) => handleInputChange("amount", parseFloat(e.target.value) || 0)}
+              />
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="dueDate">Due Date</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-full justify-start text-left font-normal",
-                    !formData.dueDate && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {formData.dueDate ? format(parseDateInputLocal(formData.dueDate), "PPP") : <span>Pick a date</span>}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={formData.dueDate ? parseDateInputLocal(formData.dueDate) : undefined}
-                  onSelect={(date) => {
-                    if (date) {
-                      handleInputChange("dueDate", formatDateInputLocal(date));
-                    }
-                  }}
-                  initialFocus
-                  className="pointer-events-auto"
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="dueDate">Due Date</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !formData.dueDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {formData.dueDate ? format(parseDateInputLocal(formData.dueDate), "PPP") : <span>Pick a date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={formData.dueDate ? parseDateInputLocal(formData.dueDate) : undefined}
+                    onSelect={(date) => {
+                      if (date) {
+                        handleInputChange("dueDate", formatDateInputLocal(date));
+                      }
+                    }}
+                    initialFocus
+                    className="pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="remarks">Remarks</Label>
-            <Textarea
-              id="remarks"
-              placeholder="Additional notes..."
-              value={formData.remarks}
-              onChange={(e) => handleInputChange("remarks", e.target.value)}
-              rows={2}
-            />
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="remarks">Remarks</Label>
+              <Textarea
+                id="remarks"
+                placeholder="Additional notes..."
+                value={formData.remarks}
+                onChange={(e) => handleInputChange("remarks", e.target.value)}
+                rows={2}
+                className="resize-none"
+              />
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="creditCard">Payment Method</Label>
-            <Select 
-              value={formData.creditCardId || 'cash'} 
-              onValueChange={(value) => handleInputChange("creditCardId", value === 'cash' ? null : value)}
-            >
-              <SelectTrigger className="w-full">
-                <div className="flex items-center gap-2">
-                  <CreditCard className="h-4 w-4" />
-                  <SelectValue />
-                </div>
-              </SelectTrigger>
-              <SelectContent className="z-50 bg-popover text-popover-foreground border border-border shadow-lg">
-                <SelectItem value="cash">
+            <div className="space-y-2">
+              <Label htmlFor="creditCard">Payment Method</Label>
+              <Select 
+                value={formData.creditCardId || 'cash'} 
+                onValueChange={(value) => handleInputChange("creditCardId", value === 'cash' ? null : value)}
+              >
+                <SelectTrigger className="w-full">
                   <div className="flex items-center gap-2">
-                    <span>Cash / Bank</span>
+                    <CreditCard className="h-4 w-4" />
+                    <SelectValue />
                   </div>
-                </SelectItem>
-                {creditCards.map((card) => (
-                  <SelectItem key={card.id} value={card.id}>
+                </SelectTrigger>
+                <SelectContent className="z-[100] bg-popover text-popover-foreground border border-border shadow-lg max-h-[200px]">
+                  <SelectItem value="cash">
                     <div className="flex items-center gap-2">
-                      <span className="truncate">{card.account_name}</span>
-                      <span className="text-xs text-muted-foreground">
-                        (Available: ${card.available_credit?.toFixed(2) || '0.00'})
-                      </span>
+                      <span>Cash / Bank</span>
                     </div>
                   </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+                  {creditCards.map((card) => (
+                    <SelectItem key={card.id} value={card.id}>
+                      <div className="flex flex-col items-start gap-0.5">
+                        <span className="truncate max-w-[250px]">{card.account_name}</span>
+                        <span className="text-xs text-muted-foreground">
+                          Available: ${card.available_credit?.toFixed(2) || '0.00'}
+                        </span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           
-          <div className="flex space-x-3 pt-2">
+          <div className="flex space-x-3 pt-4 mt-4 border-t">
             <Button 
               type="button" 
               variant="outline" 
