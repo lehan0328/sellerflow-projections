@@ -12,7 +12,6 @@ import { useState, useMemo } from "react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
-import { ChangeCreditCardDialog } from "./change-credit-card-dialog";
 import { useCreditCards } from "@/hooks/useCreditCards";
 
 interface ExpenseItem {
@@ -44,7 +43,6 @@ export const ExpenseOverview = ({ expenses, onEditExpense, onDeleteExpense, onCr
   const [paymentMethodFilter, setPaymentMethodFilter] = useState<'all' | 'cash' | 'credit'>('all');
   const [customFromDate, setCustomFromDate] = useState<Date | undefined>();
   const [customToDate, setCustomToDate] = useState<Date | undefined>();
-  const [changingCardExpense, setChangingCardExpense] = useState<ExpenseItem | null>(null);
 
   // Filter and sort expenses
   const filteredAndSortedExpenses = useMemo(() => {
@@ -409,19 +407,14 @@ export const ExpenseOverview = ({ expenses, onEditExpense, onDeleteExpense, onCr
                       <TableCell className="text-muted-foreground">
                         {format(new Date(expense.paymentDate), 'MMM dd, yyyy')}
                       </TableCell>
-                      <TableCell>
+                       <TableCell>
                         {expense.creditCardId ? (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setChangingCardExpense(expense)}
-                            className="h-auto py-1 px-2 flex items-center gap-1.5 text-sm hover:bg-muted/50"
-                          >
+                          <div className="flex items-center gap-1.5 text-sm text-muted-foreground pl-2">
                             <CreditCard className="h-3.5 w-3.5" />
                             <span className="max-w-[150px] truncate">
                               {creditCards.find(c => c.id === expense.creditCardId)?.account_name || 'Credit Card'}
                             </span>
-                          </Button>
+                          </div>
                         ) : (
                           <div className="flex items-center gap-1.5 text-sm text-muted-foreground pl-2">
                             <DollarSign className="h-3.5 w-3.5" />
@@ -479,23 +472,6 @@ export const ExpenseOverview = ({ expenses, onEditExpense, onDeleteExpense, onCr
             </div>
           )}
         </CardContent>
-
-        {/* Change Credit Card Dialog */}
-        {changingCardExpense && (
-          <ChangeCreditCardDialog
-            open={!!changingCardExpense}
-            onOpenChange={(open) => {
-              if (!open) setChangingCardExpense(null);
-            }}
-            transactionId={changingCardExpense.id}
-            currentCreditCardId={changingCardExpense.creditCardId!}
-            transactionAmount={changingCardExpense.amount}
-            onSuccess={() => {
-              setChangingCardExpense(null);
-              onCreditCardChange?.();
-            }}
-          />
-        )}
       </Card>
     </div>
   );
