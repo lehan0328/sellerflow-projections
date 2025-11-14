@@ -2130,10 +2130,13 @@ export type Database = {
           code: string
           code_type: string | null
           created_at: string
+          current_uses: number
           discount_percentage: number
           duration_months: number
           id: string
           is_active: boolean
+          last_used_at: string | null
+          max_uses: number | null
           owner_id: string | null
           updated_at: string
         }
@@ -2141,10 +2144,13 @@ export type Database = {
           code: string
           code_type?: string | null
           created_at?: string
+          current_uses?: number
           discount_percentage?: number
           duration_months?: number
           id?: string
           is_active?: boolean
+          last_used_at?: string | null
+          max_uses?: number | null
           owner_id?: string | null
           updated_at?: string
         }
@@ -2152,10 +2158,13 @@ export type Database = {
           code?: string
           code_type?: string | null
           created_at?: string
+          current_uses?: number
           discount_percentage?: number
           duration_months?: number
           id?: string
           is_active?: boolean
+          last_used_at?: string | null
+          max_uses?: number | null
           owner_id?: string | null
           updated_at?: string
         }
@@ -2832,6 +2841,10 @@ export type Database = {
       }
       increment_affiliate_commission: {
         Args: { p_affiliate_id: string; p_commission_amount: number }
+        Returns: undefined
+      }
+      increment_referral_code_usage: {
+        Args: { p_code: string }
         Returns: undefined
       }
       insert_secure_amazon_account: {

@@ -67,18 +67,30 @@ serve(async (req) => {
     if (profile?.referral_code) {
       const { data: codeData } = await supabaseClient
         .from('referral_codes')
-        .select('discount_percentage, duration_months, is_active, code_type')
+        .select('discount_percentage, duration_months, is_active, code_type, max_uses, current_uses')
         .eq('code', profile.referral_code)
         .single();
       
       if (codeData && codeData.is_active) {
-        discountSettings = codeData;
-        logStep("Fetched active referral code settings", { 
-          code: profile.referral_code,
-          percentage: codeData.discount_percentage,
-          months: codeData.duration_months,
-          type: codeData.code_type
-        });
+        // Check if code has reached usage limit
+        if (codeData.max_uses !== null && codeData.current_uses >= codeData.max_uses) {
+          logStep("Referral code has reached max usage limit", {
+            code: profile.referral_code,
+            currentUses: codeData.current_uses,
+            maxUses: codeData.max_uses
+          });
+          discountSettings = null; // Don't apply discount
+        } else {
+          discountSettings = codeData;
+          logStep("Fetched active referral code settings", { 
+            code: profile.referral_code,
+            percentage: codeData.discount_percentage,
+            months: codeData.duration_months,
+            type: codeData.code_type,
+            currentUses: codeData.current_uses,
+            maxUses: codeData.max_uses || 'unlimited'
+          });
+        }
       } else if (codeData && !codeData.is_active) {
         logStep("Referral code is inactive, will not apply discount", { code: profile.referral_code });
       } else {
@@ -266,6 +278,24 @@ serve(async (req) => {
       }
       
       if (discountCouponId) {
+        // Increment the usage counter for the referral code atomically
+        if (profile?.referral_code) {
+          const { error: updateError } = await supabaseClient.rpc('increment_referral_code_usage', {
+            p_code: profile.referral_code
+          });
+          
+          if (updateError) {
+            logStep("WARNING: Failed to increment usage counter", {
+              code: profile.referral_code,
+              error: updateError.message
+            });
+          } else {
+            logStep("Incremented referral code usage counter", { 
+              code: profile.referral_code 
+            });
+          }
+        }
+        
         logStep("Will apply discount to checkout", { 
           couponId: discountCouponId,
           percentage: discountPercentage,

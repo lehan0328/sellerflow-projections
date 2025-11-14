@@ -22,6 +22,9 @@ interface CodeUsage {
   duration: string;
   createdBy?: string;
   status?: string;
+  maxUses?: number | null;
+  currentUses: number;
+  usagePercentage: number;
 }
 
 export function AdminCodeTracking() {
@@ -39,6 +42,8 @@ export function AdminCodeTracking() {
     code: '',
     discountPercentage: 10,
     durationMonths: 3,
+    maxUses: null as number | null,
+    unlimitedUses: true,
   });
   const [isCreating, setIsCreating] = useState(false);
   const [filterType, setFilterType] = useState<'all' | 'referral' | 'affiliate' | 'custom'>('all');
@@ -68,7 +73,7 @@ export function AdminCodeTracking() {
       // Fetch all codes from unified referral_codes table
       const { data: allCodes, error: codesError } = await supabase
         .from("referral_codes")
-        .select("*");
+        .select("*, max_uses, current_uses, last_used_at");
 
       if (codesError) throw codesError;
 
@@ -115,6 +120,11 @@ export function AdminCodeTracking() {
           activeSubscriptions: activeCount,
           discountAmount: `${codeData.discount_percentage}% off`,
           duration: `${codeData.duration_months} months`,
+          maxUses: codeData.max_uses,
+          currentUses: codeData.current_uses || 0,
+          usagePercentage: codeData.max_uses 
+            ? (codeData.current_uses / codeData.max_uses) * 100 
+            : 0,
         };
       }) || [];
 
@@ -188,6 +198,8 @@ export function AdminCodeTracking() {
           code_type: 'custom',
           discount_percentage: newCode.discountPercentage,
           duration_months: newCode.durationMonths,
+          max_uses: newCode.unlimitedUses ? null : newCode.maxUses,
+          current_uses: 0,
           is_active: true,
         });
 
@@ -201,7 +213,7 @@ export function AdminCodeTracking() {
       }
 
       toast.success('Code created successfully');
-      setNewCode({ code: '', discountPercentage: 10, durationMonths: 3 });
+      setNewCode({ code: '', discountPercentage: 10, durationMonths: 3, maxUses: null, unlimitedUses: true });
       fetchCodeTracking();
     } catch (error) {
       console.error('Error creating code:', error);
@@ -338,49 +350,76 @@ export function AdminCodeTracking() {
           <CardDescription>Add a new custom code with custom discount percentage</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="code">Code</Label>
-              <Input
-                id="code"
-                placeholder="SAVE20"
-                value={newCode.code}
-                onChange={(e) => setNewCode({ ...newCode, code: e.target.value.toUpperCase() })}
-                maxLength={20}
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="code">Code</Label>
+                <Input
+                  id="code"
+                  placeholder="SAVE20"
+                  value={newCode.code}
+                  onChange={(e) => setNewCode({ ...newCode, code: e.target.value.toUpperCase() })}
+                  maxLength={20}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="discount">Discount %</Label>
+                <Input
+                  id="discount"
+                  type="number"
+                  min="1"
+                  max="100"
+                  value={newCode.discountPercentage}
+                  onChange={(e) => setNewCode({ ...newCode, discountPercentage: parseInt(e.target.value) || 10 })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="duration">Duration (months)</Label>
+                <Input
+                  id="duration"
+                  type="number"
+                  min="1"
+                  max="12"
+                  value={newCode.durationMonths}
+                  onChange={(e) => setNewCode({ ...newCode, durationMonths: parseInt(e.target.value) || 3 })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="maxUses">Max Uses</Label>
+                <Input
+                  id="maxUses"
+                  type="number"
+                  min="1"
+                  placeholder="∞"
+                  value={newCode.unlimitedUses ? '' : newCode.maxUses || ''}
+                  onChange={(e) => {
+                    const value = e.target.value ? parseInt(e.target.value) : null;
+                    setNewCode({ ...newCode, maxUses: value, unlimitedUses: !value });
+                  }}
+                  disabled={newCode.unlimitedUses}
+                />
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="unlimitedUses"
+                checked={newCode.unlimitedUses}
+                onChange={(e) => setNewCode({ ...newCode, unlimitedUses: e.target.checked, maxUses: null })}
+                className="h-4 w-4 rounded border-gray-300"
               />
+              <Label htmlFor="unlimitedUses" className="text-sm font-normal cursor-pointer">
+                Unlimited uses
+              </Label>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="discount">Discount %</Label>
-              <Input
-                id="discount"
-                type="number"
-                min="1"
-                max="100"
-                value={newCode.discountPercentage}
-                onChange={(e) => setNewCode({ ...newCode, discountPercentage: parseInt(e.target.value) || 10 })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="duration">Duration (months)</Label>
-              <Input
-                id="duration"
-                type="number"
-                min="1"
-                max="12"
-                value={newCode.durationMonths}
-                onChange={(e) => setNewCode({ ...newCode, durationMonths: parseInt(e.target.value) || 3 })}
-              />
-            </div>
-            <div className="flex items-end">
-              <Button 
-                onClick={handleCreateCode} 
-                disabled={isCreating}
-                className="w-full"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                {isCreating ? 'Creating...' : 'Create Code'}
-              </Button>
-            </div>
+            <Button 
+              onClick={handleCreateCode} 
+              disabled={isCreating}
+              className="w-full"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              {isCreating ? 'Creating...' : 'Create Code'}
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -429,6 +468,24 @@ export function AdminCodeTracking() {
                         {code.status && (
                           <Badge variant={code.status === 'approved' ? 'default' : 'outline'}>
                             {code.status}
+                          </Badge>
+                        )}
+                        {code.maxUses !== null && code.maxUses !== undefined && (
+                          <Badge 
+                            variant={
+                              code.usagePercentage >= 100 ? 'destructive' :
+                              code.usagePercentage >= 90 ? 'destructive' :
+                              code.usagePercentage >= 50 ? 'default' :
+                              'secondary'
+                            }
+                          >
+                            {code.currentUses} / {code.maxUses} uses
+                            {code.usagePercentage >= 100 && ' (EXHAUSTED)'}
+                          </Badge>
+                        )}
+                        {(code.maxUses === null || code.maxUses === undefined) && (
+                          <Badge variant="outline">
+                            {code.currentUses} / ∞ uses
                           </Badge>
                         )}
                       </div>
