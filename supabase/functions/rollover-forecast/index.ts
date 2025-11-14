@@ -22,11 +22,11 @@ serve(async (req) => {
       throw new Error('amazonAccountId and userId are required');
     }
 
-    // Get today's date in EST (UTC-5)
-    const now = new Date();
-    const estOffset = -5 * 60; // EST is UTC-5
-    const estNow = new Date(now.getTime() + estOffset * 60 * 1000);
-    const todayStr = estNow.toISOString().split('T')[0];
+    // --- MODIFIED SECTION: USE UTC DATE ---
+    // Get today's date in UTC
+    // This removes the manual EST offset and uses the server's standard UTC time.
+    const todayStr = new Date().toISOString().split('T')[0]; 
+    // --------------------------------------
 
     // 1. Find the Last Confirmed Payout Date
     // This acts as our "floor" - we assume any forecast BEFORE this date was covered by this payout.
