@@ -55,6 +55,10 @@ interface AuditResult {
   status: 'valid' | 'invalid' | 'mismatch' | 'not_found' | 'multiple';
   canAutoFix: boolean;
   suggestedFix: string | null;
+  amazonAccounts: number;
+  bankAccounts: number;
+  creditCards: number;
+  forecasts: number;
 }
 
 interface AuditSummary {
@@ -197,13 +201,17 @@ export function AdminStripeAudit() {
       return;
     }
 
-    const headers = ['Email', 'Database Customer ID', 'Stripe Customer ID', 'Status', 'Stripe Email', 'Can Auto-Fix', 'Suggested Action'];
+    const headers = ['Email', 'Database Customer ID', 'Stripe Customer ID', 'Status', 'Stripe Email', 'Amazon Accounts', 'Bank Accounts', 'Credit Cards', 'Forecasts', 'Can Auto-Fix', 'Suggested Action'];
     const rows = auditResults.map(r => [
       r.email,
       r.dbCustomerId || 'N/A',
       r.stripeCustomerId || 'N/A',
       r.status,
       r.stripeEmail || 'N/A',
+      r.amazonAccounts || 0,
+      r.bankAccounts || 0,
+      r.creditCards || 0,
+      r.forecasts || 0,
       r.canAutoFix ? 'Yes' : 'No',
       r.suggestedFix || 'N/A'
     ]);
@@ -440,6 +448,10 @@ export function AdminStripeAudit() {
                     <TableHead>DB Customer ID</TableHead>
                     <TableHead>Stripe Customer ID</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead className="text-center">Amazon</TableHead>
+                    <TableHead className="text-center">Banks</TableHead>
+                    <TableHead className="text-center">Cards</TableHead>
+                    <TableHead className="text-center">Forecasts</TableHead>
                     <TableHead>Suggested Fix</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -447,7 +459,7 @@ export function AdminStripeAudit() {
                 <TableBody>
                   {filteredResults.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center text-muted-foreground">
+                      <TableCell colSpan={10} className="text-center text-muted-foreground">
                         No results match your filters
                       </TableCell>
                     </TableRow>
@@ -476,6 +488,26 @@ export function AdminStripeAudit() {
                           )}
                         </TableCell>
                         <TableCell>{getStatusBadge(result.status)}</TableCell>
+                        <TableCell className="text-center">
+                          <Badge variant={result.amazonAccounts > 0 ? "default" : "secondary"}>
+                            {result.amazonAccounts}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Badge variant={result.bankAccounts > 0 ? "default" : "secondary"}>
+                            {result.bankAccounts}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Badge variant={result.creditCards > 0 ? "default" : "secondary"}>
+                            {result.creditCards}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Badge variant={result.forecasts > 0 ? "default" : "secondary"}>
+                            {result.forecasts}
+                          </Badge>
+                        </TableCell>
                         <TableCell className="text-sm text-muted-foreground max-w-xs truncate">
                           {result.suggestedFix || '-'}
                         </TableCell>
