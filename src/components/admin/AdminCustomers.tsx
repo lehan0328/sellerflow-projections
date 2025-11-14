@@ -807,7 +807,7 @@ export const AdminCustomers = () => {
                         <div className="flex flex-col gap-1">
                           {customer.stripe_plan_name ? (
                             <>
-                              <Badge variant="default" className="text-xs w-fit">
+                              <Badge variant="outline" className="text-xs w-fit">
                                 {customer.stripe_plan_name}
                               </Badge>
                               {customer.stripe_subscription_status && customer.stripe_subscription_status !== 'active' && (
