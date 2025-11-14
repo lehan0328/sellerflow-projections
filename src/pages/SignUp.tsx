@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
-import { useGoogleReCaptcha } from 'react-google-recaptcha-v3';
+import { GoogleReCaptchaProvider, useGoogleReCaptcha } from 'react-google-recaptcha-v3';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,7 +13,7 @@ import aurenIcon from "@/assets/auren-icon-blue.png";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-export const SignUp = () => {
+const SignUpComponent = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { executeRecaptcha } = useGoogleReCaptcha();
@@ -578,3 +578,9 @@ export const SignUp = () => {
     </div>
   );
 };
+
+export const SignUp = () => (
+  <GoogleReCaptchaProvider reCaptchaKey="6Lf5AA0sAAAAAJgWKTxuUy40FjcIVEm17I3Zrmq0">
+    <SignUpComponent />
+  </GoogleReCaptchaProvider>
+);
