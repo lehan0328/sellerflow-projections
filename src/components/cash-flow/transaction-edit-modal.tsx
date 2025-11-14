@@ -226,7 +226,11 @@ export const TransactionEditModal = ({ open, onOpenChange, transaction, onSucces
                     )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {formData.dueDate ? format(parseDateInputLocal(formData.dueDate), "PPP") : <span>Pick a date</span>}
+                    {formData.dueDate ? (
+                      format(parseDateInputLocal(formData.dueDate), "PPP")
+                    ) : (
+                      <span>Pick a date</span>
+                    )}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
