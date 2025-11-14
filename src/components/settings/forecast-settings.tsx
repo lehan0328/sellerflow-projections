@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Sparkles, TrendingUp, Info, AlertTriangle, AlertCircle, Loader2, RefreshCw } from "lucide-react";
+import { Sparkles, TrendingUp, Info, AlertTriangle, AlertCircle, Loader2 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -682,74 +682,6 @@ export const ForecastSettings = () => {
             </div>
             <div className="flex items-center gap-3">
               {!isOnForecastPage}
-              {forecastsEnabled && <Button variant="outline" size="sm" onClick={async () => {
-              setSyncProgress(10);
-              toast.loading("Regenerating forecasts...");
-              try {
-                const {
-                  data: {
-                    user: currentUser
-                  }
-                } = await supabase.auth.getUser();
-                if (!currentUser) throw new Error("Not authenticated");
-                setSyncProgress(30);
-                
-                // Detect payout frequency for logging
-                const { data: amazonAccount } = await supabase
-                  .from('amazon_accounts')
-                  .select('payout_frequency')
-                  .eq('user_id', currentUser.id)
-                  .eq('is_active', true)
-                  .limit(1)
-                  .single();
-                
-                const payoutFrequency = amazonAccount?.payout_frequency || 'bi-weekly';
-                console.log(`🔄 Regenerating forecasts (account type: ${payoutFrequency}, will auto-route)...`);
-                
-                // Get user's account_id for consistent forecast deletion
-                const { data: profile } = await supabase
-                  .from('profiles')
-                  .select('account_id')
-                  .eq('user_id', currentUser.id)
-                  .single();
-                
-                if (!profile?.account_id) {
-                  throw new Error('Account ID not found');
-                }
-                
-                // Delete old forecasts for this ACCOUNT (not just user_id)
-                console.log('🗑️ Deleting old forecasts for account:', profile.account_id);
-                await supabase.from('amazon_payouts').delete().eq('account_id', profile.account_id).eq('status', 'forecasted');
-                setSyncProgress(50);
-                
-                // Generate new forecasts using main router
-                const {
-                  error
-                } = await supabase.functions.invoke('forecast-amazon-payouts', {
-                  body: {
-                    userId: currentUser.id
-                  }
-                });
-                if (error) throw error;
-                setSyncProgress(80);
-                await refetchPayouts();
-                setSyncProgress(100);
-                toast.dismiss();
-                toast.success("Forecasts regenerated successfully! Refreshing...");
-                setTimeout(() => {
-                  setSyncProgress(0);
-                  window.location.reload();
-                }, 1500);
-              } catch (error) {
-                console.error("Regeneration error:", error);
-                toast.dismiss();
-                toast.error("Failed to regenerate forecasts");
-                setSyncProgress(0);
-              }
-            }} disabled={togglingForecast || syncProgress > 0} className="flex items-center gap-2">
-                  <RefreshCw className="h-4 w-4" />
-                  Regenerate
-                </Button>}
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
