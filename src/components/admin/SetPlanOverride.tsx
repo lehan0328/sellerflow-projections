@@ -286,7 +286,9 @@ export const SetPlanOverride = () => {
                 <SelectItem value="starter">Starter</SelectItem>
                 <SelectItem value="growing">Growing</SelectItem>
                 <SelectItem value="professional">Professional</SelectItem>
-                <SelectItem value="enterprise">Enterprise</SelectItem>
+                <SelectItem value="tier1">Enterprise 1 ($100k-$250k)</SelectItem>
+                <SelectItem value="tier2">Enterprise 2 ($250k-$500k)</SelectItem>
+                <SelectItem value="tier3">Enterprise 3 ($500k+)</SelectItem>
               </SelectContent>
             </Select>
           </div>
