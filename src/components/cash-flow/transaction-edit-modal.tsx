@@ -190,7 +190,7 @@ export const TransactionEditModal = ({ open, onOpenChange, transaction, onSucces
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
-          <div className="space-y-4 overflow-y-auto pr-2 flex-1">
+          <div className="space-y-4 overflow-y-auto pr-4 flex-1">
             <div className="space-y-2">
               <Label htmlFor="description">Payee</Label>
               <Input
