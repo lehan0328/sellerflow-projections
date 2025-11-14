@@ -12,6 +12,8 @@ import { useState, useMemo } from "react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { ChangeCreditCardDialog } from "./change-credit-card-dialog";
+import { useCreditCards } from "@/hooks/useCreditCards";
 
 interface ExpenseItem {
   id: string;
@@ -21,15 +23,18 @@ interface ExpenseItem {
   status: 'pending' | 'paid';
   category: string;
   creditCardId?: string;
+  creditCardName?: string;
 }
 
 interface ExpenseOverviewProps {
   expenses: ExpenseItem[];
   onEditExpense?: (expense: ExpenseItem) => void;
   onDeleteExpense?: (expense: ExpenseItem) => void;
+  onCreditCardChange?: () => void;
 }
 
-export const ExpenseOverview = ({ expenses, onEditExpense, onDeleteExpense }: ExpenseOverviewProps) => {
+export const ExpenseOverview = ({ expenses, onEditExpense, onDeleteExpense, onCreditCardChange }: ExpenseOverviewProps) => {
+  const { creditCards } = useCreditCards();
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<'description' | 'amount' | 'paymentDate'>('paymentDate');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
@@ -39,6 +44,7 @@ export const ExpenseOverview = ({ expenses, onEditExpense, onDeleteExpense }: Ex
   const [paymentMethodFilter, setPaymentMethodFilter] = useState<'all' | 'cash' | 'credit'>('all');
   const [customFromDate, setCustomFromDate] = useState<Date | undefined>();
   const [customToDate, setCustomToDate] = useState<Date | undefined>();
+  const [changingCardExpense, setChangingCardExpense] = useState<ExpenseItem | null>(null);
 
   // Filter and sort expenses
   const filteredAndSortedExpenses = useMemo(() => {
@@ -405,12 +411,19 @@ export const ExpenseOverview = ({ expenses, onEditExpense, onDeleteExpense }: Ex
                       </TableCell>
                       <TableCell>
                         {expense.creditCardId ? (
-                          <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setChangingCardExpense(expense)}
+                            className="h-auto py-1 px-2 flex items-center gap-1.5 text-sm hover:bg-muted/50"
+                          >
                             <CreditCard className="h-3.5 w-3.5" />
-                            <span>Credit Card</span>
-                          </div>
+                            <span className="max-w-[150px] truncate">
+                              {creditCards.find(c => c.id === expense.creditCardId)?.account_name || 'Credit Card'}
+                            </span>
+                          </Button>
                         ) : (
-                          <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                          <div className="flex items-center gap-1.5 text-sm text-muted-foreground pl-2">
                             <DollarSign className="h-3.5 w-3.5" />
                             <span>Cash</span>
                           </div>
@@ -466,6 +479,23 @@ export const ExpenseOverview = ({ expenses, onEditExpense, onDeleteExpense }: Ex
             </div>
           )}
         </CardContent>
+
+        {/* Change Credit Card Dialog */}
+        {changingCardExpense && (
+          <ChangeCreditCardDialog
+            open={!!changingCardExpense}
+            onOpenChange={(open) => {
+              if (!open) setChangingCardExpense(null);
+            }}
+            transactionId={changingCardExpense.id}
+            currentCreditCardId={changingCardExpense.creditCardId!}
+            transactionAmount={changingCardExpense.amount}
+            onSuccess={() => {
+              setChangingCardExpense(null);
+              onCreditCardChange?.();
+            }}
+          />
+        )}
       </Card>
     </div>
   );

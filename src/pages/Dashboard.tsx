@@ -2948,6 +2948,10 @@ const Dashboard = () => {
             onDeleteExpense={async (expense) => {
               await deleteTransaction(expense.id);
             }}
+            onCreditCardChange={() => {
+              refetchTransactions();
+              refetchCreditCards();
+            }}
           />
         );
 
