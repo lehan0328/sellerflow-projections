@@ -22,6 +22,7 @@ interface TransactionsViewProps {
   expenses: any[];
   onEditExpense?: (expense: any) => void;
   onDeleteExpense?: (expense: any) => void;
+  onCreditCardChange?: () => void;
 }
 
 export function TransactionsView({
@@ -36,6 +37,7 @@ export function TransactionsView({
   expenses,
   onEditExpense,
   onDeleteExpense,
+  onCreditCardChange,
 }: TransactionsViewProps) {
   return (
     <Tabs defaultValue="vendors" className="w-full">
@@ -67,6 +69,7 @@ export function TransactionsView({
           expenses={expenses}
           onEditExpense={onEditExpense}
           onDeleteExpense={onDeleteExpense}
+          onCreditCardChange={onCreditCardChange}
         />
       </TabsContent>
       
