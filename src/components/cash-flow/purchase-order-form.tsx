@@ -734,20 +734,19 @@ export const PurchaseOrderForm = ({
                     
                     {showVendorDropdown && <div className="absolute z-50 w-full mt-1 bg-background border border-border rounded-md shadow-lg max-h-48 overflow-y-auto">
                         {filteredVendors.length === 0 ? <div className="p-3 text-sm text-muted-foreground text-center bg-background">
-                            {vendorSearchTerm ? <div className="space-y-2">
-                                <div>No vendors found matching your search</div>
-                                 <Button size="sm" variant="outline" onClick={() => setShowVendorForm(true)} className="text-xs">
-                                   Add "{vendorSearchTerm}" as new vendor
-                                 </Button>
-                              </div> : <div className="space-y-2">
-                                <div>No vendors available</div>
-                                 <Button size="sm" variant="outline" onClick={() => setShowVendorForm(true)} className="text-xs">
-                                   Create Your First Vendor
-                                 </Button>
-                              </div>}
+...
                           </div> : filteredVendors.map(vendor => <div key={vendor.id} className="p-2 hover:bg-accent cursor-pointer text-sm border-b last:border-b-0 bg-background" onClick={() => handleVendorSelect(vendor)}>
-                              <div className="font-medium">{vendor.name}</div>
-                              {vendor.category && <div className="text-xs text-muted-foreground">{vendor.category}</div>}
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="flex-1">
+                                  <div className="font-medium">{vendor.name}</div>
+                                  {vendor.category && <div className="text-xs text-muted-foreground">{vendor.category}</div>}
+                                </div>
+                                {vendor.paymentMethod && (
+                                  <div className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground whitespace-nowrap">
+                                    {vendor.paymentMethod === 'credit-card' ? '💳 Card' : '🏦 Bank'}
+                                  </div>
+                                )}
+                              </div>
                             </div>)}
                       </div>}
                   </div>
