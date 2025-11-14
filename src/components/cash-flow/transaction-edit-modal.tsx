@@ -215,6 +215,38 @@ export const TransactionEditModal = ({ open, onOpenChange, transaction, onSucces
             </div>
 
             <div className="space-y-2">
+              <Label htmlFor="creditCard">Payment Method</Label>
+              <Select 
+                value={formData.creditCardId || 'cash'} 
+                onValueChange={(value) => handleInputChange("creditCardId", value === 'cash' ? null : value)}
+              >
+                <SelectTrigger className="w-full">
+                  <div className="flex items-center gap-2">
+                    <CreditCard className="h-4 w-4" />
+                    <SelectValue />
+                  </div>
+                </SelectTrigger>
+                <SelectContent className="z-[100] bg-popover text-popover-foreground border border-border shadow-lg max-h-[200px]">
+                  <SelectItem value="cash">
+                    <div className="flex items-center gap-2">
+                      <span>Cash / Bank</span>
+                    </div>
+                  </SelectItem>
+                  {creditCards.map((card) => (
+                    <SelectItem key={card.id} value={card.id}>
+                      <div className="flex flex-col items-start gap-0.5">
+                        <span className="truncate max-w-[250px]">{card.account_name}</span>
+                        <span className="text-xs text-muted-foreground">
+                          Available: ${card.available_credit?.toFixed(2) || '0.00'}
+                        </span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="dueDate">Due Date</Label>
               <Popover>
                 <PopoverTrigger asChild>
@@ -259,38 +291,6 @@ export const TransactionEditModal = ({ open, onOpenChange, transaction, onSucces
                 rows={2}
                 className="resize-none"
               />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="creditCard">Payment Method</Label>
-              <Select 
-                value={formData.creditCardId || 'cash'} 
-                onValueChange={(value) => handleInputChange("creditCardId", value === 'cash' ? null : value)}
-              >
-                <SelectTrigger className="w-full">
-                  <div className="flex items-center gap-2">
-                    <CreditCard className="h-4 w-4" />
-                    <SelectValue />
-                  </div>
-                </SelectTrigger>
-                <SelectContent className="z-[100] bg-popover text-popover-foreground border border-border shadow-lg max-h-[200px]">
-                  <SelectItem value="cash">
-                    <div className="flex items-center gap-2">
-                      <span>Cash / Bank</span>
-                    </div>
-                  </SelectItem>
-                  {creditCards.map((card) => (
-                    <SelectItem key={card.id} value={card.id}>
-                      <div className="flex flex-col items-start gap-0.5">
-                        <span className="truncate max-w-[250px]">{card.account_name}</span>
-                        <span className="text-xs text-muted-foreground">
-                          Available: ${card.available_credit?.toFixed(2) || '0.00'}
-                        </span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
             </div>
           </div>
           
