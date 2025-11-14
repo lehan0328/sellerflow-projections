@@ -57,7 +57,7 @@ export const TransactionEditModal = ({ open, onOpenChange, transaction, onSucces
     if (open && transaction) {
       setFormData({
         amount: transaction.amount || 0,
-        dueDate: transaction.dueDate ? formatDateInputLocal(transaction.dueDate) : formatDateInputLocal(new Date()),
+        dueDate: transaction.dueDate ? formatDateInputLocal(transaction.dueDate) : '',
         description: transaction.description || '',
         remarks: transaction.remarks || '',
         creditCardId: transaction.creditCardId || null
