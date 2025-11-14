@@ -2327,6 +2327,7 @@ export type Database = {
         Row: {
           action: string
           created_at: string | null
+          credit_cards: number | null
           id: string
           metadata: Json | null
           new_customer_id: string | null
@@ -2338,6 +2339,7 @@ export type Database = {
         Insert: {
           action: string
           created_at?: string | null
+          credit_cards?: number | null
           id?: string
           metadata?: Json | null
           new_customer_id?: string | null
@@ -2349,6 +2351,7 @@ export type Database = {
         Update: {
           action?: string
           created_at?: string | null
+          credit_cards?: number | null
           id?: string
           metadata?: Json | null
           new_customer_id?: string | null

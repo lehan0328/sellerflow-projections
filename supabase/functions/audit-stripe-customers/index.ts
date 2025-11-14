@@ -16,6 +16,10 @@ interface AuditResult {
   status: 'valid' | 'invalid' | 'mismatch' | 'not_found' | 'multiple';
   canAutoFix: boolean;
   suggestedFix: string | null;
+  amazonAccounts: number;
+  bankAccounts: number;
+  creditCards: number;
+  forecasts: number;
 }
 
 serve(async (req) => {
@@ -76,6 +80,32 @@ serve(async (req) => {
 
     // Process each profile
     for (const profile of profiles || []) {
+      // Get account counts for this user
+      const [amazonAccounts, bankAccounts, creditCards, forecasts] = await Promise.all([
+        supabaseClient
+          .from('amazon_accounts')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', profile.user_id),
+        supabaseClient
+          .from('bank_accounts')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', profile.user_id),
+        supabaseClient
+          .from('credit_cards')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', profile.user_id),
+        supabaseClient
+          .from('amazon_payouts')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', profile.user_id)
+          .in('status', ['forecasted', 'estimated'])
+      ]);
+
+      const amazonCount = amazonAccounts.count || 0;
+      const bankCount = bankAccounts.count || 0;
+      const creditCardCount = creditCards.count || 0;
+      const forecastCount = forecasts.count || 0;
+
       const result: AuditResult = {
         userId: profile.user_id,
         email: profile.email || 'No email',
@@ -85,6 +115,10 @@ serve(async (req) => {
         status: 'not_found',
         canAutoFix: false,
         suggestedFix: null,
+        amazonAccounts: amazonCount,
+        bankAccounts: bankCount,
+        creditCards: creditCardCount,
+        forecasts: forecastCount,
       };
 
       // Skip if no email
