@@ -129,12 +129,13 @@ export const TransactionEditModal = ({ open, onOpenChange, transaction, onSucces
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="description">PO# / Reference</Label>
+            <Label htmlFor="description">Payee</Label>
             <Input
               id="description"
-              placeholder="Enter PO or reference number"
+              placeholder="Payee name"
               value={formData.description}
-              onChange={(e) => handleInputChange("description", e.target.value)}
+              readOnly
+              className="bg-muted cursor-not-allowed"
             />
           </div>
 
