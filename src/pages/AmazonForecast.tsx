@@ -597,7 +597,7 @@ export default function AmazonForecast() {
             <div className="bg-background rounded-lg border p-4">
               <div className="flex items-center justify-between space-y-0 pb-2">
                 <div className="flex items-center gap-2">
-                  <p className="text-sm font-medium">Avg Daily Revenue</p>
+                  <p className="text-sm font-medium">Daily Average Payouts</p>
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
