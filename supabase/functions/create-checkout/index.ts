@@ -51,19 +51,49 @@ serve(async (req) => {
       apiVersion: "2025-08-27.basil",
     });
 
-    // Check user's profile for referred user discount
+    // Check user's profile and fetch referral discount settings dynamically
     const { data: profile } = await supabaseClient
       .from('profiles')
-      .select('plan_override, discount_redeemed_at')
+      .select(`
+        plan_override, 
+        discount_redeemed_at,
+        referral_code
+      `)
       .eq('user_id', user.id)
       .single();
     
-    const hasReferredUserDiscount = profile?.plan_override === 'referred_user_discount';
+    // Fetch referral code discount settings if user has a referral code
+    let discountSettings = null;
+    if (profile?.referral_code) {
+      const { data: codeData } = await supabaseClient
+        .from('referral_codes')
+        .select('discount_percentage, duration_months, is_active, code_type')
+        .eq('code', profile.referral_code)
+        .single();
+      
+      if (codeData && codeData.is_active) {
+        discountSettings = codeData;
+        logStep("Fetched active referral code settings", { 
+          code: profile.referral_code,
+          percentage: codeData.discount_percentage,
+          months: codeData.duration_months,
+          type: codeData.code_type
+        });
+      } else if (codeData && !codeData.is_active) {
+        logStep("Referral code is inactive, will not apply discount", { code: profile.referral_code });
+      } else {
+        logStep("Referral code not found in database", { code: profile.referral_code });
+      }
+    }
+    
+    const hasReferredUserDiscount = profile?.plan_override === 'referred_user_discount' || !!discountSettings;
     const hasEverRedeemedDiscount = !!profile?.discount_redeemed_at;
     logStep("Checked user profile", { 
       hasReferredUserDiscount, 
       hasEverRedeemedDiscount,
-      planOverride: profile?.plan_override 
+      planOverride: profile?.plan_override,
+      referralCode: profile?.referral_code,
+      hasDiscountSettings: !!discountSettings
     });
 
     // Check for existing customer or create new one
@@ -143,28 +173,105 @@ serve(async (req) => {
       logStep("Stripe customer ID saved to profile");
     }
 
-    // Create or get the referred user discount coupon if applicable
+    // Create or get the discount coupon if applicable with dynamic values
     let discountCouponId = null;
     if (hasReferredUserDiscount && !hasEverRedeemedDiscount) {
-      const couponId = 'referred_user_discount_10pct';
+      // Determine discount percentage and duration
+      let discountPercentage = 10; // Default for legacy users
+      let durationMonths = 3; // Default for legacy users
+      
+      // Use dynamic settings from referral_codes table if available
+      if (discountSettings) {
+        discountPercentage = discountSettings.discount_percentage;
+        durationMonths = discountSettings.duration_months;
+        
+        // Validate discount settings
+        if (discountPercentage < 1 || discountPercentage > 100) {
+          logStep("WARNING: Invalid discount percentage, using default 10%", { 
+            invalidValue: discountPercentage 
+          });
+          discountPercentage = 10;
+        }
+        
+        if (durationMonths < 1 || durationMonths > 36) {
+          logStep("WARNING: Invalid duration months, using default 3", { 
+            invalidValue: durationMonths 
+          });
+          durationMonths = 3;
+        }
+        
+        logStep("Using dynamic discount settings", { 
+          percentage: discountPercentage,
+          months: durationMonths,
+          source: 'referral_codes_table'
+        });
+      } else {
+        logStep("Using legacy discount settings for backward compatibility", {
+          percentage: discountPercentage,
+          months: durationMonths,
+          source: 'hardcoded_default'
+        });
+      }
+      
+      // Generate dynamic coupon ID based on discount settings
+      const couponId = `discount_${discountPercentage}pct_${durationMonths}mo`;
+      
       try {
         // Try to retrieve existing coupon
-        await stripe.coupons.retrieve(couponId);
-        discountCouponId = couponId;
-        logStep("Found existing referred user discount coupon");
+        const existingCoupon = await stripe.coupons.retrieve(couponId);
+        
+        // Verify existing coupon has correct settings
+        if (existingCoupon.percent_off === discountPercentage && 
+            existingCoupon.duration === 'repeating' &&
+            existingCoupon.duration_in_months === durationMonths) {
+          discountCouponId = couponId;
+          logStep("Found existing discount coupon with correct settings", { couponId });
+        } else {
+          logStep("WARNING: Existing coupon has different settings", {
+            couponId,
+            existingPercent: existingCoupon.percent_off,
+            existingMonths: existingCoupon.duration_in_months,
+            expectedPercent: discountPercentage,
+            expectedMonths: durationMonths
+          });
+          // Use existing coupon anyway to avoid conflicts
+          discountCouponId = couponId;
+        }
       } catch (error) {
-        // Create coupon if it doesn't exist (10% off for 3 months)
-        logStep("Creating referred user discount coupon");
-        await stripe.coupons.create({
-          id: couponId,
-          name: 'Referred User Discount - 10% Off',
-          percent_off: 10,
-          duration: 'repeating',
-          duration_in_months: 3,
+        // Create coupon if it doesn't exist
+        logStep("Creating new discount coupon", {
+          couponId,
+          percentage: discountPercentage,
+          months: durationMonths
         });
-        discountCouponId = couponId;
+        
+        try {
+          await stripe.coupons.create({
+            id: couponId,
+            name: `Referral Discount - ${discountPercentage}% Off for ${durationMonths} Months`,
+            percent_off: discountPercentage,
+            duration: 'repeating',
+            duration_in_months: durationMonths,
+          });
+          discountCouponId = couponId;
+          logStep("Successfully created discount coupon", { couponId });
+        } catch (createError) {
+          logStep("ERROR: Failed to create discount coupon", {
+            error: createError.message,
+            couponId
+          });
+          // Proceed without discount rather than failing checkout
+          logStep("Proceeding with checkout without discount");
+        }
       }
-      logStep("Will apply referred user discount", { couponId: discountCouponId });
+      
+      if (discountCouponId) {
+        logStep("Will apply discount to checkout", { 
+          couponId: discountCouponId,
+          percentage: discountPercentage,
+          months: durationMonths
+        });
+      }
     }
 
     // Create checkout session - simplified without trial logic
