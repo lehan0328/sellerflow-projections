@@ -68,7 +68,7 @@ const handler = async (req: Request): Promise<Response> => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "Auren <noreply@aurenapp.com>",
+        from: "Auren <reset@aurenapp.com>",
         to: [email],
         subject: "Reset Your Auren Password",
         html: `
