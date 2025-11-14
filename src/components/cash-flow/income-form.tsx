@@ -64,6 +64,7 @@ export const IncomeForm = ({
   const { categories: incomeCategories, addCategory: addIncomeCategory, refetch: refetchIncomeCategories } = useCategories('income', isRecurring);
   const { categories: expenseCategories, addCategory: addExpenseCategory, refetch: refetchExpenseCategories } = useCategories('expense', isRecurring);
   const { creditCards } = useCreditCards();
+  const [previousCreditCardCount, setPreviousCreditCardCount] = useState(creditCards.length);
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [formData, setFormData] = useState({
     type: initialType as "income" | "expense",
@@ -145,6 +146,23 @@ export const IncomeForm = ({
       setCustomerSearchTerm("");
     }
   }, [editingIncome, isRecurring, initialType]);
+
+  // Auto-select newly added credit card
+  useEffect(() => {
+    if (creditCards.length > previousCreditCardCount && formData.type === "expense") {
+      // A new credit card was added - auto-select it
+      const newestCard = creditCards[creditCards.length - 1];
+      if (newestCard) {
+        setFormData(prev => ({
+          ...prev,
+          paymentMethod: "credit-card",
+          creditCardId: newestCard.id
+        }));
+        toast.success(`Credit card "${newestCard.account_name || newestCard.institution_name}" selected`);
+      }
+    }
+    setPreviousCreditCardCount(creditCards.length);
+  }, [creditCards.length]);
 
   const handleCustomerSelect = (customer: Customer) => {
     setFormData(prev => ({
