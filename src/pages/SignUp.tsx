@@ -12,6 +12,7 @@ import { ArrowLeft, Eye, EyeOff, Check, X, Loader2 } from "lucide-react";
 import aurenIcon from "@/assets/auren-icon-blue.png";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { capitalizeName } from "@/lib/utils";
 
 const SignUpComponent = () => {
   const navigate = useNavigate();
@@ -223,9 +224,9 @@ const SignUpComponent = () => {
       const redirectUrl = `${window.location.origin}/auth`;
       
     const metadata: Record<string, any> = {
-      first_name: signUpData.firstName,
-      last_name: signUpData.lastName,
-      company: signUpData.company,
+      first_name: capitalizeName(signUpData.firstName.trim()),
+      last_name: capitalizeName(signUpData.lastName.trim()),
+      company: signUpData.company?.trim() ? capitalizeName(signUpData.company.trim()) : signUpData.company,
       monthly_amazon_revenue: signUpData.monthlyAmazonRevenue,
       hear_about_us: signUpData.hearAboutUs,
     };
