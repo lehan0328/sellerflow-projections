@@ -399,7 +399,7 @@ const Features = () => {
             <Card>
               <CardHeader>
                 <CardTitle>What Auren Models</CardTitle>
-                <CardDescription>Unlike basic forecasters, we account for Amazon's actual settlement mechanics</CardDescription>
+                <CardDescription>We account for Amazon's actual settlement mechanics</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid md:grid-cols-2 gap-4">
