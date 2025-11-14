@@ -8,8 +8,7 @@ const corsHeaders = {
 };
 
 const logStep = (step: string, details?: any) => {
-  const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
-  console.log(`[CONVERT-TRIAL-ADDONS] ${step}${detailsStr}`);
+  // Logging disabled
 };
 
 // Pricing for add-ons (converted to purchased_addons)
