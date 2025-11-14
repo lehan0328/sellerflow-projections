@@ -6,11 +6,13 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { CalendarIcon } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { CalendarIcon, CreditCard } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { VendorTransaction } from "@/hooks/useVendorTransactions";
+import { useCreditCards } from "@/hooks/useCreditCards";
 import { cn } from "@/lib/utils";
 
 // Helpers to handle local date formatting/parsing to avoid timezone shifts
@@ -41,11 +43,13 @@ interface TransactionEditModalProps {
 }
 
 export const TransactionEditModal = ({ open, onOpenChange, transaction, onSuccess }: TransactionEditModalProps) => {
+  const { creditCards } = useCreditCards();
   const [formData, setFormData] = useState({
     amount: 0,
     dueDate: '',
     description: '',
-    remarks: ''
+    remarks: '',
+    creditCardId: null as string | null
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -55,7 +59,8 @@ export const TransactionEditModal = ({ open, onOpenChange, transaction, onSucces
         amount: transaction.amount || 0,
         dueDate: transaction.dueDate ? formatDateInputLocal(transaction.dueDate) : '',
         description: transaction.description || '',
-        remarks: transaction.remarks || ''
+        remarks: transaction.remarks || '',
+        creditCardId: transaction.creditCardId || null
       });
     }
   }, [open, transaction]);
@@ -69,34 +74,86 @@ export const TransactionEditModal = ({ open, onOpenChange, transaction, onSucces
       const updates: any = {
         amount: Number(formData.amount),
         description: formData.description,
-        remarks: formData.remarks
+        remarks: formData.remarks,
+        credit_card_id: formData.creditCardId
       };
 
       if (formData.dueDate) {
         updates.due_date = formatDateForDB(parseDateInputLocal(formData.dueDate));
       }
 
-      // If amount changed and this is a credit card expense, adjust credit card balance
+      // Handle credit card balance changes
       const amountChanged = Number(formData.amount) !== transaction.amount;
-      if (amountChanged && transaction.creditCardId && transaction.status === 'completed') {
-        const { data: creditCard } = await supabase
-          .from('credit_cards')
-          .select('balance, credit_limit')
-          .eq('id', transaction.creditCardId)
-          .single();
-        
-        if (creditCard) {
-          const amountDifference = Number(formData.amount) - transaction.amount;
-          const newBalance = creditCard.balance + amountDifference;
-          const newAvailableCredit = creditCard.credit_limit - newBalance;
-          
-          await supabase
+      const cardChanged = formData.creditCardId !== transaction.creditCardId;
+
+      if (transaction.status === 'completed') {
+        // If card changed, update both old and new card balances
+        if (cardChanged) {
+          // Restore balance to old card if there was one
+          if (transaction.creditCardId) {
+            const { data: oldCard } = await supabase
+              .from('credit_cards')
+              .select('balance, credit_limit')
+              .eq('id', transaction.creditCardId)
+              .single();
+            
+            if (oldCard) {
+              const newOldBalance = oldCard.balance - transaction.amount;
+              const newOldAvailable = oldCard.credit_limit - newOldBalance;
+              
+              await supabase
+                .from('credit_cards')
+                .update({
+                  balance: newOldBalance,
+                  available_credit: newOldAvailable
+                })
+                .eq('id', transaction.creditCardId);
+            }
+          }
+
+          // Add balance to new card if there is one
+          if (formData.creditCardId) {
+            const { data: newCard } = await supabase
+              .from('credit_cards')
+              .select('balance, credit_limit')
+              .eq('id', formData.creditCardId)
+              .single();
+            
+            if (newCard) {
+              const newNewBalance = newCard.balance + Number(formData.amount);
+              const newNewAvailable = newCard.credit_limit - newNewBalance;
+              
+              await supabase
+                .from('credit_cards')
+                .update({
+                  balance: newNewBalance,
+                  available_credit: newNewAvailable
+                })
+                .eq('id', formData.creditCardId);
+            }
+          }
+        } 
+        // If only amount changed and there's a credit card, adjust its balance
+        else if (amountChanged && transaction.creditCardId) {
+          const { data: creditCard } = await supabase
             .from('credit_cards')
-            .update({
-              balance: newBalance,
-              available_credit: newAvailableCredit
-            })
-            .eq('id', transaction.creditCardId);
+            .select('balance, credit_limit')
+            .eq('id', transaction.creditCardId)
+            .single();
+          
+          if (creditCard) {
+            const amountDifference = Number(formData.amount) - transaction.amount;
+            const newBalance = creditCard.balance + amountDifference;
+            const newAvailableCredit = creditCard.credit_limit - newBalance;
+            
+            await supabase
+              .from('credit_cards')
+              .update({
+                balance: newBalance,
+                available_credit: newAvailableCredit
+              })
+              .eq('id', transaction.creditCardId);
+          }
         }
       }
 
@@ -196,6 +253,38 @@ export const TransactionEditModal = ({ open, onOpenChange, transaction, onSucces
               onChange={(e) => handleInputChange("remarks", e.target.value)}
               rows={2}
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="creditCard">Payment Method</Label>
+            <Select 
+              value={formData.creditCardId || 'cash'} 
+              onValueChange={(value) => handleInputChange("creditCardId", value === 'cash' ? null : value)}
+            >
+              <SelectTrigger className="w-full">
+                <div className="flex items-center gap-2">
+                  <CreditCard className="h-4 w-4" />
+                  <SelectValue />
+                </div>
+              </SelectTrigger>
+              <SelectContent className="z-50 bg-popover text-popover-foreground border border-border shadow-lg">
+                <SelectItem value="cash">
+                  <div className="flex items-center gap-2">
+                    <span>Cash / Bank</span>
+                  </div>
+                </SelectItem>
+                {creditCards.map((card) => (
+                  <SelectItem key={card.id} value={card.id}>
+                    <div className="flex items-center gap-2">
+                      <span className="truncate">{card.account_name}</span>
+                      <span className="text-xs text-muted-foreground">
+                        (Available: ${card.available_credit?.toFixed(2) || '0.00'})
+                      </span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           
           <div className="flex space-x-3 pt-2">
