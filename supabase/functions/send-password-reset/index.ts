@@ -12,7 +12,6 @@ const corsHeaders = {
 
 interface PasswordResetRequest {
   email: string;
-  resetUrl: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -22,7 +21,7 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { email, resetUrl }: PasswordResetRequest = await req.json();
+    const { email }: PasswordResetRequest = await req.json();
 
     console.log("Sending password reset email to:", email);
 
@@ -38,7 +37,8 @@ const handler = async (req: Request): Promise<Response> => {
         type: 'recovery',
         email: email,
         options: {
-          redirectTo: resetUrl
+          // Always use aurenapp.com to match sending domain and prevent spam filters
+          redirectTo: 'https://aurenapp.com/auth'
         }
       })
     });
