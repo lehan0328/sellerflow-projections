@@ -33,6 +33,11 @@ export const SignUp = () => {
   const [referralCodeType, setReferralCodeType] = useState<'user' | 'affiliate' | 'custom' | null>(null);
   const [discountPercentage, setDiscountPercentage] = useState<number>(10);
   const [durationMonths, setDurationMonths] = useState<number>(3);
+  const [passwordRequirements, setPasswordRequirements] = useState({
+    minLength: false,
+    hasLower: false,
+    hasUpper: false,
+  });
 
   // Check for referral code or affiliate code in URL parameters
   useEffect(() => {
@@ -154,8 +159,18 @@ export const SignUp = () => {
       return;
     }
 
-    if (signUpData.password.length < 6) {
-      toast.error('Password must be at least 6 characters');
+    if (signUpData.password.length < 8) {
+      toast.error('Password must be at least 8 characters');
+      return;
+    }
+
+    if (!/[a-z]/.test(signUpData.password)) {
+      toast.error('Password must contain at least one lowercase letter');
+      return;
+    }
+
+    if (!/[A-Z]/.test(signUpData.password)) {
+      toast.error('Password must contain at least one uppercase letter');
       return;
     }
 
@@ -322,7 +337,15 @@ export const SignUp = () => {
                         id="password"
                         type={showPassword ? "text" : "password"}
                         value={signUpData.password}
-                        onChange={(e) => setSignUpData({ ...signUpData, password: e.target.value })}
+                        onChange={(e) => {
+                          const password = e.target.value;
+                          setSignUpData({ ...signUpData, password });
+                          setPasswordRequirements({
+                            minLength: password.length >= 8,
+                            hasLower: /[a-z]/.test(password),
+                            hasUpper: /[A-Z]/.test(password),
+                          });
+                        }}
                         className="h-12 pr-12 border-primary/20 bg-background/50 backdrop-blur-sm focus:border-primary focus:ring-primary/20 transition-all"
                         disabled={loading}
                         required
@@ -347,6 +370,21 @@ export const SignUp = () => {
                       disabled={loading}
                       required
                     />
+                  </div>
+                </div>
+                
+                <div className="text-xs space-y-1 text-muted-foreground">
+                  <div className={`flex items-center gap-1.5 ${passwordRequirements.minLength ? 'text-green-600 dark:text-green-400' : ''}`}>
+                    {passwordRequirements.minLength ? <Check className="h-3 w-3" /> : <span className="h-3 w-3 inline-block">•</span>}
+                    Minimum 8 characters
+                  </div>
+                  <div className={`flex items-center gap-1.5 ${passwordRequirements.hasLower ? 'text-green-600 dark:text-green-400' : ''}`}>
+                    {passwordRequirements.hasLower ? <Check className="h-3 w-3" /> : <span className="h-3 w-3 inline-block">•</span>}
+                    At least one lowercase letter
+                  </div>
+                  <div className={`flex items-center gap-1.5 ${passwordRequirements.hasUpper ? 'text-green-600 dark:text-green-400' : ''}`}>
+                    {passwordRequirements.hasUpper ? <Check className="h-3 w-3" /> : <span className="h-3 w-3 inline-block">•</span>}
+                    At least one uppercase letter
                   </div>
                 </div>
 
