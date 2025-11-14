@@ -391,9 +391,8 @@ export const AdminCustomers = () => {
       return { label: 'Admin', variant: 'default' as const };
     }
     
-    // Check for lifetime access ONLY (explicit lifetime grants by admin)
-    // Only 'lifetime' and 'lifetime_access' = true lifetime (forever access)
-    // tier1, tier2, tier3 = paid subscriptions, NOT lifetime
+    // Check for EXPLICIT lifetime grants by admin ONLY
+    // Only 'lifetime' and 'lifetime_access' = true lifetime status
     if (customer.plan_override && (
       customer.plan_override === 'lifetime' || 
       customer.plan_override === 'lifetime_access'
@@ -401,15 +400,15 @@ export const AdminCustomers = () => {
       return { label: 'Lifetime', variant: 'default' as const };
     }
     
-    // Check for active Stripe subscription first (most accurate)
-    // Active subscription status from Stripe takes priority
+    // Check for active Stripe subscription (paid monthly/yearly)
     if (customer.stripe_subscription_status === 'active' || customer.stripe_subscription_status === 'trialing') {
       return { label: 'Paid', variant: 'default' as const };
     }
     
-    // If plan_override is tier1/tier2/tier3, treat as paid subscription
+    // Enterprise tiers (tier1/tier2/tier3) without Stripe subscription
+    // These are admin-granted enterprise access but NOT lifetime unless explicitly marked
     if (customer.plan_override && customer.plan_override.match(/^tier[1-3]$/)) {
-      return { label: 'Paid', variant: 'default' as const };
+      return { label: 'Active', variant: 'secondary' as const };
     }
     
     // If renewal_date is set and in the future, they have an active subscription
