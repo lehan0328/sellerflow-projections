@@ -1,0 +1,109 @@
+-- Update handle_new_user function to track referral code usage
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_referrer_id uuid;
+  v_account_id uuid;
+  v_referral_code text;
+BEGIN
+  -- Check if user is admin/staff (prevent profile creation for admin invites)
+  IF EXISTS (
+    SELECT 1 FROM admin_permissions 
+    WHERE email = NEW.email 
+    AND account_created = false
+  ) THEN
+    UPDATE admin_permissions 
+    SET account_created = true 
+    WHERE email = NEW.email;
+    RETURN NEW;
+  END IF;
+
+  -- Generate account_id
+  v_account_id := gen_random_uuid();
+
+  -- Extract referral code from metadata
+  v_referral_code := NEW.raw_user_meta_data->>'referral_code';
+
+  -- Create profile with ALL required fields including trial dates and referral_code
+  INSERT INTO public.profiles (
+    user_id, 
+    first_name, 
+    last_name, 
+    email,
+    company,
+    monthly_amazon_revenue,
+    hear_about_us,
+    account_id,
+    my_referral_code,
+    referral_code,
+    trial_start,
+    trial_end,
+    plan_tier,
+    created_at, 
+    updated_at
+  )
+  VALUES (
+    NEW.id,
+    NEW.raw_user_meta_data->>'first_name',
+    NEW.raw_user_meta_data->>'last_name',
+    NEW.email,
+    NEW.raw_user_meta_data->>'company',
+    NEW.raw_user_meta_data->>'monthly_amazon_revenue',
+    NEW.raw_user_meta_data->>'hear_about_us',
+    v_account_id,
+    upper(substring(md5(NEW.id::text) from 1 for 8)),
+    v_referral_code,
+    now(),
+    now() + interval '168 hours',
+    'professional',
+    now(),
+    now()
+  );
+
+  -- Create owner role for the new account
+  INSERT INTO public.user_roles (user_id, account_id, role)
+  VALUES (NEW.id, v_account_id, 'owner'::app_role)
+  ON CONFLICT (user_id, account_id) DO NOTHING;
+
+  -- Create user settings with only user_id (other columns have defaults)
+  INSERT INTO public.user_settings (user_id)
+  VALUES (NEW.id);
+
+  -- Track code usage in referral_codes table
+  IF v_referral_code IS NOT NULL THEN
+    UPDATE referral_codes
+    SET 
+      current_uses = COALESCE(current_uses, 0) + 1,
+      last_used_at = now()
+    WHERE code = UPPER(v_referral_code);
+  END IF;
+
+  -- Handle referral code if present (for referral rewards system)
+  IF v_referral_code IS NOT NULL THEN
+    -- Find referrer by referral code using my_referral_code column
+    SELECT user_id INTO v_referrer_id
+    FROM profiles
+    WHERE my_referral_code = v_referral_code
+    LIMIT 1;
+
+    -- If referrer found, create referral record
+    IF v_referrer_id IS NOT NULL THEN
+      INSERT INTO referrals (referrer_id, referred_user_id, referral_code, status, created_at, updated_at)
+      VALUES (
+        v_referrer_id,
+        NEW.id,
+        v_referral_code,
+        'trial',
+        now(),
+        now()
+      );
+    END IF;
+  END IF;
+
+  RETURN NEW;
+END;
+$function$;
