@@ -721,10 +721,6 @@ export const AdminCustomers = () => {
                 <TableHead>Joined</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>{viewMode === 'churned' ? 'Last Plan' : 'Plan'}</TableHead>
-                <TableHead>Code Type</TableHead>
-                <TableHead>Code Used</TableHead>
-                <TableHead>Discount</TableHead>
-                <TableHead>Duration</TableHead>
                 <TableHead>Renewal Date</TableHead>
                 <TableHead>Last Paid</TableHead>
                 {viewMode === 'churned' && <TableHead>Churn Date</TableHead>}
@@ -734,7 +730,7 @@ export const AdminCustomers = () => {
             <TableBody>
               {paginatedCustomers.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={15} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={11} className="text-center py-8 text-muted-foreground">
                     No customers found
                   </TableCell>
                 </TableRow>
@@ -836,48 +832,6 @@ export const AdminCustomers = () => {
                         </div>
                       </TableCell>
                       <TableCell>
-                        {customer.referral_code || customer.affiliate_code ? (
-                          customer.referral_code ? (
-                            <Badge variant="secondary" className="text-xs">
-                              User Referral
-                            </Badge>
-                          ) : (
-                            <Badge variant="default" className="text-xs">
-                              Affiliate/Influencer
-                            </Badge>
-                          )
-                        ) : (
-                          <span className="text-muted-foreground">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {customer.referral_code || customer.affiliate_code ? (
-                          <span className="text-sm font-medium">
-                            {customer.referral_code || customer.affiliate_code}
-                          </span>
-                        ) : customer.plan_override === 'referred_user_discount' ? (
-                          <span className="text-sm text-muted-foreground">Legacy</span>
-                        ) : customer.discount_redeemed_at ? (
-                          <span className="text-sm text-muted-foreground">Legacy</span>
-                        ) : (
-                          <span className="text-muted-foreground">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {customer.referral_code || customer.affiliate_code || customer.plan_override === 'referred_user_discount' || customer.discount_redeemed_at ? (
-                          <span className="text-sm">10% off</span>
-                        ) : (
-                          <span className="text-muted-foreground">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {customer.referral_code || customer.affiliate_code || customer.plan_override === 'referred_user_discount' || customer.discount_redeemed_at ? (
-                          <span className="text-sm">3 months</span>
-                        ) : (
-                          <span className="text-muted-foreground">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
                         {customer.renewal_date ? (
                           <span className="text-sm">
                             {new Date(customer.renewal_date).toLocaleDateString('en-US', { 
@@ -971,20 +925,6 @@ export const AdminCustomers = () => {
                             <Badge variant="outline" className="text-xs capitalize">
                               {member.role || 'staff'}
                             </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <span className="text-muted-foreground">-</span>
-                          </TableCell>
-                          <TableCell>
-                            <span className="text-sm font-medium">
-                              ${(member.amazon_revenue || 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-                            </span>
-                          </TableCell>
-                          <TableCell>
-                            <span className="text-muted-foreground">-</span>
-                          </TableCell>
-                          <TableCell>
-                            <span className="text-muted-foreground">-</span>
                           </TableCell>
                           {viewMode === 'churned' && (
                             <TableCell>
