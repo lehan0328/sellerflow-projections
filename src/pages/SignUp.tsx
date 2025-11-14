@@ -94,7 +94,7 @@ export const SignUp = () => {
       // Check unified referral_codes table (includes user, affiliate, and custom codes)
       const { data: referralCode, error } = await supabase
         .from("referral_codes")
-        .select("code, code_type, discount_percentage, duration_months")
+        .select("code, code_type, discount_percentage, duration_months, current_uses, max_uses")
         .eq("code", upperCode)
         .eq("is_active", true)
         .single();
@@ -113,6 +113,16 @@ export const SignUp = () => {
           setDiscountPercentage(10);
           setDurationMonths(3);
         }
+        return;
+      }
+
+      // Check if code has reached max uses
+      if (referralCode.max_uses !== null && referralCode.current_uses >= referralCode.max_uses) {
+        setReferralCodeStatus('invalid');
+        setReferralCodeType(null);
+        setDiscountPercentage(10);
+        setDurationMonths(3);
+        toast.error(`This referral code has reached its maximum usage limit (${referralCode.max_uses}/${referralCode.max_uses} uses)`);
         return;
       }
 
