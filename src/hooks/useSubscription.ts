@@ -313,7 +313,7 @@ export const useSubscription = () => {
       
       console.log('[SUBSCRIPTION] Session valid, calling check-subscription edge function');
 
-      const { data, error } = await supabase.functions.invoke("check-subscription", {
+      let { data, error } = await supabase.functions.invoke("check-subscription", {
         headers: {
           Authorization: `Bearer ${session.access_token}`,
         },
@@ -328,50 +328,51 @@ export const useSubscription = () => {
         const { data: { session: refreshedSession }, error: refreshError } = await supabase.auth.refreshSession();
         
         if (refreshError || !refreshedSession) {
-          console.error('[SUBSCRIPTION] Session refresh failed, clearing session and state:', refreshError);
-          // Clear the invalid session from local storage
+          console.error('[SUBSCRIPTION] Session refresh failed, redirecting to login:', refreshError);
+          // Clear the invalid session and cache
           await supabase.auth.signOut();
           clearCache();
-          // Set state to logged out instead of throwing error
-          const loggedOutState = {
-            subscribed: false,
-            product_id: null,
-            subscription_end: null,
-            plan: null,
-            isLoading: false,
-            is_trialing: false,
-            trial_end: null,
-            trial_expired: false,
-            billing_interval: null,
-            current_period_start: null,
-            price_amount: null,
-            currency: null,
-            discount: null,
-            discount_ever_redeemed: false,
-            payment_failed: false,
-            is_expired: false,
-          };
-          setSubscriptionState(loggedOutState);
+          // Force redirect to auth page
+          window.location.href = '/auth';
           return;
         }
         
-        // Retry with refreshed token
+        // Retry with refreshed session
+        console.log('[SUBSCRIPTION] Session refreshed successfully, retrying...');
         const { data: retryData, error: retryError } = await supabase.functions.invoke("check-subscription", {
           headers: {
             Authorization: `Bearer ${refreshedSession.access_token}`,
           },
         });
         
-        if (retryError) throw retryError;
+        if (retryError) {
+          console.error('[SUBSCRIPTION] Retry failed after refresh:', retryError);
+          await supabase.auth.signOut();
+          clearCache();
+          window.location.href = '/auth';
+          return;
+        }
         
-        // Use the retry data
-        const finalData = retryData;
+        // Use the retry data for processing below
+        data = retryData;
+        error = null;
+      }
+
+      if (error) {
+        console.error('[SUBSCRIPTION] Error fetching subscription:', error);
+        throw error;
+      }
+
+      if (!data) {
+        console.error('[SUBSCRIPTION] No data received from check-subscription');
+        throw new Error('No data received from subscription check');
+      }
         
-        // Continue with finalData - use plan_tier from backend if available
+        // Continue with data - use plan_tier from backend if available
         let plan: PlanTier | null = null;
-        if (finalData.is_override && finalData.plan) {
-          plan = finalData.plan as PlanTier;
-        } else if (finalData.plan_tier) {
+        if (data.is_override && data.plan) {
+          plan = data.plan as PlanTier;
+        } else if (data.plan_tier) {
           // Use explicit plan_tier from backend (for trial and paid users)
           const tierMap: Record<string, PlanTier> = {
             'professional': 'professional',
@@ -379,13 +380,13 @@ export const useSubscription = () => {
             'starter': 'starter',
             'enterprise': 'tier1' // Map enterprise to tier1 for compatibility
           };
-          plan = tierMap[finalData.plan_tier] || 'starter';
-        } else if (finalData.is_trialing) {
+          plan = tierMap[data.plan_tier] || 'starter';
+        } else if (data.is_trialing) {
           plan = 'professional';
-        } else if (finalData.product_id) {
+        } else if (data.product_id) {
           // First check PRICING_PLANS (starter, growing, professional)
           let planEntry = Object.entries(PRICING_PLANS).find(
-            ([, planData]) => planData.product_id === finalData.product_id
+            ([, planData]) => planData.product_id === data.product_id
           );
           
           if (planEntry) {
@@ -393,49 +394,49 @@ export const useSubscription = () => {
           } else {
             // If no match, check ENTERPRISE_TIERS
             const enterpriseEntry = Object.entries(ENTERPRISE_TIERS).find(
-              ([, tierData]) => tierData.productId === finalData.product_id
+              ([, tierData]) => tierData.productId === data.product_id
             );
             
             if (enterpriseEntry) {
               plan = enterpriseEntry[0] as PlanTier; // Use the actual tier key (tier1, tier2, tier3)
-              console.log('[SUBSCRIPTION] Enterprise tier detected (retry):', plan);
+              console.log('[SUBSCRIPTION] Enterprise tier detected:', plan);
             }
           }
         }
 
-        const paymentFailed = finalData.subscriptionStatus === 'past_due' || finalData.subscriptionStatus === 'unpaid';
-        const isExpired = finalData.subscription_end ? new Date(finalData.subscription_end) < new Date() : false;
+        const paymentFailed = data.subscriptionStatus === 'past_due' || data.subscriptionStatus === 'unpaid';
+        const isExpired = data.subscription_end ? new Date(data.subscription_end) < new Date() : false;
         const shouldBlockAccess = paymentFailed && isExpired;
-        const trialExpired = finalData.trial_expired || false;
+        const trialExpired = data.trial_expired || false;
 
         const state = {
-          subscribed: finalData.subscribed || false,
-          product_id: finalData.product_id,
-          subscription_end: finalData.subscription_end,
+          subscribed: data.subscribed || false,
+          product_id: data.product_id,
+          subscription_end: data.subscription_end,
           plan,
-          plan_tier: finalData.plan_tier,
+          plan_tier: data.plan_tier,
           isLoading: false,
-          is_trialing: finalData.is_trialing || false,
-          trial_end: finalData.trial_end || null,
-          trial_start: finalData.trial_start || null,
+          is_trialing: data.is_trialing || false,
+          trial_end: data.trial_end || null,
+          trial_start: data.trial_start || null,
           trial_expired: trialExpired,
-          billing_interval: finalData.billing_interval || null,
-          current_period_start: finalData.current_period_start || null,
-          price_amount: finalData.price_amount || null,
-          currency: finalData.currency || null,
-          discount: finalData.discount || null,
-          discount_ever_redeemed: finalData.discount_ever_redeemed || false,
-          payment_failed: finalData.payment_failed || false,
+          billing_interval: data.billing_interval || null,
+          current_period_start: data.current_period_start || null,
+          price_amount: data.price_amount || null,
+          currency: data.currency || null,
+          discount: data.discount || null,
+          discount_ever_redeemed: data.discount_ever_redeemed || false,
+          payment_failed: data.payment_failed || false,
           is_expired: shouldBlockAccess || trialExpired,
         };
         
         setSubscriptionState(state);
         saveToCache(state);
 
-        if (finalData.subscribed && refreshedSession) {
+        if (data.subscribed && session) {
           try {
             const { data: pmData } = await supabase.functions.invoke("get-payment-method", {
-              headers: { Authorization: `Bearer ${refreshedSession.access_token}` },
+              headers: { Authorization: `Bearer ${session.access_token}` },
             });
             if (pmData?.brand && pmData?.last4) {
               setPaymentMethod({ brand: pmData.brand, last4: pmData.last4 });
@@ -444,19 +445,7 @@ export const useSubscription = () => {
             console.error("Failed to fetch payment method:", error);
           }
         }
-        
-        return;
-      }
-
-      if (error) {
-        console.error('[SUBSCRIPTION] Error after retry or initial call:', error);
-        throw error;
-      }
-
-      console.log('[SUBSCRIPTION] Processing subscription data:', data);
-      // Handle plan detection: use plan_tier from backend if available, otherwise derive from product_id
-      let plan: PlanTier | null = null;
-      if (data.is_override && data.plan) {
+      } catch (error) {
         plan = data.plan as PlanTier;
       } else if (data.plan_tier) {
         // Use explicit plan_tier from backend (for trial and paid users)
