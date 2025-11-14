@@ -57,7 +57,9 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Send branded email with reset link
-    const resetUrl = `${req.headers.get('origin') || 'https://aurenapp.com'}/auth?token=${token}`;
+    // IMPORTANT: Always use aurenapp.com domain to match the sending domain (noreply@aurenapp.com)
+    // Using the same domain prevents spam filter issues
+    const resetUrl = `https://aurenapp.com/auth?token=${token}`;
     
     const emailResponse = await fetch("https://api.resend.com/emails", {
       method: "POST",
