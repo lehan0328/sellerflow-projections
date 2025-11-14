@@ -336,7 +336,7 @@ export function AdminDashboardOverview() {
           />
           <MetricCard
             title="Trial Conversion"
-            value={`${metrics.trialUsers > 0 ? Math.round(((metrics.totalUsers - metrics.trialUsers - metrics.activeSubscriptions) / metrics.trialUsers) * 100) : 0}%`}
+            value={`${(metrics.totalUsers - metrics.trialUsers) > 0 ? Math.round((metrics.activeSubscriptions / (metrics.totalUsers - metrics.trialUsers)) * 100) : 0}%`}
             icon={CheckCircle}
             description="Trial to paid"
             variant="success"
