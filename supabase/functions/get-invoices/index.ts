@@ -8,8 +8,7 @@ const corsHeaders = {
 };
 
 const logStep = (step: string, details?: any) => {
-  const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
-  console.log(`[GET-INVOICES] ${step}${detailsStr}`);
+  // Logging disabled
 };
 
 serve(async (req) => {
