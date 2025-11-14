@@ -471,6 +471,14 @@ export const VendorsOverview = ({
   const pendingCount = pendingTransactions.length;
   const pendingCash = pendingTransactions.filter(tx => !tx.creditCardId).reduce((sum, tx) => sum + (tx.amount || 0), 0);
   const pendingCredit = pendingTransactions.filter(tx => tx.creditCardId).reduce((sum, tx) => sum + (tx.amount || 0), 0);
+  
+  // Calculate how many pending transactions are due this month
+  const pendingThisMonth = pendingTransactions.filter(tx => {
+    if (!tx.dueDate) return false;
+    const today = new Date();
+    const dueDate = new Date(tx.dueDate);
+    return dueDate.getMonth() === today.getMonth() && dueDate.getFullYear() === today.getFullYear();
+  }).length;
 
   return (
     <div className="space-y-6">
@@ -513,21 +521,12 @@ export const VendorsOverview = ({
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-amber-600 dark:text-amber-400">{pendingCount}</div>
-            <div className="flex flex-col gap-1 mt-2">
-              <div className="flex items-center justify-between text-xs">
-                <span className="flex items-center gap-1 text-muted-foreground">
-                  <Landmark className="h-3 w-3" />
-                  Bank/Cash:
-                </span>
-                <span className="font-medium">{formatCurrency(pendingCash)}</span>
-              </div>
-              <div className="flex items-center justify-between text-xs">
-                <span className="flex items-center gap-1 text-muted-foreground">
-                  <CreditCard className="h-3 w-3" />
-                  Credit Card:
-                </span>
-                <span className="font-medium">{formatCurrency(pendingCredit)}</span>
-              </div>
+            <div className="flex items-center justify-between text-xs mt-2">
+              <span className="flex items-center gap-1 text-muted-foreground">
+                <Calendar className="h-3 w-3" />
+                This Month:
+              </span>
+              <span className="font-medium">{pendingThisMonth}</span>
             </div>
           </CardContent>
         </Card>
