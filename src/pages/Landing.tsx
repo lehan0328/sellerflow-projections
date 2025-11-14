@@ -630,7 +630,7 @@ const Landing = () => {
                       </div>
                     </div>
                     <div className="flex items-center gap-4 pb-2">
-                      <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent animate-shimmer bg-[length:200%_100%]">
+                      <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent animate-shimmer bg-[length:200%_100%] leading-relaxed py-1">
                         Cash Flow Forecasting
                       </span>
                       <Badge variant="secondary" className="text-base px-4 py-2 whitespace-nowrap font-semibold tracking-wide">
