@@ -11,17 +11,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { ChevronLeft, ChevronRight, Plus, Wallet, CreditCard, Building2, CalendarIcon, TrendingUp, ShoppingBag, AlertTriangle, DollarSign, ArrowLeft, Check, AlertCircle, Search } from "lucide-react";
+import { CalendarIcon, ShoppingBag, AlertTriangle, DollarSign, Check, AlertCircle } from "lucide-react";
 import { useCreditCards } from "@/hooks/useCreditCards";
 import { useUserSettings } from "@/hooks/useUserSettings";
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, addMonths, subMonths, subDays, addDays, startOfWeek, endOfWeek, getDay, startOfDay } from "date-fns";
-import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Brush, ReferenceArea } from 'recharts';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, addMonths, startOfWeek, endOfWeek, startOfDay } from "date-fns";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, ReferenceLine, ReferenceArea } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { TransactionDetailModal } from "./transaction-detail-modal";
 import { DayTransactionsModal } from "./day-transactions-modal";
-import { cn } from "@/lib/utils";
-import { toast } from "sonner";
-import { PendingNotificationsPanel } from "./pending-notifications-panel";
 
 // Utility function for consistent currency formatting
 const formatCurrency = (amount: number): string => {
@@ -168,9 +165,6 @@ export const CashFlowCalendar = ({
     left: 8,
     bottom: 16
   };
-  useEffect(() => {
-    console.log('[Calendar] currentDate changed:', currentDate);
-  }, [currentDate]);
 
   // Chart resize observer
   useEffect(() => {
@@ -329,9 +323,6 @@ export const CashFlowCalendar = ({
         const impactDate = event.balanceImpactDate || event.date;
         const checkDate = new Date(day);
         const bcheckDate = new Date(impactDate);
-        // if(checkDate.getFullYear() === 2025 && checkDate.getMonth() === 10 && bcheckDate.getFullYear() === 2025 && bcheckDate.getMonth() === 10 && format(impactDate, 'yyyy-MM-dd') === format(day, 'yyyy-MM-dd')){
-        // console.log(event, "impact_date", impactDate, "day", day)
-        // }
         return format(impactDate, 'yyyy-MM-dd') === format(day, 'yyyy-MM-dd');
       });
       const dailyInflow = dayEvents.filter(e => e.type === 'inflow').reduce((sum, e) => sum + e.amount, 0);

@@ -54,19 +54,13 @@ export function AdminForecastAccuracy() {
   });
 
   useEffect(() => {
-    console.log('[Admin Forecast Accuracy] useEffect triggered - isAdmin:', isAdmin);
     if (isAdmin) {
-      console.log('[Admin Forecast Accuracy] Admin verified, fetching metrics...');
       fetchAndCalculateMetrics();
-    } else {
-      console.log('[Admin Forecast Accuracy] User is not admin, skipping fetch');
     }
   }, [isAdmin]);
 
   const fetchAndCalculateMetrics = async () => {
     try {
-      console.log('[Admin Forecast Accuracy] Fetching accuracy logs...');
-      
       // Fetch logs and profiles separately, then merge
       const { data: logs, error: logsError } = await supabase
         .from('forecast_accuracy_log')
@@ -74,12 +68,10 @@ export function AdminForecastAccuracy() {
         .order('created_at', { ascending: false });
 
       if (logsError) {
-        console.error('[Admin Forecast Accuracy] Query error:', logsError);
         throw logsError;
       }
 
       if (!logs || logs.length === 0) {
-        console.log('[Admin Forecast Accuracy] No data returned from query');
         setIsLoading(false);
         return;
       }
@@ -88,11 +80,6 @@ export function AdminForecastAccuracy() {
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('account_id, first_name, last_name, user_id, email');
-
-      if (profilesError) {
-        console.error('[Admin Forecast Accuracy] Profiles query error:', profilesError);
-      }
-
       // Create a map of account_id to profile
       const profileMap = new Map(
         profiles?.map(p => [p.account_id, p]) || []
@@ -103,16 +90,6 @@ export function AdminForecastAccuracy() {
         ...log,
         profiles: profileMap.get(log.account_id)
       }));
-
-      console.log('[Admin Forecast Accuracy] Query result:', { 
-        dataCount: data?.length,
-        sampleRecord: data?.[0]
-      });
-      
-      console.log('[Admin Forecast Accuracy] Processing data:', {
-        totalRecords: data.length,
-        uniqueEmails: [...new Set(data.map(d => d.user_email))]
-      });
 
       // Store all logs for detailed view
       setAllLogs(data);

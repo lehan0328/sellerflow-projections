@@ -24,16 +24,12 @@ export const AmazonForecastAccuracy = () => {
     const fetchData = async () => {
       if (!user) return;
 
-      console.log('[Forecast Accuracy] Fetching accuracy logs for user:', user.id);
-
       // Fetch accuracy logs
       const { data, error } = await supabase
         .from('forecast_accuracy_log')
         .select('*')
         .eq('user_id', user.id)
         .order('payout_date', { ascending: false });
-
-      console.log('[Forecast Accuracy] Fetched logs:', data?.length, 'error:', error);
       
       if (!error && data) {
         setAccuracyLogs(data);
@@ -110,7 +106,6 @@ export const AmazonForecastAccuracy = () => {
     : null;
 
   const loadMetrics = async () => {
-    console.log('[Forecast Accuracy] Loading metrics... accuracyLogs:', accuracyLogs.length);
     
     setIsLoading(true);
     setError(null);
@@ -118,16 +113,12 @@ export const AmazonForecastAccuracy = () => {
     try {
       const { data, error: invokeError } = await supabase.functions.invoke('calculate-forecast-accuracy');
       
-      console.log('[Forecast Accuracy] Raw response:', { data, error: invokeError });
-      
       if (invokeError) {
-        console.error('[Forecast Accuracy] Invoke error:', invokeError);
         setError('Failed to calculate metrics');
         throw invokeError;
       }
       
       if (!data) {
-        console.warn('[Forecast Accuracy] No data in response');
         setError('No data returned from calculation');
         return;
       }

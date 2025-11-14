@@ -77,20 +77,17 @@ export const usePlanLimits = () => {
 
   // Map subscription plan to plan type - default to starter for free users
   const mapPlanTier = (tier: string | null, productId: string | null): PlanType => {
-    console.log('[usePlanLimits] Mapping plan:', { tier, productId });
     
     // Check for enterprise product IDs first (be explicit about all three)
     if (productId === 'prod_TBOiOltXIGat2d' || 
         productId === 'prod_TBOiz4xSwK3cGV' || 
         productId === 'prod_TBOiTlRX4YLU4g' ||
         (productId && productId.startsWith('prod_TBOi'))) {
-      console.log('[usePlanLimits] Enterprise product detected:', productId);
       return 'enterprise';
     }
     
     // Check for enterprise tier strings (tier1, tier2, tier3, tier4, tier5)
     if (tier === 'tier1' || tier === 'tier2' || tier === 'tier3' || tier === 'tier4' || tier === 'tier5') {
-      console.log('[usePlanLimits] Enterprise tier detected:', tier);
       return 'enterprise';
     }
     

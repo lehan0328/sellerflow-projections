@@ -63,8 +63,6 @@ export const useAmazonPayouts = () => {
     }
 
     try {
-      console.log('[fetchAmazonPayouts] Fetching Amazon payouts for user:', user.id);
-      
       // Check if forecasts and advanced modeling are enabled
       const { data: settings } = await supabase
         .from('user_settings')
@@ -88,13 +86,8 @@ export const useAmazonPayouts = () => {
         `)
         .eq("user_id", user.id)
         .order("payout_date", { ascending: false });
-      
-      console.log('[fetchAmazonPayouts] Sample payout with modeling_method:', data?.[0]?.modeling_method);
-      
-      console.log('[fetchAmazonPayouts] Query result:', { count: data?.length, error });
 
       if (error) {
-        console.error("Error fetching Amazon payouts:", error);
         toast.error("Failed to load Amazon payouts");
         return;
       }
@@ -108,12 +101,6 @@ export const useAmazonPayouts = () => {
           
           // Always return open settlements (no end date)
           if (!hasEndDate) {
-            console.log('[fetchAmazonPayouts] Including open settlement:', {
-              id: payout.id,
-              settlement_id: payout.settlement_id,
-              amount: payout.total_amount,
-              status: 'open (no end date)'
-            });
             return true;
           }
           
@@ -121,7 +108,6 @@ export const useAmazonPayouts = () => {
           const settlementStartStr = rawData?.settlement_start_date || rawData?.FinancialEventGroupStart;
           
           if (!settlementStartStr) {
-            console.log('[fetchAmazonPayouts] No start date for closed estimated settlement, excluding:', payout.id);
             return false;
           }
           
@@ -136,23 +122,8 @@ export const useAmazonPayouts = () => {
           
           // Only show closed estimated settlements that close today or in the future
           if (settlementCloseDate < today) {
-            console.log('[fetchAmazonPayouts] Filtering past closed estimated settlement:', {
-              id: payout.id,
-              start_date: settlementStartStr,
-              close_date: settlementCloseDate.toISOString().split('T')[0],
-              amount: payout.total_amount,
-              reason: 'Settlement already closed'
-            });
             return false;
           }
-          
-          console.log('[fetchAmazonPayouts] Keeping future estimated settlement:', {
-            id: payout.id,
-            status: payout.status,
-            start_date: settlementStartStr,
-            close_date: settlementCloseDate.toISOString().split('T')[0],
-            amount: payout.total_amount
-          });
           return true;
         }
         
