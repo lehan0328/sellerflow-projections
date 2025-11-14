@@ -108,6 +108,14 @@ export const ExpenseOverview = ({ expenses, onEditExpense, onDeleteExpense, onCr
     return filteredAndSortedExpenses.reduce((sum, expense) => sum + expense.amount, 0);
   }, [filteredAndSortedExpenses]);
 
+  const totalCashExpenses = useMemo(() => {
+    return filteredAndSortedExpenses.filter(e => !e.creditCardId).reduce((sum, expense) => sum + expense.amount, 0);
+  }, [filteredAndSortedExpenses]);
+
+  const totalCreditExpenses = useMemo(() => {
+    return filteredAndSortedExpenses.filter(e => e.creditCardId).reduce((sum, expense) => sum + expense.amount, 0);
+  }, [filteredAndSortedExpenses]);
+
   const pendingExpenses = useMemo(() => {
     return filteredAndSortedExpenses.filter(e => e.status === 'pending').length;
   }, [filteredAndSortedExpenses]);
@@ -116,6 +124,24 @@ export const ExpenseOverview = ({ expenses, onEditExpense, onDeleteExpense, onCr
     const today = new Date();
     return filteredAndSortedExpenses.filter(expense => {
       if (!expense.paymentDate) return false;
+      const paymentDate = new Date(expense.paymentDate);
+      return paymentDate.getMonth() === today.getMonth() && paymentDate.getFullYear() === today.getFullYear();
+    }).reduce((sum, expense) => sum + expense.amount, 0);
+  }, [filteredAndSortedExpenses]);
+
+  const thisMonthCashExpenses = useMemo(() => {
+    const today = new Date();
+    return filteredAndSortedExpenses.filter(expense => {
+      if (!expense.paymentDate || expense.creditCardId) return false;
+      const paymentDate = new Date(expense.paymentDate);
+      return paymentDate.getMonth() === today.getMonth() && paymentDate.getFullYear() === today.getFullYear();
+    }).reduce((sum, expense) => sum + expense.amount, 0);
+  }, [filteredAndSortedExpenses]);
+
+  const thisMonthCreditExpenses = useMemo(() => {
+    const today = new Date();
+    return filteredAndSortedExpenses.filter(expense => {
+      if (!expense.paymentDate || !expense.creditCardId) return false;
       const paymentDate = new Date(expense.paymentDate);
       return paymentDate.getMonth() === today.getMonth() && paymentDate.getFullYear() === today.getFullYear();
     }).reduce((sum, expense) => sum + expense.amount, 0);
@@ -151,9 +177,16 @@ export const ExpenseOverview = ({ expenses, onEditExpense, onDeleteExpense, onCr
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-red-600 dark:text-red-400">{formatCurrency(totalExpenses)}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {filteredAndSortedExpenses.length} expense{filteredAndSortedExpenses.length !== 1 ? 's' : ''}
-            </p>
+            <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+              <div className="flex items-center gap-1">
+                <DollarSign className="h-3 w-3" />
+                <span>Cash: {formatCurrency(totalCashExpenses)}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <CreditCard className="h-3 w-3" />
+                <span>Credit: {formatCurrency(totalCreditExpenses)}</span>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
@@ -179,7 +212,16 @@ export const ExpenseOverview = ({ expenses, onEditExpense, onDeleteExpense, onCr
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-primary">{formatCurrency(thisMonthAmount)}</div>
-            <p className="text-xs text-muted-foreground mt-1">Due this month</p>
+            <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+              <div className="flex items-center gap-1">
+                <DollarSign className="h-3 w-3" />
+                <span>Cash: {formatCurrency(thisMonthCashExpenses)}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <CreditCard className="h-3 w-3" />
+                <span>Credit: {formatCurrency(thisMonthCreditExpenses)}</span>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
