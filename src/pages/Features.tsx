@@ -5,199 +5,145 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PublicLayout } from "@/components/PublicLayout";
-import {
-  Calendar,
-  TrendingUp,
-  TrendingDown,
-  Brain,
-  FileText,
-  CreditCard,
-  Building2,
-  Users,
-  Repeat,
-  Wallet,
-  ShoppingCart,
-  MessageSquare,
-  Target,
-  BarChart3,
-  Zap,
-  Lock,
-  Globe,
-  DollarSign,
-  ArrowRight,
-  Shield,
-  Search,
-  AlertCircle,
-} from "lucide-react";
-
+import { Calendar, TrendingUp, TrendingDown, Brain, FileText, CreditCard, Building2, Users, Repeat, Wallet, ShoppingCart, MessageSquare, Target, BarChart3, Zap, Lock, Globe, DollarSign, ArrowRight, Shield, Search, AlertCircle } from "lucide-react";
 const Features = () => {
   const navigate = useNavigate();
   const [showStickyCTA, setShowStickyCTA] = useState(false);
-
   useEffect(() => {
     window.scrollTo(0, 0);
-    
     const handleScroll = () => {
       setShowStickyCTA(window.scrollY > 600);
     };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
-
-  const features = [
-    {
-      icon: Calendar,
-      title: "Cash Flow Calendar",
-      description: "Visualize your entire financial future on an interactive calendar. See exactly when money comes in and goes out.",
-      category: "Core",
-      badge: "Popular",
-      slug: "cash-flow-calendar"
-    },
-    {
-      icon: Target,
-      title: "Scenario Planning",
-      description: "Model what-if scenarios to understand how revenue changes, new expenses, or vendor terms affect your cash position.",
-      category: "Planning",
-      badge: "New",
-      slug: "scenario-planning"
-    },
-    {
-      icon: BarChart3,
-      title: "Advanced Analytics",
-      description: "Multi-dashboard analytics covering cashflow, profitability, inventory forecasts, ad performance, and account health.",
-      category: "Analytics",
-      badge: "Pro",
-      slug: "advanced-analytics"
-    },
-    {
-      icon: Brain,
-      title: "AI Cash Flow Insights",
-      description: "Get daily AI-generated insights about your cash position, spending patterns, and optimization opportunities.",
-      category: "AI",
-      badge: "AI",
-      slug: "ai-cash-flow-insights"
-    },
-    {
-      icon: FileText,
-      title: "AI PDF Extractor",
-      description: "Upload purchase orders and invoices - our AI automatically extracts vendor details, amounts, and payment terms.",
-      category: "AI",
-      badge: "AI",
-      slug: "ai-pdf-extractor"
-    },
-    {
-      icon: MessageSquare,
-      title: "AI Financial Assistant",
-      description: "Chat with AI about your finances. Ask questions, get advice, and understand your cash flow in plain English.",
-      category: "AI",
-      badge: "AI",
-      slug: "ai-financial-assistant"
-    },
-    {
-      icon: ShoppingCart,
-      title: "Amazon Integration",
-      description: "Automatically sync Amazon payouts, orders, fees, and refunds. Support for multiple marketplaces.",
-      category: "Integrations",
-      badge: null,
-      slug: "amazon-integration"
-    },
-    {
-      icon: Building2,
-      title: "Bank Account Sync",
-      description: "Connect unlimited bank accounts via Plaid. Real-time balance updates and automatic transaction syncing.",
-      category: "Integrations",
-      badge: null,
-      slug: "bank-account-sync"
-    },
-    {
-      icon: CreditCard,
-      title: "Credit Card Management",
-      description: "Track credit utilization, payment due dates, and available credit across all your business cards.",
-      category: "Core",
-      badge: null,
-      slug: "credit-card-management"
-    },
-    {
-      icon: Users,
-      title: "Vendor Management",
-      description: "Manage all vendor relationships, payment schedules, and purchase orders in one place.",
-      category: "Core",
-      badge: null,
-      slug: "vendor-management"
-    },
-    {
-      icon: DollarSign,
-      title: "Income Tracking",
-      description: "Log one-time and recurring income. Track customer payments and manage receivables.",
-      category: "Core",
-      badge: null,
-      slug: "income-tracking"
-    },
-    {
-      icon: Repeat,
-      title: "Recurring Expenses",
-      description: "Set up subscriptions and recurring costs. Automatically project future expenses on your calendar.",
-      category: "Core",
-      badge: null,
-      slug: "recurring-expenses"
-    },
-    {
-      icon: Zap,
-      title: "AI Transaction Matching",
-      description: "AI automatically matches bank transactions to vendors, invoices, and purchase orders. Review and approve with one click to save hours of reconciliation.",
-      category: "AI",
-      badge: "AI",
-      slug: "ai-transaction-matching"
-    },
-    {
-      icon: TrendingUp,
-      title: "AI Buying Opportunities",
-      description: "AI analyzes your cash flow patterns and tells you the optimal timing for major purchases when you have available funds.",
-      category: "AI",
-      badge: "AI",
-      slug: "ai-buying-opportunities"
-    },
-    {
-      icon: Wallet,
-      title: "Safe Spending Calculator",
-      description: "Know exactly how much cash is safe to spend without risking upcoming obligations.",
-      category: "Planning",
-      badge: null,
-      slug: "safe-spending-calculator"
-    },
-    {
-      icon: BarChart3,
-      title: "Mathematical Payout Forecasting",
-      description: "DD+7 reserve modeling with per-order net cash calculations. Accounts for fees, returns, chargebacks, and Amazon's settlement mechanics with adjustable safety buffers (−3% to −15%).",
-      category: "Analytics",
-      badge: "Popular",
-      slug: "amazon-payout-forecasting"
-    },
-    {
-      icon: Lock,
-      title: "Bank-Level Security",
-      description: "All financial data encrypted at rest and in transit. SOC 2 compliant infrastructure.",
-      category: "Security",
-      badge: null,
-      slug: "bank-level-security"
-    },
-  ];
-
+  const features = [{
+    icon: Calendar,
+    title: "Cash Flow Calendar",
+    description: "Visualize your entire financial future on an interactive calendar. See exactly when money comes in and goes out.",
+    category: "Core",
+    badge: "Popular",
+    slug: "cash-flow-calendar"
+  }, {
+    icon: Target,
+    title: "Scenario Planning",
+    description: "Model what-if scenarios to understand how revenue changes, new expenses, or vendor terms affect your cash position.",
+    category: "Planning",
+    badge: "New",
+    slug: "scenario-planning"
+  }, {
+    icon: BarChart3,
+    title: "Advanced Analytics",
+    description: "Multi-dashboard analytics covering cashflow, profitability, inventory forecasts, ad performance, and account health.",
+    category: "Analytics",
+    badge: "Pro",
+    slug: "advanced-analytics"
+  }, {
+    icon: Brain,
+    title: "AI Cash Flow Insights",
+    description: "Get daily AI-generated insights about your cash position, spending patterns, and optimization opportunities.",
+    category: "AI",
+    badge: "AI",
+    slug: "ai-cash-flow-insights"
+  }, {
+    icon: FileText,
+    title: "AI PDF Extractor",
+    description: "Upload purchase orders and invoices - our AI automatically extracts vendor details, amounts, and payment terms.",
+    category: "AI",
+    badge: "AI",
+    slug: "ai-pdf-extractor"
+  }, {
+    icon: MessageSquare,
+    title: "AI Financial Assistant",
+    description: "Chat with AI about your finances. Ask questions, get advice, and understand your cash flow in plain English.",
+    category: "AI",
+    badge: "AI",
+    slug: "ai-financial-assistant"
+  }, {
+    icon: ShoppingCart,
+    title: "Amazon Integration",
+    description: "Automatically sync Amazon payouts, orders, fees, and refunds. Support for multiple marketplaces.",
+    category: "Integrations",
+    badge: null,
+    slug: "amazon-integration"
+  }, {
+    icon: Building2,
+    title: "Bank Account Sync",
+    description: "Connect unlimited bank accounts via Plaid. Real-time balance updates and automatic transaction syncing.",
+    category: "Integrations",
+    badge: null,
+    slug: "bank-account-sync"
+  }, {
+    icon: CreditCard,
+    title: "Credit Card Management",
+    description: "Track credit utilization, payment due dates, and available credit across all your business cards.",
+    category: "Core",
+    badge: null,
+    slug: "credit-card-management"
+  }, {
+    icon: Users,
+    title: "Vendor Management",
+    description: "Manage all vendor relationships, payment schedules, and purchase orders in one place.",
+    category: "Core",
+    badge: null,
+    slug: "vendor-management"
+  }, {
+    icon: DollarSign,
+    title: "Income Tracking",
+    description: "Log one-time and recurring income. Track customer payments and manage receivables.",
+    category: "Core",
+    badge: null,
+    slug: "income-tracking"
+  }, {
+    icon: Repeat,
+    title: "Recurring Expenses",
+    description: "Set up subscriptions and recurring costs. Automatically project future expenses on your calendar.",
+    category: "Core",
+    badge: null,
+    slug: "recurring-expenses"
+  }, {
+    icon: Zap,
+    title: "AI Transaction Matching",
+    description: "AI automatically matches bank transactions to vendors, invoices, and purchase orders. Review and approve with one click to save hours of reconciliation.",
+    category: "AI",
+    badge: "AI",
+    slug: "ai-transaction-matching"
+  }, {
+    icon: TrendingUp,
+    title: "AI Buying Opportunities",
+    description: "AI analyzes your cash flow patterns and tells you the optimal timing for major purchases when you have available funds.",
+    category: "AI",
+    badge: "AI",
+    slug: "ai-buying-opportunities"
+  }, {
+    icon: Wallet,
+    title: "Safe Spending Calculator",
+    description: "Know exactly how much cash is safe to spend without risking upcoming obligations.",
+    category: "Planning",
+    badge: null,
+    slug: "safe-spending-calculator"
+  }, {
+    icon: BarChart3,
+    title: "Mathematical Payout Forecasting",
+    description: "DD+7 reserve modeling with per-order net cash calculations. Accounts for fees, returns, chargebacks, and Amazon's settlement mechanics with adjustable safety buffers (−3% to −15%).",
+    category: "Analytics",
+    badge: "Popular",
+    slug: "amazon-payout-forecasting"
+  }, {
+    icon: Lock,
+    title: "Bank-Level Security",
+    description: "All financial data encrypted at rest and in transit. SOC 2 compliant infrastructure.",
+    category: "Security",
+    badge: null,
+    slug: "bank-level-security"
+  }];
   const categories = ["All", "Core", "AI", "Analytics", "Planning", "Integrations", "Security"];
   const [activeCategory, setActiveCategory] = useState("All");
-
-  const filteredFeatures = activeCategory === "All" 
-    ? features 
-    : features.filter(f => f.category === activeCategory);
-
-  return (
-    <PublicLayout>
+  const filteredFeatures = activeCategory === "All" ? features : features.filter(f => f.category === activeCategory);
+  return <PublicLayout>
       <Helmet>
         <title>Amazon Cashflow Management Software Features | Auren</title>
-        <meta
-          name="description"
-          content="Discover Auren's marketplace cash flow software — forecast revenue, manage payouts, and optimize your working capital. Complete Amazon cashflow management tools."
-        />
+        <meta name="description" content="Discover Auren's marketplace cash flow software — forecast revenue, manage payouts, and optimize your working capital. Complete Amazon cashflow management tools." />
         <meta name="keywords" content="amazon cashflow management software, marketplace cash flow software, amazon payout forecasting, cashflow automation, amazon seller tools" />
         <link rel="canonical" href="https://aurenapp.com/features" />
         <meta property="og:title" content="Amazon Cashflow Management Software Features | Auren" />
@@ -210,8 +156,7 @@ const Features = () => {
       </Helmet>
 
       {/* Sticky CTA */}
-      {showStickyCTA && (
-        <div className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-t shadow-lg animate-slide-up">
+      {showStickyCTA && <div className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-t shadow-lg animate-slide-up">
           <div className="container mx-auto px-4 py-3 flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <AlertCircle className="h-5 w-5 text-primary" />
@@ -225,8 +170,7 @@ const Features = () => {
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </div>
-        </div>
-      )}
+        </div>}
 
         {/* Signature Features */}
         <section className="py-20 px-4 bg-gradient-to-b from-primary/5 to-background">
@@ -398,7 +342,7 @@ const Features = () => {
             {/* What We Model */}
             <Card>
               <CardHeader>
-                <CardTitle>What Auren Models</CardTitle>
+                <CardTitle>What Auren Model V1 Include?          </CardTitle>
                 <CardDescription>We account for Amazon's actual settlement mechanics</CardDescription>
               </CardHeader>
               <CardContent>
@@ -449,16 +393,9 @@ const Features = () => {
         <section className="py-8 px-4 border-b bg-card/30">
           <div className="container mx-auto">
             <div className="flex gap-2 overflow-x-auto pb-2">
-              {categories.map((category) => (
-                <Button
-                  key={category}
-                  variant={activeCategory === category ? "default" : "outline"}
-                  onClick={() => setActiveCategory(category)}
-                  className="whitespace-nowrap"
-                >
+              {categories.map(category => <Button key={category} variant={activeCategory === category ? "default" : "outline"} onClick={() => setActiveCategory(category)} className="whitespace-nowrap">
                   {category}
-                </Button>
-              ))}
+                </Button>)}
             </div>
           </div>
         </section>
@@ -468,23 +405,16 @@ const Features = () => {
           <div className="container mx-auto">
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredFeatures.map((feature, index) => {
-                const Icon = feature.icon;
-                return (
-                  <Card 
-                    key={index} 
-                    className="hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer group" 
-                    onClick={() => navigate(`/features/${feature.slug}`)}
-                  >
+            const Icon = feature.icon;
+            return <Card key={index} className="hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer group" onClick={() => navigate(`/features/${feature.slug}`)}>
                     <CardHeader>
                       <div className="flex items-start justify-between mb-2">
                         <div className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
                           <Icon className="h-6 w-6 text-primary" />
                         </div>
-                        {feature.badge && (
-                          <Badge variant={feature.badge === "AI" ? "default" : "secondary"}>
+                        {feature.badge && <Badge variant={feature.badge === "AI" ? "default" : "secondary"}>
                             {feature.badge}
-                          </Badge>
-                        )}
+                          </Badge>}
                       </div>
                       <CardTitle className="text-xl group-hover:text-primary transition-colors">{feature.title}</CardTitle>
                     </CardHeader>
@@ -497,9 +427,8 @@ const Features = () => {
                         <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                       </div>
                     </CardContent>
-                  </Card>
-                );
-              })}
+                  </Card>;
+          })}
             </div>
           </div>
         </section>
@@ -528,8 +457,6 @@ const Features = () => {
           </div>
         </section>
 
-    </PublicLayout>
-  );
+    </PublicLayout>;
 };
-
 export default Features;
