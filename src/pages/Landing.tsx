@@ -664,33 +664,6 @@ const Landing = () => {
                 </div>
               </div>
               
-              {/* Trust Indicators */}
-              <div className="flex flex-wrap items-center gap-6 pt-4 animate-fade-in" style={{
-              animationDelay: '800ms'
-            }}>
-                <div className="flex items-center gap-2 text-sm">
-                <div className="flex -space-x-1">
-                  <img src={avatar1} alt="Amazon FBA seller using Auren for cash flow forecasting" className="w-8 h-8 rounded-full border-2 border-background object-cover" />
-                  <img src={avatar2} alt="Marketplace seller managing finances with Auren" className="w-8 h-8 rounded-full border-2 border-background object-cover" />
-                  <img src={avatar3} alt="eCommerce seller tracking Amazon payouts" className="w-8 h-8 rounded-full border-2 border-background object-cover" />
-                  <img src={avatar4} alt="Online seller forecasting cash flow with Auren" className="w-8 h-8 rounded-full border-2 border-background object-cover" />
-                </div>
-                  <span className="text-muted-foreground">
-                    <span className="font-semibold text-foreground">500+</span> sellers trust Auren
-                  </span>
-                </div>
-                <div className="flex items-center gap-1">
-                  {[1, 2, 3, 4, 5].map(i => <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />)}
-                  <span className="ml-2 text-sm text-muted-foreground">
-                    <span className="font-semibold text-foreground">4.9</span>/5 rating
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20">
-                  <CheckCircle className="h-4 w-4 text-primary" />
-                  <span className="text-sm font-medium text-primary">No credit card required</span>
-                </div>
-              </div>
-              
               {/* Security Badge */}
               <div className="inline-flex items-center gap-3 px-4 py-3 rounded-xl bg-card/50 backdrop-blur-sm border border-border/50 animate-fade-in" style={{
               animationDelay: '1000ms'
