@@ -65,7 +65,7 @@ export const IncomeOverview = ({ incomeItems, bankTransactions = [], onCollectTo
     today.setHours(0, 0, 0, 0);
     
     let filtered = incomeItems.filter(income => {
-      // Hide received income
+      // Hide archived (received) income
       if (income.status === 'received') return false;
 
       // Automatically exclude overdue income from calculations

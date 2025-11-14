@@ -96,9 +96,19 @@ const MatchTransactions = () => {
       } else if (match.type === 'vendor' && match.matchedVendorTransaction) {
         await markAsPaid(match.matchedVendorTransaction.id);
         
+        // Archive the purchase order in transactions table since it's now matched
+        const { error: archiveError } = await supabase
+          .from('transactions')
+          .update({ archived: true })
+          .eq('id', match.matchedVendorTransaction.id);
+        
+        if (archiveError) {
+          console.error('Error archiving purchase order:', archiveError);
+        }
+        
         toast({
           title: 'Vendor payment matched',
-          description: 'Purchase order has been matched with bank transaction.',
+          description: 'Purchase order has been archived and matched with bank transaction.',
         });
       }
       

@@ -45,7 +45,7 @@ export const useVendorTransactions = () => {
         return;
       }
 
-      // Fetch transactions with vendor information
+      // Fetch transactions with vendor information (exclude archived)
       // Using left join to include transactions even if vendor is deleted
       const { data, error } = await supabase
         .from('transactions')
@@ -54,6 +54,7 @@ export const useVendorTransactions = () => {
           vendors(name, category)
         `)
         .eq('type', 'purchase_order')
+        .eq('archived', false)
         .order('due_date', { ascending: true });
 
       if (error) throw error;
@@ -91,18 +92,19 @@ export const useVendorTransactions = () => {
       const { error } = await supabase
         .from('transactions')
         .update({ 
-          status: 'completed'
+          status: 'completed',
+          archived: true 
         } as any)
         .eq('id', transactionId);
 
       if (error) throw error;
 
-      // Remove from local state since it's now completed
+      // Remove from local state since it's now archived
       setTransactions(prev => prev.filter(tx => tx.id !== transactionId));
 
       toast({
         title: "Success",
-        description: "Payment marked as paid",
+        description: "Payment marked as paid and archived",
       });
     } catch (error) {
       console.error('Error updating transaction:', error);
@@ -274,6 +276,7 @@ export const useVendorTransactions = () => {
       .from('transactions')
       .update({
         status: 'pending',
+        archived: false,
         remarks: `Partial payment reversed (${timestamp})`
       } as any)
       .eq('id', originalTx.id);
@@ -348,13 +351,14 @@ export const useVendorTransactions = () => {
         .from('transactions')
         .update({
           status: 'partially_paid',
-          remarks: 'Partially Paid'
+          remarks: 'Partially Paid',
+          archived: true,
         } as any)
         .eq('id', transactionId);
 
       if (updateError) throw updateError;
 
-      // Create PO#.1 transaction for the paid amount (completed, not shown in vendors overview)
+      // Create PO#.1 transaction for the paid amount (archived, not shown anywhere)
       const { error: paidError } = await supabase
         .from('transactions')
         .insert({
@@ -367,7 +371,8 @@ export const useVendorTransactions = () => {
           transaction_date: formatDateForDB(new Date()),
           status: 'completed',
           description: `${originalTx.description}.1`,
-          remarks: 'Partially Paid'
+          remarks: 'Partially Paid',
+          archived: true
         } as any);
 
       if (paidError) throw paidError;

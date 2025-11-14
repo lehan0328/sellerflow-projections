@@ -584,6 +584,19 @@ export const VendorsOverview = ({
               </div>}
             </div>
           </div>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="outline" size="sm" onClick={() => navigate("/transactions?tab=vendors")} className="flex items-center space-x-2">
+                  <ExternalLink className="h-4 w-4" />
+                  <span>Archived Transactions</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>View archived transactions. All archived transactions are automatically erased after 1 year.</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
         
         <div className="flex items-center space-x-4 mt-4">

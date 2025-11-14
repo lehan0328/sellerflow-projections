@@ -40,7 +40,7 @@ export default function Analytics() {
   const {
     transactions: dbTransactions
   } = useTransactions();
-  // Fetch ALL vendor transactions (including completed)
+  // Fetch ALL vendor transactions (including archived/completed, excluding deleted)
   const [vendorTransactions, setVendorTransactions] = useState<any[]>([]);
 
   // Use unified Amazon revenue hook
@@ -76,7 +76,7 @@ export default function Analytics() {
         }
       } = await supabase.auth.getUser();
       if (!user) return;
-      // Fetch ALL purchase orders (including completed) for Analytics
+      // Fetch ALL purchase orders (including archived/completed) for Analytics
       // Deleted transactions are not in this table, so they're automatically excluded
       const {
         data,
@@ -105,7 +105,8 @@ export default function Analytics() {
         status: tx.status,
         description: tx.description || '',
         category: tx.vendors?.category || '',
-        type: tx.type
+        type: tx.type,
+        archived: tx.archived || false
       })) || [];
       setVendorTransactions(formatted);
     };

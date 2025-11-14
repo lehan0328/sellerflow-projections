@@ -18,6 +18,7 @@ export interface BankTransaction {
   currencyCode: string;
   createdAt: Date;
   updatedAt: Date;
+  archived: boolean;
   matchedTransactionId?: string;
   matchedType?: 'income' | 'vendor';
 }
@@ -33,6 +34,7 @@ export const useBankTransactions = (accountId?: string, accountType: 'bank' | 'c
       let query = supabase
         .from('bank_transactions')
         .select('*')
+        .eq('archived', false)  // Exclude archived transactions
         .order('date', { ascending: false });
 
       if (accountId) {
@@ -64,6 +66,7 @@ export const useBankTransactions = (accountId?: string, accountType: 'bank' | 'c
         currencyCode: tx.currency_code,
         createdAt: new Date(tx.created_at),
         updatedAt: new Date(tx.updated_at),
+        archived: tx.archived || false,
         matchedTransactionId: tx.matched_transaction_id,
         matchedType: tx.matched_type,
       }));

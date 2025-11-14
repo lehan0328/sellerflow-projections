@@ -236,20 +236,20 @@ const BankTransactions = () => {
     if (!user) throw new Error('Not authenticated');
     
     if (match.type === 'income') {
-      // Update income status to received
+      // Update income status to received and archive
       await supabase
         .from('income')
-        .update({ status: 'received' })
+        .update({ status: 'received', archived: true })
         .eq('id', match.matchedIncome!.id);
     } else {
-      // Update vendor transaction status to paid
+      // Update vendor transaction status to paid and archive
       await supabase
         .from('transactions')
-        .update({ status: 'paid' })
+        .update({ status: 'paid', archived: true })
         .eq('id', match.matchedVendorTransaction!.id);
     }
     
-    // Delete the bank transaction after matching
+    // Archive the bank transaction by storing it and deleting from bank_transactions
     await supabase
       .from('deleted_transactions')
       .insert([{

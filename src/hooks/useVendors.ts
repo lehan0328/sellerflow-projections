@@ -296,7 +296,7 @@ export const useVendors = () => {
         console.error('Error saving deleted vendor to deleted_transactions:', saveError);
         toast({
           title: "Warning",
-          description: "Vendor deleted but transaction history could not be saved: " + saveError.message,
+          description: "Vendor deleted but could not be archived: " + saveError.message,
           variant: "destructive",
         });
       } else {
