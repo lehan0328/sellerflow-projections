@@ -57,7 +57,7 @@ export const TransactionEditModal = ({ open, onOpenChange, transaction, onSucces
     if (open && transaction) {
       setFormData({
         amount: transaction.amount || 0,
-        dueDate: transaction.dueDate ? formatDateInputLocal(transaction.dueDate) : '',
+        dueDate: transaction.dueDate ? formatDateInputLocal(transaction.dueDate) : formatDateInputLocal(new Date()),
         description: transaction.description || '',
         remarks: transaction.remarks || '',
         creditCardId: transaction.creditCardId || null
@@ -190,7 +190,7 @@ export const TransactionEditModal = ({ open, onOpenChange, transaction, onSucces
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
-          <div className="space-y-4 overflow-y-auto pr-4 flex-1">
+          <div className="space-y-4 overflow-y-auto pr-4 pl-4 flex-1">
             <div className="space-y-2">
               <Label htmlFor="description">Payee</Label>
               <Input
