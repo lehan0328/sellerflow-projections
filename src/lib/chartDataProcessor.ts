@@ -8,6 +8,7 @@ interface CashFlowEvent {
   date: Date;
   balanceImpactDate?: Date;
   affectsBalance?: boolean;
+  creditCardId?: string | null;
 }
 
 export interface ChartDailyBalance {
@@ -44,8 +45,9 @@ export const calculateChartBalances = (
       .filter(e => e.type === 'inflow')
       .reduce((sum, e) => sum + e.amount, 0);
     
+    // Exclude credit card purchases from cash outflow (they affect credit line instead)
     const dailyOutflow = dayEvents
-      .filter(e => e.type !== 'inflow')
+      .filter(e => e.type !== 'inflow' && !e.creditCardId)
       .reduce((sum, e) => sum + e.amount, 0);
     
     const netChange = dailyInflow - dailyOutflow;

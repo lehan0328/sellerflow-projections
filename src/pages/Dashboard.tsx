@@ -1881,10 +1881,6 @@ const Dashboard = () => {
       if (tx.type !== "purchase_order" || !tx.vendorId) {
         return false;
       }
-      // Skip credit card purchases - they're already in credit card balance
-      if (tx.creditCardId) {
-        return false;
-      }
       // Exclude completed transactions
       if (tx.status === "completed") {
         return false;
