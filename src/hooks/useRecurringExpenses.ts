@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -5,6 +6,7 @@ import { toast } from "@/hooks/use-toast";
 export interface RecurringExpense {
   id: string;
   user_id: string;
+  account_id: string | null;
   name: string;
   transaction_name: string | null;
   amount: number;
@@ -23,19 +25,70 @@ export interface RecurringExpense {
 export const useRecurringExpenses = () => {
   const queryClient = useQueryClient();
 
-  const { data: recurringExpenses = [], isLoading } = useQuery({
+  const { data: recurringExpenses = [], isLoading, error: queryError } = useQuery({
     queryKey: ['recurring-expenses'],
     queryFn: async () => {
+      console.log('[useRecurringExpenses] Fetching recurring expenses...');
+      
+      // Get current user's account_id for debugging
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.error('[useRecurringExpenses] No authenticated user found');
+        throw new Error('User not authenticated');
+      }
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('account_id')
+        .eq('user_id', user.id)
+        .single();
+
+      console.log('[useRecurringExpenses] Current user profile:', {
+        user_id: user.id,
+        account_id: profile?.account_id
+      });
+
       const { data, error } = await supabase
         .from('recurring_expenses')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('[useRecurringExpenses] Query error:', error);
+        throw error;
+      }
+
+      console.log('[useRecurringExpenses] Query result:', {
+        count: data?.length || 0,
+        sample: data?.[0] ? {
+          id: data[0].id,
+          name: data[0].name,
+          account_id: data[0].account_id
+        } : null
+      });
+
+      if (!data || data.length === 0) {
+        console.warn('[useRecurringExpenses] No recurring expenses returned by query - this may indicate RLS filtering');
+      }
+
       return data as RecurringExpense[];
     },
     staleTime: 30 * 60 * 1000, // 30 minutes - rarely changes
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
+
+  // Log query errors
+  useEffect(() => {
+    if (queryError) {
+      console.error('[useRecurringExpenses] Query failed:', queryError);
+      toast({
+        title: "Failed to load recurring expenses",
+        description: queryError instanceof Error ? queryError.message : "Please try refreshing the page",
+        variant: "destructive"
+      });
+    }
+  }, [queryError]);
 
   const createMutation = useMutation({
     mutationFn: async (expense: Omit<RecurringExpense, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {

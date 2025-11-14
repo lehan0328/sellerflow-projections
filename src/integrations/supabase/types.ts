@@ -750,6 +750,36 @@ export type Database = {
         }
         Relationships: []
       }
+      audit_logs: {
+        Row: {
+          created_at: string | null
+          id: string
+          metadata: Json | null
+          operation: string
+          record_id: string | null
+          table_name: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          operation: string
+          record_id?: string | null
+          table_name: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          operation?: string
+          record_id?: string | null
+          table_name?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       bank_accounts: {
         Row: {
           account_id: string | null
@@ -2771,7 +2801,36 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      admin_data_visibility_issues: {
+        Row: {
+          account_id: string | null
+          email: string | null
+          recurring_count: number | null
+          recurring_missing_account: number | null
+          transaction_count: number | null
+          transaction_missing_account: number | null
+          user_id: string | null
+        }
+        Insert: {
+          account_id?: string | null
+          email?: string | null
+          recurring_count?: never
+          recurring_missing_account?: never
+          transaction_count?: never
+          transaction_missing_account?: never
+          user_id?: string | null
+        }
+        Update: {
+          account_id?: string | null
+          email?: string | null
+          recurring_count?: never
+          recurring_missing_account?: never
+          transaction_count?: never
+          transaction_missing_account?: never
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       calculate_bank_account_balance: {
@@ -2787,6 +2846,15 @@ export type Database = {
         Returns: {
           has_permission: boolean
           role: string
+        }[]
+      }
+      check_user_data_consistency: {
+        Args: { p_user_id: string }
+        Returns: {
+          account_id: string
+          missing_account_id: number
+          table_name: string
+          total_records: number
         }[]
       }
       cleanup_expired_reset_tokens: { Args: never; Returns: undefined }

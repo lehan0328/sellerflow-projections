@@ -81,6 +81,9 @@ import { ReferralDashboardContent } from "@/components/ReferralDashboardContent"
 import { TransactionsView } from "@/components/TransactionsView";
 import { useIncome } from "@/hooks/useIncome";
 import { useExcludeToday } from "@/contexts/ExcludeTodayContext";
+import { AccountStatusWidget } from "@/components/cash-flow/account-status-widget";
+import { DataTroubleshootingPanel } from "@/components/cash-flow/data-troubleshooting-panel";
+import { useSessionHealth } from "@/hooks/useSessionHealth";
 import ScenarioPlanner from "@/pages/ScenarioPlanner";
 import Analytics from "@/pages/Analytics";
 import AmazonForecast from "@/pages/AmazonForecast";
@@ -1414,6 +1417,7 @@ const Dashboard = () => {
         category: null,
         notes: incomeData.description || incomeData.notes || null,
         credit_card_id: null,
+        account_id: null, // Will be set automatically by database trigger
       });
 
       toast({
@@ -1506,6 +1510,7 @@ const Dashboard = () => {
         category: expenseData.category || null,
         notes: expenseData.description || expenseData.notes || null,
         credit_card_id: expenseData.creditCardId || null,
+        account_id: null, // Will be set automatically by database trigger
       });
 
       toast({
@@ -2708,6 +2713,12 @@ const Dashboard = () => {
               unmatchedCount={unmatchedTransactionsCount}
               onNavigate={() => handleSectionChange("match-transactions")}
             />
+
+            {/* Session Health & Account Status */}
+            <div className="space-y-3">
+              <AccountStatusWidget />
+              <DataTroubleshootingPanel />
+            </div>
 
             {/* Main Layout: Stats Sidebar + Cash Flow Visualization */}
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-3 lg:h-[620px]">

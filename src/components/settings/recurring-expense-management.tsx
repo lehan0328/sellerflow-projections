@@ -90,7 +90,8 @@ export function RecurringExpenseManagement() {
       type: formData.type,
       category: formData.category || null,
       notes: formData.notes || null,
-      credit_card_id: null
+      credit_card_id: null,
+      account_id: null // Will be set automatically by database trigger
     };
 
     createRecurringExpense(expenseData);
