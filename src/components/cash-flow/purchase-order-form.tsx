@@ -652,7 +652,7 @@ export const PurchaseOrderForm = ({
       }
       if (data.success && data.data) {
         const extracted = data.data;
-        console.log("Extracted data from document:", extracted);
+        
 
         // Auto-fill form fields with extracted data (description removed since line items capture that)
         setFormData(prev => ({

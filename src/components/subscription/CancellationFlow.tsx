@@ -135,11 +135,6 @@ export const CancellationFlow = ({ open, onOpenChange }: CancellationFlowProps) 
     setLoading(true);
     
     // Submit feedback
-    console.log('Cancellation feedback:', {
-      reason: selectedReason,
-      feedback,
-      improvementFeedback,
-    });
 
     toast.success('Thank you for your feedback. Opening Stripe portal to complete cancellation...');
     

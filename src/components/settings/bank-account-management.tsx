@@ -20,7 +20,6 @@ export function BankAccountManagement() {
     receivedRedirectUri: window.location.href,
     onSuccess: async (public_token: string, metadata: any) => {
       try {
-        console.log("Plaid Link success:", metadata);
         
         // Clear OAuth state from sessionStorage
         sessionStorage.removeItem('plaid_oauth_state_id');
@@ -42,7 +41,6 @@ export function BankAccountManagement() {
       }
     },
     onExit: (err: any, metadata: any) => {
-      console.log("Plaid Link exit:", { err, metadata });
       if (err) {
         toast.error("Failed to connect account");
       }
@@ -58,9 +56,6 @@ export function BankAccountManagement() {
     if (linkToken && ready) {
       // Check if we're returning from OAuth
       const oauthStateId = sessionStorage.getItem('plaid_oauth_state_id');
-      if (oauthStateId) {
-        console.log('Resuming OAuth flow with state ID:', oauthStateId);
-      }
       open();
     }
   }, [linkToken, ready, open]);

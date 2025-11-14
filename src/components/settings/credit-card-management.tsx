@@ -77,7 +77,6 @@ export function CreditCardManagement() {
     token: linkToken,
     onSuccess: async (public_token: string, metadata: any) => {
       try {
-        console.log("Plaid Link success:", metadata);
         
         // Exchange the public token for an access token via edge function
         const { data, error } = await supabase.functions.invoke('exchange-plaid-token', {
@@ -111,7 +110,6 @@ export function CreditCardManagement() {
       }
     },
     onExit: (err: any, metadata: any) => {
-      console.log("Plaid Link exit:", { err, metadata });
       if (err) {
         toast.error("Failed to connect credit card");
       }

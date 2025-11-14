@@ -40,7 +40,6 @@ export const VendorOrderDetailModal = ({ open, onOpenChange, vendor }: VendorOrd
   // Refetch transactions only when modal initially opens
   React.useEffect(() => {
     if (open && !hasFetchedRef.current) {
-      console.log('Modal opened for vendor:', vendor?.name, 'ID:', vendor?.id);
       refetch();
       hasFetchedRef.current = true;
     } else if (!open) {
@@ -62,13 +61,6 @@ export const VendorOrderDetailModal = ({ open, onOpenChange, vendor }: VendorOrd
 
   const vendorTransactions = React.useMemo(() => {
     const filtered = transactions.filter(t => t.vendorId === vendor?.id);
-    console.log('VendorOrderDetailModal Debug:', {
-      vendorId: vendor?.id,
-      vendorName: vendor?.name,
-      totalTransactions: transactions.length,
-      vendorTransactions: filtered.length,
-      allTransactionVendorIds: transactions.map(t => ({ id: t.id, vendorId: t.vendorId, desc: t.description }))
-    });
     return filtered;
   }, [transactions, vendor?.id]);
   const [selectedTxId, setSelectedTxId] = useState<string | undefined>(undefined);
