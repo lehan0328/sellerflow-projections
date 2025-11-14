@@ -374,6 +374,15 @@ const Features = () => {
                       <p className="text-xs text-muted-foreground">Recent deliveries within reserve window</p>
                     </div>
                   </div>
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-orange-100 dark:bg-orange-900/20 rounded">
+                      <TrendingUp className="h-4 w-4 text-orange-600" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-sm">Settlement Data Sync</p>
+                      <p className="text-xs text-muted-foreground">Gathers previous and open settlements from Amazon</p>
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
