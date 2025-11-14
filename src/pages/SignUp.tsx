@@ -31,6 +31,8 @@ export const SignUp = () => {
   });
   const [referralCodeStatus, setReferralCodeStatus] = useState<'idle' | 'validating' | 'valid' | 'invalid'>('idle');
   const [referralCodeType, setReferralCodeType] = useState<'user' | 'affiliate' | 'custom' | null>(null);
+  const [discountPercentage, setDiscountPercentage] = useState<number>(10);
+  const [durationMonths, setDurationMonths] = useState<number>(3);
 
   // Check for referral code or affiliate code in URL parameters
   useEffect(() => {
@@ -74,6 +76,8 @@ export const SignUp = () => {
     if (!code || code.length < 3) {
       setReferralCodeStatus('idle');
       setReferralCodeType(null);
+      setDiscountPercentage(10);
+      setDurationMonths(3);
       return;
     }
 
@@ -95,10 +99,14 @@ export const SignUp = () => {
           // No matching code found
           setReferralCodeStatus('invalid');
           setReferralCodeType(null);
+          setDiscountPercentage(10);
+          setDurationMonths(3);
         } else {
           console.error("Error validating referral code:", error);
           setReferralCodeStatus('invalid');
           setReferralCodeType(null);
+          setDiscountPercentage(10);
+          setDurationMonths(3);
         }
         return;
       }
@@ -106,7 +114,12 @@ export const SignUp = () => {
       // Code found and valid
       setReferralCodeStatus('valid');
       const validTypes = ['user', 'affiliate', 'custom'];
-      setReferralCodeType(validTypes.includes(referralCode.code_type) ? referralCode.code_type as 'affiliate' | 'custom' | 'user' : null);
+      const codeType = validTypes.includes(referralCode.code_type) 
+        ? referralCode.code_type as 'user' | 'affiliate' | 'custom'
+        : 'custom';
+      setReferralCodeType(codeType);
+      setDiscountPercentage(referralCode.discount_percentage || 10);
+      setDurationMonths(referralCode.duration_months || 3);
     } catch (err) {
       console.error('Unexpected error validating referral code:', err);
       setReferralCodeStatus('invalid');
@@ -425,7 +438,10 @@ export const SignUp = () => {
                   <Alert className="bg-green-500/10 border-green-500/20">
                     <Check className="h-4 w-4 text-green-500" />
                     <AlertDescription className="text-green-600 dark:text-green-400 text-sm">
-                      Valid code! You'll get 10% off for 3 months after your trial ends.
+                      {discountPercentage === 100 
+                        ? `Valid code! You'll get 100% off (FREE) for ${durationMonths} ${durationMonths === 1 ? 'month' : 'months'} after your trial ends.`
+                        : `Valid code! You'll get ${discountPercentage}% off for ${durationMonths} ${durationMonths === 1 ? 'month' : 'months'} after your trial ends.`
+                      }
                     </AlertDescription>
                   </Alert>
                 )}
