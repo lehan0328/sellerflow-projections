@@ -82,8 +82,7 @@ const handler = async (req: Request): Promise<Response> => {
           <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f8fafc;">
             <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
               <div style="text-align: center; margin-bottom: 40px;">
-                <img src="https://ruvdqtqyfzaxlobmxgaj.supabase.co/storage/v1/object/public/assets/auren-icon-blue.png" alt="Auren" style="width: 64px; height: 64px; margin-bottom: 16px;" />
-                <h1 style="margin: 0; color: #1e293b; font-size: 24px; font-weight: bold;">Auren</h1>
+                <h1 style="margin: 0; color: #1e293b; font-size: 32px; font-weight: bold;">Auren</h1>
               </div>
 
               <div style="background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
