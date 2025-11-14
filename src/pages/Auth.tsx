@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useGoogleReCaptcha } from 'react-google-recaptcha-v3';
+import { GoogleReCaptchaProvider, useGoogleReCaptcha } from 'react-google-recaptcha-v3';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,7 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { EnterpriseSetupModal } from "@/components/EnterpriseSetupModal";
 
-export const Auth = () => {
+const AuthComponent = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { executeRecaptcha } = useGoogleReCaptcha();
@@ -676,5 +676,11 @@ export const Auth = () => {
       onOpenChange={setShowEnterpriseSetup}
     />
   </div>
-  );
+   );
 };
+
+export const Auth = () => (
+  <GoogleReCaptchaProvider reCaptchaKey="6Lf5AA0sAAAAAJgWKTxuUy40FjcIVEm17I3Zrmq0">
+    <AuthComponent />
+  </GoogleReCaptchaProvider>
+);
