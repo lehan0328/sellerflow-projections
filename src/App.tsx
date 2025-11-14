@@ -10,7 +10,7 @@ import { SignUpsClosed } from "./pages/SignUpsClosed";
 import { SignUp } from "./pages/SignUp";
 import UpgradePlan from "./pages/UpgradePlan";
 import SubscriptionManagement from "./pages/SubscriptionManagement";
-import TransactionLog from "./pages/TransactionLog";
+
 import BankTransactions from "./pages/BankTransactions";
 import Analytics from "./pages/Analytics";
 import ScenarioPlanner from "./pages/ScenarioPlanner";
@@ -251,11 +251,6 @@ const App = () => (
           <Route path="/subscription" element={
             <ProtectedRoute>
               <SubscriptionManagement />
-            </ProtectedRoute>
-          } />
-          <Route path="/transactions" element={
-            <ProtectedRoute>
-              <TransactionLog />
             </ProtectedRoute>
           } />
           <Route path="/bank-transactions" element={

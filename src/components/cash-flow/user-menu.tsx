@@ -123,10 +123,6 @@ export function UserMenu() {
           <span>Manage Subscription</span>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => navigate('/transactions')}>
-          <History className="mr-2 h-4 w-4" />
-          <span>Archived Transaction</span>
-        </DropdownMenuItem>
         <DropdownMenuItem onClick={() => navigate('/dashboard?view=settings&section=feature-request')}>
           <Lightbulb className="mr-2 h-4 w-4" />
           <span>Feature Request</span>

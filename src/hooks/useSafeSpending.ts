@@ -172,14 +172,12 @@ export const useSafeSpending = (
         supabase
           .from('transactions')
           .select('*')
-          .eq('account_id', profile.account_id)
-          .eq('archived', false),
+          .eq('account_id', profile.account_id),
         
         supabase
           .from('income')
           .select('*')
-          .eq('account_id', profile.account_id)
-          .eq('archived', false),
+          .eq('account_id', profile.account_id),
         
         supabase
           .from('recurring_expenses')
