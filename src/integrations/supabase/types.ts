@@ -2323,6 +2323,42 @@ export type Database = {
         }
         Relationships: []
       }
+      stripe_customer_audit_log: {
+        Row: {
+          action: string
+          created_at: string | null
+          id: string
+          metadata: Json | null
+          new_customer_id: string | null
+          old_customer_id: string | null
+          performed_by: string | null
+          reason: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          new_customer_id?: string | null
+          old_customer_id?: string | null
+          performed_by?: string | null
+          reason?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          new_customer_id?: string | null
+          old_customer_id?: string | null
+          performed_by?: string | null
+          reason?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       support_tickets: {
         Row: {
           admin_last_viewed_at: string | null
