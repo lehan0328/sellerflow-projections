@@ -422,15 +422,6 @@ const Features = () => {
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
-                    <div className="p-2 bg-orange-100 dark:bg-orange-900/20 rounded">
-                      <TrendingDown className="h-4 w-4 text-orange-600" />
-                    </div>
-                    <div>
-                      <p className="font-semibold text-sm">Return & Chargeback Rates</p>
-                      <p className="text-xs text-muted-foreground">Historical patterns by product category</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
                     <div className="p-2 bg-emerald-100 dark:bg-emerald-900/20 rounded">
                       <BarChart3 className="h-4 w-4 text-emerald-600" />
                     </div>
