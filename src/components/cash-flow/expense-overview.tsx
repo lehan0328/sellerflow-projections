@@ -349,7 +349,7 @@ export const ExpenseOverview = ({ expenses, onEditExpense, onDeleteExpense, onCr
                         }}
                         className="hover:bg-transparent -ml-3 h-8 font-semibold"
                       >
-                        Description
+                        Payee
                       </Button>
                     </TableHead>
                     <TableHead className="font-semibold">Category</TableHead>
