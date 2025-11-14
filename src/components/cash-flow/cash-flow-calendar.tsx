@@ -744,9 +744,9 @@ export const CashFlowCalendar = ({
                                 </p>}
 
                               <div className="space-y-1">
-                                <p className="font-bold text-base">
-                                  Projected Balance: <span className="text-primary">${data.cashFlow?.toLocaleString()}</span>
-                                </p>
+                                 <p className="font-bold text-base">
+                                   Projected Balance: <span className="text-primary">${data.cashFlow?.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                 </p>
                                 {data.dailyChange !== 0 && <p className={data.dailyChange > 0 ? 'text-green-600 font-medium' : 'text-red-600 font-medium'}>
                                     Daily Net: {data.dailyChange > 0 ? '+' : ''}${Math.abs(data.dailyChange).toLocaleString()}
                                   </p>}
