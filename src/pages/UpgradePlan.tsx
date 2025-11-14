@@ -417,9 +417,7 @@ const UpgradePlan = () => {
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium">Plan</span>
                     <Badge className="bg-gradient-primary">
-                      {plan === 'lifetime' 
-                        ? 'Lifetime Access' 
-                        : plan && (plan === 'tier1' || plan === 'tier2' || plan === 'tier3')
+                      {plan && (plan === 'tier1' || plan === 'tier2' || plan === 'tier3')
                         ? `Enterprise - ${ENTERPRISE_TIERS[plan as keyof typeof ENTERPRISE_TIERS]?.name}`
                         : PRICING_PLANS[plan as keyof typeof PRICING_PLANS]?.name || 'Unknown Plan'}
                     </Badge>
