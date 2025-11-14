@@ -31,9 +31,10 @@ const categories = [
 ];
 
 const paymentTypeOptions = [
-  { value: 'total', label: 'Due Upon Order' },
+  { value: 'due-upon-order', label: 'Due Upon Order' },
   { value: 'net-terms', label: 'Net Terms' },
-  { value: 'preorder', label: 'Pre-order with Deposit' }
+  { value: 'preorder', label: 'Preorder' },
+  { value: 'due-upon-delivery', label: 'Due Upon Delivery' }
 ];
 
 const paymentMethodOptions = [
@@ -55,7 +56,7 @@ export function VendorManagement() {
   const [formData, setFormData] = useState<VendorFormData>({
     name: '',
     category: '',
-    paymentType: 'total',
+    paymentType: 'due-upon-order',
     paymentMethod: 'bank-transfer',
     netTermsDays: '30'
   });
@@ -67,7 +68,7 @@ export function VendorManagement() {
     setFormData({
       name: '',
       category: '',
-      paymentType: 'total',
+      paymentType: 'due-upon-order',
       paymentMethod: 'bank-transfer',
       netTermsDays: '30'
     });
@@ -111,14 +112,14 @@ export function VendorManagement() {
       id: vendor.id, 
       name: vendor.name, 
       category: vendor.category || '',
-      paymentType: vendor.paymentType || 'total',
+      paymentType: vendor.paymentType || 'due-upon-order',
       paymentMethod: vendor.paymentMethod || 'bank-transfer',
       netTermsDays: vendor.netTermsDays || '30'
     });
     setFormData({ 
       name: vendor.name, 
       category: vendor.category || '',
-      paymentType: vendor.paymentType || 'total',
+      paymentType: vendor.paymentType || 'due-upon-order',
       paymentMethod: vendor.paymentMethod || 'bank-transfer',
       netTermsDays: vendor.netTermsDays || '30'
     });
