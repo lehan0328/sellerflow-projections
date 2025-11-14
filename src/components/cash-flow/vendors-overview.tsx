@@ -448,16 +448,29 @@ export const VendorsOverview = ({
   };
 
   const totalOwed = filteredAndSortedTransactions.reduce((sum, tx) => sum + (tx.amount || 0), 0);
-  const thisMonthAmount = filteredAndSortedTransactions.filter(tx => {
+  const totalOwedCash = filteredAndSortedTransactions
+    .filter(tx => !tx.creditCardId)
+    .reduce((sum, tx) => sum + (tx.amount || 0), 0);
+  const totalOwedCredit = filteredAndSortedTransactions
+    .filter(tx => tx.creditCardId)
+    .reduce((sum, tx) => sum + (tx.amount || 0), 0);
+  
+  const thisMonthTransactions = filteredAndSortedTransactions.filter(tx => {
     if (!tx.dueDate || tx.status === 'completed' || tx.status === 'paid') return false;
     const today = new Date();
     const dueDate = new Date(tx.dueDate);
     return dueDate.getMonth() === today.getMonth() && dueDate.getFullYear() === today.getFullYear();
-  }).reduce((sum, tx) => sum + (tx.amount || 0), 0);
+  });
+  const thisMonthAmount = thisMonthTransactions.reduce((sum, tx) => sum + (tx.amount || 0), 0);
+  const thisMonthCash = thisMonthTransactions.filter(tx => !tx.creditCardId).reduce((sum, tx) => sum + (tx.amount || 0), 0);
+  const thisMonthCredit = thisMonthTransactions.filter(tx => tx.creditCardId).reduce((sum, tx) => sum + (tx.amount || 0), 0);
   
-  const pendingCount = filteredAndSortedTransactions.filter(tx => 
+  const pendingTransactions = filteredAndSortedTransactions.filter(tx => 
     tx.status === 'pending' || (tx.status !== 'completed' && tx.status !== 'paid')
-  ).length;
+  );
+  const pendingCount = pendingTransactions.length;
+  const pendingCash = pendingTransactions.filter(tx => !tx.creditCardId).reduce((sum, tx) => sum + (tx.amount || 0), 0);
+  const pendingCredit = pendingTransactions.filter(tx => tx.creditCardId).reduce((sum, tx) => sum + (tx.amount || 0), 0);
 
   return (
     <div className="space-y-6">
@@ -472,9 +485,22 @@ export const VendorsOverview = ({
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">{formatCurrency(totalOwed)}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {filteredAndSortedTransactions.length} transaction{filteredAndSortedTransactions.length !== 1 ? 's' : ''}
-            </p>
+            <div className="flex flex-col gap-1 mt-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="flex items-center gap-1 text-muted-foreground">
+                  <Landmark className="h-3 w-3" />
+                  Bank/Cash:
+                </span>
+                <span className="font-medium">{formatCurrency(totalOwedCash)}</span>
+              </div>
+              <div className="flex items-center justify-between text-xs">
+                <span className="flex items-center gap-1 text-muted-foreground">
+                  <CreditCard className="h-3 w-3" />
+                  Credit Card:
+                </span>
+                <span className="font-medium">{formatCurrency(totalOwedCredit)}</span>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
@@ -487,7 +513,22 @@ export const VendorsOverview = ({
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-amber-600 dark:text-amber-400">{pendingCount}</div>
-            <p className="text-xs text-muted-foreground mt-1">Awaiting payment</p>
+            <div className="flex flex-col gap-1 mt-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="flex items-center gap-1 text-muted-foreground">
+                  <Landmark className="h-3 w-3" />
+                  Bank/Cash:
+                </span>
+                <span className="font-medium">{formatCurrency(pendingCash)}</span>
+              </div>
+              <div className="flex items-center justify-between text-xs">
+                <span className="flex items-center gap-1 text-muted-foreground">
+                  <CreditCard className="h-3 w-3" />
+                  Credit Card:
+                </span>
+                <span className="font-medium">{formatCurrency(pendingCredit)}</span>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
@@ -500,7 +541,22 @@ export const VendorsOverview = ({
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-primary">{formatCurrency(thisMonthAmount)}</div>
-            <p className="text-xs text-muted-foreground mt-1">Due this month</p>
+            <div className="flex flex-col gap-1 mt-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="flex items-center gap-1 text-muted-foreground">
+                  <Landmark className="h-3 w-3" />
+                  Bank/Cash:
+                </span>
+                <span className="font-medium">{formatCurrency(thisMonthCash)}</span>
+              </div>
+              <div className="flex items-center justify-between text-xs">
+                <span className="flex items-center gap-1 text-muted-foreground">
+                  <CreditCard className="h-3 w-3" />
+                  Credit Card:
+                </span>
+                <span className="font-medium">{formatCurrency(thisMonthCredit)}</span>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
