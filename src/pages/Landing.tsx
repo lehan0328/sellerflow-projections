@@ -624,7 +624,7 @@ const Landing = () => {
                         wordSpacing: '0.3em'
                       }}>
                           <Sparkles className="h-4 w-4 animate-pulse" />
-                          <span className="font-display">Mathematical Rule-Based</span>
+                          <span className="font-badge">Mathematical Rule-Based</span>
                           <span className="ml-2 px-2.5 py-0.5 bg-primary/20 rounded-full text-xs">Accurate</span>
                         </Badge>
                       </div>
