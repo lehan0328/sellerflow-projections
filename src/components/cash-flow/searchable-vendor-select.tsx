@@ -38,7 +38,7 @@ export const SearchableVendorSelect = ({
   const selectedVendor = uniqueVendors.find(vendor => vendor.id === value);
 
   const handleSelect = (vendorId: string) => {
-    console.log('SearchableVendorSelect - handleSelect called with:', vendorId);
+    
     onValueChange(vendorId);
     setOpen(false);
   };

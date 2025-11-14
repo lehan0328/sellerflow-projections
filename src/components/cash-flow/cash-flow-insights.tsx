@@ -145,7 +145,7 @@ export const CashFlowInsights = memo(({
         
         // Only generate if we have at least 1 payout but no forecasts
         if (confirmedPayouts.length >= 1 && forecastedPayouts.length === 0 && !isForecastGenerating) {
-          console.log('🚀 Starting forecast generation...');
+          
           setIsForecastGenerating(true);
           
           try {

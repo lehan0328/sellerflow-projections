@@ -68,14 +68,12 @@ export const VendorOrderEditModal = ({ vendor, open, onOpenChange, onSave, onDel
 
   // Update editedVendor when vendor prop changes
   useEffect(() => {
-    console.log('VendorOrderEditModal: vendor prop changed to:', vendor);
     setEditedVendor(vendor);
   }, [vendor]);
 
   // Update form data when vendor changes
   useEffect(() => {
     if (vendor) {
-      console.log('VendorOrderEditModal: updating form data for vendor:', vendor);
       
       // Preserve original purchase order details
       setFormData(prev => ({
@@ -204,11 +202,8 @@ export const VendorOrderEditModal = ({ vendor, open, onOpenChange, onSave, onDel
   };
 
   if (!vendor || !editedVendor) {
-    console.log('VendorOrderEditModal: returning null because vendor or editedVendor is null', { vendor, editedVendor });
     return null;
   }
-
-  console.log('VendorOrderEditModal: rendering modal for vendor:', vendor.name);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

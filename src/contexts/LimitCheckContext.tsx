@@ -14,24 +14,14 @@ export const LimitCheckProvider: React.FC<{
   const { isOverBankLimit, isOverAmazonLimit, isOverTeamLimit, currentUsage, planLimits } = usePlanLimits();
 
   const triggerLimitCheck = useCallback(() => {
-    console.log('[LimitCheckContext] Checking limits after action:', {
-      isOverBankLimit,
-      isOverAmazonLimit,
-      isOverTeamLimit,
-      currentUsage,
-      planLimits
-    });
     
     // Small delay to ensure database updates have propagated
     setTimeout(() => {
       if (isOverBankLimit) {
-        console.log('[LimitCheckContext] Bank limit exceeded, showing modal');
         onLimitViolation('bank_connection');
       } else if (isOverAmazonLimit) {
-        console.log('[LimitCheckContext] Amazon limit exceeded, showing modal');
         onLimitViolation('amazon_connection');
       } else if (isOverTeamLimit) {
-        console.log('[LimitCheckContext] Team limit exceeded, showing modal');
         onLimitViolation('user');
       }
     }, 500); // 500ms delay for DB propagation

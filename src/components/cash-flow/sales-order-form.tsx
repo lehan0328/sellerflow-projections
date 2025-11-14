@@ -88,7 +88,7 @@ export const SalesOrderForm = ({ open, onOpenChange, customers, onSubmitOrder }:
       paymentSchedule: formData.paymentType === "preorder" ? paymentSchedule : undefined
     };
     
-    console.log("Submitting sales order:", salesOrder);
+    
     onSubmitOrder(salesOrder);
     toast.success(`Sales Order "${formData.soName}" created successfully!`);
     onOpenChange(false);

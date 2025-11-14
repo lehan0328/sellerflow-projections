@@ -179,20 +179,15 @@ export function AmazonManagement() {
   };
 
   const handleConnectAmazon = async () => {
-    console.log('=== STARTING AMAZON CONNECTION FLOW ===');
     try {
       // Get current session
-      console.log('Step 1: Getting session...');
       const { data: { session } } = await supabase.auth.getSession();
-      console.log('Session:', session ? 'Found' : 'Not found');
       
       if (!session) {
-        console.error('No session found');
         toast.error('Please log in to connect your Amazon account.');
         return;
       }
 
-      console.log('Step 2: Fetching Amazon SP-API Application ID from edge function...');
       toast.info('Fetching Amazon connection details...');
 
       // Get Amazon SP-API Application ID from backend with auth token
@@ -202,20 +197,14 @@ export function AmazonManagement() {
         },
       });
       
-      console.log('Edge function response:', { data, error });
-      
       if (error) {
-        console.error('Error fetching SP-API Application ID:', error);
         toast.error(`Failed to get Amazon credentials: ${error.message}`);
         return;
       }
       
       const applicationId = data?.clientId; // This should be SP-API Application ID
       
-      console.log('Amazon SP-API Application ID received:', applicationId);
-      
-      if (!applicationId || applicationId === 'undefined' || applicationId === '') {
-        console.error('Invalid SP-API Application ID:', applicationId);
+      if (applicationId && applicationId !== 'undefined' && applicationId !== '') {
         toast.error('Amazon SP-API Application ID is not configured. Please contact support.');
         return;
       }
@@ -226,25 +215,16 @@ export function AmazonManagement() {
       const consentBaseUrl = SELLER_CENTRAL_CONSENT_URLS[region];
       
       const redirectUri = `${window.location.origin}/amazon-oauth-callback`;
-      console.log('Step 3: Building authorization URL...');
-      console.log('Redirect URI:', redirectUri);
-      console.log('Selected marketplace:', selectedMarketplace);
-      console.log('Region:', region);
-      console.log('Consent URL:', consentBaseUrl);
       
       // Construct Amazon authorization URL with region-specific consent URL
       // IMPORTANT: Use application_id (SP-API App ID), not client_id
       const authUrl = `${consentBaseUrl}?application_id=${applicationId}&state=${selectedMarketplace}&redirect_uri=${encodeURIComponent(redirectUri)}`;
       
-      console.log('Amazon OAuth URL:', authUrl);
-      
       toast.info('Redirecting to Amazon Seller Central...');
-      console.log('Step 4: Redirecting to Amazon in same tab...');
       
       // Force same-tab navigation (not new window)
       window.open(authUrl, '_self');
     } catch (error) {
-      console.error('=== ERROR IN AMAZON CONNECTION ===', error);
       toast.error(`Failed to initiate Amazon connection: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
