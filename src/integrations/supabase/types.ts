@@ -1741,6 +1741,42 @@ export type Database = {
         }
         Relationships: []
       }
+      payees: {
+        Row: {
+          account_id: string | null
+          category: string | null
+          created_at: string
+          id: string
+          name: string
+          notes: string | null
+          payment_method: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          category?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          notes?: string | null
+          payment_method?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string | null
+          category?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          payment_method?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       plan_limits: {
         Row: {
           amazon_connections: number
@@ -1982,6 +2018,47 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      recurring_expense_exceptions: {
+        Row: {
+          account_id: string | null
+          created_at: string | null
+          exception_date: string
+          id: string
+          reason: string | null
+          recurring_expense_id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          created_at?: string | null
+          exception_date: string
+          id?: string
+          reason?: string | null
+          recurring_expense_id: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          account_id?: string | null
+          created_at?: string | null
+          exception_date?: string
+          id?: string
+          reason?: string | null
+          recurring_expense_id?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recurring_expense_exceptions_recurring_expense_id_fkey"
+            columns: ["recurring_expense_id"]
+            isOneToOne: false
+            referencedRelation: "recurring_expenses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       recurring_expenses: {
         Row: {
