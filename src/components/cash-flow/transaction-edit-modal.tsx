@@ -71,6 +71,30 @@ export const TransactionEditModal = ({ open, onOpenChange, transaction, onSucces
         updates.due_date = formatDateForDB(parseDateInputLocal(formData.dueDate));
       }
 
+      // If amount changed and this is a credit card expense, adjust credit card balance
+      const amountChanged = Number(formData.amount) !== transaction.amount;
+      if (amountChanged && transaction.creditCardId && transaction.status === 'completed') {
+        const { data: creditCard } = await supabase
+          .from('credit_cards')
+          .select('balance, credit_limit')
+          .eq('id', transaction.creditCardId)
+          .single();
+        
+        if (creditCard) {
+          const amountDifference = Number(formData.amount) - transaction.amount;
+          const newBalance = creditCard.balance + amountDifference;
+          const newAvailableCredit = creditCard.credit_limit - newBalance;
+          
+          await supabase
+            .from('credit_cards')
+            .update({
+              balance: newBalance,
+              available_credit: newAvailableCredit
+            })
+            .eq('id', transaction.creditCardId);
+        }
+      }
+
       const { error } = await supabase
         .from('transactions')
         .update(updates)

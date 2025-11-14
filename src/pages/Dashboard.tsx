@@ -875,6 +875,28 @@ const Dashboard = () => {
       }
     }
 
+    // If this was a credit card expense, restore credit card balance
+    if (transaction.type === "expense" && transaction.creditCardId && transaction.status === "completed") {
+      const { data: creditCard } = await supabase
+        .from('credit_cards')
+        .select('balance, credit_limit')
+        .eq('id', transaction.creditCardId)
+        .single();
+      
+      if (creditCard) {
+        const newBalance = Math.max(0, creditCard.balance - transaction.amount);
+        const newAvailableCredit = creditCard.credit_limit - newBalance;
+        
+        await supabase
+          .from('credit_cards')
+          .update({
+            balance: newBalance,
+            available_credit: newAvailableCredit
+          })
+          .eq('id', transaction.creditCardId);
+      }
+    }
+
     // Remove transaction from database
     await deleteTransaction(transactionId);
 
@@ -1511,6 +1533,28 @@ const Dashboard = () => {
       category: expenseData.category || null,
       creditCardId: expenseData.creditCardId || null,
     });
+
+    // Update credit card balance if paid by credit card and completed
+    if (expenseData.creditCardId && isPaymentDatePassed) {
+      const { data: creditCard } = await supabase
+        .from('credit_cards')
+        .select('balance, credit_limit')
+        .eq('id', expenseData.creditCardId)
+        .single();
+      
+      if (creditCard) {
+        const newBalance = creditCard.balance + amount;
+        const newAvailableCredit = creditCard.credit_limit - newBalance;
+        
+        await supabase
+          .from('credit_cards')
+          .update({
+            balance: newBalance,
+            available_credit: newAvailableCredit
+          })
+          .eq('id', expenseData.creditCardId);
+      }
+    }
 
     // Refetch transactions to update the UI
     await refetchTransactions();
