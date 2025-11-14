@@ -4,9 +4,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Gift, Users, TrendingUp, DollarSign, Plus, Trash2 } from "lucide-react";
+import { Gift, Users, TrendingUp, DollarSign, Plus, Trash2, Eye } from "lucide-react";
 import { toast } from "sonner";
 
 interface CodeUsage {
@@ -40,6 +41,9 @@ export function AdminCodeTracking() {
   });
   const [isCreating, setIsCreating] = useState(false);
   const [filterType, setFilterType] = useState<'all' | 'referral' | 'affiliate' | 'custom'>('all');
+  const [showUsersDialog, setShowUsersDialog] = useState(false);
+  const [selectedCode, setSelectedCode] = useState<string>('');
+  const [codeUsers, setCodeUsers] = useState<Array<{email: string; created_at: string; hasSubscription: boolean}>>([]);
 
   useEffect(() => {
     fetchCodeTracking();
@@ -133,6 +137,31 @@ export function AdminCodeTracking() {
       console.error('Error fetching code tracking:', error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const fetchUsersForCode = async (code: string) => {
+    try {
+      const { data: profiles, error } = await supabase
+        .from("profiles")
+        .select("email, created_at, stripe_customer_id")
+        .ilike("referral_code", code)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+
+      const users = profiles?.map(p => ({
+        email: p.email || 'No email',
+        created_at: p.created_at,
+        hasSubscription: !!p.stripe_customer_id
+      })) || [];
+
+      setCodeUsers(users);
+      setSelectedCode(code);
+      setShowUsersDialog(true);
+    } catch (error) {
+      console.error('Error fetching users for code:', error);
+      toast.error('Failed to load users');
     }
   };
 
@@ -421,8 +450,18 @@ export function AdminCodeTracking() {
                         </p>
                         <p className="text-xs text-muted-foreground">Conversion</p>
                       </div>
-                      {code.id && (
-                        <div>
+                      <div className="flex items-center gap-2">
+                        {code.totalUses > 0 && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => fetchUsersForCode(code.code)}
+                          >
+                            <Eye className="w-4 h-4 mr-2" />
+                            View Users
+                          </Button>
+                        )}
+                        {code.id && (
                           <Button
                             variant="destructive"
                             size="sm"
@@ -430,8 +469,8 @@ export function AdminCodeTracking() {
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -440,6 +479,42 @@ export function AdminCodeTracking() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Users Dialog */}
+      <Dialog open={showUsersDialog} onOpenChange={setShowUsersDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Users who signed up with {selectedCode}</DialogTitle>
+            <DialogDescription>
+              {codeUsers.length} {codeUsers.length === 1 ? 'user has' : 'users have'} signed up with this code
+            </DialogDescription>
+          </DialogHeader>
+          <div className="max-h-[400px] overflow-y-auto">
+            {codeUsers.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-8">No users found</p>
+            ) : (
+              <div className="space-y-2">
+                {codeUsers.map((user, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between p-3 rounded-lg border bg-card"
+                  >
+                    <div className="flex-1">
+                      <p className="font-medium">{user.email}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Signed up: {new Date(user.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <Badge variant={user.hasSubscription ? "default" : "outline"}>
+                      {user.hasSubscription ? "Active Subscription" : "Trial"}
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
