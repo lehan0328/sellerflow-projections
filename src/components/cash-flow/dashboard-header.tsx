@@ -63,7 +63,6 @@ export function DashboardHeader({
         console.error('[Dashboard] Error fetching profile:', error);
         return null;
       }
-      console.log('[Dashboard] Company data loaded:', data);
       return data;
     },
     enabled: !!user?.id,

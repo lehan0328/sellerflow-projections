@@ -129,43 +129,23 @@ export const useAmazonPayouts = () => {
         
         // Always show confirmed settlements
         if (payout.status === 'confirmed') {
-          console.log('[fetchAmazonPayouts] Keeping confirmed settlement:', {
-            id: payout.id,
-            status: payout.status,
-            date: payout.payout_date,
-            amount: payout.total_amount
-          });
           return true;
         }
         
         // Always include mathematical forecasts - let the consuming components decide display logic
         // The forecast toggle should only affect calculations, not data availability
         if (payout.status === 'forecasted') {
-          console.log('[fetchAmazonPayouts] Including forecasted payout:', {
-            id: payout.id,
-            date: payout.payout_date,
-            amount: payout.total_amount
-          });
           return true;
         }
         
         // Include rolled-over forecasts (these are past forecasts that were combined with future dates)
         // They should display on the chart to show rollover history
         if (payout.status === 'rolled_over') {
-          console.log('[fetchAmazonPayouts] Including rolled_over forecast:', {
-            id: payout.id,
-            date: payout.payout_date,
-            amount: payout.total_amount,
-            note: 'This forecast was rolled into a future date'
-          });
           return true;
         }
         
         return true;
       });
-
-      console.log('[fetchAmazonPayouts] Filtered payouts:', filteredPayouts.length, 'total');
-      console.log('[fetchAmazonPayouts] Open settlements:', filteredPayouts.filter(p => p.status === 'estimated').length);
 
       // Parse and enrich with metadata
       setAmazonPayouts(filteredPayouts.map(payout => {

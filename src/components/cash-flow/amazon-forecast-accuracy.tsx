@@ -123,7 +123,6 @@ export const AmazonForecastAccuracy = () => {
         return;
       }
       
-      console.log('[Forecast Accuracy] Success! Setting metrics:', data.metrics);
       setMetrics(data.metrics);
       
     } catch (error) {
@@ -135,15 +134,8 @@ export const AmazonForecastAccuracy = () => {
   };
 
   useEffect(() => {
-    console.log('[Forecast Accuracy] useEffect triggered', { 
-      logsCount: accuracyLogs.length,
-      hasMetrics: !!metrics,
-      isLoading
-    });
-    
     // Load metrics if we have accuracy logs
     if (accuracyLogs.length > 0 && !metrics && !isLoading) {
-      console.log('[Forecast Accuracy] Auto-loading metrics...');
       loadMetrics();
     }
   }, [accuracyLogs.length, metrics, isLoading]);

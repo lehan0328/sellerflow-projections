@@ -104,17 +104,6 @@ export const CashFlowInsights = memo(({
   const netDaily = dailyInflow - dailyOutflow;
   const healthStatus = netDaily >= 0 ? "positive" : "negative";
 
-  // Debug: Log the received values
-  useEffect(() => {
-    console.log('💰 CashFlowInsights received:', {
-      safeSpendingLimit,
-      reserveAmount,
-      projectedLowestBalance,
-      calculation: `${projectedLowestBalance} - ${reserveAmount} = ${projectedLowestBalance - reserveAmount}`,
-      expectedSafeSpending: projectedLowestBalance - reserveAmount
-    });
-  }, [safeSpendingLimit, reserveAmount, projectedLowestBalance]);
-
   // Update edit value when reserveAmount prop changes
   useEffect(() => {
     setEditReserveValue(reserveAmount.toString());
@@ -177,7 +166,6 @@ export const CashFlowInsights = memo(({
               console.error('Forecast generation error:', error);
               setIsForecastGenerating(false);
             } else if (data?.success) {
-              console.log('✅ Amazon payouts forecasted successfully');
               // Refetch to get fresh data
               await refetchPayouts();
               setIsForecastGenerating(false);

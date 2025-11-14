@@ -96,7 +96,6 @@ export function BankAccounts({ useAvailableBalance, onToggleBalance }: { useAvai
   const config = {
     token: linkToken,
     onSuccess: (publicToken: string, metadata: any) => {
-      console.log('Plaid onSuccess - showing confirmation dialog', metadata);
       setPlaidPublicToken(publicToken);
       setPlaidMetadata(metadata);
       setShowPlaidConfirmation(true);
@@ -285,7 +284,6 @@ export function BankAccounts({ useAvailableBalance, onToggleBalance }: { useAvai
     if (!plaidPublicToken || !plaidMetadata) return;
     
     try {
-      console.log('Exchanging Plaid token with selected accounts:', selectedAccountIds);
       const { error } = await supabase.functions.invoke('exchange-plaid-token', {
         body: { 
           publicToken: plaidPublicToken, 

@@ -104,7 +104,6 @@ export const PaymentAccessControl = ({ children }: PaymentAccessControlProps) =>
 
       // If user has a plan override (lifetime access, tier1, etc.), bypass payment checks
       if (planOverride) {
-        console.log('User has plan override, bypassing payment checks:', planOverride);
         setIsChecking(false);
         return;
       }

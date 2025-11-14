@@ -796,11 +796,6 @@ export function AmazonPayouts() {
             return payoutDate >= startDateFilter && payoutDate <= endDateFilter;
           });
           
-          console.log('🛒 Amazon Payouts Component - Displaying Closed Settlements:', {
-            total: filteredPayouts.length,
-            dateRange: { start: startDateFilter, end: endDateFilter }
-          });
-          
           // Group by unique combination of payout_date AND settlement_id to keep them separate
           const payoutsByKey = filteredPayouts.reduce((acc, payout) => {
             const key = `${payout.payout_date}-${payout.settlement_id}`;

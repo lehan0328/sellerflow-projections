@@ -234,13 +234,11 @@ export function OverviewStats({
 
   // Force fresh calculation on mount
   useEffect(() => {
-    console.log('🔄 OverviewStats mounted - fetching safe spending data');
     refetchSafeSpending();
   }, []);
 
   // Refetch when exclude today changes
   useEffect(() => {
-    console.log('🔄 [OVERVIEW STATS] Exclude today changed to:', excludeToday, '- refetching safe spending');
     refetchSafeSpending();
   }, [excludeToday]);
 
@@ -441,19 +439,7 @@ export function OverviewStats({
     payoutDate.setHours(0, 0, 0, 0);
     return payoutDate >= amazonDateRange.start && payoutDate < amazonDateRange.end;
   });
-  console.log('[Analytics] Filtered Amazon Payouts:', {
-    range: `${amazonDateRange.start.toISOString()} to ${amazonDateRange.end.toISOString()}`,
-    totalPayouts: amazonPayouts.length,
-    filteredCount: filteredPayouts.length,
-    statuses: amazonPayouts.map(p => p.status),
-    filteredPayouts: filteredPayouts.map(p => ({
-      date: p.payout_date,
-      amount: p.total_amount,
-      status: p.status
-    }))
-  });
   const filteredAmazonRevenue = filteredPayouts.reduce((sum, payout) => sum + (payout.total_amount || 0), 0);
-  console.log('[Analytics] Filtered Amazon Revenue:', filteredAmazonRevenue);
 
   // Calculate overdue transactions
   const today = new Date();
