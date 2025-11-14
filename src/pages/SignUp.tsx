@@ -17,6 +17,10 @@ const SignUpComponent = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { executeRecaptcha } = useGoogleReCaptcha();
+  
+  // Check if we're in production environment
+  const isProduction = window.location.hostname === 'aurenapp.com' || 
+                       window.location.hostname === 'www.aurenapp.com';
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
@@ -191,24 +195,29 @@ const SignUpComponent = () => {
       return;
     }
 
-    if (!executeRecaptcha) {
-      toast.error('reCAPTCHA not ready. Please try again.');
-      return;
-    }
-
     setLoading(true);
     try {
-      // Generate reCAPTCHA token
-      const recaptchaToken = await executeRecaptcha('signup');
+      // Only verify reCAPTCHA in production
+      if (isProduction) {
+        if (!executeRecaptcha) {
+          toast.error('reCAPTCHA not ready. Please try again.');
+          setLoading(false);
+          return;
+        }
 
-      // Verify reCAPTCHA token with edge function
-      const { data: verifyData, error: verifyError } = await supabase.functions.invoke('verify-recaptcha', {
-        body: { token: recaptchaToken }
-      });
+        // Generate reCAPTCHA token
+        const recaptchaToken = await executeRecaptcha('signup');
 
-      if (verifyError || !verifyData?.success) {
-        toast.error('Security verification failed. Please try again.');
-        return;
+        // Verify reCAPTCHA token with edge function
+        const { data: verifyData, error: verifyError } = await supabase.functions.invoke('verify-recaptcha', {
+          body: { token: recaptchaToken }
+        });
+
+        if (verifyError || !verifyData?.success) {
+          toast.error('Security verification failed. Please try again.');
+          setLoading(false);
+          return;
+        }
       }
 
       const redirectUrl = `${window.location.origin}/auth`;
@@ -579,8 +588,17 @@ const SignUpComponent = () => {
   );
 };
 
-export const SignUp = () => (
-  <GoogleReCaptchaProvider reCaptchaKey="6Lf5AA0sAAAAAJgWKTxuUy40FjcIVEm17I3Zrmq0">
-    <SignUpComponent />
-  </GoogleReCaptchaProvider>
-);
+export const SignUp = () => {
+  const isProduction = window.location.hostname === 'aurenapp.com' || 
+                       window.location.hostname === 'www.aurenapp.com';
+  
+  if (isProduction) {
+    return (
+      <GoogleReCaptchaProvider reCaptchaKey="6Lf5AA0sAAAAAJgWKTxuUy40FjcIVEm17I3Zrmq0">
+        <SignUpComponent />
+      </GoogleReCaptchaProvider>
+    );
+  }
+  
+  return <SignUpComponent />;
+};
