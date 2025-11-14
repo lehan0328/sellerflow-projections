@@ -57,7 +57,6 @@ export function TicketMessagesDialog({ ticket, open, onOpenChange }: TicketMessa
           console.error('Error fetching staff name:', error);
         }
         
-        console.log('Staff name data:', data, 'for email:', user.email);
         setStaffName(data?.first_name || 'Support');
       }
     } else {

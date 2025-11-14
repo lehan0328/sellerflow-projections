@@ -245,14 +245,6 @@ export const IncomeForm = ({
       creditCardId: (formData.type === "expense" && formData.paymentMethod === "credit-card") ? formData.creditCardId : undefined
     };
     
-    // Debug logging to track submission data
-    console.log("=== FORM SUBMISSION DEBUG ===");
-    console.log("Form Data:", formData);
-    console.log("Payment Method:", formData.paymentMethod);
-    console.log("Credit Card ID:", formData.creditCardId);
-    console.log("Final Data Being Submitted:", data);
-    console.log("===========================");
-    
     // Call the appropriate submit function based on type
     if (formData.type === "expense" && onSubmitExpense) {
       await onSubmitExpense(data);

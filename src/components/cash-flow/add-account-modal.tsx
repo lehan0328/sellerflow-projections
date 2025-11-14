@@ -85,7 +85,6 @@ export const AddAccountModal = ({ open, onOpenChange }: AddAccountModalProps) =>
   const { open: openPlaid, ready } = usePlaidLink({
     token: linkToken,
     onSuccess: async (public_token: string, metadata: any) => {
-      console.log('Plaid onSuccess - Selected accounts:', metadata.accounts);
       setIsLoading(true);
       try {
         const { data, error } = await supabase.functions.invoke('exchange-plaid-token', {
@@ -107,7 +106,6 @@ export const AddAccountModal = ({ open, onOpenChange }: AddAccountModalProps) =>
       }
     },
     onExit: (error, metadata) => {
-      console.log('Plaid onExit:', { error, metadata });
       if (error) {
         console.error('Plaid Link error:', error);
         toast.error(`Connection canceled: ${error.error_message || 'Unknown error'}`);

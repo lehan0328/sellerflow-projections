@@ -83,13 +83,6 @@ export function useCategories(type: 'expense' | 'income' | 'purchase_order', isR
         .eq('user_id', user.id)
         .single();
 
-      console.log('[Category] Adding new category:', { 
-        name, 
-        type, 
-        userId: user.id, 
-        accountId: profile?.account_id 
-      });
-
       // Trim, capitalize first letter, lowercase rest
       const normalizedName = name.trim();
       const capitalizedName = normalizedName.charAt(0).toUpperCase() + normalizedName.slice(1).toLowerCase();
@@ -103,7 +96,6 @@ export function useCategories(type: 'expense' | 'income' | 'purchase_order', isR
         .ilike('name', normalizedName);
 
       if (existing && existing.length > 0) {
-        console.log('[Category] Category already exists:', existing[0]);
         toast({
           title: "Category already exists",
           description: `"${normalizedName}" is already in your ${type} categories`,

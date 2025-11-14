@@ -95,21 +95,10 @@ export function PlaidAccountConfirmationDialog({
   const remainingConnections = planLimits.bankConnections - currentUsage.bankConnections;
   const willExceedLimit = !isInTrial && (selectedAccountIds.size > remainingConnections);
 
-  // Debug logging
-  console.log('PlaidAccountConfirmationDialog - Accounts:', accountsWithIds.map(acc => ({
-    account_id: acc.account_id,
-    uniqueId: acc.uniqueId,
-    name: acc.name,
-    type: acc.type
-  })));
-  console.log('PlaidAccountConfirmationDialog - Selected IDs:', Array.from(selectedAccountIds));
-  console.log('PlaidAccountConfirmationDialog - Priorities:', priorities);
-
-  const isCreditCard = (account: PlaidAccount & { uniqueId: string }) => 
+  const isCreditCard = (account: PlaidAccount & { uniqueId: string }) =>
     account.type === 'credit' || account.subtype === 'credit card' || account.subtype === 'credit';
 
   const toggleAccount = (uniqueId: string) => {
-    console.log('toggleAccount called with:', uniqueId);
     const newSelected = new Set(selectedAccountIds);
     if (newSelected.has(uniqueId)) {
       newSelected.delete(uniqueId);
@@ -120,7 +109,6 @@ export function PlaidAccountConfirmationDialog({
     } else {
       newSelected.add(uniqueId);
     }
-    console.log('New selected set:', Array.from(newSelected));
     setSelectedAccountIds(newSelected);
   };
 
@@ -153,8 +141,6 @@ export function PlaidAccountConfirmationDialog({
         .filter(acc => selectedAccountIds.has(acc.uniqueId))
         .map(acc => acc.account_id);
       
-      console.log('Confirming accounts:', selectedAccounts);
-      
       // Map priorities back to Plaid account IDs
       const mappedPriorities: Record<string, number> = {};
       Object.entries(priorities).forEach(([uniqueId, priority]) => {
@@ -164,8 +150,6 @@ export function PlaidAccountConfirmationDialog({
         }
       });
       
-      console.log('Mapped priorities:', mappedPriorities);
-      
       // Map credit card data back to Plaid account IDs
       const mappedCreditCardData: Record<string, CreditCardData> = {};
       Object.entries(creditCardData).forEach(([uniqueId, data]) => {
@@ -174,8 +158,6 @@ export function PlaidAccountConfirmationDialog({
           mappedCreditCardData[account.account_id] = data;
         }
       });
-      
-      console.log('Mapped credit card data:', mappedCreditCardData);
       
       await onConfirm(selectedAccounts, mappedPriorities, mappedCreditCardData);
       onOpenChange(false);
@@ -396,7 +378,6 @@ export function PlaidAccountConfirmationDialog({
                                     onClick={(e) => {
                                       e.preventDefault();
                                       e.stopPropagation();
-                                      console.log('Setting priority:', p, 'for account:', account.uniqueId);
                                       setPriorities({ ...priorities, [account.uniqueId]: p });
                                       setOpenPriorityPopover(null); // Close popover after selection
                                     }}

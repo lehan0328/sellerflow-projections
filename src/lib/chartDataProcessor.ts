@@ -23,13 +23,6 @@ export const calculateChartBalances = (
   daysToProject: number = 91,
   excludeToday: boolean = false
 ): ChartDailyBalance[] => {
-  console.log('🧮 [chartDataProcessor] Starting calculation:', {
-    totalEvents: events.length,
-    startingBalance,
-    daysToProject,
-    excludeToday
-  });
-  
   const dailyBalances: ChartDailyBalance[] = [];
   const today = startOfDay(new Date());
   let runningBalance = startingBalance;
@@ -57,20 +50,6 @@ export const calculateChartBalances = (
     
     const netChange = dailyInflow - dailyOutflow;
     
-    // Log specific dates for debugging
-    if (dateStr === '2026-01-31' || dateStr === '2026-01-30') {
-      console.log(`🧮 [chartDataProcessor] ${dateStr}:`, {
-        isToday,
-        dayEvents: dayEvents.length,
-        inflow: dailyInflow,
-        outflow: dailyOutflow,
-        netChange,
-        runningBalanceBefore: runningBalance,
-        excludeToday,
-        willAddChange: !isToday || !excludeToday
-      });
-    }
-    
     // Match CashFlowCalendar logic exactly:
     // For today: runningBalance = startingBalance + (excludeToday ? 0 : netChange)
     // For future days: runningBalance += netChange
@@ -78,12 +57,6 @@ export const calculateChartBalances = (
       runningBalance = startingBalance + (excludeToday ? 0 : netChange);
     } else {
       runningBalance += netChange;
-    }
-    
-    if (dateStr === '2026-01-31' || dateStr === '2026-01-30') {
-      console.log(`🧮 [chartDataProcessor] ${dateStr} RESULT:`, {
-        projected_balance: runningBalance
-      });
     }
     
     dailyBalances.push({

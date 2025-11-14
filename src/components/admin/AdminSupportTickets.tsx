@@ -93,8 +93,6 @@ export const AdminSupportTickets = () => {
         const ticketData = ticket as any;
         const cutoffDate = ticketData.admin_last_viewed_at || ticket.created_at;
         
-        console.log(`Ticket ${ticket.id}: admin_last_viewed_at =`, ticketData.admin_last_viewed_at, 'cutoff =', cutoffDate);
-        
         const { count, error } = await supabase
           .from('ticket_messages')
           .select('*', { count: 'exact', head: true })
@@ -106,7 +104,6 @@ export const AdminSupportTickets = () => {
           console.error('Error fetching message count:', error);
         }
         
-        console.log(`Ticket ${ticket.id}: unread count =`, count);
         counts[ticket.id] = count || 0;
       }
       
@@ -184,8 +181,6 @@ export const AdminSupportTickets = () => {
     if (permError) {
       console.error("Error fetching staff name:", permError);
     }
-
-    console.log("Admin permission data:", adminPerm, "for email:", user.email);
 
     const staffName = adminPerm?.first_name || 'Support';
 

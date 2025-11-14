@@ -40,7 +40,6 @@ export const useAdmin = () => {
         if (adminPermission && adminPermission.length > 0 && adminPermission[0].has_permission) {
           isWebsiteAdmin = true;
           adminRole = adminPermission[0].role as 'admin' | 'staff';
-          console.log('[ADMIN] User has admin permission:', { email: session.user.email, role: adminRole });
         }
       } else {
         adminRole = 'admin'; // Hardcoded admins are full admins

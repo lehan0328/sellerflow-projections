@@ -233,7 +233,6 @@ export const PurchaseOrderForm = ({
     }
   }, [vendors, formData.vendor, formData.vendorId]);
   const handleVendorSelect = (vendor: Vendor) => {
-    console.log('Selected vendor:', vendor);
     setFormData(prev => ({
       ...prev,
       vendor: vendor.name,
@@ -394,7 +393,6 @@ export const PurchaseOrderForm = ({
       lineItemDescription: formData.description, // Pass description separately for line item creation
       lineItems: lineItems // Pass line items array
     };
-    console.log("Submitting purchase order:", orderData);
     onSubmitOrder(orderData);
 
     // Save uploaded document to storage if exists and toggle is on
@@ -469,11 +467,8 @@ export const PurchaseOrderForm = ({
           if (lineItemsError) {
             console.error('Error saving line items:', lineItemsError);
             toast.error('Document saved but failed to save line items');
-          } else {
-            console.log(`Saved ${lineItems.length} line items for document:`, safeFileName);
           }
         }
-        console.log('Document saved to storage:', safeFileName);
         
         // Invalidate documents cache to refresh Document Storage page
         await queryClient.invalidateQueries({ queryKey: ['documents'], refetchType: 'all' });

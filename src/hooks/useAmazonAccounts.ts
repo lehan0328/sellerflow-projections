@@ -47,7 +47,6 @@ export const useAmazonAccounts = () => {
     }
 
     try {
-      console.log('[fetchAmazonAccounts] Fetching active Amazon accounts for user:', user.id);
       const { data, error } = await supabase
         .from("amazon_accounts")
         .select(`
@@ -72,8 +71,6 @@ export const useAmazonAccounts = () => {
         .eq("user_id", user.id)
         .eq("is_active", true)
         .order("created_at", { ascending: false });
-      
-      console.log('[fetchAmazonAccounts] Query result:', { count: data?.length, error });
 
       if (error) {
         console.error("Error fetching Amazon accounts:", error);

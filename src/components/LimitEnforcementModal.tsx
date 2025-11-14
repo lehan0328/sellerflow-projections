@@ -129,8 +129,6 @@ export const LimitEnforcementModal = ({
   const handleDeleteAmazonAccount = async (accountId: string) => {
     setIsDeleting(true);
     try {
-      console.log('[LimitEnforcementModal] Deleting Amazon account:', accountId);
-      
       // Delete all associated data first
       await Promise.all([
         supabase.from('amazon_daily_rollups').delete().eq('amazon_account_id', accountId),
@@ -145,7 +143,6 @@ export const LimitEnforcementModal = ({
 
       if (error) throw error;
 
-      console.log('[LimitEnforcementModal] Amazon account deleted successfully');
       toast.success('Amazon account deleted successfully');
       
       // Refresh all related data
