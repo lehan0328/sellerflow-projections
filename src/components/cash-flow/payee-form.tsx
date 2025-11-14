@@ -93,6 +93,10 @@ export function PayeeForm({
   };
 
   const handleInputChange = (field: string, value: string) => {
+    // Auto-capitalize first letter of payee name
+    if (field === "name" && value.length > 0) {
+      value = value.charAt(0).toUpperCase() + value.slice(1);
+    }
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
