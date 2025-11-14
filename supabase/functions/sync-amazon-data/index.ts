@@ -381,15 +381,11 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string,
         console.log(`⚠️ [SYNC] Settlement delayed in API: ${group.FinancialEventGroupId} (closed ${hoursSinceClose.toFixed(1)}h ago)`);
       }
       
-      console.log(`[SYNC] Processing daily settlement: ${group.FinancialEventGroupId} (${settlementDays} days, Amount: $${totalAmount.toFixed(2)}, Age: ${hoursSinceClose.toFixed(1)}h)`);
-      
       // Closed settlement - payout is received the same day the settlement closes
       // (Settlement closes at night e.g. Nov 1 8pm = Nov 2 00:01 UTC, payout received Nov 2)
       // Use the settlement end date as-is (it's already the payout date in UTC)
       const payoutDate = settlementEndDate.toISOString().split('T')[0]
       const status = 'confirmed'
-
-      const totalAmount = parseFloat(group.ConvertedTotal?.CurrencyAmount || group.OriginalTotal?.CurrencyAmount || '0')
 
       return {
         user_id: userId,
