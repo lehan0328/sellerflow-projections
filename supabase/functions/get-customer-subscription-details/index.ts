@@ -23,14 +23,10 @@ serve(async (req) => {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) throw new Error("No authorization header");
     
-    // Use anon client for token verification
-    const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
-      { global: { headers: { Authorization: authHeader } } }
-    );
+    const token = authHeader.replace("Bearer ", "");
     
-    const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+    // Verify the JWT token using service role
+    const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token);
     if (userError || !user) throw new Error("Unauthorized");
 
     // Check if user is the website admin

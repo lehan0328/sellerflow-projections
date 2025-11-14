@@ -23,15 +23,9 @@ serve(async (req) => {
 
     const token = authHeader.replace("Bearer ", "");
     
-    // Use anon client for token verification
-    const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
-      { global: { headers: { Authorization: authHeader } } }
-    );
-    
-    const { data: userData, error: userError } = await supabaseClient.auth.getUser();
-    if (userError) throw userError;
+    // Verify the JWT token using service role
+    const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token);
+    if (userError || !user) throw new Error("Unauthorized");
     
     const body = await req.json();
     const { userIds } = body;
@@ -40,7 +34,7 @@ serve(async (req) => {
     const { data: requestingUserProfile } = await supabaseAdmin
       .from('profiles')
       .select('account_id')
-      .eq('user_id', userData.user.id)
+      .eq('user_id', user.id)
       .single();
 
     if (!requestingUserProfile?.account_id) {
@@ -52,7 +46,7 @@ serve(async (req) => {
 
     // Check if user is website admin OR if they're requesting emails for their own account's users
     const WEBSITE_ADMIN_EMAILS = ['chuandy914@gmail.com', 'orders@imarand.com'];
-    const isWebsiteAdmin = WEBSITE_ADMIN_EMAILS.includes(userData.user.email || '');
+    const isWebsiteAdmin = WEBSITE_ADMIN_EMAILS.includes(user.email || '');
 
     // If not website admin, verify they're only requesting emails for users in their account
     if (!isWebsiteAdmin) {
