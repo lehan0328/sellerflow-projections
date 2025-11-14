@@ -298,6 +298,11 @@ export const useSafeSpending = (
                 }
               }
             } else if (tx.type === 'purchase_order' || tx.type === 'expense' || tx.vendor_id) {
+              // Skip completed transactions - they're already reflected in bank balance
+              if (tx.status === 'completed') {
+                return;
+              }
+              
               // Skip credit card purchases - they're tracked separately against credit card balances
               if (tx.credit_card_id) {
                 return;
