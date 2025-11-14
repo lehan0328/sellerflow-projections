@@ -111,23 +111,6 @@ export const ExpenseOverview = ({ expenses, onEditExpense, onDeleteExpense, onCr
   const pendingExpenses = useMemo(() => {
     return filteredAndSortedExpenses.filter(e => e.status === 'pending').length;
   }, [filteredAndSortedExpenses]);
-  
-  const pendingCash = useMemo(() => {
-    return filteredAndSortedExpenses.filter(e => e.status === 'pending' && !e.creditCardId).reduce((sum, e) => sum + e.amount, 0);
-  }, [filteredAndSortedExpenses]);
-  
-  const pendingCredit = useMemo(() => {
-    return filteredAndSortedExpenses.filter(e => e.status === 'pending' && e.creditCardId).reduce((sum, e) => sum + e.amount, 0);
-  }, [filteredAndSortedExpenses]);
-
-  const thisMonthCount = useMemo(() => {
-    const today = new Date();
-    return filteredAndSortedExpenses.filter(expense => {
-      if (!expense.paymentDate || expense.status !== 'pending') return false;
-      const paymentDate = new Date(expense.paymentDate);
-      return paymentDate.getMonth() === today.getMonth() && paymentDate.getFullYear() === today.getFullYear();
-    }).length;
-  }, [filteredAndSortedExpenses]);
 
   const thisMonthAmount = useMemo(() => {
     const today = new Date();
@@ -183,22 +166,7 @@ export const ExpenseOverview = ({ expenses, onEditExpense, onDeleteExpense, onCr
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-amber-600 dark:text-amber-400">{pendingExpenses}</div>
-            <div className="flex flex-col gap-1 mt-2">
-              <div className="flex items-center justify-between text-xs">
-                <span className="flex items-center gap-1 text-muted-foreground">
-                  <DollarSign className="h-3 w-3" />
-                  Cash/Bank:
-                </span>
-                <span className="font-medium">{formatCurrency(pendingCash)}</span>
-              </div>
-              <div className="flex items-center justify-between text-xs">
-                <span className="flex items-center gap-1 text-muted-foreground">
-                  <CreditCard className="h-3 w-3" />
-                  Credit Card:
-                </span>
-                <span className="font-medium">{formatCurrency(pendingCredit)}</span>
-              </div>
-            </div>
+            <p className="text-xs text-muted-foreground mt-1">Awaiting payment</p>
           </CardContent>
         </Card>
 
@@ -210,8 +178,8 @@ export const ExpenseOverview = ({ expenses, onEditExpense, onDeleteExpense, onCr
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-primary">{thisMonthCount}</div>
-            <p className="text-xs text-muted-foreground mt-1">Pending this month</p>
+            <div className="text-3xl font-bold text-primary">{formatCurrency(thisMonthAmount)}</div>
+            <p className="text-xs text-muted-foreground mt-1">Due this month</p>
           </CardContent>
         </Card>
       </div>
