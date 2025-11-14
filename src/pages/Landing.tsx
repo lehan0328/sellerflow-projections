@@ -620,7 +620,7 @@ const Landing = () => {
                     <div className="flex items-center justify-between pb-2">
                       <span className="text-foreground">Smarter</span>
                       <div className="flex flex-col gap-2">
-                        <Badge className="inline-flex items-center gap-2 bg-primary/10 text-primary border border-primary/20 px-4 py-2 text-sm font-semibold backdrop-blur-sm hover-scale whitespace-nowrap" style={{
+                        <Badge className="inline-flex items-center gap-3 bg-primary/10 text-primary border border-primary/20 px-4 py-2 text-sm font-semibold backdrop-blur-sm hover-scale whitespace-nowrap" style={{
                         wordSpacing: '0.3em'
                       }}>
                           <Sparkles className="h-4 w-4 animate-pulse" />
