@@ -18,6 +18,9 @@ interface SignupData {
   referral_code: string | null;
   hear_about_us: string | null;
   created_at: string;
+  amazon_accounts: number;
+  bank_accounts: number;
+  credit_cards: number;
 }
 
 interface SignupMetrics {
@@ -69,8 +72,35 @@ export function AdminSignupDashboard() {
       const allSignupsData = (allData || []).filter(profile => 
         !adminEmailList.includes(profile.email)
       );
+
+      // Fetch connection counts for all users
+      const userIds = allSignupsData.map(s => s.user_id);
+
+      const [amazonData, bankData, creditData] = await Promise.all([
+        supabase.from('amazon_accounts').select('user_id').in('user_id', userIds),
+        supabase.from('bank_accounts').select('user_id').in('user_id', userIds),
+        supabase.from('credit_cards').select('user_id').in('user_id', userIds)
+      ]);
+
+      // Count connections per user
+      const connectionCounts = userIds.reduce((acc, userId) => {
+        acc[userId] = {
+          amazon: amazonData.data?.filter(a => a.user_id === userId).length || 0,
+          banks: bankData.data?.filter(b => b.user_id === userId).length || 0,
+          cards: creditData.data?.filter(c => c.user_id === userId).length || 0
+        };
+        return acc;
+      }, {} as Record<string, { amazon: number; banks: number; cards: number }>);
+
+      // Merge connection counts into signup data
+      const enrichedSignups = allSignupsData.map(signup => ({
+        ...signup,
+        amazon_accounts: connectionCounts[signup.user_id]?.amazon || 0,
+        bank_accounts: connectionCounts[signup.user_id]?.banks || 0,
+        credit_cards: connectionCounts[signup.user_id]?.cards || 0
+      }));
       
-      setAllSignups(allSignupsData);
+      setAllSignups(enrichedSignups);
 
       // Calculate all-time metrics
       const totalSignups = allSignupsData.length;
@@ -262,6 +292,9 @@ export function AdminSignupDashboard() {
                 <TableHead>Company</TableHead>
                 <TableHead>Revenue Range</TableHead>
                 <TableHead>Source</TableHead>
+                <TableHead>Amazon</TableHead>
+                <TableHead>Banks</TableHead>
+                <TableHead>Cards</TableHead>
                 <TableHead>Referral Code</TableHead>
                 <TableHead>Signup Date</TableHead>
               </TableRow>
@@ -269,7 +302,7 @@ export function AdminSignupDashboard() {
             <TableBody>
               {allSignups.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center text-muted-foreground">
+                  <TableCell colSpan={10} className="text-center text-muted-foreground">
                     No signups yet
                   </TableCell>
                 </TableRow>
@@ -292,6 +325,21 @@ export function AdminSignupDashboard() {
                     </TableCell>
                     <TableCell>
                       <Badge variant="secondary">{formatSource(signup.hear_about_us)}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={signup.amazon_accounts > 0 ? "default" : "secondary"}>
+                        {signup.amazon_accounts}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={signup.bank_accounts > 0 ? "default" : "secondary"}>
+                        {signup.bank_accounts}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={signup.credit_cards > 0 ? "default" : "secondary"}>
+                        {signup.credit_cards}
+                      </Badge>
                     </TableCell>
                     <TableCell>
                       {signup.referral_code ? (
