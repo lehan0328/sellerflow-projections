@@ -183,7 +183,6 @@ verify_jwt = false
 [functions.reset-amazon-sync]
 verify_jwt = false
 
-
 [functions.trigger-amazon-sync]
 verify_jwt = false
 
@@ -201,9 +200,3 @@ verify_jwt = true
 
 [functions.set-plan-override]
 verify_jwt = true
-
-[functions.get-user-emails]
-verify_jwt = false
-
-[functions.get-customer-subscription-details]
-verify_jwt = false
