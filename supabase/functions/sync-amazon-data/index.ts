@@ -537,7 +537,6 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string,
       sync_message: `${settlementsToSave.length} payouts synced`,
       last_sync: now.toISOString()
     }).eq('id', amazonAccountId)
-    }
 
     console.log('[SYNC] ===== SYNC COMPLETE =====')
 
