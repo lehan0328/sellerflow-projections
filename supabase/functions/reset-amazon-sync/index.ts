@@ -24,7 +24,6 @@ Deno.serve(async (req) => {
     console.log(`[RESET] Starting hard reset for account: ${accountId}`)
 
     // 1. Delete existing payouts for this account
-    // This ensures that when you re-sync, only the settlements that PASS your new filter will appear.
     const { error: deleteError } = await supabase
       .from('amazon_payouts')
       .delete()
