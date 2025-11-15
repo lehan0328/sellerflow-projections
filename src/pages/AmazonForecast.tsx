@@ -1034,7 +1034,7 @@ export default function AmazonForecast() {
                 </div>
               )}
 
-              <div className="space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {amazonPayouts
                   .filter(p => p.status === 'forecasted')
                   .sort((a, b) => new Date(a.payout_date).getTime() - new Date(b.payout_date).getTime())
