@@ -584,6 +584,27 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string,
       // Don't fail the sync if workflow fails
     }
 
+    // For bi-weekly accounts, fetch current open settlement
+    if (amazonAccount.payout_frequency === 'bi-weekly') {
+      console.log('[SYNC] Fetching open settlement for bi-weekly account...');
+      try {
+        const { data: openSettlementResult, error: openSettlementError } = await supabase.functions.invoke('fetch-amazon-open-settlement', {
+          body: {
+            amazonAccountId: amazonAccountId
+          }
+        });
+
+        if (openSettlementError) {
+          console.error('[SYNC] Open settlement fetch failed:', openSettlementError);
+        } else {
+          console.log('[SYNC] Open settlement fetch completed:', openSettlementResult);
+        }
+      } catch (openSettlementErr) {
+        console.error('[SYNC] Error fetching open settlement:', openSettlementErr);
+        // Don't fail the sync if open settlement fetch fails
+      }
+    }
+
     // Update sync log with completion
     if (syncLogId) {
       const syncDuration = Date.now() - syncStartTime;
