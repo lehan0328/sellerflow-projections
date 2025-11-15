@@ -9,19 +9,7 @@ import { useAmazonPayouts } from './useAmazonPayouts';
 import { useBankAccounts } from './useBankAccounts';
 import { useCashFlowEvents } from './useCashFlowEvents';
 import { generateRecurringDates } from '@/lib/recurringDates';
-
-// Extended CalendarEvent with required id field
-export interface CalendarEvent {
-  id: string;
-  type: 'inflow' | 'outflow';
-  amount: number;
-  description?: string;
-  vendor?: string;
-  source?: string;
-  creditCardId?: string | null;
-  date: Date;
-  balanceImpactDate?: Date;
-}
+import type { CalendarEvent } from '@/lib/calendarBalances';
 
 interface CalendarEventsResult {
   calendarEvents: CalendarEvent[];
@@ -177,7 +165,6 @@ export const useCalendarEvents = (): CalendarEventsResult => {
           : null;
 
         return {
-          id: `vendor-payment-${tx.id}`,
           type: "outflow" as const,
           amount: tx.amount,
           description: tx.description || `${vendor?.name || "Vendor"} - Payment`,
@@ -197,7 +184,6 @@ export const useCalendarEvents = (): CalendarEventsResult => {
         return true;
       })
       .map((tx) => ({
-        id: `expense-${tx.id}`,
         type: "outflow" as const,
         amount: tx.amount,
         description: tx.description || "Expense",
@@ -272,7 +258,6 @@ export const useCalendarEvents = (): CalendarEventsResult => {
         balanceImpactDate.setDate(balanceImpactDate.getDate() + 1);
 
         return {
-          id: `amazon-payout-${payout.id}`,
           type: "inflow" as const,
           amount: payout.total_amount,
           description,
