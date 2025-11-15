@@ -591,6 +591,9 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string,
         const { data: openSettlementResult, error: openSettlementError } = await supabase.functions.invoke('fetch-amazon-open-settlement', {
           body: {
             amazonAccountId: amazonAccountId
+          },
+          headers: {
+            Authorization: req.headers.get('Authorization')!
           }
         });
 
