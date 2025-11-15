@@ -281,13 +281,6 @@ const UpgradePlan = () => {
       description: ADDON_PRODUCTS.bank_account.description,
     },
     {
-      key: "amazon_account",
-      name: ADDON_PRODUCTS.amazon_account.name,
-      price: ADDON_PRODUCTS.amazon_account.price,
-      priceId: ADDON_PRODUCTS.amazon_account.price_id,
-      description: ADDON_PRODUCTS.amazon_account.description,
-    },
-    {
       key: "user",
       name: ADDON_PRODUCTS.user.name,
       price: ADDON_PRODUCTS.user.price,
