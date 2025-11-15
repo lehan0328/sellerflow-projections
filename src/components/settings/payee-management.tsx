@@ -295,12 +295,12 @@ export function PayeeManagement() {
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <h3 className="font-semibold text-lg">{payee.name}</h3>
-                          {payee.category && (
+                        <h3 className="font-semibold text-lg mb-1">{payee.name}</h3>
+                        {payee.category && (
+                          <div className="mb-2">
                             <Badge variant="secondary">{payee.category}</Badge>
-                          )}
-                        </div>
+                          </div>
+                        )}
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           {getPaymentMethodIcon(payee.payment_method)}
                           <span>{getPaymentMethodLabel(payee.payment_method)}</span>
