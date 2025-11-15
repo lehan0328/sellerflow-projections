@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useVendors, type Vendor } from "@/hooks/useVendors";
+import { useCategories } from "@/hooks/useCategories";
 import { Building2, Plus, Trash2, Pencil, Search, CreditCard, Banknote, DollarSign, FileText, Landmark } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -20,15 +21,6 @@ interface VendorFormData {
   paymentMethod: string;
   netTermsDays: string;
 }
-
-const categories = [
-  "Inventory",
-  "Packaging Materials", 
-  "Marketing/PPC",
-  "Shipping & Logistics",
-  "Professional Services",
-  "Other"
-];
 
 const paymentTypeOptions = [
   { value: 'due-upon-order', label: 'Due Upon Order' },
@@ -44,6 +36,7 @@ const paymentMethodOptions = [
 
 export function VendorManagement() {
   const { vendors, loading, addVendor, updateVendor, deleteVendor } = useVendors();
+  const { categories: purchaseOrderCategories } = useCategories('purchase_order');
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [editingVendor, setEditingVendor] = useState<{ id: string; name: string; category: string; paymentType: string; paymentMethod: string; netTermsDays: string } | null>(null);
@@ -59,6 +52,9 @@ export function VendorManagement() {
 
   // Filter to only show management vendors
   const managementVendors = vendors.filter(vendor => vendor.source === 'management');
+  
+  // Get category names from purchase order categories
+  const categories = purchaseOrderCategories.map(cat => cat.name);
 
   const resetForm = () => {
     setFormData({
