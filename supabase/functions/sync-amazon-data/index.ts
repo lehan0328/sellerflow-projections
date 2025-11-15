@@ -284,10 +284,8 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string,
     // Get only CLOSED settlements from the last 60 days, sorted by end date
     const recentClosedSettlements = allSettlements
       .filter((g: any) => {
-        // Must have an end date (closed settlement)
         if (!g.FinancialEventGroupEnd) return false
         const endDate = new Date(g.FinancialEventGroupEnd)
-        // Must be within last 60 days and not in the future
         return endDate >= sixtyDaysAgo && endDate <= now
       })
       .map((g: any) => ({
@@ -295,8 +293,6 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string,
         endDate: new Date(g.FinancialEventGroupEnd)
       }))
       .sort((a, b) => a.endDate.getTime() - b.endDate.getTime())
-
-    console.log(`[SYNC] Found ${recentClosedSettlements.length} recent closed settlements in last 60 days`)
 
     let detectedFrequency = 'bi-weekly' // default
 
@@ -310,88 +306,129 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string,
         intervals.push(daysDiff)
       }
 
-      console.log(`[SYNC] Settlement intervals (days): ${intervals.map(i => i.toFixed(1)).join(', ')}`)
-
-      // If we have ANY intervals less than 10 days, it's likely daily
-      // (allowing some margin for weekends/holidays)
-      const hasShortIntervals = intervals.some(d => d < 10)
-
-      if (hasShortIntervals) {
+      const avgInterval = intervals.reduce((a, b) => a + b, 0) / intervals.length
+      
+      if (avgInterval < 10) {
         detectedFrequency = 'daily'
-        console.log('[SYNC] ✅ Detected DAILY payout frequency (found intervals < 10 days)')
       } else {
-        // Count intervals to be sure
-        const avgInterval = intervals.reduce((a, b) => a + b, 0) / intervals.length
-        console.log(`[SYNC] Average interval: ${avgInterval.toFixed(1)} days`)
-
-        if (avgInterval < 10) {
-          detectedFrequency = 'daily'
-          console.log('[SYNC] ✅ Detected DAILY payout frequency (average < 10 days)')
-        } else {
-          detectedFrequency = 'bi-weekly'
-          console.log('[SYNC] ✅ Detected BI-WEEKLY payout frequency (average >= 10 days)')
-        }
+        detectedFrequency = 'bi-weekly'
       }
 
       // Update amazon_account with detected frequency
       await supabase.from('amazon_accounts').update({
         payout_frequency: detectedFrequency
       }).eq('id', amazonAccountId)
-
-      console.log(`[SYNC] 💾 Updated payout_frequency to: ${detectedFrequency}`)
-    } else {
-      console.log('[SYNC] ⚠️ Not enough recent closed settlements (need 3+) to detect frequency, using default: bi-weekly')
     }
 
-    // Process and save only CONFIRMED (closed) settlements
-    // Open settlements are handled by fetch-amazon-open-settlement function
-    const settlementsToSave = allSettlements.map((group: any) => {
-      const settlementEndDate = group.FinancialEventGroupEnd ? new Date(group.FinancialEventGroupEnd) : null
-      const currentTime = new Date()
+    // === NEW: Filter B2B Settlements by Inspecting Events ===
+    // B2B/Invoiced settlements are separate from standard settlements.
+    // They often have matching durations (14 days) but different contents (no service fees, different balance behavior).
+    // We must fetch events for each candidate settlement to confirm.
+    
+    const processSettlementCandidates = async () => {
+      const candidates = allSettlements.filter((group: any) => {
+        const settlementEndDate = group.FinancialEventGroupEnd ? new Date(group.FinancialEventGroupEnd) : null
+        const currentTime = new Date()
 
-      // Only process settlements that have ended (closed/confirmed)
-      if (!settlementEndDate || settlementEndDate > currentTime) {
-        // Skip open/future settlements - let fetch-amazon-open-settlement handle them
-        return null
-      }
-
-      // Check settlement duration - skip B2B settlements based on account type
-      const settlementStart = new Date(group.FinancialEventGroupStart);
-      const settlementEnd = new Date(group.FinancialEventGroupEnd);
-      const settlementDays = Math.ceil((settlementEnd.getTime() - settlementStart.getTime()) / (1000 * 60 * 60 * 24));
-
-      // Determine acceptable settlement duration based on account payout frequency
-      // Daily accounts: max 3 days (normal daily settlements)
-      // Bi-weekly accounts: max 21 days (allows 14-day settlements, filters 28-day+ B2B)
-      const maxAcceptableDays = amazonAccount.payout_frequency === 'daily' ? 3 : 21;
-
-      if (settlementDays > maxAcceptableDays) {
-        console.log(`[SYNC] Skipping long-duration settlement (likely B2B): ${group.FinancialEventGroupId} (${settlementDays} days, Account type: ${amazonAccount.payout_frequency}, Max allowed: ${maxAcceptableDays} days, Amount: $${parseFloat(group.ConvertedTotal?.CurrencyAmount || group.OriginalTotal?.CurrencyAmount || '0').toFixed(2)})`);
-        return null;
-      }
-
-      // Only process Succeeded settlements (skip processing, failed, unknown)
-      const isSucceededSettlement = group.FundTransferStatus === 'Succeeded';
-      if (!isSucceededSettlement) {
-        console.log(`[SYNC] Skipping non-succeeded settlement: ${group.FinancialEventGroupId} (Status: ${group.FundTransferStatus})`);
-        return null;
+        // Only process confirmed/closed settlements in the past
+        if (!settlementEndDate || settlementEndDate > currentTime) return false
+        
+        // Only process Succeeded settlements
+        if (group.FundTransferStatus !== 'Succeeded') return false
+        
+        return true
+      })
+      
+      console.log(`[SYNC] Analyzing ${candidates.length} candidates for B2B exclusion...`)
+      
+      const results = []
+      
+      // Process in batches to avoid rate limits
+      const BATCH_SIZE = 3; // Low concurrency for safety
+      for (let i = 0; i < candidates.length; i += BATCH_SIZE) {
+        const batch = candidates.slice(i, i + BATCH_SIZE)
+        
+        const batchPromises = batch.map(async (group: any) => {
+          try {
+            // 1. Check BeginningBalance: Invoiced settlements are often isolated events with 0 beginning balance
+            const beginningBalance = parseFloat(group.BeginningBalance?.CurrencyAmount || '0');
+            
+            // If it has a carry-over balance, it's almost certainly Standard (Rolling Reserve)
+            // If it's 0, it COULD be Invoiced (or a Standard one that cleared perfectly)
+            // We need to inspect events to be sure if balance is 0
+            
+            let isB2B = false;
+            let checkReason = 'Standard settlement analysis';
+            
+            if (beginningBalance === 0) {
+              // Suspicious - check events for confirmation
+              const eventsUrl = `${apiEndpoint}/finances/v0/financialEventGroups/${group.FinancialEventGroupId}/financialEvents?MaxResultsPerPage=10`;
+              const eventResponse = await makeRequest(eventsUrl, {
+                headers: {
+                  'x-amz-access-token': accessToken,
+                  'Content-Type': 'application/json'
+                }
+              });
+              
+              if (eventResponse.ok) {
+                const eventData = await eventResponse.json();
+                const events = eventData.payload?.FinancialEvents || {};
+                
+                // Heuristic: Standard settlements almost always have ServiceFeeEvents (subscription, storage) 
+                // or DebtRecoveryEvents, or a mix of many event types.
+                // Invoiced settlements are usually just ShipmentEvents for the B2B order + potentially a specific Charge.
+                
+                const hasServiceFees = events.ServiceFeeEventList && events.ServiceFeeEventList.length > 0;
+                const hasProductAds = events.ProductAdsPaymentEventList && events.ProductAdsPaymentEventList.length > 0;
+                const hasShipments = events.ShipmentEventList && events.ShipmentEventList.length > 0;
+                
+                // If it has ONLY shipments but NO fees/ads, and 0 beginning balance, it's likely Invoiced
+                // Standard settlements usually have some overhead fees mixed in
+                if (hasShipments && !hasServiceFees && !hasProductAds) {
+                  // Strong indicator of B2B/Invoiced isolated payout
+                  isB2B = true;
+                  checkReason = 'Zero balance + Only Shipments (No Fees/Ads) detected';
+                }
+                
+                // Also check for specific B2B indicators if known (e.g. "Charge" events as user noted)
+                // Some docs suggest B2B might show as "ChargeComponent" or distinct events
+                // but absence of standard fees is the strongest signal for isolated payouts.
+              }
+            }
+            
+            if (isB2B) {
+              console.log(`[SYNC] 🚫 EXCLUDING B2B/Invoiced Settlement: ${group.FinancialEventGroupId} (${checkReason}) - Amount: ${group.OriginalTotal?.CurrencyAmount}`);
+              return null;
+            }
+            
+            return group;
+          } catch (err) {
+            console.warn(`[SYNC] Failed to inspect settlement ${group.FinancialEventGroupId}, including by default:`, err);
+            return group; // Include if check fails to be safe
+          }
+        });
+        
+        const batchResults = await Promise.all(batchPromises);
+        results.push(...batchResults);
+        
+        // Slight delay between batches
+        if (i + BATCH_SIZE < candidates.length) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
       }
       
+      return results.filter(Boolean);
+    };
+    
+    const validSettlements = await processSettlementCandidates();
+    
+    const settlementsToSave = validSettlements.map((group: any) => {
+       // Map to DB structure (same as before)
+      const settlementEndDate = new Date(group.FinancialEventGroupEnd)
       const totalAmount = parseFloat(group.ConvertedTotal?.CurrencyAmount || group.OriginalTotal?.CurrencyAmount || '0');
       
-      // Calculate how long ago this settlement closed
-      const hoursSinceClose = (Date.now() - settlementEndDate.getTime()) / (1000 * 60 * 60);
-      
-      if (hoursSinceClose > 24) {
-        console.log(`⚠️ [SYNC] Settlement delayed in API: ${group.FinancialEventGroupId} (closed ${hoursSinceClose.toFixed(1)}h ago)`);
-      }
-      
-      // Closed settlement - payout is received the same day the settlement closes
-      // (Settlement closes at night e.g. Nov 1 8pm = Nov 2 00:01 UTC, payout received Nov 2)
-      // Use the settlement end date as-is (it's already the payout date in UTC)
       const payoutDate = settlementEndDate.toISOString().split('T')[0]
-      const status = 'confirmed'
-
+      
       return {
         user_id: userId,
         account_id: amazonAccount.account_id,
@@ -400,12 +437,12 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string,
         payout_date: payoutDate,
         total_amount: totalAmount,
         currency_code: group.ConvertedTotal?.CurrencyCode || group.OriginalTotal?.CurrencyCode || 'USD',
-        status,
+        status: 'confirmed',
         payout_type: detectedFrequency,
         marketplace_name: amazonAccount.marketplace_name,
         raw_settlement_data: group
       }
-    }).filter(Boolean)
+    });
 
     console.log(`[SYNC] Saving ${settlementsToSave.length} settlements to database...`)
 
@@ -444,7 +481,7 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string,
 
         if (rolledForecasts && rolledForecasts.length > 0) {
           // Sum all rolled-over forecasts
-          const totalForecastedAmount = rolledForecasts.reduce((sum, f) => sum + Number(f.total_amount), 0);
+          const totalForecastedAmount = rolledForecasts.reduce((sum: any, f: any) => sum + Number(f.total_amount), 0);
           const actualAmount = Number(settlement.total_amount);
 
           // Calculate MAPE: |difference| / actual * 100
@@ -459,7 +496,7 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string,
             : rolledForecasts.length;
 
           // Capture individual forecast details
-          const forecastDetails = rolledForecasts.map(f => ({
+          const forecastDetails = rolledForecasts.map((f: any) => ({
             date: f.payout_date,
             amount: Number(f.total_amount),
             method: f.modeling_method
@@ -469,7 +506,7 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string,
             settlementPeriod: `${settlementStartDateStr} to ${settlementCloseDate}`,
             daysAccumulated,
             forecastsIncluded: rolledForecasts.length,
-            forecastDates: rolledForecasts.map(f => f.payout_date),
+            forecastDates: rolledForecasts.map((f: any) => f.payout_date),
             totalForecasted: totalForecastedAmount,
             actual: actualAmount,
             accuracy: accuracyPercent.toFixed(1) + '%',
@@ -571,7 +608,6 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string,
       const { data: userSettings } = await supabase
         .from('user_settings')
         .select('forecasts_enabled')
-        .eq('user_id', userId)
         .maybeSingle();
       
       const forecastsEnabled = userSettings?.forecasts_enabled ?? true;

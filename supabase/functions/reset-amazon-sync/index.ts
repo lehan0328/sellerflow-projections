@@ -21,7 +21,22 @@ Deno.serve(async (req) => {
       throw new Error('Account ID is required')
     }
 
-    // Reset the account to start fresh historical sync
+    console.log(`[RESET] Starting hard reset for account: ${accountId}`)
+
+    // 1. Delete existing payouts for this account
+    // This ensures that when you re-sync, only the settlements that PASS your new filter will appear.
+    const { error: deleteError } = await supabase
+      .from('amazon_payouts')
+      .delete()
+      .eq('amazon_account_id', accountId)
+
+    if (deleteError) {
+      console.error('[RESET] Error deleting payouts:', deleteError)
+      throw deleteError
+    }
+    console.log('[RESET] Deleted existing payouts')
+
+    // 2. Reset the account flags to allow a fresh historical sync
     const { data, error } = await supabase
       .from('amazon_accounts')
       .update({
@@ -30,19 +45,20 @@ Deno.serve(async (req) => {
         sync_status: 'idle',
         sync_progress: 0,
         sync_message: 'Ready to start fresh sync',
-        initial_sync_complete: false
+        initial_sync_complete: false, // Forces the sync to look back 365 days
+        payout_frequency: null // Reset this so it redetects frequency
       })
       .eq('id', accountId)
       .select()
 
     if (error) throw error
 
-    console.log('Reset account:', data)
+    console.log('[RESET] Account flags reset:', data)
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: 'Account sync state reset successfully',
+        message: 'Account data deleted and sync state reset successfully. Ready for re-sync.',
         account: data[0]
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
