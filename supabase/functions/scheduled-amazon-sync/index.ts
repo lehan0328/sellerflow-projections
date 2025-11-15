@@ -156,7 +156,20 @@ Deno.serve(async (req) => {
           }
         )
 
-        const data = await response.json()
+        const responseText = await response.text()
+        let data
+        
+        try {
+          data = responseText ? JSON.parse(responseText) : {}
+        } catch (e) {
+          console.error(`Invalid JSON from sync function for account ${account.id}. Status: ${response.status}. Body snippet: ${responseText.slice(0, 100)}`)
+          // Create a synthetic error result so we can handle it below
+          data = { 
+            error: response.ok 
+              ? 'Sync finished with invalid response' 
+              : `Sync failed with ${response.status} ${response.statusText}`
+          }
+        }
 
         if (!response.ok) {
           console.error(`Error syncing account ${account.id}:`, data)
