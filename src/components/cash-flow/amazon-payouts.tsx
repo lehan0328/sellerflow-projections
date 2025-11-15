@@ -63,6 +63,7 @@ export function AmazonPayouts() {
   const [selectedMarketplace, setSelectedMarketplace] = useState("ATVPDKIKX0DER");
   const [showSettledPayouts, setShowSettledPayouts] = useState(false);
   const [advancedModelingEnabled, setAdvancedModelingEnabled] = useState(false);
+  const [selectedAccountId, setSelectedAccountId] = useState<string | "all">("all");
   
   // Date range filter - default to current month
   const now = new Date();
@@ -596,6 +597,11 @@ export function AmazonPayouts() {
           
           // Show open settlements where today's date falls within the settlement period
           const openSettlements = amazonPayouts.filter(p => {
+            // Filter by account first
+            if (selectedAccountId !== 'all' && p.amazon_account_id !== selectedAccountId) {
+              return false;
+            }
+            
             const rawData = p.raw_settlement_data;
             const hasEndDate = !!(rawData?.FinancialEventGroupEnd || rawData?.settlement_end_date);
             const isEstimated = p.status === 'estimated';
@@ -714,58 +720,83 @@ export function AmazonPayouts() {
           );
         })()}
 
-        {/* Date Range Filter */}
-        <div className="flex items-center gap-3 p-4 rounded-lg border bg-card">
-          <div className="flex items-center gap-3 flex-1">
-            <Label className="text-sm font-medium whitespace-nowrap">Settlement Period:</Label>
-            <Input
-              type="date"
-              value={startDateFilter}
-              onChange={(e) => setStartDateFilter(e.target.value)}
-              className="w-auto"
-            />
-            <span className="text-muted-foreground">to</span>
-            <Input
-              type="date"
-              value={endDateFilter}
-              onChange={(e) => setEndDateFilter(e.target.value)}
-              className="w-auto"
-            />
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                const now = new Date();
-                setStartDateFilter(new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0]);
-                setEndDateFilter(new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0]);
-              }}
-            >
-              This Month
-            </Button>
-          </div>
-          <div className="flex items-center gap-4 border-l pl-4">
-            <div className="text-right">
-              <div className="text-xs text-muted-foreground">Closed Settlements</div>
-              <div className="text-sm font-medium">
-                {amazonPayouts.filter(p => 
-                  p.status === 'confirmed' && 
-                  p.payout_date >= startDateFilter && 
-                  p.payout_date <= endDateFilter
-                ).length}
-              </div>
+        {/* Filters */}
+        <div className="space-y-3">
+          {/* Account Filter */}
+          {amazonAccounts.length > 1 && (
+            <div className="flex items-center gap-3 p-4 rounded-lg border bg-card">
+              <Label className="text-sm font-medium whitespace-nowrap">Amazon Account:</Label>
+              <Select value={selectedAccountId} onValueChange={setSelectedAccountId}>
+                <SelectTrigger className="w-[280px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Accounts</SelectItem>
+                  {amazonAccounts.map(account => (
+                    <SelectItem key={account.id} value={account.id}>
+                      {account.account_name} ({account.marketplace_name})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-            <div className="text-right">
-              <div className="text-xs text-muted-foreground">Total Paid Out</div>
-              <div className="text-lg font-bold text-finance-positive">
-                {formatCurrency(
-                  amazonPayouts
-                    .filter(p => 
-                      p.status === 'confirmed' && 
-                      p.payout_date >= startDateFilter && 
-                      p.payout_date <= endDateFilter
-                    )
-                    .reduce((sum, p) => sum + p.total_amount, 0)
-                )}
+          )}
+          
+          {/* Date Range Filter */}
+          <div className="flex items-center gap-3 p-4 rounded-lg border bg-card">
+            <div className="flex items-center gap-3 flex-1">
+              <Label className="text-sm font-medium whitespace-nowrap">Settlement Period:</Label>
+              <Input
+                type="date"
+                value={startDateFilter}
+                onChange={(e) => setStartDateFilter(e.target.value)}
+                className="w-auto"
+              />
+              <span className="text-muted-foreground">to</span>
+              <Input
+                type="date"
+                value={endDateFilter}
+                onChange={(e) => setEndDateFilter(e.target.value)}
+                className="w-auto"
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const now = new Date();
+                  setStartDateFilter(new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0]);
+                  setEndDateFilter(new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0]);
+                }}
+              >
+                This Month
+              </Button>
+            </div>
+            <div className="flex items-center gap-4 border-l pl-4">
+              <div className="text-right">
+                <div className="text-xs text-muted-foreground">Closed Settlements</div>
+                <div className="text-sm font-medium">
+                  {amazonPayouts.filter(p => 
+                    p.status === 'confirmed' && 
+                    p.payout_date >= startDateFilter && 
+                    p.payout_date <= endDateFilter &&
+                    (selectedAccountId === 'all' || p.amazon_account_id === selectedAccountId)
+                  ).length}
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-xs text-muted-foreground">Total Paid Out</div>
+                <div className="text-lg font-bold text-finance-positive">
+                  {formatCurrency(
+                    amazonPayouts
+                      .filter(p => 
+                        p.status === 'confirmed' && 
+                        p.payout_date >= startDateFilter && 
+                        p.payout_date <= endDateFilter &&
+                        (selectedAccountId === 'all' || p.amazon_account_id === selectedAccountId)
+                      )
+                      .reduce((sum, p) => sum + p.total_amount, 0)
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -788,6 +819,11 @@ export function AmazonPayouts() {
           const filteredPayouts = amazonPayouts.filter(payout => {
             // Only show confirmed settlements
             if (payout.status !== 'confirmed') {
+              return false;
+            }
+            
+            // Filter by account
+            if (selectedAccountId !== 'all' && payout.amazon_account_id !== selectedAccountId) {
               return false;
             }
             
