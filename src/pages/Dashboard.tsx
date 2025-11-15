@@ -2380,7 +2380,7 @@ const Dashboard = () => {
                 {showSafeSpendingData ? (
                   <OverviewStats
                     totalCash={displayCash}
-                    events={allCalendarEvents}
+                    events={allCalendarEvents as any}
                     onTransactionUpdate={() => {
                       refetchVendorTransactions();
                       refetchSafeSpending();
@@ -2398,7 +2398,7 @@ const Dashboard = () => {
                 <div className="lg:col-span-2 h-full">
                   {showSafeSpendingData ? (
                     <CashFlowCalendar
-                      events={allCalendarEvents}
+                      events={allCalendarEvents as any}
                       totalCash={displayCash}
                       onEditTransaction={handleEditTransaction}
                       onUpdateTransactionDate={handleUpdateTransactionDate}
