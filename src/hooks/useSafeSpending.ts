@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { generateRecurringDates } from "@/lib/recurringDates";
 import { format } from "date-fns";
-import { useAmazonPayouts } from "./useAmazonPayouts";
+import { calculateCalendarBalances } from '@/lib/calendarBalances';
+import { useCalendarEvents } from './useCalendarEvents';
 
 interface Transaction {
   type: string;
@@ -27,9 +27,10 @@ interface SafeSpendingData {
     next_buying_opportunity_date?: string;
     next_buying_opportunity_available_date?: string;
     all_buying_opportunities?: Array<{ 
-      date: string; 
-      balance: number;
-      available_date?: string;
+      date: string; // When funds are available (peak date)
+      lowPointDate: string; // Actual lowest projected balance date  
+      balance: number; // Amount safe to spend
+      available_date?: string; // Earliest date to safely spend this amount
     }>;
     daily_balances?: Array<{ 
       date: string; 
@@ -199,8 +200,40 @@ export const useSafeSpending = (
           .eq('is_active', true)
       ]);
 
-      // Filter Amazon payouts with proper T+1 handling for confirmed payouts
-      const filteredAmazonPayouts = amazonPayouts.filter(payout => {
+      // Use centralized calendar events - same as Dashboard chart for 100% consistency
+      const { calendarEvents, startingBalance: hookStartingBalance, isLoading: eventsLoading } = useCalendarEvents();
+      
+      if (eventsLoading) {
+        setIsLoading(true);
+        return;
+      }
+
+      // Use shared calendar balance calculation (same as chart)
+      const { dailyBalances: sharedDailyBalances, minimumBalance: sharedMinBalance, minimumDate: sharedMinDate } = calculateCalendarBalances(
+        hookStartingBalance,
+        calendarEvents,
+        daysToProject
+      );
+
+      console.log('📊 [useSafeSpending] Using shared calendar balance calculation:', {
+        startingBalance: hookStartingBalance,
+        totalEvents: calendarEvents.length,
+        dailyBalancesCount: sharedDailyBalances.length,
+        minimumBalance: sharedMinBalance,
+        minimumDate: sharedMinDate
+      });
+
+      // Convert to internal format for buying opportunity detection
+      const dailyBalances: DailyBalance[] = sharedDailyBalances.map(day => ({
+        date: day.date,
+        balance: day.runningBalance,
+        starting_balance: day.runningBalance - day.dailyChange,
+        net_change: day.dailyChange,
+        transactions: [] // Not needed for opportunity detection
+      }));
+
+      // Skip old day-by-day calculation - now using shared calculation above
+      const filteredAmazonPayouts = [] as any[]; // No longer needed
         const payoutDate = parseLocalDate(payout.payout_date);
         
         // ALWAYS include open settlements (estimated status) - they represent real accumulating funds
@@ -248,40 +281,11 @@ export const useSafeSpending = (
           }))
       });
 
-      // Check if we have any forecast data
-      const hasForecastData = (
-        (transactionsResult.data && transactionsResult.data.length > 0) ||
-        (incomeResult.data && incomeResult.data.length > 0) ||
-        (recurringResult.data && recurringResult.data.length > 0) ||
-        (vendorsResult.data && vendorsResult.data.some(v => v.status !== 'paid' && Number(v.total_owed || 0) > 0)) ||
-        (filteredAmazonPayouts && filteredAmazonPayouts.length > 0) ||
-        (creditCardsResult.data && creditCardsResult.data.some(c => c.balance > 0 && c.payment_due_date))
-      );
-
-      // Simple calculation: Track Total Projected Cash for each day, find minimum, subtract reserve
-      const dailyBalances: DailyBalance[] = [];
-      let runningBalance = bankBalance;
-
-      // Process each day based on daysToProject parameter
-      for (let i = 0; i <= daysToProject; i++) {
-        const targetDate = new Date(today);
-        targetDate.setDate(targetDate.getDate() + i);
-        targetDate.setHours(0, 0, 0, 0);
-        const targetDateStr = formatDate(targetDate);
-
-        let dayChange = 0;
-        const isTargetDateRange = targetDateStr >= '2024-10-31' && targetDateStr <= '2025-12-12';
-        const transactionLog: any[] = [];
-
-        // Add all inflows for this day (skip sales_orders without status=completed as they're pending)
-        transactionsResult.data?.forEach((tx) => {
-          const txDate = parseLocalDate(tx.due_date || tx.transaction_date);
-          
-          // Skip ALL past transactions (anything before today)
-          if (txDate.getTime() < today.getTime()) {
-            return;
-          }
-          
+      // Check if we have any forecast data (using calendar events)
+      const hasForecastData = calendarEvents.length > 0;
+      // OLD DAY-BY-DAY CALCULATION REMOVED
+      // Now using shared calculateCalendarBalances from lib/calendarBalances.ts
+      // This ensures 100% consistency with the Dashboard chart
           // Skip today's transactions if excludeTodayTransactions is true
           if (excludeTodayTransactions && txDate.getTime() === today.getTime()) {
             return;

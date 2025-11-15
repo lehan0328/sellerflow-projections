@@ -1878,56 +1878,12 @@ const Dashboard = () => {
   // No sample events for new users
   const sampleEvents: any[] = [];
 
-  // Convert cash flow events to calendar format (no conversion needed since types now match)
-  const calendarEvents = cashFlowEvents;
-
-  // Convert vendor transactions to calendar events (only show POs with vendors assigned)
-  const vendorEvents: CashFlowEvent[] = transactions
-    .filter((tx) => {
-      // Only show purchase orders with vendor IDs
-      if (tx.type !== "purchase_order" || !tx.vendorId) {
-        return false;
-      }
-      // Exclude completed transactions
-      if (tx.status === "completed") {
-        return false;
-      }
-      // Exclude .1 transactions (paid portion of partial payments)
-      if (tx.description?.endsWith(".1")) return false;
-      // Exclude partially_paid parent transactions (they're replaced by .2 transactions)
-      const dbStatus = (tx as any).status;
-      if (dbStatus === "partially_paid") return false;
-      // Allow .2 transactions (remaining balance with new due date) to show
-      return true;
-    })
-    .map((tx) => {
-      const vendor = vendors.find((v) => v.id === tx.vendorId);
-      // Use dueDate if available (for net terms), otherwise use transactionDate
-      const eventDate = tx.dueDate || tx.transactionDate;
-
-      return {
-        id: `vendor-tx-${tx.id}`,
-        type: "outflow" as const,
-        amount: tx.amount,
-        description:
-          tx.description || `${vendor?.name || "Vendor"} - Payment Due`,
-        vendor: vendor?.name,
-        creditCardId: tx.creditCardId,
-        date: eventDate,
-      };
-    });
-
-  // Convert income items to calendar events (exclude received income)
-  const incomeEvents: CashFlowEvent[] = incomeItems
-    .filter((income) => income.status !== "received")
-    .map((income) => ({
-      id: `income-${income.id}`,
-      type: "inflow" as const,
-      amount: income.amount,
-      description: income.description,
-      source: income.source,
-      date: income.paymentDate,
-    }));
+  // Use centralized calendar events hook for consistency with safe spending
+  const { 
+    calendarEvents: allCalendarEvents, 
+    startingBalance: calendarStartingBalance,
+    isLoading: calendarLoading 
+  } = useCalendarEvents();
 
   // Prevent duplicate inflows: remove any legacy cashFlowEvents that mirror existing income items
   useEffect(() => {
@@ -2157,75 +2113,6 @@ const Dashboard = () => {
         if (settlementEndStr) {
           displayDate = new Date(settlementEndStr);
           displayDate.setDate(displayDate.getDate() + 1);
-        } else {
-          // Fallback to payout_date if no settlement data
-          displayDate = new Date(payout.payout_date);
-        }
-
-      } else if (isOpenSettlement) {
-        // For estimated payouts (open settlements), calculate from settlement end date + 1 day
-        const rawData = (payout as any).raw_settlement_data;
-        const settlementEndStr =
-          rawData?.FinancialEventGroupEnd || rawData?.settlement_end_date;
-        const settlementStartStr =
-          rawData?.settlement_start_date || rawData?.FinancialEventGroupStart;
-
-        if (settlementEndStr) {
-          displayDate = new Date(settlementEndStr);
-        } else if (settlementStartStr) {
-          const settlementStartDate = new Date(settlementStartStr);
-          const settlementCloseDate = new Date(settlementStartDate);
-          settlementCloseDate.setDate(settlementCloseDate.getDate() + 14);
-          displayDate = settlementCloseDate;
-
-        } else {
-          displayDate = new Date(`${payout.payout_date}T00:00:00`);
-        }
-
-        // Add +1 day for bank transfer for estimated payouts
-        displayDate = new Date(displayDate);
-        displayDate.setDate(displayDate.getDate() + 1);
-      } else {
-        // For forecasted payouts, use date as-is (forecast engine already calculates correct dates)
-        displayDate = new Date(`${payout.payout_date}T00:00:00`);
-      }
-
-      const description =
-        (payout.status as string) === "forecasted"
-          ? `Amazon Payout (Forecasted) - ${payout.marketplace_name}`
-          : isOpenSettlement
-          ? `Amazon Settlement (In Progress) - ${payout.marketplace_name}`
-          : `Amazon Payout - ${payout.marketplace_name}`;
-
-      // Track event creation for logging
-      const eventDateStr = displayDate.toISOString().split("T")[0];
-      if (eventDateStr >= "2024-10-31" && eventDateStr <= "2025-12-12") {
-        eventCreationLog.amazonEvents.push({
-          date: eventDateStr,
-          amount: payout.total_amount,
-          status: payout.status,
-          settlementId: payout.settlement_id,
-        });
-      }
-
-      // For forecasted payouts, add +1 day for balance impact (bank transfer time)
-      const balanceImpactDate =
-        (payout.status as string) === "forecasted"
-          ? new Date(new Date(displayDate).setDate(displayDate.getDate() + 1))
-          : displayDate;
-      return {
-        id: `amazon-payout-${payout.id}`,
-        type: "inflow" as const,
-        amount: payout.total_amount,
-        description,
-        source:
-          (payout.status as string) === "forecasted"
-            ? "Amazon-Forecasted"
-            : "Amazon",
-        date: displayDate,
-        balanceImpactDate,
-      };
-    });
 
 
   // Combine all events for calendar - only include real user data
@@ -2802,7 +2689,9 @@ const Dashboard = () => {
                         safeSpendingData?.calculation?.lowest_projected_balance ||
                         calendarMinimum.balance
                       }
-                      lowestBalanceDate={calendarMinimum.date}
+                lowestBalanceDate={
+                  safeSpendingData?.calculation?.lowest_balance_date || calendarMinimum.date
+                }
                       safeSpendingAvailableDate={
                         safeSpendingData?.calculation
                           ?.safe_spending_available_date

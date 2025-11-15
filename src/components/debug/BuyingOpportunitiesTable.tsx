@@ -10,7 +10,8 @@ import {
 import { TrendingUp } from 'lucide-react';
 
 interface BuyingOpportunity {
-  date: string;
+  date: string; // When funds are available (peak date)
+  lowPointDate: string; // Actual lowest point in projection
   balance: number;
   available_date?: string;
 }
@@ -36,10 +37,11 @@ const BuyingOpportunitiesTable = ({ opportunities }: BuyingOpportunitiesTablePro
         <TableHeader>
           <TableRow>
             <TableHead className="w-[100px]">Opportunity #</TableHead>
-            <TableHead>Date (Money Arrives)</TableHead>
-            <TableHead>Available Date (Can Use)</TableHead>
-            <TableHead className="text-right">Balance Available</TableHead>
-            <TableHead>Calculation</TableHead>
+            <TableHead>Low Point Date</TableHead>
+            <TableHead>Funds Available Date</TableHead>
+            <TableHead>Earliest Safe Spend Date</TableHead>
+            <TableHead className="text-right">Amount Available</TableHead>
+            <TableHead>Note</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -52,16 +54,32 @@ const BuyingOpportunitiesTable = ({ opportunities }: BuyingOpportunitiesTablePro
                   </div>
                 </div>
               </TableCell>
+              
+              {/* Low Point Date - the valley bottom */}
+              <TableCell>
+                <div>
+                  <p className="font-medium">
+                    {format(new Date(opportunity.lowPointDate), 'MMM dd, yyyy')}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Lowest balance in projection
+                  </p>
+                </div>
+              </TableCell>
+              
+              {/* Funds Available Date - when money arrives at peak */}
               <TableCell>
                 <div>
                   <p className="font-medium">
                     {format(new Date(opportunity.date), 'MMM dd, yyyy')}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {format(new Date(opportunity.date), 'EEEE')}
+                    Peak balance date
                   </p>
                 </div>
               </TableCell>
+              
+              {/* Earliest Safe Spend Date */}
               <TableCell>
                 {opportunity.available_date ? (
                   <div>
@@ -69,20 +87,24 @@ const BuyingOpportunitiesTable = ({ opportunities }: BuyingOpportunitiesTablePro
                       {format(new Date(opportunity.available_date), 'MMM dd, yyyy')}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {format(new Date(opportunity.available_date), 'EEEE')}
+                      Safe to commit funds
                     </p>
                   </div>
                 ) : (
-                  <span className="text-muted-foreground">Same day</span>
+                  <span className="text-muted-foreground">Same as available date</span>
                 )}
               </TableCell>
+              
+              {/* Amount */}
               <TableCell className="text-right">
                 <span className="text-lg font-bold text-green-600 tabular-nums">
                   ${opportunity.balance.toFixed(2)}
                 </span>
               </TableCell>
+              
+              {/* Calculation Note */}
               <TableCell className="text-sm text-muted-foreground">
-                Valley bottom balance - reserve amount
+                Peak balance - reserve amount
               </TableCell>
             </TableRow>
           ))}
