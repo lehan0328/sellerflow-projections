@@ -106,11 +106,11 @@ export const useCalendarEvents = (): CalendarEventsResult => {
     const recurringEvents: CalendarEvent[] = recurringExpenses.flatMap(expense => {
       if (!expense.is_active) return [];
       const dates = generateRecurringDates(new Date(expense.start_date), expense.frequency, today, addDays(today, 365));
-      return dates.map(date => ({
+      return dates.map((date, idx) => ({
         type: expense.type === 'income' ? 'inflow' as const : 'outflow' as const,
         amount: expense.amount,
         description: `${expense.name} (Recurring)`,
-        date,
+        date: date,
       }));
     });
 
