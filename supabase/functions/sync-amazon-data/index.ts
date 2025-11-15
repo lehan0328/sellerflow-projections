@@ -584,59 +584,76 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string,
       // Don't fail the sync if workflow fails
     }
 
-    // For bi-weekly accounts, fetch current open settlement
-    if (amazonAccount.payout_frequency === 'bi-weekly') {
-      console.log('[SYNC] Fetching open settlement for bi-weekly account...');
-      try {
-        // Fetch financial event groups for open settlements
-        const oneYearAgo = new Date();
-        oneYearAgo.setDate(oneYearAgo.getDate() - 365);
+    // Fetch open settlements for ALL accounts (daily and bi-weekly)
+    console.log('[SYNC] Fetching open settlements for all account types...');
+    try {
+      const oneYearAgo = new Date();
+      oneYearAgo.setDate(oneYearAgo.getDate() - 365);
+      
+      const eventGroupsUrl = `${apiEndpoint}/finances/v0/financialEventGroups`;
+      let groupNextToken: string | null = null;
+      let openSettlementsFound = 0;
+      
+      do {
+        const groupParams = new URLSearchParams({
+          FinancialEventGroupStartedAfter: oneYearAgo.toISOString()
+        });
+        if (groupNextToken) {
+          groupParams.append('NextToken', groupNextToken);
+        }
         
-        const eventGroupsUrl = `${apiEndpoint}/finances/v0/financialEventGroups`;
-        let groupNextToken: string | null = null;
-        let openSettlementsFound = 0;
+        const groupResponse = await fetch(`${eventGroupsUrl}?${groupParams}`, {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'x-amz-access-token': accessToken,
+            'Content-Type': 'application/json'
+          }
+        });
         
-        do {
-          const groupParams = new URLSearchParams({
-            FinancialEventGroupStartedAfter: oneYearAgo.toISOString()
-          });
-          if (groupNextToken) {
-            groupParams.append('NextToken', groupNextToken);
+        if (!groupResponse.ok) {
+          const errorText = await groupResponse.text();
+          console.error('[SYNC] Error fetching open settlements:', errorText);
+          break;
+        }
+        
+        const groupData = await groupResponse.json();
+        const groups = groupData.payload?.FinancialEventGroupList || [];
+        
+        console.log(`[SYNC] Found ${groups.length} settlement groups, filtering for open ones...`);
+        
+        for (const group of groups) {
+          if (!group.FinancialEventGroupId || !group.FinancialEventGroupEnd) {
+            console.log('[SYNC] Skipping group without ID or end date');
+            continue;
           }
           
-          const groupResponse = await fetch(`${eventGroupsUrl}?${groupParams}`, {
-            headers: {
-              'Authorization': `Bearer ${accessToken}`,
-              'x-amz-access-token': accessToken,
-              'Content-Type': 'application/json'
-            }
-          });
+          const settlementEndDate = new Date(group.FinancialEventGroupEnd);
+          const now = new Date();
           
-          if (!groupResponse.ok) {
-            console.error('[SYNC] Error fetching open settlements:', await groupResponse.text());
-            break;
+          // Only process settlements that haven't ended yet (open settlements)
+          if (settlementEndDate <= now) {
+            continue; // Skip closed settlements
           }
           
-          const groupData = await groupResponse.json();
-          const groups = groupData.payload?.FinancialEventGroupList || [];
+          console.log(`[SYNC] Found open settlement: ${group.FinancialEventGroupId}, ends: ${settlementEndDate.toISOString()}`);
           
-          for (const group of groups) {
-            if (!group.FinancialEventGroupId || !group.FinancialEventGroupEnd) continue;
-            
-            const settlementEndDate = new Date(group.FinancialEventGroupEnd);
-            const now = new Date();
-            
-            // Only process open or recently closed settlements
-            if (settlementEndDate <= now) continue;
-            
-            const payoutDateObj = new Date(settlementEndDate);
-            payoutDateObj.setDate(payoutDateObj.getDate() + 1);
-            const payoutDate = payoutDateObj.toISOString().split('T')[0];
-            
-            const totalAmount = parseFloat(group.ConvertedTotal?.CurrencyAmount || group.OriginalTotal?.CurrencyAmount || '0');
-            
-            // Upsert open settlement
-            await supabase.from('amazon_payouts').upsert({
+          // Calculate payout date (1 day after settlement ends)
+          const payoutDateObj = new Date(settlementEndDate);
+          payoutDateObj.setDate(payoutDateObj.getDate() + 1);
+          const payoutDate = payoutDateObj.toISOString().split('T')[0];
+          
+          const totalAmount = parseFloat(
+            group.ConvertedTotal?.CurrencyAmount || 
+            group.OriginalTotal?.CurrencyAmount || 
+            '0'
+          );
+          
+          console.log(`[SYNC] Upserting open settlement: ${payoutDate}, amount: ${totalAmount}`);
+          
+          // Upsert open settlement
+          const { error: upsertError } = await supabase
+            .from('amazon_payouts')
+            .upsert({
               user_id: userId,
               amazon_account_id: amazonAccountId,
               settlement_id: group.FinancialEventGroupId,
@@ -645,23 +662,26 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string,
               currency_code: group.ConvertedTotal?.CurrencyCode || 'USD',
               marketplace_name: amazonAccount.marketplace_name,
               status: 'estimated',
-              payout_type: 'bi-weekly',
+              payout_type: amazonAccount.payout_frequency || 'daily',
               raw_settlement_data: group
             }, {
               onConflict: 'settlement_id,amazon_account_id'
             });
-            
+          
+          if (upsertError) {
+            console.error('[SYNC] Error upserting open settlement:', upsertError);
+          } else {
             openSettlementsFound++;
           }
-          
-          groupNextToken = groupData.payload?.NextToken || null;
-        } while (groupNextToken);
+        }
         
-        console.log(`[SYNC] Open settlements processed: ${openSettlementsFound}`);
-      } catch (openSettlementErr) {
-        console.error('[SYNC] Error fetching open settlement:', openSettlementErr);
-        // Don't fail the sync if open settlement fetch fails
-      }
+        groupNextToken = groupData.payload?.NextToken || null;
+      } while (groupNextToken);
+      
+      console.log(`[SYNC] ✅ Open settlements processed: ${openSettlementsFound}`);
+    } catch (openSettlementErr) {
+      console.error('[SYNC] Error fetching open settlements:', openSettlementErr);
+      // Don't fail the sync if open settlement fetch fails
     }
 
     // Update sync log with completion
