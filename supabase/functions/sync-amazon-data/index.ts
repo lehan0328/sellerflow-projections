@@ -621,26 +621,61 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string,
         
         console.log(`[SYNC] Found ${groups.length} settlement groups, filtering for open ones...`);
         
-        for (const group of groups) {
-          if (!group.FinancialEventGroupId || !group.FinancialEventGroupEnd) {
-            console.log('[SYNC] Skipping group without ID or end date');
-            continue;
-          }
-          
-          const settlementEndDate = new Date(group.FinancialEventGroupEnd);
-          const now = new Date();
-          
-          // Only process settlements that haven't ended yet (open settlements)
-          if (settlementEndDate <= now) {
-            continue; // Skip closed settlements
-          }
-          
-          console.log(`[SYNC] Found open settlement: ${group.FinancialEventGroupId}, ends: ${settlementEndDate.toISOString()}`);
-          
-          // Calculate payout date (1 day after settlement ends)
-          const payoutDateObj = new Date(settlementEndDate);
-          payoutDateObj.setDate(payoutDateObj.getDate() + 1);
-          const payoutDate = payoutDateObj.toISOString().split('T')[0];
+    for (const group of groups) {
+      if (!group.FinancialEventGroupId) {
+        console.log('[SYNC] Skipping group without ID');
+        continue;
+      }
+      
+      const hasEndDate = !!group.FinancialEventGroupEnd;
+      const hasStartDate = !!group.FinancialEventGroupStart;
+      
+      if (!hasStartDate) {
+        console.log('[SYNC] Skipping group without start date');
+        continue;
+      }
+      
+      let isOpen = false;
+      let payoutDate: string;
+      
+      if (!hasEndDate) {
+        // This is a currently open settlement (no end date yet)
+        console.log(`[SYNC] Found open settlement (no end date): ${group.FinancialEventGroupId}`);
+        isOpen = true;
+        
+        // Estimate payout date based on account type
+        const today = new Date();
+        if (amazonAccount.payout_frequency === 'bi-weekly') {
+          // Bi-weekly: estimate based on typical 2-week cycle
+          const startDate = new Date(group.FinancialEventGroupStart);
+          const estimatedEndDate = new Date(startDate);
+          estimatedEndDate.setDate(estimatedEndDate.getDate() + 14);
+          estimatedEndDate.setDate(estimatedEndDate.getDate() + 1); // +1 for payout
+          payoutDate = estimatedEndDate.toISOString().split('T')[0];
+        } else {
+          // Daily: tomorrow or day after
+          today.setDate(today.getDate() + 2);
+          payoutDate = today.toISOString().split('T')[0];
+        }
+      } else {
+        // Has an end date - check if it's in the future
+        const settlementEndDate = new Date(group.FinancialEventGroupEnd);
+        const now = new Date();
+        
+        if (settlementEndDate <= now) {
+          continue; // Skip closed settlements
+        }
+        
+        console.log(`[SYNC] Found future settlement: ${group.FinancialEventGroupId}, ends: ${settlementEndDate.toISOString()}`);
+        isOpen = true;
+        
+        // Calculate payout date (1 day after settlement ends)
+        const payoutDateObj = new Date(settlementEndDate);
+        payoutDateObj.setDate(payoutDateObj.getDate() + 1);
+        payoutDate = payoutDateObj.toISOString().split('T')[0];
+      }
+      
+      if (!isOpen) continue;
           
           const totalAmount = parseFloat(
             group.ConvertedTotal?.CurrencyAmount || 
