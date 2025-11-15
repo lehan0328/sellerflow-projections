@@ -1034,50 +1034,117 @@ export default function AmazonForecast() {
                 </div>
               )}
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {amazonPayouts
-                  .filter(p => p.status === 'forecasted')
-                  .sort((a, b) => new Date(a.payout_date).getTime() - new Date(b.payout_date).getTime())
-                  .slice(0, showAllForecasts ? undefined : 5)
-                  .map((payout, index) => {
-                    // Calculate which period this is (0-5 for 6 bi-weekly forecasts)
-                    const periodIndex = index;
+              {/* Group forecasts by Amazon account */}
+              {amazonAccounts && amazonAccounts.length > 0 ? (
+                <div className="space-y-6">
+                  {amazonAccounts.map((account) => {
+                    const accountForecasts = amazonPayouts
+                      .filter(p => p.status === 'forecasted' && p.amazon_account_id === account.id)
+                      .sort((a, b) => new Date(a.payout_date).getTime() - new Date(b.payout_date).getTime())
+                      .slice(0, showAllForecasts ? undefined : 5);
                     
-                    // Extract calculation details from payout fields
-                    const eligibleAmount = payout.eligible_in_period || 0;
-                    const reserveAmount = payout.reserve_amount || 0;
-                    const unavailableAmount = eligibleAmount + reserveAmount - payout.total_amount;
-                    const daysInPeriod = 14;
-                    const avgDailyEligible = eligibleAmount / daysInPeriod;
+                    if (accountForecasts.length === 0) return null;
+                    
+                    const accountColor = getAccountColor(account.id);
                     
                     return (
-                      <div 
-                        key={payout.id}
-                        className="border rounded-lg overflow-hidden"
-                      >
-                        <div className="flex items-center justify-between p-4 hover:bg-accent/50 transition-colors">
-                          <div className="flex items-center gap-4">
-                            <div className="flex flex-col">
-                              <span className="text-sm font-medium">
-                                {format(parseISODate(payout.payout_date), 'MMM dd, yyyy')}
-                              </span>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-6">
-                            <div className="text-right">
-                              <div className="text-lg font-semibold text-amber-600">
-                                ${payout.total_amount.toLocaleString()}
+                      <div key={account.id} className="space-y-3">
+                        <div className="flex items-center gap-2 pb-2 border-b">
+                          <div className={`w-2 h-2 rounded-full ${accountColor.dot}`} />
+                          <h3 className="font-semibold text-sm">{account.account_name}</h3>
+                          <span className="text-xs text-muted-foreground">({account.marketplace_name})</span>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {accountForecasts.map((payout, index) => {
+                            // Calculate which period this is (0-5 for 6 bi-weekly forecasts)
+                            const periodIndex = index;
+                            
+                            // Extract calculation details from payout fields
+                            const eligibleAmount = payout.eligible_in_period || 0;
+                            const reserveAmount = payout.reserve_amount || 0;
+                            const unavailableAmount = eligibleAmount + reserveAmount - payout.total_amount;
+                            const daysInPeriod = 14;
+                            const avgDailyEligible = eligibleAmount / daysInPeriod;
+                            
+                            return (
+                              <div 
+                                key={payout.id}
+                                className={`border-l-4 ${accountColor.border} border rounded-lg overflow-hidden`}
+                              >
+                                <div className="flex items-center justify-between p-4 hover:bg-accent/50 transition-colors">
+                                  <div className="flex items-center gap-4">
+                                    <div className="flex flex-col">
+                                      <span className="text-sm font-medium">
+                                        {format(parseISODate(payout.payout_date), 'MMM dd, yyyy')}
+                                      </span>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-6">
+                                    <div className="text-right">
+                                      <div className="text-lg font-semibold text-amber-600">
+                                        ${payout.total_amount.toLocaleString()}
+                                      </div>
+                                      <div className="text-xs text-muted-foreground">
+                                        Forecasted (Period {periodIndex + 1})
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
                               </div>
-                              <div className="text-xs text-muted-foreground">
-                                Forecasted (Period {periodIndex + 1})
-                              </div>
-                            </div>
-                          </div>
+                            );
+                          })}
                         </div>
                       </div>
                     );
                   })}
-              </div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {amazonPayouts
+                    .filter(p => p.status === 'forecasted')
+                    .sort((a, b) => new Date(a.payout_date).getTime() - new Date(b.payout_date).getTime())
+                    .slice(0, showAllForecasts ? undefined : 5)
+                    .map((payout, index) => {
+                      // Calculate which period this is (0-5 for 6 bi-weekly forecasts)
+                      const periodIndex = index;
+                      
+                      // Extract calculation details from payout fields
+                      const eligibleAmount = payout.eligible_in_period || 0;
+                      const reserveAmount = payout.reserve_amount || 0;
+                      const unavailableAmount = eligibleAmount + reserveAmount - payout.total_amount;
+                      const daysInPeriod = 14;
+                      const avgDailyEligible = eligibleAmount / daysInPeriod;
+                      
+                      return (
+                        <div 
+                          key={payout.id}
+                          className="border rounded-lg overflow-hidden"
+                        >
+                          <div className="flex items-center justify-between p-4 hover:bg-accent/50 transition-colors">
+                            <div className="flex items-center gap-4">
+                              <div className="flex flex-col">
+                                <span className="text-sm font-medium">
+                                  {format(parseISODate(payout.payout_date), 'MMM dd, yyyy')}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-6">
+                              <div className="text-right">
+                                <div className="text-lg font-semibold text-amber-600">
+                                  ${payout.total_amount.toLocaleString()}
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                  Forecasted (Period {periodIndex + 1})
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+              )}
               
               {amazonPayouts.filter(p => p.status === 'forecasted').length > 5 && (
                 <div className="mt-4 flex justify-center">
