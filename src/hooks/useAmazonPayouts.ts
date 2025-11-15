@@ -99,8 +99,34 @@ export const useAmazonPayouts = () => {
           const rawData = payout.raw_settlement_data as any;
           const hasEndDate = !!(rawData?.FinancialEventGroupEnd || rawData?.settlement_end_date);
           
-          // Always return open settlements (no end date)
+          // For open settlements (no end date), check if they're still active
           if (!hasEndDate) {
+            const settlementStartStr = rawData?.settlement_start_date || rawData?.FinancialEventGroupStart;
+            
+            if (!settlementStartStr) {
+              return false; // Can't validate, exclude it
+            }
+            
+            const settlementStartDate = new Date(settlementStartStr);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            // Calculate how long ago the settlement started
+            const daysSinceStart = Math.floor((today.getTime() - settlementStartDate.getTime()) / (1000 * 60 * 60 * 24));
+            
+            // Get payout frequency from joined account data
+            const payoutFrequency = payout.amazon_accounts?.payout_frequency || payout.payout_type;
+            
+            // Filter logic:
+            // - Daily accounts: only show settlements from last 3 days
+            // - Bi-weekly accounts: only show settlements from last 20 days (14 day cycle + buffer)
+            const maxDays = payoutFrequency === 'bi-weekly' ? 20 : 3;
+            
+            if (daysSinceStart > maxDays) {
+              console.log(`[FILTER] Hiding stale settlement from ${settlementStartStr} (${daysSinceStart} days old)`);
+              return false;
+            }
+            
             return true;
           }
           
