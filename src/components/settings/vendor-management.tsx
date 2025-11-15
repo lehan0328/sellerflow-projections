@@ -164,9 +164,13 @@ export function VendorManagement() {
   };
 
   const getPaymentTypeLabel = (paymentType: string, netTermsDays?: string) => {
-    const option = paymentTypeOptions.find(opt => opt.value === paymentType);
-    const label = option ? option.label : paymentType;
-    if (paymentType === 'net-terms' && netTermsDays) {
+    // Handle legacy 'total' value - map to 'due-upon-order'
+    const normalizedType = paymentType === 'total' ? 'due-upon-order' : paymentType;
+    
+    const option = paymentTypeOptions.find(opt => opt.value === normalizedType);
+    const label = option ? option.label : 'Due Upon Order'; // Default to Due Upon Order
+    
+    if (normalizedType === 'net-terms' && netTermsDays) {
       return `${label} (Net ${netTermsDays} days)`;
     }
     return label;

@@ -10,7 +10,7 @@ export interface Vendor {
   nextPaymentAmount: number;
   status: 'upcoming' | 'current' | 'overdue' | 'paid';
   category: string;
-  paymentType?: 'total' | 'preorder' | 'net-terms';
+  paymentType?: 'due-upon-order' | 'net-terms' | 'preorder' | 'due-upon-delivery';
   paymentMethod?: 'bank-transfer' | 'credit-card' | 'ach' | 'check' | 'wire' | 'cash';
   netTermsDays?: string;
   poName?: string;

@@ -21,7 +21,7 @@ interface Vendor {
   nextPaymentAmount: number;
   status: 'current' | 'overdue' | 'upcoming';
   category: string;
-  paymentType?: 'total' | 'preorder' | 'net-terms';
+  paymentType?: 'due-upon-order' | 'net-terms' | 'preorder' | 'due-upon-delivery';
   netTermsDays?: string;
   poName?: string;
   description?: string;
@@ -50,7 +50,7 @@ export const VendorOrderEditModal = ({ vendor, open, onOpenChange, onSave, onDel
     description: "",
     category: vendor?.category || "",
     notes: "",
-    paymentType: "total" as "total" | "preorder" | "net-terms",
+    paymentType: "due-upon-order" as "due-upon-order" | "preorder" | "net-terms" | "due-upon-delivery",
     netTermsDays: "30" as "30" | "60" | "90" | "custom",
     customDays: ""
   });
@@ -82,7 +82,7 @@ export const VendorOrderEditModal = ({ vendor, open, onOpenChange, onSave, onDel
         description: vendor.description || "",
         category: vendor.category || "",
         notes: vendor.notes || "",
-        paymentType: vendor.paymentType || "total",
+        paymentType: vendor.paymentType || "due-upon-order",
         netTermsDays: (vendor.netTermsDays === "30" || vendor.netTermsDays === "60" || 
                       vendor.netTermsDays === "90" || vendor.netTermsDays === "custom") 
                       ? vendor.netTermsDays : "30",
@@ -168,7 +168,7 @@ export const VendorOrderEditModal = ({ vendor, open, onOpenChange, onSave, onDel
       totalScheduledPayments = paymentSchedule.reduce((sum, payment) => 
         sum + (parseFloat(payment.amount) || 0), 0
       );
-    } else if (formData.paymentType === "total" || formData.paymentType === "net-terms") {
+    } else if (formData.paymentType === "due-upon-order" || formData.paymentType === "due-upon-delivery" || formData.paymentType === "net-terms") {
       totalScheduledPayments = editedVendor.totalOwed;
     }
 
@@ -257,7 +257,7 @@ export const VendorOrderEditModal = ({ vendor, open, onOpenChange, onSave, onDel
             </RadioGroup>
           </div>
 
-          {formData.paymentType === "total" ? (
+          {formData.paymentType === "due-upon-order" || formData.paymentType === "due-upon-delivery" ? (
             <>
               <div className="space-y-2">
                 <Label htmlFor="totalOwed">Total Amount ($)</Label>
