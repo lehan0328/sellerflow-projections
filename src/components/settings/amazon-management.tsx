@@ -204,7 +204,7 @@ export function AmazonManagement() {
       
       const applicationId = data?.clientId; // This should be SP-API Application ID
       
-      if (applicationId && applicationId !== 'undefined' && applicationId !== '') {
+      if (!applicationId || applicationId === 'undefined' || applicationId === '') {
         toast.error('Amazon SP-API Application ID is not configured. Please contact support.');
         return;
       }
@@ -220,10 +220,16 @@ export function AmazonManagement() {
       // IMPORTANT: Use application_id (SP-API App ID), not client_id
       const authUrl = `${consentBaseUrl}?application_id=${applicationId}&state=${selectedMarketplace}&redirect_uri=${encodeURIComponent(redirectUri)}`;
       
-      toast.info('Redirecting to Amazon Seller Central...');
+      toast.info('Opening Amazon Seller Central in a new tab...');
       
-      // Force same-tab navigation (not new window)
-      window.open(authUrl, '_self');
+      // CRITICAL: Open in new tab to avoid iframe blocking (X-Frame-Options: DENY)
+      const newWindow = window.open(authUrl, '_blank', 'noopener,noreferrer');
+      
+      if (!newWindow) {
+        toast.error('Pop-up blocked. Please allow pop-ups and try again.');
+      } else {
+        toast.success('Amazon authorization opened in new tab. Please complete the process there.');
+      }
     } catch (error) {
       toast.error(`Failed to initiate Amazon connection: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
