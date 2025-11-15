@@ -126,6 +126,7 @@ import { useBankTransactions } from "@/hooks/useBankTransactions";
 import { useRecurringExpenses } from "@/hooks/useRecurringExpenses";
 import { useSafeSpending } from "@/hooks/useSafeSpending";
 import { useAmazonPayouts } from "@/hooks/useAmazonPayouts";
+import { useCalendarEvents } from "@/hooks/useCalendarEvents";
 import { generateRecurringDates } from "@/lib/recurringDates";
 import { BankTransaction } from "@/components/cash-flow/bank-transaction-log";
 import { useTransactionMatching } from "@/hooks/useTransactionMatching";
@@ -524,6 +525,14 @@ const Dashboard = () => {
     resetAccount,
     forecastsEnabled,
   } = useUserSettings();
+
+  // Use centralized calendar events hook - same as safe spending calculations
+  const { 
+    calendarEvents: allCalendarEvents, 
+    startingBalance: calendarStartingBalance,
+    isLoading: calendarLoading,
+    error: calendarError 
+  } = useCalendarEvents();
 
   // Real-time updates for bank account balance changes
   useEffect(() => {
