@@ -9,17 +9,23 @@ import { parseISODate } from "@/lib/utils";
 interface AmazonSettledPayoutsProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  selectedAccountId?: string;
 }
 
-export const AmazonSettledPayouts = ({ open, onOpenChange }: AmazonSettledPayoutsProps) => {
+export const AmazonSettledPayouts = ({ open, onOpenChange, selectedAccountId = 'all' }: AmazonSettledPayoutsProps) => {
   const { amazonPayouts, isLoading } = useAmazonPayouts();
   
+  // Filter by account if specified
+  const accountFilteredPayouts = amazonPayouts.filter(p => 
+    selectedAccountId === 'all' || p.amazon_account_id === selectedAccountId
+  );
+  
   // Check if user has any daily settlement accounts
-  const hasDailyAccount = amazonPayouts.some(p => p.payout_type === 'daily');
+  const hasDailyAccount = accountFilteredPayouts.some(p => p.payout_type === 'daily');
 
   // For daily accounts, only show confirmed payouts (hide open settlements to avoid double counting)
   // For bi-weekly accounts, show both confirmed and estimated
-  const settledPayouts = amazonPayouts.filter(p => {
+  const settledPayouts = accountFilteredPayouts.filter(p => {
     if (hasDailyAccount && p.payout_type === 'daily') {
       // Daily accounts: only show confirmed (hide open settlements)
       return p.status === 'confirmed';
