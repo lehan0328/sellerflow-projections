@@ -969,7 +969,7 @@ const Dashboard = () => {
       console.info("Creating new vendor profile");
 
       // Map form payment types to database payment types
-      let dbPaymentType: "total" | "preorder" | "net-terms" = "total";
+      let dbPaymentType: "due-upon-order" | "preorder" | "net-terms" | "due-upon-delivery" = "due-upon-order";
       switch (orderData.paymentType) {
         case "net-terms":
           dbPaymentType = "net-terms";
@@ -977,10 +977,12 @@ const Dashboard = () => {
         case "preorder":
           dbPaymentType = "preorder";
           break;
-        case "due-upon-order":
         case "due-upon-delivery":
+          dbPaymentType = "due-upon-delivery";
+          break;
+        case "due-upon-order":
         default:
-          dbPaymentType = "total";
+          dbPaymentType = "due-upon-order";
           break;
       }
 
