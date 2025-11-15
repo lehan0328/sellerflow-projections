@@ -50,6 +50,18 @@ import { AmazonForecastAccuracy } from "@/components/cash-flow/amazon-forecast-a
 import { ForecastSettings } from "@/components/settings/forecast-settings";
 import { BarChart3 } from "lucide-react";
 
+// Color palette for Amazon accounts
+const ACCOUNT_COLORS = [
+  { border: 'border-blue-500', bg: 'bg-blue-500/10', text: 'text-blue-700 dark:text-blue-400', dot: 'bg-blue-500' },
+  { border: 'border-purple-500', bg: 'bg-purple-500/10', text: 'text-purple-700 dark:text-purple-400', dot: 'bg-purple-500' },
+  { border: 'border-emerald-500', bg: 'bg-emerald-500/10', text: 'text-emerald-700 dark:text-emerald-400', dot: 'bg-emerald-500' },
+  { border: 'border-orange-500', bg: 'bg-orange-500/10', text: 'text-orange-700 dark:text-orange-400', dot: 'bg-orange-500' },
+  { border: 'border-pink-500', bg: 'bg-pink-500/10', text: 'text-pink-700 dark:text-pink-400', dot: 'bg-pink-500' },
+  { border: 'border-cyan-500', bg: 'bg-cyan-500/10', text: 'text-cyan-700 dark:text-cyan-400', dot: 'bg-cyan-500' },
+  { border: 'border-rose-500', bg: 'bg-rose-500/10', text: 'text-rose-700 dark:text-rose-400', dot: 'bg-rose-500' },
+  { border: 'border-indigo-500', bg: 'bg-indigo-500/10', text: 'text-indigo-700 dark:text-indigo-400', dot: 'bg-indigo-500' },
+];
+
 export default function AmazonForecast() {
   const navigate = useNavigate();
   const { amazonPayouts } = useAmazonPayouts();
@@ -63,6 +75,12 @@ export default function AmazonForecast() {
   const [isCheckingRollover, setIsCheckingRollover] = useState(false);
   const [growthTimeframe, setGrowthTimeframe] = useState<'30d' | '60d' | '90d' | '6m' | '1y'>('1y');
   const [avgPayoutPeriod, setAvgPayoutPeriod] = useState<string>(format(new Date(), 'yyyy-MM')); // Current month
+
+  // Function to get color for an account
+  const getAccountColor = (accountId: string) => {
+    const index = amazonAccounts.findIndex(acc => acc.id === accountId);
+    return ACCOUNT_COLORS[index % ACCOUNT_COLORS.length];
+  };
 
   // Check if user has 2+ confirmed payouts
   const confirmedPayouts = amazonPayouts.filter(p => p.status === 'confirmed');
@@ -797,204 +815,224 @@ export default function AmazonForecast() {
             </p>
           ) : (
             <>
-              {/* Recent Growth Trends - Shown once */}
-              <div className="mb-6 px-4 py-4 bg-muted/30 border rounded-lg text-xs space-y-2">
-                <div className="font-semibold text-muted-foreground mb-2">Recent Growth Trends:</div>
-                
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="space-y-1">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Last 30 Days Total:</span>
-                      <span className="font-mono">
-                        ${(() => {
-                          const now = new Date();
-                          now.setHours(0, 0, 0, 0);
-                          const thirtyDaysAgo = new Date(now);
-                          thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-                          const total = confirmedPayouts
-                            .filter(p => {
-                              const date = new Date(p.payout_date);
-                              return date >= thirtyDaysAgo && date <= now;
-                            })
-                            .reduce((sum, p) => sum + p.total_amount, 0);
-                          return total.toLocaleString();
-                        })()}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Previous 30 Days Total:</span>
-                      <span className="font-mono">
-                        ${(() => {
-                          const now = new Date();
-                          now.setHours(0, 0, 0, 0);
-                          const sixtyDaysAgo = new Date(now);
-                          sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
-                          const thirtyOneDaysAgo = new Date(now);
-                          thirtyOneDaysAgo.setDate(thirtyOneDaysAgo.getDate() - 31);
-                          const total = confirmedPayouts
-                            .filter(p => {
-                              const date = new Date(p.payout_date);
-                              return date >= sixtyDaysAgo && date < thirtyOneDaysAgo;
-                            })
-                            .reduce((sum, p) => sum + p.total_amount, 0);
-                          return total.toLocaleString();
-                        })()}
-                      </span>
-                    </div>
-                    <div className="flex justify-between border-t pt-1">
-                      <span className="text-muted-foreground font-semibold">30-Day Growth:</span>
-                      <span className={`font-mono font-semibold ${(() => {
-                        const now = new Date();
-                        now.setHours(0, 0, 0, 0);
-                        const thirtyDaysAgo = new Date(now);
-                        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-                        const sixtyDaysAgo = new Date(now);
-                        sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+              {/* Recent Growth Trends - Show per account */}
+              {amazonAccounts && amazonAccounts.length > 0 ? (
+                <div className="mb-6 space-y-3">
+                  {amazonAccounts.map((account) => {
+                    const accountPayouts = confirmedPayouts.filter(p => p.amazon_account_id === account.id);
+                    const accountColor = getAccountColor(account.id);
+                    
+                    return (
+                      <div key={account.id} className={`px-4 py-4 border-l-4 ${accountColor.border} ${accountColor.bg} border rounded-lg text-xs space-y-2`}>
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className={`w-2 h-2 rounded-full ${accountColor.dot}`} />
+                          <span className="font-semibold text-foreground">{account.account_name}</span>
+                          <span className="text-muted-foreground">({account.marketplace_name})</span>
+                        </div>
                         
-                        const last30 = confirmedPayouts
-                          .filter(p => {
-                            const date = new Date(p.payout_date);
-                            return date >= thirtyDaysAgo && date <= now;
-                          })
-                          .reduce((sum, p) => sum + p.total_amount, 0);
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="space-y-1">
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Last 30 Days Total:</span>
+                              <span className="font-mono">
+                                ${(() => {
+                                  const now = new Date();
+                                  now.setHours(0, 0, 0, 0);
+                                  const thirtyDaysAgo = new Date(now);
+                                  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+                                  const total = accountPayouts
+                                    .filter(p => {
+                                      const date = new Date(p.payout_date);
+                                      return date >= thirtyDaysAgo && date <= now;
+                                    })
+                                    .reduce((sum, p) => sum + p.total_amount, 0);
+                                  return total.toLocaleString();
+                                })()}
+                              </span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Previous 30 Days Total:</span>
+                              <span className="font-mono">
+                                ${(() => {
+                                  const now = new Date();
+                                  now.setHours(0, 0, 0, 0);
+                                  const sixtyDaysAgo = new Date(now);
+                                  sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+                                  const thirtyOneDaysAgo = new Date(now);
+                                  thirtyOneDaysAgo.setDate(thirtyOneDaysAgo.getDate() - 31);
+                                  const total = accountPayouts
+                                    .filter(p => {
+                                      const date = new Date(p.payout_date);
+                                      return date >= sixtyDaysAgo && date < thirtyOneDaysAgo;
+                                    })
+                                    .reduce((sum, p) => sum + p.total_amount, 0);
+                                  return total.toLocaleString();
+                                })()}
+                              </span>
+                            </div>
+                            <div className="flex justify-between border-t pt-1">
+                              <span className="text-muted-foreground font-semibold">30-Day Growth:</span>
+                              <span className={`font-mono font-semibold ${(() => {
+                                const now = new Date();
+                                now.setHours(0, 0, 0, 0);
+                                const thirtyDaysAgo = new Date(now);
+                                thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+                                const sixtyDaysAgo = new Date(now);
+                                sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+                                
+                                const last30 = accountPayouts
+                                  .filter(p => {
+                                    const date = new Date(p.payout_date);
+                                    return date >= thirtyDaysAgo && date <= now;
+                                  })
+                                  .reduce((sum, p) => sum + p.total_amount, 0);
+                                
+                                const prev30 = accountPayouts
+                                  .filter(p => {
+                                    const date = new Date(p.payout_date);
+                                    return date >= sixtyDaysAgo && date < thirtyDaysAgo;
+                                  })
+                                  .reduce((sum, p) => sum + p.total_amount, 0);
+                                
+                                const growth = prev30 > 0 ? ((last30 - prev30) / prev30 * 100) : 0;
+                                return growth >= 0 ? 'text-green-600' : 'text-red-600';
+                              })()}`}>
+                                {(() => {
+                                  const now = new Date();
+                                  now.setHours(0, 0, 0, 0);
+                                  const thirtyDaysAgo = new Date(now);
+                                  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+                                  const sixtyDaysAgo = new Date(now);
+                                  sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+                                  
+                                  const last30 = accountPayouts
+                                    .filter(p => {
+                                      const date = new Date(p.payout_date);
+                                      return date >= thirtyDaysAgo && date <= now;
+                                    })
+                                    .reduce((sum, p) => sum + p.total_amount, 0);
+                                  
+                                  const prev30 = accountPayouts
+                                    .filter(p => {
+                                      const date = new Date(p.payout_date);
+                                      return date >= sixtyDaysAgo && date < thirtyDaysAgo;
+                                    })
+                                    .reduce((sum, p) => sum + p.total_amount, 0);
+                                  
+                                  const growth = prev30 > 0 ? ((last30 - prev30) / prev30 * 100) : 0;
+                                  return growth >= 0 ? `+${growth.toFixed(1)}%` : `${growth.toFixed(1)}%`;
+                                })()}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="space-y-1">
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Last 60 Days Avg/Day:</span>
+                              <span className="font-mono">
+                                ${(() => {
+                                  const now = new Date();
+                                  now.setHours(0, 0, 0, 0);
+                                  const sixtyDaysAgo = new Date(now);
+                                  sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+                                  const total = accountPayouts
+                                    .filter(p => {
+                                      const date = new Date(p.payout_date);
+                                      return date >= sixtyDaysAgo && date <= now;
+                                    })
+                                    .reduce((sum, p) => sum + p.total_amount, 0);
+                                  return Math.round(total / 60).toLocaleString();
+                                })()}
+                              </span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Last 90 Days Total:</span>
+                              <span className="font-mono">
+                                ${(() => {
+                                  const now = new Date();
+                                  now.setHours(0, 0, 0, 0);
+                                  const ninetyDaysAgo = new Date(now);
+                                  ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+                                  const total = accountPayouts
+                                    .filter(p => {
+                                      const date = new Date(p.payout_date);
+                                      return date >= ninetyDaysAgo && date <= now;
+                                    })
+                                    .reduce((sum, p) => sum + p.total_amount, 0);
+                                  return total.toLocaleString();
+                                })()}
+                              </span>
+                            </div>
+                            <div className="flex justify-between border-t pt-1">
+                              <span className="text-muted-foreground font-semibold">60-Day Growth:</span>
+                              <span className={`font-mono font-semibold ${(() => {
+                                const now = new Date();
+                                now.setHours(0, 0, 0, 0);
+                                const sixtyDaysAgo = new Date(now);
+                                sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+                                const oneTwentyDaysAgo = new Date(now);
+                                oneTwentyDaysAgo.setDate(oneTwentyDaysAgo.getDate() - 120);
+                                
+                                const last60 = accountPayouts
+                                  .filter(p => {
+                                    const date = new Date(p.payout_date);
+                                    return date >= sixtyDaysAgo && date <= now;
+                                  })
+                                  .reduce((sum, p) => sum + p.total_amount, 0);
+                                
+                                const prev60 = accountPayouts
+                                  .filter(p => {
+                                    const date = new Date(p.payout_date);
+                                    return date >= oneTwentyDaysAgo && date < sixtyDaysAgo;
+                                  })
+                                  .reduce((sum, p) => sum + p.total_amount, 0);
+                                
+                                const growth = prev60 > 0 ? ((last60 - prev60) / prev60 * 100) : 0;
+                                return growth >= 0 ? 'text-green-600' : 'text-red-600';
+                              })()}`}>
+                                {(() => {
+                                  const now = new Date();
+                                  now.setHours(0, 0, 0, 0);
+                                  const sixtyDaysAgo = new Date(now);
+                                  sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+                                  const oneTwentyDaysAgo = new Date(now);
+                                  oneTwentyDaysAgo.setDate(oneTwentyDaysAgo.getDate() - 120);
+                                  
+                                  const last60 = accountPayouts
+                                    .filter(p => {
+                                      const date = new Date(p.payout_date);
+                                      return date >= sixtyDaysAgo && date <= now;
+                                    })
+                                    .reduce((sum, p) => sum + p.total_amount, 0);
+                                  
+                                  const prev60 = accountPayouts
+                                    .filter(p => {
+                                      const date = new Date(p.payout_date);
+                                      return date >= oneTwentyDaysAgo && date < sixtyDaysAgo;
+                                    })
+                                    .reduce((sum, p) => sum + p.total_amount, 0);
+                                  
+                                  const growth = prev60 > 0 ? ((last60 - prev60) / prev60 * 100) : 0;
+                                  return growth >= 0 ? `+${growth.toFixed(1)}%` : `${growth.toFixed(1)}%`;
+                                })()}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
                         
-                        const prev30 = confirmedPayouts
-                          .filter(p => {
-                            const date = new Date(p.payout_date);
-                            return date >= sixtyDaysAgo && date < thirtyDaysAgo;
-                          })
-                          .reduce((sum, p) => sum + p.total_amount, 0);
-                        
-                        const growth = prev30 > 0 ? ((last30 - prev30) / prev30 * 100) : 0;
-                        return growth >= 0 ? 'text-green-600' : 'text-red-600';
-                      })()}`}>
-                        {(() => {
-                          const now = new Date();
-                          now.setHours(0, 0, 0, 0);
-                          const thirtyDaysAgo = new Date(now);
-                          thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-                          const sixtyDaysAgo = new Date(now);
-                          sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
-                          
-                          const last30 = confirmedPayouts
-                            .filter(p => {
-                              const date = new Date(p.payout_date);
-                              return date >= thirtyDaysAgo && date <= now;
-                            })
-                            .reduce((sum, p) => sum + p.total_amount, 0);
-                          
-                          const prev30 = confirmedPayouts
-                            .filter(p => {
-                              const date = new Date(p.payout_date);
-                              return date >= sixtyDaysAgo && date < thirtyDaysAgo;
-                            })
-                            .reduce((sum, p) => sum + p.total_amount, 0);
-                          
-                          const growth = prev30 > 0 ? ((last30 - prev30) / prev30 * 100) : 0;
-                          return growth >= 0 ? `+${growth.toFixed(1)}%` : `${growth.toFixed(1)}%`;
-                        })()}
-                      </span>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-1">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Last 60 Days Avg/Day:</span>
-                      <span className="font-mono">
-                        ${(() => {
-                          const now = new Date();
-                          now.setHours(0, 0, 0, 0);
-                          const sixtyDaysAgo = new Date(now);
-                          sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
-                          const total = confirmedPayouts
-                            .filter(p => {
-                              const date = new Date(p.payout_date);
-                              return date >= sixtyDaysAgo && date <= now;
-                            })
-                            .reduce((sum, p) => sum + p.total_amount, 0);
-                          return (total / 60).toFixed(0);
-                        })()}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Last 90 Days Total:</span>
-                      <span className="font-mono">
-                        ${(() => {
-                          const now = new Date();
-                          now.setHours(0, 0, 0, 0);
-                          const ninetyDaysAgo = new Date(now);
-                          ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
-                          const total = confirmedPayouts
-                            .filter(p => {
-                              const date = new Date(p.payout_date);
-                              return date >= ninetyDaysAgo && date <= now;
-                            })
-                            .reduce((sum, p) => sum + p.total_amount, 0);
-                          return total.toLocaleString();
-                        })()}
-                      </span>
-                    </div>
-                    <div className="flex justify-between border-t pt-1">
-                      <span className="text-muted-foreground font-semibold">60-Day Growth:</span>
-                      <span className={`font-mono font-semibold ${(() => {
-                        const now = new Date();
-                        now.setHours(0, 0, 0, 0);
-                        const sixtyDaysAgo = new Date(now);
-                        sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
-                        const oneTwentyDaysAgo = new Date(now);
-                        oneTwentyDaysAgo.setDate(oneTwentyDaysAgo.getDate() - 120);
-                        
-                        const last60 = confirmedPayouts
-                          .filter(p => {
-                            const date = new Date(p.payout_date);
-                            return date >= sixtyDaysAgo && date <= now;
-                          })
-                          .reduce((sum, p) => sum + p.total_amount, 0);
-                        
-                        const prev60 = confirmedPayouts
-                          .filter(p => {
-                            const date = new Date(p.payout_date);
-                            return date >= oneTwentyDaysAgo && date < sixtyDaysAgo;
-                          })
-                          .reduce((sum, p) => sum + p.total_amount, 0);
-                        
-                        const growth = prev60 > 0 ? ((last60 - prev60) / prev60 * 100) : 0;
-                        return growth >= 0 ? 'text-green-600' : 'text-red-600';
-                      })()}`}>
-                        {(() => {
-                          const now = new Date();
-                          now.setHours(0, 0, 0, 0);
-                          const sixtyDaysAgo = new Date(now);
-                          sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
-                          const oneTwentyDaysAgo = new Date(now);
-                          oneTwentyDaysAgo.setDate(oneTwentyDaysAgo.getDate() - 120);
-                          
-                          const last60 = confirmedPayouts
-                            .filter(p => {
-                              const date = new Date(p.payout_date);
-                              return date >= sixtyDaysAgo && date <= now;
-                            })
-                            .reduce((sum, p) => sum + p.total_amount, 0);
-                          
-                          const prev60 = confirmedPayouts
-                            .filter(p => {
-                              const date = new Date(p.payout_date);
-                              return date >= oneTwentyDaysAgo && date < sixtyDaysAgo;
-                            })
-                            .reduce((sum, p) => sum + p.total_amount, 0);
-                          
-                          const growth = prev60 > 0 ? ((last60 - prev60) / prev60 * 100) : 0;
-                          return growth >= 0 ? `+${growth.toFixed(1)}%` : `${growth.toFixed(1)}%`;
-                        })()}
-                      </span>
-                    </div>
+                        <div className="text-[10px] text-muted-foreground mt-2 pt-2 border-t">
+                          Based on {accountPayouts.length} confirmed payout{accountPayouts.length !== 1 ? 's' : ''} from historical data
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="mb-6 px-4 py-4 bg-muted/30 border rounded-lg text-xs">
+                  <div className="text-muted-foreground text-center">
+                    Connect Amazon accounts to see growth trends
                   </div>
                 </div>
-                
-                <div className="text-[10px] text-muted-foreground mt-2 pt-2 border-t">
-                  Based on {confirmedPayouts.length} confirmed payout{confirmedPayouts.length !== 1 ? 's' : ''} from historical data
-                </div>
-              </div>
+              )}
 
               <div className="space-y-3">
                 {amazonPayouts
