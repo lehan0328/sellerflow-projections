@@ -1158,7 +1158,7 @@ const UpgradePlan = () => {
                   </CardContent>
                 </Card>
               ) : (
-                <Card className="relative">
+                <Card className="relative md:col-start-2">
                   <CardHeader className="text-center">
                     <CardTitle className="flex items-center justify-center gap-2">
                       <Shield className="h-5 w-5 text-primary" />
