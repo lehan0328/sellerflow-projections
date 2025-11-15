@@ -537,27 +537,6 @@ export function AmazonManagement() {
                       Auto-sync enabled • Last: {new Date(account.last_sync).toLocaleString()}
                     </p>
                     
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <Badge variant="outline" className="text-xs">
-                        {account.transaction_count || 0} transactions
-                      </Badge>
-                      {(() => {
-                        if (account.initial_sync_complete) {
-                          return (
-                            <Badge className="text-xs bg-green-100 text-green-800">
-                              ✓ Forecast ready
-                            </Badge>
-                          );
-                        } else {
-                          return (
-                            <Badge variant="secondary" className="text-xs bg-amber-100 text-amber-800">
-                              Processing data...
-                            </Badge>
-                          );
-                        }
-                      })()}
-                    </div>
-                    
                     {isSyncing === account.id && syncProgress > 0 && (
                       <div className="mt-2 space-y-1">
                         <Progress value={syncProgress} className="h-2" />
