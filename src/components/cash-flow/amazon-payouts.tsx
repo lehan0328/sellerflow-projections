@@ -975,11 +975,19 @@ export function AmazonPayouts() {
                   </div>;
           });
         })()}
-        {amazonPayouts.length > 0 && <div className="pt-2">
-            <Button variant="outline" className="w-full" onClick={() => setShowSettledPayouts(true)}>
-              View Settlement History
-            </Button>
-          </div>}
+        {(() => {
+          const filteredForButton = amazonPayouts.filter(p => 
+            selectedAccountId === 'all' || p.amazon_account_id === selectedAccountId
+          );
+          
+          return filteredForButton.length > 0 && (
+            <div className="pt-2">
+              <Button variant="outline" className="w-full" onClick={() => setShowSettledPayouts(true)}>
+                View Settlement History
+              </Button>
+            </div>
+          );
+        })()}
       </CardContent>
 
       <Dialog open={showConnectDialog} onOpenChange={setShowConnectDialog}>
@@ -1029,6 +1037,7 @@ export function AmazonPayouts() {
       <AmazonSettledPayouts
         open={showSettledPayouts} 
         onOpenChange={setShowSettledPayouts}
+        selectedAccountId={selectedAccountId}
       />
     </Card>;
 }
