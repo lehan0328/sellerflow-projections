@@ -43,6 +43,18 @@ const marketplaces = [
   { id: "A1VC38T7YXB528", name: "Japan", region: "JP" },
 ];
 
+// Color palette for Amazon accounts
+const ACCOUNT_COLORS = [
+  { border: 'border-blue-500', bg: 'bg-blue-500/10', text: 'text-blue-700 dark:text-blue-400', dot: 'bg-blue-500' },
+  { border: 'border-purple-500', bg: 'bg-purple-500/10', text: 'text-purple-700 dark:text-purple-400', dot: 'bg-purple-500' },
+  { border: 'border-emerald-500', bg: 'bg-emerald-500/10', text: 'text-emerald-700 dark:text-emerald-400', dot: 'bg-emerald-500' },
+  { border: 'border-orange-500', bg: 'bg-orange-500/10', text: 'text-orange-700 dark:text-orange-400', dot: 'bg-orange-500' },
+  { border: 'border-pink-500', bg: 'bg-pink-500/10', text: 'text-pink-700 dark:text-pink-400', dot: 'bg-pink-500' },
+  { border: 'border-cyan-500', bg: 'bg-cyan-500/10', text: 'text-cyan-700 dark:text-cyan-400', dot: 'bg-cyan-500' },
+  { border: 'border-rose-500', bg: 'bg-rose-500/10', text: 'text-rose-700 dark:text-rose-400', dot: 'bg-rose-500' },
+  { border: 'border-indigo-500', bg: 'bg-indigo-500/10', text: 'text-indigo-700 dark:text-indigo-400', dot: 'bg-indigo-500' },
+];
+
 export function AmazonPayouts() {
   const navigate = useNavigate();
   const {
@@ -64,6 +76,12 @@ export function AmazonPayouts() {
   const [showSettledPayouts, setShowSettledPayouts] = useState(false);
   const [advancedModelingEnabled, setAdvancedModelingEnabled] = useState(false);
   const [selectedAccountId, setSelectedAccountId] = useState<string | "all">("all");
+  
+  // Function to get color for an account
+  const getAccountColor = (accountId: string) => {
+    const index = amazonAccounts.findIndex(acc => acc.id === accountId);
+    return ACCOUNT_COLORS[index % ACCOUNT_COLORS.length];
+  };
   
   // Date range filter - default to current month
   const now = new Date();
@@ -510,10 +528,13 @@ export function AmazonPayouts() {
                 const hasRecentSync = hoursSinceSync !== null && hoursSinceSync < 24;
                 const showWarning = !account.initial_sync_complete && hoursSinceSync !== null && hoursSinceSync > 24;
                 
+                const accountColor = getAccountColor(account.id);
+                
                 return (
-                  <div key={account.id} className="flex items-center justify-between text-sm p-2 rounded bg-muted/50">
+                  <div key={account.id} className={`flex items-center justify-between text-sm p-2 rounded border-l-4 ${accountColor.border} ${accountColor.bg}`}>
                     <div className="flex items-center gap-2 flex-1">
-                      <ShoppingCart className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                      <div className={`w-2 h-2 rounded-full ${accountColor.dot} flex-shrink-0`} />
+                      <ShoppingCart className={`h-4 w-4 flex-shrink-0 ${accountColor.text}`} />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           <span className="font-medium truncate">{account.account_name}</span>
@@ -656,12 +677,14 @@ export function AmazonPayouts() {
                 // Use the close date for the payout date
                 const estimatedPayoutDate = estimatedEnd;
                 const daysUntil = estimatedPayoutDate ? getDaysUntil(estimatedPayoutDate.toISOString().split('T')[0]) : 0;
+                const accountColor = getAccountColor(payout.amazon_account_id);
 
                 return (
-                  <div key={payout.id} className="rounded-lg border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/30 p-4 transition-all hover:shadow-card">
+                  <div key={payout.id} className={`rounded-lg border-l-4 ${accountColor.border} border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/30 p-4 transition-all hover:shadow-card`}>
                     <div className="flex items-center justify-between">
                       <div className="space-y-2">
                         <div className="flex items-center space-x-2">
+                          <div className={`w-2 h-2 rounded-full ${accountColor.dot}`} />
                           <Badge variant="secondary" className="text-xs bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-700">
                             <Clock className="h-3 w-3 mr-1" />
                             Open
@@ -853,11 +876,13 @@ export function AmazonPayouts() {
             const daysUntil = getDaysUntil(actualPayoutDate.toISOString().split('T')[0]);
             const isUpcoming = daysUntil <= 7 && daysUntil >= 0;
             const isForecasted = aggregatedPayout.status === 'forecasted';
+            const accountColor = getAccountColor(firstPayout.amazon_account_id);
             
-            return <div key={`${aggregatedPayout.payout_date}-${aggregatedPayout.settlement_id}`} className={`rounded-lg border bg-gradient-card p-4 transition-all hover:shadow-card ${isUpcoming ? 'border-primary/30 bg-primary/5' : ''} ${isForecasted ? 'border-purple-300 dark:border-purple-700 bg-purple-50 dark:bg-purple-950/30' : ''}`}>
+            return <div key={`${aggregatedPayout.payout_date}-${aggregatedPayout.settlement_id}`} className={`rounded-lg border-l-4 ${accountColor.border} border bg-gradient-card p-4 transition-all hover:shadow-card ${isUpcoming ? 'border-primary/30 bg-primary/5' : ''} ${isForecasted ? 'border-purple-300 dark:border-purple-700 bg-purple-50 dark:bg-purple-950/30' : ''}`}>
                     <div className="flex items-center justify-between">
                       <div className="space-y-2">
                         <div className="flex items-center space-x-2">
+                          <div className={`w-2 h-2 rounded-full ${accountColor.dot}`} />
                           {isForecasted && (
                             <Badge variant="secondary" className="text-xs bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 border-purple-300 dark:border-purple-700">
                               <Sparkles className="h-3 w-3 mr-1" />
