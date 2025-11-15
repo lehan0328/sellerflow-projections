@@ -467,8 +467,6 @@ serve(async (req) => {
           console.log(`  - Amount: $${openSettlementAmount}`);
           
           // For BI-WEEKLY payouts: Set lastPayoutDate to settlement close date
-          // The payout_date is when funds are disbursed (1 day after settlement closes)
-          // We need to forecast from the settlement CLOSE date, not the payout date
           if (payoutFrequency === 'bi-weekly') {
             // Settlement closes 1 day before payout
             const settlementCloseDate = new Date(estimatedPayouts[0].payout_date);
@@ -476,30 +474,31 @@ serve(async (req) => {
             lastPayoutDate = settlementCloseDate;
             console.log(`  - BI-WEEKLY: Settlement closes ${lastPayoutDate.toISOString().split('T')[0]}`);
             console.log(`  - Next forecast will be 14 days from settlement close date`);
-          } else if (payoutFrequency === 'daily') {
-            console.log(`  - DAILY: Using open settlement for daily forecasts`);
-            
-            // For daily accounts with open settlement, skip the cumulative distribution
-            // The standard daily forecast logic will handle it
-            lastPayoutDate = new Date(estimatedPayouts[0].payout_date);
-            lastPayoutDate.setDate(lastPayoutDate.getDate() - 1); // Start forecasts from the day before settlement
-            console.log(`  - Set lastPayoutDate to ${lastPayoutDate.toISOString().split('T')[0]} (day before settlement)`);
           }
-        } else {
-          // No open settlement - use last confirmed payout's settlement close date
+          // For DAILY accounts: Ignore estimated payouts and use last confirmed settlement close date
+          // Daily forecasts should start from the day after the last CONFIRMED settlement closed
+        }
+        
+        // For DAILY accounts OR no open settlement: use last confirmed payout's settlement close date
+        if (payoutFrequency === 'daily' || !hasOpenSettlement) {
           if (amazonPayouts.length > 0) {
             const lastPayout = amazonPayouts[0];
             const rawData = lastPayout.raw_settlement_data as any;
             const settlementEndDate = rawData?.FinancialEventGroupEnd;
             
             if (settlementEndDate && payoutFrequency === 'daily') {
-              // FinancialEventGroupEnd is the actual settlement close date (not next day)
+              // FinancialEventGroupEnd is the actual settlement close date
               const closeDate = new Date(settlementEndDate);
               closeDate.setHours(0, 0, 0, 0);
               lastPayoutDate = closeDate;
-              console.log(`[FORECAST] Settlement closed: ${lastPayoutDate.toISOString().split('T')[0]} (payout: ${lastPayout.payout_date})`);
+              console.log(`[FORECAST] DAILY: Last confirmed settlement closed ${lastPayoutDate.toISOString().split('T')[0]} (payout: ${lastPayout.payout_date})`);
+              console.log(`[FORECAST] DAILY: Forecasts will start ${new Date(closeDate.getTime() + 86400000).toISOString().split('T')[0]} (next day)`);
+            } else if (!settlementEndDate && payoutFrequency === 'daily') {
+              // Fallback to payout date for daily if no settlement data
+              lastPayoutDate = new Date(lastPayout.payout_date);
+              console.log(`[FORECAST] DAILY: Using payout date ${lastPayoutDate.toISOString().split('T')[0]} (no settlement close data)`);
             } else {
-              // Fallback to payout date for bi-weekly or if no settlement data
+              // Fallback to payout date for bi-weekly
               lastPayoutDate = new Date(lastPayout.payout_date);
               console.log(`[FORECAST] Using payout date: ${lastPayoutDate.toISOString().split('T')[0]}`);
             }
@@ -760,10 +759,9 @@ serve(async (req) => {
         while (currentDate <= threeMonthsOut && dayCount < maxForecasts) {
           // Move to next payout date based on frequency
           if (payoutFrequency === 'daily') {
+            // Daily accounts: increment by 1 day for each forecast
             currentDate.setDate(currentDate.getDate() + 1);
             dayCount++;
-            // For daily, we just use the daily average (no AI prediction division needed)
-            biweeklyPeriodIndex = Math.floor((dayCount - 1) / 14);
           } else { // bi-weekly = every 14 days
             currentDate.setDate(currentDate.getDate() + 14);
             biweeklyPeriodIndex = dayCount;
