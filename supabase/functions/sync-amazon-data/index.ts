@@ -355,13 +355,18 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string,
         return null
       }
 
-      // Check settlement duration - skip invoiced settlements (14-day B2B settlements)
+      // Check settlement duration - skip B2B settlements based on account type
       const settlementStart = new Date(group.FinancialEventGroupStart);
       const settlementEnd = new Date(group.FinancialEventGroupEnd);
       const settlementDays = Math.ceil((settlementEnd.getTime() - settlementStart.getTime()) / (1000 * 60 * 60 * 24));
 
-      if (settlementDays > 3) {
-        console.log(`[SYNC] Skipping invoiced/B2B settlement: ${group.FinancialEventGroupId} (${settlementDays} days, Amount: $${parseFloat(group.ConvertedTotal?.CurrencyAmount || group.OriginalTotal?.CurrencyAmount || '0').toFixed(2)})`);
+      // Determine acceptable settlement duration based on account payout frequency
+      // Daily accounts: max 3 days (normal daily settlements)
+      // Bi-weekly accounts: max 21 days (allows 14-day settlements, filters 28-day+ B2B)
+      const maxAcceptableDays = amazonAccount.payout_frequency === 'daily' ? 3 : 21;
+
+      if (settlementDays > maxAcceptableDays) {
+        console.log(`[SYNC] Skipping long-duration settlement (likely B2B): ${group.FinancialEventGroupId} (${settlementDays} days, Account type: ${amazonAccount.payout_frequency}, Max allowed: ${maxAcceptableDays} days, Amount: $${parseFloat(group.ConvertedTotal?.CurrencyAmount || group.OriginalTotal?.CurrencyAmount || '0').toFixed(2)})`);
         return null;
       }
 
