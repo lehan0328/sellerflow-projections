@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { usePayees, type Payee } from "@/hooks/usePayees";
+import { useCategories } from "@/hooks/useCategories";
 import { User, Plus, Trash2, Pencil, Search, CreditCard } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,26 +20,15 @@ interface PayeeFormData {
   payment_method: string;
 }
 
-const categories = [
-  "Contractor",
-  "Freelancer", 
-  "Consultant",
-  "Service Provider",
-  "Supplier",
-  "Other"
-];
-
 const paymentMethodOptions = [
+  { value: 'cash', label: 'Cash' },
   { value: 'bank-transfer', label: 'Bank Transfer' },
-  { value: 'ach', label: 'ACH' },
-  { value: 'credit-card', label: 'Credit Card' },
-  { value: 'wire', label: 'Wire Transfer' },
-  { value: 'check', label: 'Check' },
-  { value: 'cash', label: 'Cash' }
+  { value: 'credit-card', label: 'Credit Card' }
 ];
 
 export function PayeeManagement() {
   const { payees, isLoading, addPayee, updatePayee, deletePayee } = usePayees();
+  const { categories: expenseCategories } = useCategories('expense', false);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [editingPayee, setEditingPayee] = useState<{ id: string; name: string; category: string; payment_method: string } | null>(null);
@@ -222,9 +212,9 @@ export function PayeeManagement() {
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
                     <SelectContent>
-                      {categories.map((cat) => (
-                        <SelectItem key={cat} value={cat}>
-                          {cat}
+                      {expenseCategories.map((cat) => (
+                        <SelectItem key={cat.id} value={cat.name}>
+                          {cat.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -386,9 +376,9 @@ export function PayeeManagement() {
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
-                  {categories.map((cat) => (
-                    <SelectItem key={cat} value={cat}>
-                      {cat}
+                  {expenseCategories.map((cat) => (
+                    <SelectItem key={cat.id} value={cat.name}>
+                      {cat.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
