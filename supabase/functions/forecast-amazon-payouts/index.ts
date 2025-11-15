@@ -706,23 +706,22 @@ serve(async (req) => {
         // Generate forecasts for 3 months based on frequency
         const forecastedPayouts: any[] = [];
         
-        // For BI-WEEKLY: If we have an open settlement, add it as the FIRST forecasted payout
-        if (openSettlementPayout) {
-          forecastedPayouts.push(openSettlementPayout);
-          console.log(`[FORECAST] ✅ Added open settlement as first bi-weekly forecast: $${openSettlementAmount} on ${openSettlementPayout.payout_date}`);
-        }
-        
         const threeMonthsOut = new Date(lastPayoutDate);
         threeMonthsOut.setMonth(threeMonthsOut.getMonth() + 3);
         
+        // For bi-weekly with open settlement, start forecasting from NEXT period (14 days after open settlement)
         let currentDate = new Date(lastPayoutDate);
+        if (payoutFrequency === 'bi-weekly' && hasOpenSettlement) {
+          currentDate.setDate(currentDate.getDate() + 14);
+          console.log(`[FORECAST] Starting bi-weekly forecasts from ${currentDate.toISOString().split('T')[0]} (14 days after open settlement)`);
+        }
+        
         let biweeklyPeriodIndex = 0;
         let dayCount = 0;
         
         // For daily: generate 90 daily payouts (3 months)
-        // For bi-weekly: generate 6 bi-weekly payouts (3 months)
-        // If we already added open settlement for bi-weekly, generate 5 more (total 6)
-        const maxForecasts = payoutFrequency === 'daily' ? 90 : (openSettlementPayout ? 5 : 6);
+        // For bi-weekly: generate 5-6 bi-weekly payouts (3 months)
+        const maxForecasts = payoutFrequency === 'daily' ? 90 : (hasOpenSettlement ? 5 : 6);
         
         // For daily payouts, analyze last 14 days of sales to predict next 14 days
         let last14DaysSales: number[] = [];
