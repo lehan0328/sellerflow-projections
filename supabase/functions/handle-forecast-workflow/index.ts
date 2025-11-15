@@ -20,77 +20,89 @@ serve(async (req) => {
     
     console.log('[WORKFLOW] Starting forecast workflow for account:', amazonAccountId);
 
-    // Get yesterday in EST
+    // =================================================================
+    // CHANGE 1: Setup Date Logic (Pure UTC)
+    // =================================================================
     const now = new Date();
-    const estOffset = -5 * 60; // EST is UTC-5
-    const estNow = new Date(now.getTime() + estOffset * 60 * 1000);
-    const yesterday = new Date(estNow);
-    yesterday.setDate(yesterday.getDate() - 1);
+    
+    // Define lookback window (e.g., 3 days) to catch late arrivals
+    const lookbackWindow = 3; 
+    
+    // Calculate "Yesterday" in UTC (needed for fallback logic later)
+    const yesterday = new Date(now);
+    yesterday.setUTCDate(yesterday.getUTCDate() - 1);
     const yesterdayStr = yesterday.toISOString().split('T')[0];
     
-    console.log('[WORKFLOW] Checking for settlements closed on:', yesterdayStr);
+    // Calculate Start of Search Window
+    const queryStartDate = new Date(yesterday);
+    queryStartDate.setUTCDate(queryStartDate.getUTCDate() - lookbackWindow);
 
-    // Query recent confirmed settlements (last 3 days to account for delays)
-    const threeDaysAgo = new Date(yesterday);
-    threeDaysAgo.setDate(threeDaysAgo.getDate() - 2);
-    
+    console.log(`[WORKFLOW] Checking for settlements closed in the last ${lookbackWindow} days (since ${queryStartDate.toISOString().split('T')[0]})`);
+
+    // Fetch recent confirmed settlements
     const { data: recentSettlements, error: settlementsError } = await supabase
       .from('amazon_payouts')
       .select('*')
       .eq('amazon_account_id', amazonAccountId)
       .eq('status', 'confirmed')
       .eq('marketplace_name', 'United States')
-      .gte('payout_date', threeDaysAgo.toISOString().split('T')[0])
+      .gte('payout_date', queryStartDate.toISOString().split('T')[0])
       .order('payout_date', { ascending: false });
 
     if (settlementsError) {
       throw settlementsError;
     }
 
-    // Check if any settlement CLOSED on yesterday
-    let settlementClosedYesterday = null;
+    // =================================================================
+    // CHANGE 2: Define Variable & Process Loop
+    // =================================================================
+    let settlementToProcess = null; // Defined explicitly before loop
     
     if (recentSettlements && recentSettlements.length > 0) {
       for (const settlement of recentSettlements) {
+        // Only process if funds transferred successfully
         if (settlement.raw_settlement_data?.FundTransferStatus === 'Succeeded') {
           const settlementEnd = settlement.raw_settlement_data?.FinancialEventGroupEnd;
           
           if (settlementEnd) {
-            // Convert UTC timestamp to EST date
+            // Standardize End Date (UTC)
             const endDateUTC = new Date(settlementEnd);
-            const estOffset = -5 * 60; // EST is UTC-5
-            const endDateEST = new Date(endDateUTC.getTime() + estOffset * 60 * 1000);
-            const endDateStr = endDateEST.toISOString().split('T')[0]; // Now in EST
+            const endDateStr = endDateUTC.toISOString().split('T')[0];
             
-            // Check settlement duration (exclude 14-day invoiced settlements)
+            // Calculate Duration (to exclude 14-day invoices)
             const settlementStart = settlement.raw_settlement_data?.FinancialEventGroupStart;
             let isDailySettlement = true;
             
             if (settlementStart) {
-              // Also convert start date to EST
               const startDateUTC = new Date(settlementStart);
-              const startDateEST = new Date(startDateUTC.getTime() + estOffset * 60 * 1000);
-              const startDateStr = startDateEST.toISOString().split('T')[0];
               
-              const durationDays = Math.ceil((endDateEST.getTime() - startDateEST.getTime()) / (1000 * 60 * 60 * 24));
+              // Calculate days difference directly from UTC timestamps
+              const diffTime = Math.abs(endDateUTC.getTime() - startDateUTC.getTime());
+              const durationDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+              
               isDailySettlement = durationDays <= 3;
               
-              console.log(`[WORKFLOW] Settlement ${settlement.id}: closed=${endDateStr} EST (was ${endDateUTC.toISOString().split('T')[0]} UTC), period=${startDateStr} to ${endDateStr}, duration=${durationDays}d, payout=${settlement.payout_date}`);
+              console.log(`[WORKFLOW] Settlement ${settlement.id}: closed=${endDateStr} (UTC), duration=${durationDays}d`);
             }
             
-            // Found a daily settlement that closed yesterday (EST)
-            if (endDateStr === yesterdayStr && isDailySettlement) {
-              settlementClosedYesterday = settlement;
-              console.log(`[WORKFLOW] ✅ Found settlement closed yesterday (EST): ${settlement.id}`);
-              break;
+            // CHECK RECENCY: Is this date within our lookback window?
+            const endDateObj = new Date(endDateStr);
+            const isRecent = endDateObj >= queryStartDate;
+
+            if (isRecent && isDailySettlement) {
+              settlementToProcess = settlement;
+              console.log(`[WORKFLOW] ✅ Found recent settlement to process: ${settlement.id} (Closed: ${endDateStr})`);
+              break; // Stop after finding the most recent valid one
             }
           }
         }
       }
     }
 
-    // DECISION POINT: Which scenario?
-    if (settlementClosedYesterday) {
+    // =================================================================
+    // Decision Logic
+    // =================================================================
+    if (settlementToProcess) {
       // ========== SCENARIO 1: SETTLEMENT DETECTED ==========
       console.log('[WORKFLOW] ========== SCENARIO 1: SETTLEMENT DETECTED ==========');
       
@@ -98,7 +110,7 @@ serve(async (req) => {
       console.log('[WORKFLOW] Step 1: Tracking forecast accuracy...');
       try {
         const { error: accuracyError } = await supabase.functions.invoke('track-forecast-accuracy', {
-          body: { actualPayout: settlementClosedYesterday }
+          body: { actualPayout: settlementToProcess }
         });
         
         if (accuracyError) {
@@ -130,9 +142,8 @@ serve(async (req) => {
         JSON.stringify({
           success: true,
           scenario: 'settlement_detected',
-          settlementId: settlementClosedYesterday.settlement_id,
-          settlementCloseDate: yesterdayStr,
-          payoutAmount: settlementClosedYesterday.total_amount,
+          settlementId: settlementToProcess.settlement_id,
+          settlementCloseDate: settlementToProcess.payout_date,
           actions: ['tracked_accuracy', 'regenerated_forecasts']
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
