@@ -485,7 +485,7 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string,
 
           const { error: logError } = await supabase
             .from('forecast_accuracy_log')
-            .insert({
+            .upsert({
               user_id: settlement.user_id,
               account_id: settlement.account_id,
               amazon_account_id: settlement.amazon_account_id,
