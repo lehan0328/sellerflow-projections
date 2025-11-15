@@ -398,7 +398,7 @@ export function VendorManagement() {
                            <p className="text-xs text-muted-foreground">{vendor.category}</p>
                          )}
                          <p className="text-sm text-muted-foreground">
-                           Payment Terms: {getPaymentTypeLabel(vendor.paymentType || 'total', vendor.netTermsDays)}
+                           Payment Terms: {getPaymentTypeLabel(vendor.paymentType || 'due-upon-order', vendor.netTermsDays)}
                          </p>
                        </div>
                     </div>
