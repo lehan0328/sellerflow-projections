@@ -57,6 +57,9 @@ serve(async (req) => {
     // Look back up to 7 days from settlement close
     const lookbackStart = new Date(settlementCloseDate);
     lookbackStart.setDate(lookbackStart.getDate() - 7);
+    const searchEndDate = actualPayout.payout_date > settlementCloseDate
+      ? actualPayout.payout_date
+      : settlementCloseDate;
 
     const { data: rolledForecasts, error: forecastError } = await supabase
       .from('amazon_payouts')
@@ -65,7 +68,7 @@ serve(async (req) => {
       .eq('user_id', actualPayout.user_id) // CRITICAL: Match user_id
       .eq('status', 'forecasted')
       .gte('payout_date', lookbackStart.toISOString().split('T')[0])
-      .lte('payout_date', settlementCloseDate) 
+      .lte('payout_date', searchEndDate)
       .order('payout_date', { ascending: true });
 
     if (forecastError) {
