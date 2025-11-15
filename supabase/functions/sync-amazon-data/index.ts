@@ -490,7 +490,7 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string,
 
           const { error: logError } = await supabase
             .from('forecast_accuracy_log')
-            .upsert({
+            .insert({
               user_id: settlement.user_id,
               account_id: settlement.account_id,
               amazon_account_id: settlement.amazon_account_id,
@@ -507,7 +507,7 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string,
               settlement_id: settlement.settlement_id,
               marketplace_name: settlement.marketplace_name,
               modeling_method: rolledForecasts[0]?.modeling_method
-            }, { onConflict: 'settlement_id' });
+            });
 
           if (logError) {
             console.error(`[SYNC] Failed to log accuracy for ${settlement.payout_date}:`, logError);
