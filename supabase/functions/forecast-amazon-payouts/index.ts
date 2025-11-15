@@ -906,13 +906,32 @@ serve(async (req) => {
         console.log(`[FORECAST] Deleted old forecasted payouts for ${accountIds.length} account(s)`);
       }
       
+      // Log sample of forecasts being inserted for debugging
+      console.log('[FORECAST] Sample forecast data being inserted:', JSON.stringify(allForecasts[0], null, 2));
+      console.log(`[FORECAST] Total forecasts to insert: ${allForecasts.length}`);
+      
+      // Check for duplicate settlement_ids
+      const settlementIds = allForecasts.map(f => f.settlement_id);
+      const uniqueSettlementIds = new Set(settlementIds);
+      if (settlementIds.length !== uniqueSettlementIds.size) {
+        console.error('[FORECAST] ⚠️ WARNING: Duplicate settlement_ids detected!', {
+          total: settlementIds.length,
+          unique: uniqueSettlementIds.size,
+          duplicates: settlementIds.length - uniqueSettlementIds.size
+        });
+      }
+      
       const { error: insertError } = await supabase
         .from('amazon_payouts')
         .insert(allForecasts);
 
       if (insertError) {
-        console.error('[FORECAST] Error storing forecasted payouts:', insertError);
-        throw new Error('Failed to store forecasted payouts');
+        console.error('[FORECAST] ❌ Error storing forecasted payouts:', JSON.stringify(insertError, null, 2));
+        console.error('[FORECAST] Error code:', insertError.code);
+        console.error('[FORECAST] Error message:', insertError.message);
+        console.error('[FORECAST] Error details:', insertError.details);
+        console.error('[FORECAST] Error hint:', insertError.hint);
+        throw new Error(`Failed to store forecasted payouts: ${insertError.message}`);
       } else {
         console.log(`[FORECAST] ✅ Successfully stored ${allForecasts.length} total forecasted payouts`);
       }
