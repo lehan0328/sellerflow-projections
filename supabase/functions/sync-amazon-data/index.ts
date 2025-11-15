@@ -596,10 +596,6 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string,
       console.error('[SYNC] Error invoking forecast function:', forecastErr);
       // Don't fail the sync if forecast fails
     }
-    } catch (workflowErr) {
-      console.error('[SYNC] Error invoking forecast workflow:', workflowErr);
-      // Don't fail the sync if workflow fails
-    }
 
     // Fetch open settlements for ALL accounts (daily and bi-weekly)
     console.log('[SYNC] Fetching open settlements for all account types...');
