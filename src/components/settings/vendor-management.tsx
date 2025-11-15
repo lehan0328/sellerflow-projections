@@ -39,11 +39,7 @@ const paymentTypeOptions = [
 
 const paymentMethodOptions = [
   { value: 'bank-transfer', label: 'Bank Transfer' },
-  { value: 'ach', label: 'ACH' },
-  { value: 'credit-card', label: 'Credit Card' },
-  { value: 'wire', label: 'Wire Transfer' },
-  { value: 'check', label: 'Check' },
-  { value: 'cash', label: 'Cash' }
+  { value: 'credit-card', label: 'Credit Card' }
 ];
 
 export function VendorManagement() {
@@ -185,15 +181,7 @@ export function VendorManagement() {
     switch (paymentMethod) {
       case 'credit-card':
         return CreditCard;
-      case 'cash':
-        return Banknote;
       case 'bank-transfer':
-      case 'ach':
-        return Landmark;
-      case 'wire':
-        return DollarSign;
-      case 'check':
-        return FileText;
       default:
         return Landmark;
     }
