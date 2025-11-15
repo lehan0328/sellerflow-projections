@@ -167,21 +167,28 @@ export function PayeeManagement() {
   }
 
   return (
-    <Card>
+    <Card className="shadow-card">
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <User className="h-5 w-5" />
-              Payee Management
-            </CardTitle>
-            <p className="text-sm text-muted-foreground mt-1">
-              Manage your payees and their payment information
-            </p>
+        <CardTitle className="flex items-center space-x-2">
+          <User className="h-5 w-5 text-primary" />
+          <span>Payee Management</span>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {/* Summary */}
+        <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+          <div className="flex items-center space-x-3">
+            <div className="p-2 bg-primary/10 rounded-lg">
+              <User className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Total Payees</p>
+              <p className="text-2xl font-semibold">{payees.length}</p>
+            </div>
           </div>
           <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
             <DialogTrigger asChild>
-              <Button>
+              <Button size="sm" className="bg-gradient-primary">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Payee
               </Button>
@@ -254,8 +261,6 @@ export function PayeeManagement() {
             </DialogContent>
           </Dialog>
         </div>
-      </CardHeader>
-      <CardContent>
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
