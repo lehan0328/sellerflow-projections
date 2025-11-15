@@ -466,36 +466,16 @@ serve(async (req) => {
           console.log(`  - Date: ${estimatedPayouts[0].payout_date}`);
           console.log(`  - Amount: $${openSettlementAmount}`);
           
-          // For BI-WEEKLY payouts: Use open settlement as the FIRST forecasted payout
+          // For BI-WEEKLY payouts: Set lastPayoutDate to settlement close date
+          // The payout_date is when funds are disbursed (1 day after settlement closes)
+          // We need to forecast from the settlement CLOSE date, not the payout date
           if (payoutFrequency === 'bi-weekly') {
-            lastPayoutDate = new Date(estimatedPayouts[0].payout_date);
-            console.log(`  - BI-WEEKLY: Will use open settlement as first payout, then generate additional forecasts`);
-            
-            // Create the open settlement as a forecasted payout with unique ID
-            openSettlementPayout = {
-              user_id: userId,
-              account_id: amazonAccount.account_id,
-              amazon_account_id: amazonAccount.id,
-              payout_date: estimatedPayouts[0].payout_date,
-              total_amount: openSettlementAmount,
-              settlement_id: `forecast_${crypto.randomUUID()}_${estimatedPayouts[0].payout_date}`,
-              marketplace_name: amazonAccount.marketplace_name || 'Amazon',
-              status: 'forecasted',
-              payout_type: payoutFrequency,
-              currency_code: estimatedPayouts[0].currency_code || 'USD',
-              transaction_count: 0,
-              fees_total: 0,
-              orders_total: 0,
-              refunds_total: 0,
-              other_total: 0,
-              raw_settlement_data: {
-                forecast_metadata: {
-                  method: 'amazon_open_settlement',
-                  confidence: 95,
-                  note: 'Using Amazon provided open settlement amount'
-                }
-              }
-            };
+            // Settlement closes 1 day before payout
+            const settlementCloseDate = new Date(estimatedPayouts[0].payout_date);
+            settlementCloseDate.setDate(settlementCloseDate.getDate() - 1);
+            lastPayoutDate = settlementCloseDate;
+            console.log(`  - BI-WEEKLY: Settlement closes ${lastPayoutDate.toISOString().split('T')[0]}`);
+            console.log(`  - Next forecast will be 14 days from settlement close date`);
           } else if (payoutFrequency === 'daily') {
             console.log(`  - DAILY: Using open settlement for daily forecasts`);
             
@@ -706,12 +686,6 @@ serve(async (req) => {
         // Generate forecasts for 3 months based on frequency
         const forecastedPayouts: any[] = [];
         
-        // For BI-WEEKLY: If we have an open settlement, add it as the FIRST forecasted payout
-        if (openSettlementPayout) {
-          forecastedPayouts.push(openSettlementPayout);
-          console.log(`[FORECAST] ✅ Added open settlement as first bi-weekly forecast: $${openSettlementAmount} on ${openSettlementPayout.payout_date}`);
-        }
-        
         const threeMonthsOut = new Date(lastPayoutDate);
         threeMonthsOut.setMonth(threeMonthsOut.getMonth() + 3);
         
@@ -721,8 +695,7 @@ serve(async (req) => {
         
         // For daily: generate 90 daily payouts (3 months)
         // For bi-weekly: generate 6 bi-weekly payouts (3 months)
-        // If we already added open settlement for bi-weekly, generate 5 more (total 6)
-        const maxForecasts = payoutFrequency === 'daily' ? 90 : (openSettlementPayout ? 5 : 6);
+        const maxForecasts = payoutFrequency === 'daily' ? 90 : 6;
         
         // For daily payouts, analyze last 14 days of sales to predict next 14 days
         let last14DaysSales: number[] = [];
