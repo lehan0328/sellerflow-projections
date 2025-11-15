@@ -108,7 +108,7 @@ const DocsFAQ = () => {
         },
         {
           question: "Can I add more bank accounts or Amazon accounts?",
-          answer: "Yes! Starter includes 2 bank connections and 1 Amazon account. Growing includes 4 bank connections, Professional includes 6. You can purchase add-ons anytime: Additional Bank/Credit Card ($7/mo), Additional Amazon Account ($50/mo), or Additional Team Member ($5/mo). Enterprise plans get unlimited everything."
+          answer: "Yes! Starter includes 2 bank connections and 1 Amazon account. Growing includes 4 bank connections, Professional includes 6. You can purchase add-ons anytime: Additional Bank/Credit Card ($10/mo) or Additional Team Member ($5/mo). Enterprise plans include 5 bank connections."
         },
         {
           question: "Can I change plans anytime?",
