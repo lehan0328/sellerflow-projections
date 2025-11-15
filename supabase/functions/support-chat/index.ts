@@ -136,7 +136,7 @@ Three Enterprise Tiers:
 
 All Enterprise plans include:
 - 5 bank/credit card connections
-- 2 Amazon connections
+- 1 Amazon connection
 - 7 additional team members (8 users total)
 - ✨ All AI features
 - Automated notifications

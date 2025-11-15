@@ -120,7 +120,7 @@ export const ENTERPRISE_TIERS = {
     productId: "prod_TBOiOltXIGat2d",
     features: [
       "5 bank/credit card connections (+ add more)",
-      "2 Amazon connections",
+      "1 Amazon connection",
       "7 additional users",
       "All Professional features",
       "1:1 hands-on setup with team member",
@@ -137,7 +137,7 @@ export const ENTERPRISE_TIERS = {
     productId: "prod_TBOiz4xSwK3cGV",
     features: [
       "5 bank/credit card connections (+ add more)",
-      "2 Amazon connections",
+      "1 Amazon connection",
       "7 additional users",
       "All Professional features",
       "1:1 hands-on setup with team member",
@@ -154,7 +154,7 @@ export const ENTERPRISE_TIERS = {
     productId: "prod_TBOiTlRX4YLU4g",
     features: [
       "5 bank/credit card connections (+ add more)",
-      "2 Amazon connections",
+      "1 Amazon connection",
       "7 additional users",
       "All Professional features",
       "1:1 hands-on setup with team member",

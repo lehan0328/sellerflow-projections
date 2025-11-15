@@ -90,7 +90,7 @@ const Landing = () => {
       price: 149,
       yearlyPrice: 1490,
       connections: 5,
-      amazon: 2,
+      amazon: 1,
       users: 7,
       priceId: "price_1SF1uxB28kMY3Use2W39zzO4",
       yearlyPriceId: "price_1SF2OZB28kMY3Use6rLIlv5g"
@@ -100,7 +100,7 @@ const Landing = () => {
       price: 299,
       yearlyPrice: 2990,
       connections: 5,
-      amazon: 2,
+      amazon: 1,
       users: 7,
       priceId: "price_1SF1v8B28kMY3UseVLxkFEvr",
       yearlyPriceId: "price_1SF2OnB28kMY3UseHsTG7DNZ"
@@ -110,7 +110,7 @@ const Landing = () => {
       price: 499,
       yearlyPrice: 4990,
       connections: 5,
-      amazon: 2,
+      amazon: 1,
       users: 7,
       priceId: "price_1SF1vLB28kMY3UseRb0kIQNY",
       yearlyPriceId: "price_1SF2OxB28kMY3UseUanKSxA2"
@@ -268,7 +268,7 @@ const Landing = () => {
     starter: "1",
     growing: "1",
     professional: "1",
-    enterprise: "2 + add-ons"
+    enterprise: "1 + add-ons"
   }, {
     feature: "Additional Users",
     starter: false,
