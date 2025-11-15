@@ -3,13 +3,25 @@ import { addDays } from 'date-fns';
 import { useVendors } from './useVendors';
 import { useTransactions } from './useTransactions';
 import { useIncome } from './useIncome';
-import { useCreditCards, getCreditCardDueDates } from './useCreditCards';
+import { useCreditCards } from './useCreditCards';
 import { useRecurringExpenses } from './useRecurringExpenses';
 import { useAmazonPayouts } from './useAmazonPayouts';
 import { useBankAccounts } from './useBankAccounts';
 import { useCashFlowEvents } from './useCashFlowEvents';
 import { generateRecurringDates } from '@/lib/recurringDates';
-import type { CalendarEvent } from '@/lib/calendarBalances';
+
+// Extended CalendarEvent with required id field
+export interface CalendarEvent {
+  id: string;
+  type: 'inflow' | 'outflow';
+  amount: number;
+  description?: string;
+  vendor?: string;
+  source?: string;
+  creditCardId?: string | null;
+  date: Date;
+  balanceImpactDate?: Date;
+}
 
 interface CalendarEventsResult {
   calendarEvents: CalendarEvent[];
@@ -17,6 +29,29 @@ interface CalendarEventsResult {
   isLoading: boolean;
   error: string | null;
 }
+
+// Helper function to calculate next credit card due date
+const getNextCreditCardDueDate = (statementCloseDate: string, currentDueDate?: string): string | null => {
+  const closeDate = new Date(statementCloseDate);
+  const today = new Date();
+  
+  // Calculate next statement close date
+  const nextCloseDate = new Date(closeDate);
+  nextCloseDate.setMonth(nextCloseDate.getMonth() + 1);
+  
+  if (currentDueDate) {
+    const dueDate = new Date(currentDueDate);
+    const nextDueDate = new Date(dueDate);
+    nextDueDate.setMonth(nextDueDate.getMonth() + 1);
+    
+    // Only return if it's in the future
+    if (nextDueDate > today) {
+      return nextDueDate.toISOString().split('T')[0];
+    }
+  }
+  
+  return null;
+};
 
 /**
  * Centralized calendar events hook - used by both Dashboard chart
