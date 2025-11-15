@@ -444,7 +444,9 @@ Available as monthly add-ons or yearly (10 months pricing):
 
 18. **plan_limits**: Subscription plan limit definitions
     - plan_name (starter, growing, professional, enterprise_tier_1/2/3)
-    - bank_connections, amazon_connections, team_members
+    - bank_connections (2-5 based on plan, expandable via addons)
+    - amazon_connections (fixed at 1 for all plans)
+    - team_members (varies by plan, expandable via addons)
     - has_ai_insights, has_ai_pdf_extractor
     - has_automated_notifications, has_scenario_planning
 
@@ -500,9 +502,9 @@ Available as monthly add-ons or yearly (10 months pricing):
     - Cleaned up by scheduled function
 
 29. **trial_addon_usage**: Trial addon usage tracking
-    - addon_type (bank_connection, amazon_connection, team_member)
+    - addon_type (bank_connection, team_member)
     - quantity
-    - Converted to paid addons at trial end
+    - Converted to paid addons at trial end (amazon_connection no longer supported)
 
 **Data Security:**
 

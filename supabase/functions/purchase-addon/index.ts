@@ -10,7 +10,6 @@ const corsHeaders = {
 // Stripe price IDs for add-on subscriptions (monthly recurring)
 const ADDON_STRIPE_PRICES = {
   bank_connection: "price_1SF2J6B28kMY3UseQW6ATKt1", // $10/month
-  amazon_connection: "price_1SEHQLB28kMY3UseBmY7IIjx", // $50/month
   user: "price_1SEHQoB28kMY3UsedGTbBbmA", // $15/month
 };
 
@@ -45,7 +44,7 @@ serve(async (req) => {
       throw new Error("Missing addon_type or quantity");
     }
 
-    if (!['bank_connection', 'amazon_connection', 'user'].includes(addon_type)) {
+    if (!['bank_connection', 'user'].includes(addon_type)) {
       throw new Error("Invalid addon_type");
     }
 

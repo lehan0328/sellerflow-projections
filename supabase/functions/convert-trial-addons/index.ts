@@ -14,7 +14,6 @@ const logStep = (step: string, details?: any) => {
 // Pricing for add-ons (converted to purchased_addons)
 const ADDON_PRICES = {
   bank_account: 10,
-  amazon_account: 50,
   user: 15
 };
 
@@ -99,14 +98,19 @@ serve(async (req) => {
           price: unitPrice
         });
         
+        // Skip amazon_account conversion (no longer supported)
+        if (usage.addon_type === 'amazon_account') {
+          logStep("Skipping amazon_account conversion", { quantity: usage.quantity });
+          continue;
+        }
+        
         // Insert as purchased addon (database record only)
         const { data: purchase, error: insertError } = await supabaseClient
           .from('purchased_addons')
           .insert({
             user_id: user.id,
             account_id: account_id,
-            addon_type: usage.addon_type === 'bank_account' ? 'bank_connection' : 
-                        usage.addon_type === 'amazon_account' ? 'amazon_connection' : 'user',
+            addon_type: usage.addon_type === 'bank_account' ? 'bank_connection' : 'user',
             quantity: usage.quantity,
             price_paid: unitPrice * usage.quantity,
             currency: 'usd',

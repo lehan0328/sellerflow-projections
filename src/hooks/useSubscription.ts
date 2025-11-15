@@ -11,14 +11,6 @@ export const ADDON_PRODUCTS = {
     yearly_price_id: "price_1SF2TuB28kMY3Use4DiYnkp6",
     description: "Add one more bank/credit card connection"
   },
-  amazon_account: {
-    name: "Additional Amazon Account",
-    price: 50,
-    product_id: "prod_TAcfNXVQRUFHSC",
-    price_id: "price_1SEHQLB28kMY3UseBmY7IIjx",
-    yearly_price_id: "price_1SF2U4B28kMY3Usez8rm1I7f",
-    description: "Add one more Amazon account connection"
-  },
   user: {
     name: "Additional User",
     price: 5,
