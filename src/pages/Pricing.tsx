@@ -22,7 +22,6 @@ export default function Pricing() {
   const [enterpriseTier, setEnterpriseTier] = useState<"tier1" | "tier2" | "tier3">("tier1");
   const [enterpriseAddons, setEnterpriseAddons] = useState({
     bankConnections: 0,
-    amazonConnections: 0,
     users: 0
   });
 
@@ -40,7 +39,7 @@ export default function Pricing() {
       price: 149,
       yearlyPrice: 1490,
       connections: 5, 
-      amazon: 2, 
+      amazon: 1, 
       users: 7,
       priceId: "price_1SF1uxB28kMY3Use2W39zzO4",
       yearlyPriceId: "price_1SF2OZB28kMY3Use6rLIlv5g"
@@ -50,7 +49,7 @@ export default function Pricing() {
       price: 299,
       yearlyPrice: 2990,
       connections: 5, 
-      amazon: 2, 
+      amazon: 1, 
       users: 7,
       priceId: "price_1SF1v8B28kMY3UseVLxkFEvr",
       yearlyPriceId: "price_1SF2OnB28kMY3UseHsTG7DNZ"
@@ -60,7 +59,7 @@ export default function Pricing() {
       price: 499,
       yearlyPrice: 4990,
       connections: 5, 
-      amazon: 2, 
+      amazon: 1, 
       users: 7,
       priceId: "price_1SF1vLB28kMY3UseRb0kIQNY",
       yearlyPriceId: "price_1SF2OxB28kMY3UseUanKSxA2"
@@ -69,7 +68,6 @@ export default function Pricing() {
 
   const addonPricing = {
     bankConnection: 10,
-    amazonConnection: 50,
     user: 5
   };
 
@@ -79,7 +77,6 @@ export default function Pricing() {
     const multiplier = isYearly ? 10 : 1;
     const addonCost = 
       (enterpriseAddons.bankConnections * addonPricing.bankConnection * multiplier) +
-      (enterpriseAddons.amazonConnections * addonPricing.amazonConnection * multiplier) +
       (enterpriseAddons.users * addonPricing.user * multiplier);
     return basePrice + addonCost;
   };
@@ -560,27 +557,6 @@ export default function Pricing() {
                 </Select>
               </div>
 
-              {/* Amazon Connections */}
-              <div className="space-y-1.5 p-3 rounded-lg border border-primary/10 bg-card/50 hover:border-primary/30 transition-colors">
-                <div className="flex items-center justify-between">
-                  <label htmlFor="amazonConnections" className="text-xs font-medium">
-                    Amazon Connections
-                  </label>
-                  <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                    +${addonPricing.amazonConnection}/{isYearly ? 'yr' : 'mo'}
-                  </Badge>
-                </div>
-                <Select value={enterpriseAddons.amazonConnections.toString()} onValueChange={(value) => setEnterpriseAddons({ ...enterpriseAddons, amazonConnections: parseInt(value) })}>
-                  <SelectTrigger className="w-full bg-background/50 border-primary/20 h-9">
-                    <SelectValue placeholder="0" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-background border-primary/20 z-50">
-                    {[...Array(11)].map((_, i) => (
-                      <SelectItem key={i} value={i.toString()}>{i} {i > 0 && `(+$${i * addonPricing.amazonConnection * (isYearly ? 10 : 1)})`}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
 
               {/* Users */}
               <div className="space-y-1.5 p-3 rounded-lg border border-primary/10 bg-card/50 hover:border-primary/30 transition-colors">
