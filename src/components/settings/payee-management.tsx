@@ -299,14 +299,19 @@ export function PayeeManagement() {
                 <Card key={payee.id} className="hover:shadow-md transition-shadow">
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <p className="font-medium">{payee.name}</p>
-                        {payee.category && (
-                          <p className="text-xs text-muted-foreground">{payee.category}</p>
-                        )}
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          {getPaymentMethodIcon(payee.payment_method)}
-                          <span>{getPaymentMethodLabel(payee.payment_method)}</span>
+                      <div className="flex items-center space-x-3">
+                        <div className="p-2 bg-muted rounded-full">
+                          <User className="h-4 w-4" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-medium">{payee.name}</p>
+                          {payee.category && (
+                            <p className="text-xs text-muted-foreground">{payee.category}</p>
+                          )}
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            {getPaymentMethodIcon(payee.payment_method)}
+                            <span>{getPaymentMethodLabel(payee.payment_method)}</span>
+                          </div>
                         </div>
                       </div>
                       <div className="flex gap-2">
