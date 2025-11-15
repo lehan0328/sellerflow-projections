@@ -2645,7 +2645,7 @@ export type Database = {
       }
       user_roles: {
         Row: {
-          account_id: string
+          account_id: string | null
           created_at: string
           id: string
           role: Database["public"]["Enums"]["app_role"]
@@ -2653,7 +2653,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
-          account_id: string
+          account_id?: string | null
           created_at?: string
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
@@ -2661,7 +2661,7 @@ export type Database = {
           user_id: string
         }
         Update: {
-          account_id?: string
+          account_id?: string | null
           created_at?: string
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
