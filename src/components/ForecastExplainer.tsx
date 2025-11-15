@@ -44,10 +44,10 @@ export const ForecastExplainer = () => {
                   <div className="p-4 border rounded-lg">
                     <div className="flex items-center gap-2 mb-2">
                       <TrendingUp className="h-4 w-4 text-primary" />
-                      <h4 className="font-semibold">Daily Settlement Model (Delivery Date + 7)</h4>
+                      <h4 className="font-semibold">Daily Settlement Model</h4>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      For daily payout accounts. Tracks actual delivery dates and applies Amazon's 7-day unlock rule to forecast available funds with backlog accumulation.
+                      For daily payout accounts. Uses statistical modeling based on historical payout patterns, growth trends, and seasonal variations.
                     </p>
                   </div>
                 </div>
@@ -196,70 +196,60 @@ export const ForecastExplainer = () => {
           <TabsContent value="daily" className="space-y-4">
             <div className="space-y-4">
               <div>
-                <h3 className="text-lg font-semibold mb-2">Daily Settlement Model (Delivery Date + 7)</h3>
+                <h3 className="text-lg font-semibold mb-2">Daily Settlement Forecast</h3>
                 <p className="text-muted-foreground mb-4">
-                  For daily payout accounts, we track actual delivery dates and apply Amazon's 7-day unlock rule to forecast when funds become available.
+                  For daily payout accounts, we use statistical modeling based on your historical payout patterns to forecast future settlements.
                 </p>
               </div>
 
               <div className="space-y-4">
                 <div className="p-4 border rounded-lg bg-primary/5">
-                  <h4 className="font-semibold mb-2">How Amazon Daily Settlements Work</h4>
+                  <h4 className="font-semibold mb-2">Statistical Model Approach</h4>
                   <p className="text-sm text-muted-foreground mb-2">
-                    Amazon releases funds <strong>7 days after delivery date</strong> for daily settlement accounts. For example, orders delivered on October 23rd become available on October 30th.
+                    Daily forecasts are calculated using historical payout data, analyzing patterns, trends, and variations in your settlement history.
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    We track actual delivery dates from your Amazon reports to provide accurate day-by-day forecasts.
+                    This approach provides reliable predictions without requiring detailed transaction-level data.
                   </p>
                 </div>
 
                 <div className="p-4 border rounded-lg">
-                  <h4 className="font-semibold mb-2">Step 1: Group Orders by Delivery Date</h4>
+                  <h4 className="font-semibold mb-2">Step 1: Analyze Historical Patterns</h4>
                   <div className="bg-muted p-3 rounded font-mono text-sm overflow-x-auto">
-                    DeliveryGroup[date] = Σ NetAmount<sub>i</sub> for all orders delivered on date
+                    BaseAmount = Avg(RecentPayouts) × AccountSpecificMultipliers
                   </div>
                   <p className="text-xs text-muted-foreground mt-2">
-                    Sum all order net amounts (revenue after Amazon fees) for each unique delivery date
+                    Calculate average payout amounts from recent settlement history
                   </p>
                 </div>
 
                 <div className="p-4 border rounded-lg">
-                  <h4 className="font-semibold mb-2">Step 2: Calculate Unlock Dates</h4>
+                  <h4 className="font-semibold mb-2">Step 2: Apply Growth Trends</h4>
                   <div className="bg-muted p-3 rounded font-mono text-sm overflow-x-auto">
-                    UnlockDate = DeliveryDate + 7 days
+                    GrowthTrend = (Recent30Days - Previous30Days) / Previous30Days
                   </div>
                   <p className="text-xs text-muted-foreground mt-2">
-                    For each delivery date group, calculate when those funds become available (7 days later)
+                    Factor in business growth by comparing recent performance to historical baseline
                   </p>
                 </div>
 
                 <div className="p-4 border rounded-lg">
-                  <h4 className="font-semibold mb-2">Step 3: Track Backlog Since Last Cashout</h4>
+                  <h4 className="font-semibold mb-2">Step 3: Account for Daily Variation</h4>
                   <div className="bg-muted p-3 rounded font-mono text-sm overflow-x-auto">
-                    Backlog<sub>today</sub> = Σ DailyUnlock[date] for dates from LastCashout to Today-1
+                    DailyVariation = StdDev(HistoricalPayouts) × ConfidenceFactor
                   </div>
                   <p className="text-xs text-muted-foreground mt-2">
-                    Accumulate all unlocked funds since your last withdrawal to prevent double-counting
+                    Include natural day-to-day fluctuations observed in your payout history
                   </p>
                 </div>
 
                 <div className="p-4 border rounded-lg">
-                  <h4 className="font-semibold mb-2">Step 4: Calculate Daily Forecast (Days 1-7)</h4>
+                  <h4 className="font-semibold mb-2">Step 4: Apply Safety Net</h4>
                   <div className="bg-muted p-3 rounded font-mono text-sm overflow-x-auto">
-                    Forecast<sub>today</sub> = [Backlog + TodayUnlock] × (1 - SafetyMargin%)
+                    FinalForecast = (BaseAmount × GrowthTrend) × (1 - SafetyMargin%)
                   </div>
                   <p className="text-xs text-muted-foreground mt-2">
-                    Use actual delivery data for the next 7 days, accumulating backlog + today's newly unlocked funds
-                  </p>
-                </div>
-
-                <div className="p-4 border rounded-lg">
-                  <h4 className="font-semibold mb-2">Step 5: Extrapolate Future (Days 8-90)</h4>
-                  <div className="bg-muted p-3 rounded font-mono text-sm overflow-x-auto">
-                    EstimatedUnlock = WeekdayAverage × GrowthTrend
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Beyond 7 days, use historical averages with weekday seasonality (e.g., Monday vs Sunday patterns) and recent growth trends
+                    Apply your selected safety margin (Conservative: -15%, Moderate: -8%, Aggressive: -3%)
                   </p>
                 </div>
               </div>
@@ -267,20 +257,18 @@ export const ForecastExplainer = () => {
               <div className="p-4 bg-muted rounded-lg">
                 <h4 className="font-semibold mb-2">📊 Example Calculation:</h4>
                 <div className="text-sm space-y-1">
-                  <p><strong>October 23rd deliveries:</strong> $3,200 net → Available Oct 30th</p>
-                  <p><strong>October 24th deliveries:</strong> $2,850 net → Available Oct 31st</p>
-                  <p><strong>Backlog (since last cashout):</strong> $8,500</p>
-                  <p><strong>Oct 30th forecast:</strong> $8,500 + $3,200 = $11,700</p>
-                  <p>Safety margin (8%): -$936</p>
-                  <p className="font-semibold text-primary">Available for transfer: $10,764</p>
+                  <p>• Average recent payout: <strong>$2,500/day</strong></p>
+                  <p>• Growth trend: <strong>+15%</strong></p>
+                  <p>• Projected base: <strong>$2,875/day</strong></p>
+                  <p>• Safety margin (Moderate -8%): <strong>$2,645/day</strong></p>
                 </div>
               </div>
 
               <div className="p-4 border-l-4 border-blue-500 bg-blue-50 dark:bg-blue-950">
-                <h4 className="font-semibold mb-2">💡 Why Hide Open Settlements?</h4>
+                <h4 className="font-semibold mb-2">💡 Reliability</h4>
                 <p className="text-sm text-muted-foreground">
-                  For daily accounts, "Open Settlement" data would double-count funds already tracked in the delivery date forecast. 
-                  The daily tracker shows your complete picture including all pending deliveries and accumulated backlog.
+                  The statistical model becomes more accurate as more payout history is accumulated. 
+                  It automatically adapts to your business patterns including seasonality and growth trends.
                 </p>
               </div>
             </div>

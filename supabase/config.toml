@@ -183,11 +183,6 @@ verify_jwt = false
 [functions.reset-amazon-sync]
 verify_jwt = false
 
-[functions.sync-amazon-reports]
-verify_jwt = false
-
-[functions.sync-amazon-reports-daily]
-verify_jwt = false
 
 [functions.trigger-amazon-sync]
 verify_jwt = false
