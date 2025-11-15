@@ -60,12 +60,27 @@ serve(async (req) => {
 
     console.log('[FORECAST] Using custom weights:', weights);
 
-    // Get user's forecast confidence threshold
+    // Get user's forecast settings
     const { data: userSettings } = await supabase
       .from('user_settings')
-      .select('forecast_confidence_threshold')
+      .select('forecast_confidence_threshold, forecasts_enabled')
       .eq('user_id', userId)
       .maybeSingle();
+
+    // Check if forecasts are enabled
+    const forecastsEnabled = userSettings?.forecasts_enabled ?? true;
+    if (!forecastsEnabled) {
+      console.log('[FORECAST] Forecasts are disabled for this user, skipping generation');
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          message: 'Forecasts are disabled for this user',
+          accountsProcessed: 0,
+          totalForecasts: 0 
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     const riskAdjustment = userSettings?.forecast_confidence_threshold ?? 5; // -5 = Aggressive, 0 = Medium, 5 = Safe, 10 = Very Safe
     console.log('[FORECAST] User risk adjustment:', riskAdjustment, '(-5=Aggressive+5%, 0=Medium, 5=Safe-5%, 10=Very Safe-10%)');
@@ -140,7 +155,10 @@ serve(async (req) => {
         .gte('payout_date', twelveMonthsAgo.toISOString().split('T')[0])
         .order('payout_date', { ascending: false });
       
-      // Filter out invoiced settlements (14-day B2B settlements)
+      // Filter settlements based on account payout frequency
+      // Daily accounts: 1-3 day settlements
+      // Bi-weekly accounts: 12-16 day settlements (exclude both daily 1-3 day and invoiced ~14 day B2B)
+      const payoutFrequency = amazonAccount.payout_frequency || 'bi-weekly';
       const amazonPayouts = amazonPayoutsRaw?.filter(p => {
         if (!p.raw_settlement_data?.FinancialEventGroupStart || !p.raw_settlement_data?.FinancialEventGroupEnd) {
           return true; // Keep if no duration data
@@ -148,10 +166,16 @@ serve(async (req) => {
         const start = new Date(p.raw_settlement_data.FinancialEventGroupStart);
         const end = new Date(p.raw_settlement_data.FinancialEventGroupEnd);
         const days = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
-        return days <= 3; // Only include 1-3 day settlements (daily), not 14-day (invoiced)
+        
+        if (payoutFrequency === 'daily') {
+          return days <= 3; // Daily accounts: 1-3 day settlements only
+        } else {
+          // Bi-weekly accounts: 12-16 day settlements (typical bi-weekly range)
+          return days >= 12 && days <= 16;
+        }
       }) || [];
       
-      console.log(`[FORECAST] Filtered to ${amazonPayouts.length} daily US settlements (excluded invoiced/B2B settlements)`);
+      console.log(`[FORECAST] Filtered to ${amazonPayouts.length} ${payoutFrequency} settlements for ${amazonAccount.account_name}`);
       
       // Also check for Amazon's open settlements (estimated payouts)
       const { data: estimatedPayouts } = await supabase
@@ -171,12 +195,18 @@ serve(async (req) => {
         console.log(`[FORECAST] No historical payouts found for account ${amazonAccount.account_name}, using default assumptions for forecast`);
         
         // Create a basic forecast even without historical data
-        // Use industry averages and user's marketplace as baseline
-        const defaultDailyPayout = 500; // Conservative daily estimate
-        const defaultBiweeklyPayout = 3000; // Conservative bi-weekly estimate
-        
+        // Use industry averages based on payout frequency
         const payoutFrequency = amazonAccount.payout_frequency || 'bi-weekly';
-        const baselineAmount = payoutFrequency === 'daily' ? defaultDailyPayout : defaultBiweeklyPayout;
+        
+        // More conservative defaults with clear reasoning
+        let baselineAmount: number;
+        if (payoutFrequency === 'daily') {
+          baselineAmount = 500; // Conservative daily estimate (~$15k/month)
+        } else {
+          baselineAmount = 3500; // Conservative bi-weekly estimate (~$7k/month)
+        }
+        
+        console.log(`[FORECAST] Using default baseline for ${amazonAccount.account_name}: $${baselineAmount} (${payoutFrequency})`);
         
         console.log(`[FORECAST] Using default baseline for ${amazonAccount.account_name}: $${baselineAmount} (${payoutFrequency})`);
         

@@ -565,20 +565,37 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string,
       // Don't fail the sync if rollover fails
     }
 
-    // Regenerate forecasts after rollover completes
-    console.log('[SYNC] Regenerating forecasts after settlement detection...');
+    // Regenerate forecasts after rollover completes (only if forecasts are enabled)
+    console.log('[SYNC] Checking if forecasts are enabled...');
     try {
-      const { data: forecastResult, error: forecastError } = await supabase.functions.invoke('forecast-amazon-payouts', {
-        body: {
-          userId: userId
-        }
-      });
+      const { data: userSettings } = await supabase
+        .from('user_settings')
+        .select('forecasts_enabled')
+        .eq('user_id', userId)
+        .maybeSingle();
+      
+      const forecastsEnabled = userSettings?.forecasts_enabled ?? true;
+      
+      if (forecastsEnabled) {
+        console.log('[SYNC] Forecasts enabled, regenerating forecasts after settlement detection...');
+        const { data: forecastResult, error: forecastError } = await supabase.functions.invoke('forecast-amazon-payouts', {
+          body: {
+            userId: userId
+          }
+        });
 
-      if (forecastError) {
-        console.error('[SYNC] Forecast regeneration failed:', forecastError);
+        if (forecastError) {
+          console.error('[SYNC] Forecast regeneration failed:', forecastError);
+        } else {
+          console.log('[SYNC] Forecast regeneration completed:', forecastResult);
+        }
       } else {
-        console.log('[SYNC] Forecast regeneration completed:', forecastResult);
+        console.log('[SYNC] Forecasts disabled by user, skipping forecast regeneration');
       }
+    } catch (forecastErr) {
+      console.error('[SYNC] Error invoking forecast function:', forecastErr);
+      // Don't fail the sync if forecast fails
+    }
     } catch (workflowErr) {
       console.error('[SYNC] Error invoking forecast workflow:', workflowErr);
       // Don't fail the sync if workflow fails
