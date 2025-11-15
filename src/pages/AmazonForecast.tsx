@@ -64,9 +64,9 @@ export default function AmazonForecast() {
   const [growthTimeframe, setGrowthTimeframe] = useState<'30d' | '60d' | '90d' | '6m' | '1y'>('1y');
   const [avgPayoutPeriod, setAvgPayoutPeriod] = useState<string>(format(new Date(), 'yyyy-MM')); // Current month
 
-  // Check if user has 3+ confirmed payouts
+  // Check if user has 2+ confirmed payouts
   const confirmedPayouts = amazonPayouts.filter(p => p.status === 'confirmed');
-  const hasEnoughData = confirmedPayouts.length >= 3;
+  const hasEnoughData = confirmedPayouts.length >= 2;
 
   // Calculate historical metrics with forecasts
   const historicalData = useMemo(() => {

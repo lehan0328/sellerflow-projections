@@ -523,7 +523,7 @@ serve(async (req) => {
             return payoutDate >= thirtyDaysAgo && p.status === 'confirmed';
           });
           
-          if (recent30DayPayouts.length >= 3) {
+          if (recent30DayPayouts.length >= 2) {
             // Calculate simple 30-day average
             const totalPayoutAmount = recent30DayPayouts.reduce((sum, p) => sum + Number(p.total_amount), 0);
             
@@ -650,7 +650,7 @@ serve(async (req) => {
           return date >= growthSixtyDaysAgo && date < growthThirtyDaysAgo && p.status === 'confirmed';
         });
         
-        if (last30DaysPayouts.length >= 3 && prev30DaysPayouts.length >= 3) {
+        if (last30DaysPayouts.length >= 2 && prev30DaysPayouts.length >= 2) {
           const last30Total = last30DaysPayouts.reduce((sum, p) => sum + Number(p.total_amount), 0);
           const prev30Total = prev30DaysPayouts.reduce((sum, p) => sum + Number(p.total_amount), 0);
           
@@ -670,7 +670,7 @@ serve(async (req) => {
             });
           }
         } else {
-          console.log(`[FORECAST] ${amazonAccount.account_name} - Insufficient data for growth trend (need 3+ payouts in each 30-day period)`);
+          console.log(`[FORECAST] ${amazonAccount.account_name} - Insufficient data for growth trend (need 2+ payouts in each 30-day period)`);
         }
         
         // Generate forecasts for 3 months based on frequency
