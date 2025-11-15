@@ -908,9 +908,7 @@ serve(async (req) => {
       
       const { error: insertError } = await supabase
         .from('amazon_payouts')
-        .upsert(allForecasts, { 
-            onConflict: 'settlement_id' 
-        });
+        .insert(allForecasts);
 
       if (insertError) {
         console.error('[FORECAST] Error storing forecasted payouts:', insertError);
