@@ -128,7 +128,7 @@ Pricing Plans (Starting at only $24/mo):
    - Best for: $200k+ monthly Amazon payout
    - Everything in Professional, plus:
      * Unlimited Bank/Credit Card Connections
-     * 3+ Amazon Connections
+     * 1 Amazon Connection + add-ons
      * Unlimited Team Members
      * API Access
      * White-Label Options

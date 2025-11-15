@@ -181,7 +181,7 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
     enterprise_tier1: [
       { text: "$100k - $250k monthly Amazon payout", included: true },
       { text: "5 bank/credit card connections", included: true },
-      { text: "2 Amazon connections", included: true },
+      { text: "1 Amazon connection", included: true },
       { text: "7 additional users", included: true },
       { text: "All Professional features", included: true },
       { text: "1:1 hands-on setup", included: true },
@@ -190,7 +190,7 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
     enterprise_tier2: [
       { text: "$250k - $500k monthly Amazon payout", included: true },
       { text: "5 bank/credit card connections", included: true },
-      { text: "2 Amazon connections", included: true },
+      { text: "1 Amazon connection", included: true },
       { text: "7 additional users", included: true },
       { text: "All Professional features", included: true },
       { text: "1:1 hands-on setup", included: true },
@@ -199,7 +199,7 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
     enterprise_tier3: [
       { text: "$500k+ monthly Amazon payout", included: true },
       { text: "5 bank/credit card connections", included: true },
-      { text: "2 Amazon connections", included: true },
+      { text: "1 Amazon connection", included: true },
       { text: "7 additional users", included: true },
       { text: "All Professional features", included: true },
       { text: "1:1 hands-on setup", included: true },

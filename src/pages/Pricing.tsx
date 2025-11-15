@@ -167,7 +167,7 @@ export default function Pricing() {
     { feature: "Buying Opportunity Projection", signature: true, starter: true, growing: true, professional: true, enterprise: true },
     { feature: "Payout Forecasting", signature: true, starter: true, growing: true, professional: true, enterprise: true },
     { feature: "Bank/Credit Card Connections", starter: "2", growing: "3", professional: "4", enterprise: "5 + add-ons" },
-    { feature: "Amazon Connections", starter: "1", growing: "1", professional: "1", enterprise: "2 + add-ons" },
+    { feature: "Amazon Connections", starter: "1", growing: "1", professional: "1", enterprise: "1 + add-ons" },
     { feature: "Additional Users", starter: false, growing: "2", professional: "5", enterprise: "7 + add-ons" },
     { feature: "Advanced Forecasting Workflow", starter: true, growing: true, professional: true, enterprise: true },
     { feature: "90-Day Cash Flow Projection", starter: true, growing: true, professional: true, enterprise: true },
