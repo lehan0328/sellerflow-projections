@@ -159,7 +159,10 @@ export const IncomeForm = ({
 
   const handlePayeeSelect = (payee: Payee) => {
     setSelectedPayeeId(payee.id);
-    const newPaymentMethod = (payee.payment_method === "credit-card" ? "credit-card" : "bank-transfer") as "bank-transfer" | "credit-card";
+    // Auto-select the payment method saved for this payee, defaulting to bank-transfer if not set
+    const newPaymentMethod = (payee.payment_method === "credit-card" ? "credit-card" : 
+                              payee.payment_method === "cash" ? "bank-transfer" : 
+                              "bank-transfer") as "bank-transfer" | "credit-card";
     setFormData(prev => ({
       ...prev,
       description: payee.name,
