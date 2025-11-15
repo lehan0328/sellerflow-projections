@@ -721,10 +721,10 @@ export function AmazonPayouts() {
         })()}
 
         {/* Filters */}
-        <div className="space-y-3">
+        <div className="flex items-center gap-3 p-4 rounded-lg border bg-card">
           {/* Account Filter */}
           {amazonAccounts.length > 1 && (
-            <div className="flex items-center gap-3 p-4 rounded-lg border bg-card">
+            <>
               <Label className="text-sm font-medium whitespace-nowrap">Amazon Account:</Label>
               <Select value={selectedAccountId} onValueChange={setSelectedAccountId}>
                 <SelectTrigger className="w-[280px]">
@@ -739,64 +739,63 @@ export function AmazonPayouts() {
                   ))}
                 </SelectContent>
               </Select>
-            </div>
+              <div className="h-6 w-px bg-border mx-2" />
+            </>
           )}
           
           {/* Date Range Filter */}
-          <div className="flex items-center gap-3 p-4 rounded-lg border bg-card">
-            <div className="flex items-center gap-3 flex-1">
-              <Label className="text-sm font-medium whitespace-nowrap">Settlement Period:</Label>
-              <Input
-                type="date"
-                value={startDateFilter}
-                onChange={(e) => setStartDateFilter(e.target.value)}
-                className="w-auto"
-              />
-              <span className="text-muted-foreground">to</span>
-              <Input
-                type="date"
-                value={endDateFilter}
-                onChange={(e) => setEndDateFilter(e.target.value)}
-                className="w-auto"
-              />
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  const now = new Date();
-                  setStartDateFilter(new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0]);
-                  setEndDateFilter(new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0]);
-                }}
-              >
-                This Month
-              </Button>
-            </div>
-            <div className="flex items-center gap-4 border-l pl-4">
-              <div className="text-right">
-                <div className="text-xs text-muted-foreground">Closed Settlements</div>
-                <div className="text-sm font-medium">
-                  {amazonPayouts.filter(p => 
-                    p.status === 'confirmed' && 
-                    p.payout_date >= startDateFilter && 
-                    p.payout_date <= endDateFilter &&
-                    (selectedAccountId === 'all' || p.amazon_account_id === selectedAccountId)
-                  ).length}
-                </div>
+          <div className="flex items-center gap-3 flex-1">
+            <Label className="text-sm font-medium whitespace-nowrap">Settlement Period:</Label>
+            <Input
+              type="date"
+              value={startDateFilter}
+              onChange={(e) => setStartDateFilter(e.target.value)}
+              className="w-auto"
+            />
+            <span className="text-muted-foreground">to</span>
+            <Input
+              type="date"
+              value={endDateFilter}
+              onChange={(e) => setEndDateFilter(e.target.value)}
+              className="w-auto"
+            />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const now = new Date();
+                setStartDateFilter(new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0]);
+                setEndDateFilter(new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0]);
+              }}
+            >
+              This Month
+            </Button>
+          </div>
+          <div className="flex items-center gap-4 border-l pl-4">
+            <div className="text-right">
+              <div className="text-xs text-muted-foreground">Closed Settlements</div>
+              <div className="text-sm font-medium">
+                {amazonPayouts.filter(p => 
+                  p.status === 'confirmed' && 
+                  p.payout_date >= startDateFilter && 
+                  p.payout_date <= endDateFilter &&
+                  (selectedAccountId === 'all' || p.amazon_account_id === selectedAccountId)
+                ).length}
               </div>
-              <div className="text-right">
-                <div className="text-xs text-muted-foreground">Total Paid Out</div>
-                <div className="text-lg font-bold text-finance-positive">
-                  {formatCurrency(
-                    amazonPayouts
-                      .filter(p => 
-                        p.status === 'confirmed' && 
-                        p.payout_date >= startDateFilter && 
-                        p.payout_date <= endDateFilter &&
-                        (selectedAccountId === 'all' || p.amazon_account_id === selectedAccountId)
-                      )
-                      .reduce((sum, p) => sum + p.total_amount, 0)
-                  )}
-                </div>
+            </div>
+            <div className="text-right">
+              <div className="text-xs text-muted-foreground">Total Paid Out</div>
+              <div className="text-lg font-bold text-finance-positive">
+                {formatCurrency(
+                  amazonPayouts
+                    .filter(p => 
+                      p.status === 'confirmed' && 
+                      p.payout_date >= startDateFilter && 
+                      p.payout_date <= endDateFilter &&
+                      (selectedAccountId === 'all' || p.amazon_account_id === selectedAccountId)
+                    )
+                    .reduce((sum, p) => sum + p.total_amount, 0)
+                )}
               </div>
             </div>
           </div>
