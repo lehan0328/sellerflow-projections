@@ -2265,7 +2265,7 @@ const Dashboard = () => {
       
       // Find valleys where balance increases
       if (nextDay.runningBalance > currentDay.runningBalance) {
-        const opportunityAmount = Math.max(0, nextDay.runningBalance - reserveAmount);
+        const opportunityAmount = Math.max(0, currentDay.runningBalance - reserveAmount);
         
         if (opportunityAmount > 0) {
           // Find earliest safe date to spend
@@ -2285,7 +2285,7 @@ const Dashboard = () => {
           }
           
           opportunities.push({
-            date: nextDay.date,
+            date: currentDay.date,
             balance: opportunityAmount,
             available_date: earliestDate,
             lowPointDate: currentDay.date
