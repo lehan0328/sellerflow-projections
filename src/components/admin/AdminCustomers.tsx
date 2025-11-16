@@ -736,8 +736,6 @@ export const AdminCustomers = () => {
                 <TableHead>Joined</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>{viewMode === 'churned' ? 'Last Plan' : 'Plan'}</TableHead>
-                <TableHead>Amazon</TableHead>
-                <TableHead>Bank</TableHead>
                 <TableHead>Renewal Date</TableHead>
                 <TableHead>Last Paid</TableHead>
                 {viewMode === 'churned' && <TableHead>Churn Date</TableHead>}
@@ -747,7 +745,7 @@ export const AdminCustomers = () => {
             <TableBody>
               {paginatedCustomers.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={13} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={11} className="text-center py-8 text-muted-foreground">
                     No customers found
                   </TableCell>
                 </TableRow>
@@ -848,30 +846,6 @@ export const AdminCustomers = () => {
                           )}
                         </div>
                       </TableCell>
-                      {/* Amazon Accounts Column */}
-                      <TableCell>
-                        <div className="flex items-center gap-1">
-                          {customer.amazon_accounts_count !== undefined && customer.amazon_accounts_count > 0 ? (
-                            <Badge variant="default" className="text-xs">
-                              {customer.amazon_accounts_count}
-                            </Badge>
-                          ) : (
-                            <span className="text-muted-foreground text-sm">-</span>
-                          )}
-                        </div>
-                      </TableCell>
-                      {/* Bank Accounts Column */}
-                      <TableCell>
-                        <div className="flex items-center gap-1">
-                          {customer.bank_accounts_count !== undefined && customer.bank_accounts_count > 0 ? (
-                            <Badge variant="default" className="text-xs">
-                              {customer.bank_accounts_count}
-                            </Badge>
-                          ) : (
-                            <span className="text-muted-foreground text-sm">-</span>
-                          )}
-                        </div>
-                      </TableCell>
                       <TableCell>
                         {customer.renewal_date ? (
                           <span className="text-sm">
@@ -966,30 +940,6 @@ export const AdminCustomers = () => {
                             <Badge variant="outline" className="text-xs capitalize">
                               {member.role || 'staff'}
                             </Badge>
-                          </TableCell>
-                          {/* Amazon Accounts for Team Member */}
-                          <TableCell>
-                            <div className="flex items-center gap-1">
-                              {member.amazon_accounts_count !== undefined && member.amazon_accounts_count > 0 ? (
-                                <Badge variant="default" className="text-xs">
-                                  {member.amazon_accounts_count}
-                                </Badge>
-                              ) : (
-                                <span className="text-muted-foreground text-sm">-</span>
-                              )}
-                            </div>
-                          </TableCell>
-                          {/* Bank Accounts for Team Member */}
-                          <TableCell>
-                            <div className="flex items-center gap-1">
-                              {member.bank_accounts_count !== undefined && member.bank_accounts_count > 0 ? (
-                                <Badge variant="default" className="text-xs">
-                                  {member.bank_accounts_count}
-                                </Badge>
-                              ) : (
-                                <span className="text-muted-foreground text-sm">-</span>
-                              )}
-                            </div>
                           </TableCell>
                           <TableCell>
                             <span className="text-muted-foreground">-</span>
