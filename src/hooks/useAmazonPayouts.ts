@@ -274,11 +274,6 @@ export const useAmazonPayouts = () => {
       // For daily accounts, COMPLETELY exclude all estimated settlements
       const accountFrequency = payout.amazon_accounts?.payout_frequency;
       if (accountFrequency === 'daily') {
-        console.log('[useAmazonPayouts] ❌ EXCLUDING daily account estimated settlement from totalEstimated:', {
-          settlementId: payout.settlement_id,
-          amount: payout.total_amount,
-          reason: 'Daily accounts use forecasts instead of open settlements'
-        });
         return false;
       }
       
