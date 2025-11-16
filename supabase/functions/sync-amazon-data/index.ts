@@ -343,26 +343,22 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string,
       
       const results = []
       
-      // Process in batches to avoid rate limits
-      const BATCH_SIZE = 3; // Low concurrency for safety
+      const BATCH_SIZE = 3; 
       for (let i = 0; i < candidates.length; i += BATCH_SIZE) {
         const batch = candidates.slice(i, i + BATCH_SIZE)
         
         const batchPromises = batch.map(async (group: any) => {
           try {
-            // 1. Check BeginningBalance: Invoiced settlements are often isolated events with 0 beginning balance
             const beginningBalance = parseFloat(group.BeginningBalance?.CurrencyAmount || '0');
-            
-            // If it has a carry-over balance, it's almost certainly Standard (Rolling Reserve)
-            // If it's 0, it COULD be Invoiced (or a Standard one that cleared perfectly)
-            // We need to inspect events to be sure if balance is 0
             
             let isB2B = false;
             let checkReason = 'Standard settlement analysis';
             
+            // We still check beginningBalance == 0 as a primary filter to decide IF we need to fetch events.
+            // Standard rolling reserves almost never hit exactly 0.00.
             if (beginningBalance === 0) {
-              // Suspicious - check events for confirmation
-              const eventsUrl = `${apiEndpoint}/finances/v0/financialEventGroups/${group.FinancialEventGroupId}/financialEvents?MaxResultsPerPage=10`;
+              
+              const eventsUrl = `${apiEndpoint}/finances/v0/financialEventGroups/${group.FinancialEventGroupId}/financialEvents?MaxResultsPerPage=100`; // Increased limit slightly to ensure we catch the items
               const eventResponse = await makeRequest(eventsUrl, {
                 headers: {
                   'x-amz-access-token': accessToken,
@@ -373,28 +369,44 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string,
               if (eventResponse.ok) {
                 const eventData = await eventResponse.json();
                 const events = eventData.payload?.FinancialEvents || {};
+                const shipmentEvents = events.ShipmentEventList || [];
+
+                // SOLUTION 3 IMPLEMENTATION:
+                // Check strictly for Tax Exemption indicators common in Invoiced/B2B orders
                 
-                // Heuristic: Standard settlements almost always have ServiceFeeEvents (subscription, storage) 
-                // or DebtRecoveryEvents, or a mix of many event types.
-                // Invoiced settlements are usually just ShipmentEvents for the B2B order + potentially a specific Charge.
-                
-                const hasServiceFees = events.ServiceFeeEventList && events.ServiceFeeEventList.length > 0;
-                const hasProductAds = events.ProductAdsPaymentEventList && events.ProductAdsPaymentEventList.length > 0;
-                const hasShipments = events.ShipmentEventList && events.ShipmentEventList.length > 0;
-                
-                // If it has ONLY shipments but NO fees/ads, and 0 beginning balance, it's likely Invoiced
-                // Standard settlements usually have some overhead fees mixed in
-                if (hasShipments && !hasServiceFees && !hasProductAds) {
-                  // Strong indicator of B2B/Invoiced isolated payout
-                  const eventInJson = JSON.stringify(events, null, 2)
-                  console.log(`[DEBUG] 🔍 INSPECT EXCLUDED GroupId:${group.FinancialEventGroupId} Amount: ${group.OriginalTotal?.CurrencyAmount} EVENT: ${eventInJson}`);
-                  isB2B = true;
-                  checkReason = 'Zero balance + Only Shipments (No Fees/Ads) detected';
+                if (shipmentEvents.length > 0) {
+                  // We check if ANY item in the shipment list demonstrates B2B tax exemption
+                  const hasB2BIndicators = shipmentEvents.some((shipment: any) => {
+                    return shipment.ShipmentItemList?.some((item: any) => {
+                      
+                      // Indicator A: Tax Withholding Logic
+                      // The Tax Model is "MarketplaceFacilitator", but the actual TaxesWithheld array is EMPTY.
+                      // This implies the Marketplace Facilitator (Amazon) acknowledged the tax model but collected nothing (Tax Exempt).
+                      const taxList = item.ItemTaxWithheldList || [];
+                      const isTaxExempt = taxList.some((t: any) => 
+                        t.TaxCollectionModel === 'MarketplaceFacilitator' && 
+                        (!t.TaxesWithheld || t.TaxesWithheld.length === 0)
+                      );
+
+                      // Indicator B: Private Label Credit Card (PLCC) Promotion
+                      // Often used for Amazon Business financing
+                      const promoList = item.PromotionList || [];
+                      const hasPLCC = promoList.some((p: any) => 
+                        p.PromotionId && p.PromotionId.includes('PLCC')
+                      );
+
+                      return isTaxExempt || hasPLCC;
+                    });
+                  });
+
+                  if (hasB2BIndicators) {
+                    isB2B = true;
+                    checkReason = 'Detected Tax-Exempt (Empty Withholding) or PLCC Promotion';
+                    
+                    // Optional: Debug log to confirm it caught the right one
+                    // console.log(`[DEBUG] 🔍 CONFIRMED B2B GroupId:${group.FinancialEventGroupId} - ${checkReason}`);
+                  }
                 }
-                
-                // Also check for specific B2B indicators if known (e.g. "Charge" events as user noted)
-                // Some docs suggest B2B might show as "ChargeComponent" or distinct events
-                // but absence of standard fees is the strongest signal for isolated payouts.
               }
             }
             
@@ -406,7 +418,7 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string,
             return group;
           } catch (err) {
             console.warn(`[SYNC] Failed to inspect settlement ${group.FinancialEventGroupId}, including by default:`, err);
-            return group; // Include if check fails to be safe
+            return group; 
           }
         });
         
