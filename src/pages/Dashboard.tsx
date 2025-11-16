@@ -2256,65 +2256,67 @@ const Dashboard = () => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
-    // Step 1: Find GLOBAL minimum balance and its date
-    let minBalance = Infinity;
-    let minBalanceDate = '';
-    
-    for (const day of projectedDailyBalances) {
-      if (day.runningBalance < minBalance) {
-        minBalance = day.runningBalance;
-        minBalanceDate = day.date;
-      }
+  // Step 1: Find GLOBAL minimum balance and its date (for reference only)
+  let globalMinBalance = Infinity;
+  let globalMinBalanceDate = '';
+  
+  for (const day of projectedDailyBalances) {
+    if (day.runningBalance < globalMinBalance) {
+      globalMinBalance = day.runningBalance;
+      globalMinBalanceDate = day.date;
     }
+  }
+  
+  // Step 2: Find valleys and calculate opportunities with forward-looking constraints
+  for (let i = 1; i < projectedDailyBalances.length - 1; i++) {
+    const currentDay = projectedDailyBalances[i];
+    const nextDay = projectedDailyBalances[i + 1];
     
-    // Step 2: Calculate safe spending from GLOBAL minimum
-    let remainingSafeSpending = Math.max(0, minBalance - reserveAmount);
+    const currentDate = new Date(currentDay.date);
+    if (currentDate <= today) continue;
     
-    // Step 3: Find valleys (balance increases) but only AFTER min balance date
-    for (let i = 1; i < projectedDailyBalances.length - 1; i++) {
-      const currentDay = projectedDailyBalances[i];
-      const nextDay = projectedDailyBalances[i + 1];
+    // Find valleys where balance increases
+    if (nextDay.runningBalance > currentDay.runningBalance) {
+      // Look at all future dates from this valley forward
+      let minFutureBalance = Infinity;
+      for (let j = i; j < projectedDailyBalances.length; j++) {
+        if (projectedDailyBalances[j].runningBalance < minFutureBalance) {
+          minFutureBalance = projectedDailyBalances[j].runningBalance;
+        }
+      }
       
-      const currentDate = new Date(currentDay.date);
-      if (currentDate <= today) continue;
+      // Calculate safe spending: constrained by future minimum
+      const opportunityAmount = Math.max(0, minFutureBalance - reserveAmount);
       
-      // Skip opportunities before the global minimum date
-      const minDate = new Date(minBalanceDate);
-      if (currentDate < minDate) continue;
-      
-      // Find valleys where balance increases
-      if (nextDay.runningBalance > currentDay.runningBalance) {
-        const opportunityAmount = remainingSafeSpending;
-        
-        if (opportunityAmount > 0) {
-          // Find earliest safe date to spend
-          let earliestDate = currentDay.date;
-          for (let j = 0; j <= i; j++) {
-            let canSpend = true;
-            for (let k = j; k <= i; k++) {
-              if (projectedDailyBalances[k].runningBalance - opportunityAmount < reserveAmount) {
-                canSpend = false;
-                break;
-              }
-            }
-            if (canSpend) {
-              earliestDate = projectedDailyBalances[j].date;
+      if (opportunityAmount > 0) {
+        // Find earliest safe date to spend this amount
+        let earliestDate = currentDay.date;
+        for (let j = 0; j <= i; j++) {
+          const checkDate = new Date(projectedDailyBalances[j].date);
+          if (checkDate <= today) continue;
+          
+          let canSpend = true;
+          for (let k = j; k <= i; k++) {
+            if (projectedDailyBalances[k].runningBalance - opportunityAmount < reserveAmount) {
+              canSpend = false;
               break;
             }
           }
-          
-          opportunities.push({
-            date: currentDay.date,
-            balance: opportunityAmount,
-            available_date: earliestDate,
-            lowPointDate: minBalanceDate  // Always reference GLOBAL minimum
-          });
-          
-          // First opportunity consumes all safe spending
-          remainingSafeSpending = 0;
+          if (canSpend) {
+            earliestDate = projectedDailyBalances[j].date;
+            break;
+          }
         }
+        
+        opportunities.push({
+          date: currentDay.date,
+          balance: opportunityAmount,
+          available_date: earliestDate,
+          lowPointDate: globalMinBalanceDate  // Reference to global minimum
+        });
       }
     }
+  }
     
     return opportunities;
   }, [projectedDailyBalances, reserveAmount]);
