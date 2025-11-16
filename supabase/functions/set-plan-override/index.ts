@@ -44,8 +44,13 @@ serve(async (req) => {
       throw new Error("userEmail and planTier are required");
     }
 
+    // CRITICAL: Reason is now mandatory for audit trail
+    if (!reason || reason.trim() === '') {
+      throw new Error("Reason is required for all plan override changes");
+    }
+
     // Valid plan tiers (basic plans and specific enterprise tiers)
-    const validPlans = ['starter', 'growing', 'professional', 'tier1', 'tier2', 'tier3'];
+    const validPlans = ['starter', 'growing', 'professional', 'tier1', 'tier2', 'tier3', 'lifetime', 'lifetime_access'];
     if (!validPlans.includes(planTier)) {
       throw new Error(`Invalid plan tier. Must be one of: ${validPlans.join(', ')}`);
     }
@@ -59,10 +64,25 @@ serve(async (req) => {
       throw new Error(`User not found: ${userEmail}`);
     }
 
+    // Get current profile data for audit log
+    const { data: currentProfile, error: profileError } = await supabaseClient
+      .from('profiles')
+      .select('plan_override, plan_tier, max_bank_connections, max_team_members')
+      .eq('user_id', targetUser.id)
+      .single();
+
+    if (profileError) {
+      console.error('Error fetching current profile:', profileError);
+    }
+
+    const oldPlanTier = currentProfile?.plan_override || currentProfile?.plan_tier || null;
+    const oldMaxBankConnections = currentProfile?.max_bank_connections || null;
+    const oldMaxTeamMembers = currentProfile?.max_team_members || null;
+
     // Build update object
     const updateData: any = {
       plan_override: planTier,
-      plan_override_reason: reason || `Plan override set by admin to ${planTier}`,
+      plan_override_reason: reason.trim(),
       updated_at: new Date().toISOString()
     };
 
@@ -81,6 +101,37 @@ serve(async (req) => {
       .eq('user_id', targetUser.id);
 
     if (updateError) throw updateError;
+
+    // Log the change to audit table
+    const auditLog = {
+      user_id: targetUser.id,
+      user_email: userEmail.toLowerCase(),
+      changed_by: caller.id,
+      changed_by_email: caller.email || '',
+      old_plan_tier: oldPlanTier,
+      new_plan_tier: planTier,
+      old_max_bank_connections: oldMaxBankConnections,
+      new_max_bank_connections: maxBankConnections ? parseInt(maxBankConnections) : null,
+      old_max_team_members: oldMaxTeamMembers,
+      new_max_team_members: maxTeamMembers ? parseInt(maxTeamMembers) : null,
+      reason: reason.trim()
+    };
+
+    const { error: auditError } = await supabaseClient
+      .from('plan_override_audit')
+      .insert(auditLog);
+
+    if (auditError) {
+      console.error('Error logging to audit table:', auditError);
+      // Don't fail the request if audit logging fails, but log the error
+    }
+
+    console.log('Plan override set successfully:', {
+      targetUser: userEmail,
+      planTier,
+      changedBy: caller.email,
+      reason: reason.trim()
+    });
 
     return new Response(
       JSON.stringify({ 

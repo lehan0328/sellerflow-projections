@@ -31,12 +31,45 @@ export const SetPlanOverride = () => {
   const [maxTeamMembers, setMaxTeamMembers] = useState<string>("");
   const [selectedUserData, setSelectedUserData] = useState<any>(null);
   const [lookingUp, setLookingUp] = useState(false);
+  const [auditLogs, setAuditLogs] = useState<any[]>([]);
+  const [loadingAuditLogs, setLoadingAuditLogs] = useState(false);
   
   // Admin invitation states
   const [adminEmail, setAdminEmail] = useState("");
   const [adminRole, setAdminRole] = useState<"admin" | "staff">("admin");
   const [adminPermissions, setAdminPermissions] = useState<AdminPermission[]>([]);
   const [loadingAdmins, setLoadingAdmins] = useState(false);
+
+  const fetchAuditLogs = async (userId?: string) => {
+    setLoadingAuditLogs(true);
+    try {
+      let query = supabase
+        .from('plan_override_audit')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (userId) {
+        query = query.eq('user_id', userId);
+      } else {
+        query = query.limit(50); // Show last 50 changes when no user selected
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+      setAuditLogs(data || []);
+    } catch (error: any) {
+      console.error("Error fetching audit logs:", error);
+      toast.error("Failed to load audit logs");
+    } finally {
+      setLoadingAuditLogs(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAdminPermissions();
+    fetchAuditLogs(); // Load recent changes on mount
+  }, []);
 
   const handleLookupUser = async () => {
     if (!userEmail) {
@@ -64,6 +97,9 @@ export const SetPlanOverride = () => {
       setMaxBankConnections(profileData.max_bank_connections?.toString() || "");
       setMaxTeamMembers(profileData.max_team_members?.toString() || "");
       toast.success(`Found user: ${profileData.first_name || ''} ${profileData.last_name || ''}`);
+      
+      // Fetch audit logs for this user
+      fetchAuditLogs(profileData.user_id);
     } catch (error: any) {
       console.error("Error looking up user:", error);
       toast.error(error.message || "User not found");
@@ -79,6 +115,11 @@ export const SetPlanOverride = () => {
       return;
     }
 
+    if (!reason || reason.trim() === '') {
+      toast.error("Reason is required for all plan override changes");
+      return;
+    }
+
     const oldPlanTier = selectedUserData?.plan_override || selectedUserData?.plan_tier;
     const oldBankConnections = selectedUserData?.max_bank_connections;
     const oldTeamMembers = selectedUserData?.max_team_members;
@@ -89,7 +130,7 @@ export const SetPlanOverride = () => {
         body: {
           userEmail,
           planTier,
-          reason: reason || `Plan override set to ${planTier}`,
+          reason: reason.trim(),
           maxBankConnections: maxBankConnections ? parseInt(maxBankConnections) : null,
           maxTeamMembers: maxTeamMembers ? parseInt(maxTeamMembers) : null
         }
@@ -109,6 +150,9 @@ export const SetPlanOverride = () => {
       setMaxBankConnections("");
       setMaxTeamMembers("");
       setSelectedUserData(null);
+      
+      // Refresh audit logs
+      fetchAuditLogs();
     } catch (error: any) {
       console.error("Error setting plan override:", error);
       toast.error(error.message || "Failed to set plan override");
@@ -134,11 +178,6 @@ export const SetPlanOverride = () => {
       setLoadingAdmins(false);
     }
   };
-
-  // Load admin permissions on mount
-  useEffect(() => {
-    fetchAdminPermissions();
-  }, []);
 
   const handleInviteAdmin = async () => {
     if (!adminEmail) {
@@ -426,16 +465,17 @@ export const SetPlanOverride = () => {
             />
           </div>
           <div className="space-y-2">
-            <Label>Reason (optional)</Label>
+            <Label>Reason <span className="text-destructive">*</span></Label>
             <Textarea
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              placeholder="Why is this override being set?"
+              placeholder="Why is this override being set? (Required)"
+              required
             />
           </div>
           <Button 
             onClick={handleSetOverride} 
-            disabled={loading || !userEmail || !planTier}
+            disabled={loading || !userEmail || !planTier || !reason.trim()}
             variant="secondary"
             className="w-full"
           >
@@ -443,6 +483,78 @@ export const SetPlanOverride = () => {
             Set Plan Override
           </Button>
         </div>
+      </CardContent>
+    </Card>
+
+    {/* Audit Log */}
+    <Card>
+      <CardHeader>
+        <CardTitle>Plan Override Change Log</CardTitle>
+        <CardDescription>
+          Complete history of plan override changes (read-only)
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {loadingAuditLogs ? (
+          <div className="text-center py-8">
+            <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+          </div>
+        ) : auditLogs.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            No plan override changes found
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Date</TableHead>
+                  <TableHead>User</TableHead>
+                  <TableHead>Changed By</TableHead>
+                  <TableHead>Old Plan</TableHead>
+                  <TableHead>New Plan</TableHead>
+                  <TableHead>Bank Connections</TableHead>
+                  <TableHead>Team Members</TableHead>
+                  <TableHead>Reason</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {auditLogs.map((log) => (
+                  <TableRow key={log.id}>
+                    <TableCell className="text-sm">
+                      {new Date(log.created_at).toLocaleString()}
+                    </TableCell>
+                    <TableCell className="font-medium text-sm">
+                      {log.user_email}
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      {log.changed_by_email}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="text-xs">
+                        {log.old_plan_tier || 'None'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="default" className="text-xs">
+                        {log.new_plan_tier}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      {log.old_max_bank_connections ?? '-'} → {log.new_max_bank_connections ?? '-'}
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      {log.old_max_team_members ?? '-'} → {log.new_max_team_members ?? '-'}
+                    </TableCell>
+                    <TableCell className="text-sm max-w-xs truncate">
+                      {log.reason}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
       </CardContent>
     </Card>
     </div>
