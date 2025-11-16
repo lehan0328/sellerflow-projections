@@ -5,10 +5,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import { Loader2, UserPlus, Trash2, Shield, Search } from "lucide-react";
+import { Loader2, UserPlus, Trash2, Shield, Search, Settings2 } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { PLAN_LIMITS, getPlanDefault, getAccountStatus, formatPlanName } from "@/lib/adminUtils";
@@ -33,6 +34,7 @@ export const SetPlanOverride = () => {
   const [lookingUp, setLookingUp] = useState(false);
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
   const [loadingAuditLogs, setLoadingAuditLogs] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
   
   // Admin invitation states
   const [adminEmail, setAdminEmail] = useState("");
@@ -150,6 +152,7 @@ export const SetPlanOverride = () => {
       setMaxBankConnections("");
       setMaxTeamMembers("");
       setSelectedUserData(null);
+      setDialogOpen(false);
       
       // Refresh audit logs
       fetchAuditLogs();
@@ -348,143 +351,147 @@ export const SetPlanOverride = () => {
       </Card>
 
       {/* Plan Override Management */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Plan Override Management</CardTitle>
-          <CardDescription>
-            Set or remove plan overrides for users (admin only)
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-        {/* Set for any user */}
-        <div className="space-y-4 p-4 border rounded-lg">
-          <h3 className="font-semibold">Set for Any User</h3>
-          <div className="space-y-2">
-            <Label>User Email</Label>
-            <div className="flex gap-2">
-              <Input
-                type="email"
-                value={userEmail}
-                onChange={(e) => {
-                  setUserEmail(e.target.value);
-                  setSelectedUserData(null);
-                }}
-                placeholder="user@example.com"
-                className="flex-1"
-              />
-              <Button 
-                onClick={handleLookupUser}
-                disabled={lookingUp || !userEmail}
-                variant="outline"
-              >
-                {lookingUp ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Search className="h-4 w-4" />
-                )}
-              </Button>
-            </div>
-          </div>
-
-          {selectedUserData && (
-            <Card className="bg-muted/50">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm">Current Settings</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Name:</span>
-                  <span className="font-medium">
-                    {selectedUserData.first_name || ''} {selectedUserData.last_name || ''}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Plan Tier:</span>
-                  <Badge variant="secondary">
-                    {selectedUserData.plan_override || selectedUserData.plan_tier || 'None'}
-                  </Badge>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Status:</span>
-                  <Badge variant={getAccountStatus(selectedUserData).variant}>
-                    {getAccountStatus(selectedUserData).label}
-                  </Badge>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Max Bank Connections:</span>
-                  <span className="font-medium">
-                    {selectedUserData.max_bank_connections || 
-                     getPlanDefault(selectedUserData.plan_override || selectedUserData.plan_tier, 'bank')}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Max Team Members:</span>
-                  <span className="font-medium">
-                    {selectedUserData.max_team_members || 
-                     getPlanDefault(selectedUserData.plan_override || selectedUserData.plan_tier, 'team')}
-                  </span>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          <div className="space-y-2">
-            <Label>Plan Tier</Label>
-            <Select value={planTier} onValueChange={setPlanTier}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select plan tier" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="starter">Starter</SelectItem>
-                <SelectItem value="growing">Growing</SelectItem>
-                <SelectItem value="professional">Professional</SelectItem>
-                <SelectItem value="tier1">Enterprise 1 ($100k-$250k)</SelectItem>
-                <SelectItem value="tier2">Enterprise 2 ($250k-$500k)</SelectItem>
-                <SelectItem value="tier3">Enterprise 3 ($500k+)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label>Max Bank Connections (optional)</Label>
-            <Input
-              type="number"
-              value={maxBankConnections}
-              onChange={(e) => setMaxBankConnections(e.target.value)}
-              placeholder="Leave empty for plan default"
-              min="0"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>Max Team Members (optional)</Label>
-            <Input
-              type="number"
-              value={maxTeamMembers}
-              onChange={(e) => setMaxTeamMembers(e.target.value)}
-              placeholder="Leave empty for plan default"
-              min="0"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>Reason <span className="text-destructive">*</span></Label>
-            <Textarea
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              placeholder="Why is this override being set? (Required)"
-              required
-            />
-          </div>
-          <Button 
-            onClick={handleSetOverride} 
-            disabled={loading || !userEmail || !planTier || !reason.trim()}
-            variant="secondary"
-            className="w-full"
-          >
-            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Set Plan Override
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogTrigger asChild>
+          <Button variant="outline" className="w-full">
+            <Settings2 className="mr-2 h-4 w-4" />
+            Manage Plan Overrides
           </Button>
-        </div>
-      </CardContent>
-    </Card>
+        </DialogTrigger>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Plan Override Management</DialogTitle>
+            <DialogDescription>
+              Set or remove plan overrides for users (admin only)
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>User Email</Label>
+              <div className="flex gap-2">
+                <Input
+                  type="email"
+                  value={userEmail}
+                  onChange={(e) => {
+                    setUserEmail(e.target.value);
+                    setSelectedUserData(null);
+                  }}
+                  placeholder="user@example.com"
+                  className="flex-1"
+                />
+                <Button 
+                  onClick={handleLookupUser}
+                  disabled={lookingUp || !userEmail}
+                  variant="outline"
+                >
+                  {lookingUp ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Search className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+            </div>
+
+            {selectedUserData && (
+              <Card className="bg-muted/50">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm">Current Settings</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Name:</span>
+                    <span className="font-medium">
+                      {selectedUserData.first_name || ''} {selectedUserData.last_name || ''}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Plan Tier:</span>
+                    <Badge variant="secondary">
+                      {selectedUserData.plan_override || selectedUserData.plan_tier || 'None'}
+                    </Badge>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Status:</span>
+                    <Badge variant={getAccountStatus(selectedUserData).variant}>
+                      {getAccountStatus(selectedUserData).label}
+                    </Badge>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Max Bank Connections:</span>
+                    <span className="font-medium">
+                      {selectedUserData.max_bank_connections || 
+                       getPlanDefault(selectedUserData.plan_override || selectedUserData.plan_tier, 'bank')}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Max Team Members:</span>
+                    <span className="font-medium">
+                      {selectedUserData.max_team_members || 
+                       getPlanDefault(selectedUserData.plan_override || selectedUserData.plan_tier, 'team')}
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            <div className="space-y-2">
+              <Label>Plan Tier</Label>
+              <Select value={planTier} onValueChange={setPlanTier}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select plan tier" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="starter">Starter</SelectItem>
+                  <SelectItem value="growing">Growing</SelectItem>
+                  <SelectItem value="professional">Professional</SelectItem>
+                  <SelectItem value="tier1">Enterprise 1 ($100k-$250k)</SelectItem>
+                  <SelectItem value="tier2">Enterprise 2 ($250k-$500k)</SelectItem>
+                  <SelectItem value="tier3">Enterprise 3 ($500k+)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Max Bank Connections (optional)</Label>
+              <Input
+                type="number"
+                value={maxBankConnections}
+                onChange={(e) => setMaxBankConnections(e.target.value)}
+                placeholder="Leave empty for plan default"
+                min="0"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Max Team Members (optional)</Label>
+              <Input
+                type="number"
+                value={maxTeamMembers}
+                onChange={(e) => setMaxTeamMembers(e.target.value)}
+                placeholder="Leave empty for plan default"
+                min="0"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Reason <span className="text-destructive">*</span></Label>
+              <Textarea
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                placeholder="Why is this override being set? (Required)"
+                required
+              />
+            </div>
+            <Button 
+              onClick={handleSetOverride} 
+              disabled={loading || !userEmail || !planTier || !reason.trim()}
+              variant="secondary"
+              className="w-full"
+            >
+              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Set Plan Override
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
     {/* Audit Log */}
     <Card>
