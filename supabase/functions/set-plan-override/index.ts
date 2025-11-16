@@ -38,7 +38,7 @@ serve(async (req) => {
       throw new Error("Unauthorized - Admin access required");
     }
 
-    const { userEmail, planTier, reason } = await req.json();
+    const { userEmail, planTier, reason, maxBankConnections, maxTeamMembers } = await req.json();
 
     if (!userEmail || !planTier) {
       throw new Error("userEmail and planTier are required");
@@ -59,14 +59,25 @@ serve(async (req) => {
       throw new Error(`User not found: ${userEmail}`);
     }
 
+    // Build update object
+    const updateData: any = {
+      plan_override: planTier,
+      plan_override_reason: reason || `Plan override set by admin to ${planTier}`,
+      updated_at: new Date().toISOString()
+    };
+
+    // Add optional fields if provided
+    if (maxBankConnections !== undefined && maxBankConnections !== null && maxBankConnections !== '') {
+      updateData.max_bank_connections = parseInt(maxBankConnections);
+    }
+    if (maxTeamMembers !== undefined && maxTeamMembers !== null && maxTeamMembers !== '') {
+      updateData.max_team_members = parseInt(maxTeamMembers);
+    }
+
     // Update profile with plan override
     const { error: updateError } = await supabaseClient
       .from('profiles')
-      .update({
-        plan_override: planTier,
-        plan_override_reason: reason || `Plan override set by admin to ${planTier}`,
-        updated_at: new Date().toISOString()
-      })
+      .update(updateData)
       .eq('user_id', targetUser.id);
 
     if (updateError) throw updateError;

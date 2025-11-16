@@ -420,7 +420,7 @@ export const AdminCustomers = () => {
     
     // Check for active Stripe subscription (paid monthly/yearly)
     if (customer.stripe_subscription_status === 'active' || customer.stripe_subscription_status === 'trialing') {
-      return { label: 'Paid', variant: 'default' as const };
+      return { label: 'Active', variant: 'default' as const };
     }
     
     // Enterprise tiers (tier1/tier2/tier3) without Stripe subscription
@@ -431,7 +431,7 @@ export const AdminCustomers = () => {
     
     // If renewal_date is set and in the future, they have an active subscription
     if (customer.renewal_date && new Date(customer.renewal_date) > now) {
-      return { label: 'Paid', variant: 'default' as const };
+      return { label: 'Active', variant: 'default' as const };
     }
     
     // Check trial status - either trial_end is set and in future, OR user is newly created (last 7 days) without Stripe customer
@@ -483,7 +483,7 @@ export const AdminCustomers = () => {
 
   const activeCustomers = filteredCustomers.filter(customer => {
     const status = getAccountStatus(customer);
-    return status.label === 'Paid';
+    return status.label === 'Active' || status.label === 'Lifetime';
   });
 
   const churnedCustomers = filteredCustomers.filter(customer => {

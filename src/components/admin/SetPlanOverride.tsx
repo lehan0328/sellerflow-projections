@@ -26,6 +26,8 @@ export const SetPlanOverride = () => {
   const [planTier, setPlanTier] = useState<string>("");
   const [reason, setReason] = useState("");
   const [loading, setLoading] = useState(false);
+  const [maxBankConnections, setMaxBankConnections] = useState<string>("");
+  const [maxTeamMembers, setMaxTeamMembers] = useState<string>("");
   
   // Admin invitation states
   const [adminEmail, setAdminEmail] = useState("");
@@ -46,7 +48,9 @@ export const SetPlanOverride = () => {
         body: {
           userEmail,
           planTier,
-          reason: reason || `Plan override set to ${planTier}`
+          reason: reason || `Plan override set to ${planTier}`,
+          maxBankConnections: maxBankConnections ? parseInt(maxBankConnections) : null,
+          maxTeamMembers: maxTeamMembers ? parseInt(maxTeamMembers) : null
         }
       });
 
@@ -56,6 +60,8 @@ export const SetPlanOverride = () => {
       setUserEmail("");
       setPlanTier("");
       setReason("");
+      setMaxBankConnections("");
+      setMaxTeamMembers("");
     } catch (error: any) {
       console.error("Error setting plan override:", error);
       toast.error(error.message || "Failed to set plan override");
@@ -291,6 +297,26 @@ export const SetPlanOverride = () => {
                 <SelectItem value="tier3">Enterprise 3 ($500k+)</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>Max Bank Connections (optional)</Label>
+            <Input
+              type="number"
+              value={maxBankConnections}
+              onChange={(e) => setMaxBankConnections(e.target.value)}
+              placeholder="Leave empty for plan default"
+              min="0"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Max Team Members (optional)</Label>
+            <Input
+              type="number"
+              value={maxTeamMembers}
+              onChange={(e) => setMaxTeamMembers(e.target.value)}
+              placeholder="Leave empty for plan default"
+              min="0"
+            />
           </div>
           <div className="space-y-2">
             <Label>Reason (optional)</Label>

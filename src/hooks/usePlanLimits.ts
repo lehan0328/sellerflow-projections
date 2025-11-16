@@ -74,6 +74,7 @@ export const usePlanLimits = () => {
     teamMembers: 0
   });
   const [profileMaxTeamMembers, setProfileMaxTeamMembers] = useState<number | null>(null);
+  const [profileMaxBankConnections, setProfileMaxBankConnections] = useState<number | null>(null);
 
   // Map subscription plan to plan type - default to starter for free users
   const mapPlanTier = (tier: string | null, productId: string | null): PlanType => {
@@ -111,10 +112,12 @@ export const usePlanLimits = () => {
   const basePlanLimits = PLAN_LIMITS[currentPlan];
   
   // Add purchased addons to plan limits
-  // If profile has max_team_members set, use that instead of base plan limit
+  // If profile has max_team_members or max_bank_connections set, use those instead of base plan limit
   const planLimits = {
     ...basePlanLimits,
-    bankConnections: basePlanLimits.bankConnections + purchasedAddons.bank_connections,
+    bankConnections: profileMaxBankConnections !== null 
+      ? profileMaxBankConnections 
+      : basePlanLimits.bankConnections + purchasedAddons.bank_connections,
     amazonConnections: basePlanLimits.amazonConnections + purchasedAddons.amazon_connections,
     teamMembers: profileMaxTeamMembers !== null 
       ? profileMaxTeamMembers 
@@ -132,12 +135,15 @@ export const usePlanLimits = () => {
         supabase.from('credit_cards').select('id', { count: 'exact' }).eq('user_id', user.id).eq('is_active', true),
         supabase.from('amazon_accounts').select('id', { count: 'exact' }).eq('user_id', user.id).eq('is_active', true),
         supabase.from('user_roles').select('user_id', { count: 'exact' }).neq('user_id', user.id),
-        supabase.from('profiles').select('max_team_members').eq('user_id', user.id).single()
+        supabase.from('profiles').select('max_team_members, max_bank_connections').eq('user_id', user.id).single()
       ]);
       
-      // Set profile max team members if available
+      // Set profile overrides if available
       if (profile.data?.max_team_members) {
         setProfileMaxTeamMembers(profile.data.max_team_members);
+      }
+      if (profile.data?.max_bank_connections) {
+        setProfileMaxBankConnections(profile.data.max_bank_connections);
       }
       
       console.log('[usePlanLimits] Usage counts:', {
