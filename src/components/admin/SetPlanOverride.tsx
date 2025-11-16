@@ -375,14 +375,14 @@ export const SetPlanOverride = () => {
                   <span className="text-muted-foreground">Max Bank Connections:</span>
                   <span className="font-medium">
                     {selectedUserData.max_bank_connections || 
-                     `${getPlanDefault(selectedUserData.plan_override || selectedUserData.plan_tier, 'bank')} (Plan Default)`}
+                     getPlanDefault(selectedUserData.plan_override || selectedUserData.plan_tier, 'bank')}
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Max Team Members:</span>
                   <span className="font-medium">
                     {selectedUserData.max_team_members || 
-                     `${getPlanDefault(selectedUserData.plan_override || selectedUserData.plan_tier, 'team')} (Plan Default)`}
+                     getPlanDefault(selectedUserData.plan_override || selectedUserData.plan_tier, 'team')}
                   </span>
                 </div>
               </CardContent>
