@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import { Loader2, UserPlus, Trash2, Shield } from "lucide-react";
+import { Loader2, UserPlus, Trash2, Shield, Search } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 
@@ -28,6 +28,8 @@ export const SetPlanOverride = () => {
   const [loading, setLoading] = useState(false);
   const [maxBankConnections, setMaxBankConnections] = useState<string>("");
   const [maxTeamMembers, setMaxTeamMembers] = useState<string>("");
+  const [selectedUserData, setSelectedUserData] = useState<any>(null);
+  const [lookingUp, setLookingUp] = useState(false);
   
   // Admin invitation states
   const [adminEmail, setAdminEmail] = useState("");
@@ -36,11 +38,50 @@ export const SetPlanOverride = () => {
   const [loadingAdmins, setLoadingAdmins] = useState(false);
 
 
+  const handleLookupUser = async () => {
+    if (!userEmail) {
+      toast.error("Please enter an email address");
+      return;
+    }
+    
+    setLookingUp(true);
+    try {
+      const { data: profileData, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('email', userEmail.toLowerCase())
+        .single();
+        
+      if (error) throw error;
+      
+      if (!profileData) {
+        toast.error("User not found");
+        return;
+      }
+      
+      setSelectedUserData(profileData);
+      setPlanTier(profileData.plan_override || profileData.plan_tier || "");
+      setMaxBankConnections(profileData.max_bank_connections?.toString() || "");
+      setMaxTeamMembers(profileData.max_team_members?.toString() || "");
+      toast.success(`Found user: ${profileData.first_name || ''} ${profileData.last_name || ''}`);
+    } catch (error: any) {
+      console.error("Error looking up user:", error);
+      toast.error(error.message || "User not found");
+      setSelectedUserData(null);
+    } finally {
+      setLookingUp(false);
+    }
+  };
+
   const handleSetOverride = async () => {
     if (!userEmail || !planTier) {
       toast.error("Please provide both email and plan tier");
       return;
     }
+
+    const oldPlanTier = selectedUserData?.plan_override || selectedUserData?.plan_tier;
+    const oldBankConnections = selectedUserData?.max_bank_connections;
+    const oldTeamMembers = selectedUserData?.max_team_members;
 
     setLoading(true);
     try {
@@ -56,12 +97,18 @@ export const SetPlanOverride = () => {
 
       if (error) throw error;
 
-      toast.success(data.message || "Plan override set successfully");
+      let changeDetails = `Updated ${userEmail}:`;
+      if (oldPlanTier !== planTier) changeDetails += ` Plan: ${oldPlanTier || 'none'} → ${planTier}`;
+      if (oldBankConnections?.toString() !== maxBankConnections) changeDetails += ` | Bank Connections: ${oldBankConnections || 'default'} → ${maxBankConnections || 'default'}`;
+      if (oldTeamMembers?.toString() !== maxTeamMembers) changeDetails += ` | Team Members: ${oldTeamMembers || 'default'} → ${maxTeamMembers || 'default'}`;
+
+      toast.success(changeDetails);
       setUserEmail("");
       setPlanTier("");
       setReason("");
       setMaxBankConnections("");
       setMaxTeamMembers("");
+      setSelectedUserData(null);
     } catch (error: any) {
       console.error("Error setting plan override:", error);
       toast.error(error.message || "Failed to set plan override");
@@ -275,13 +322,71 @@ export const SetPlanOverride = () => {
           <h3 className="font-semibold">Set for Any User</h3>
           <div className="space-y-2">
             <Label>User Email</Label>
-            <Input
-              type="email"
-              value={userEmail}
-              onChange={(e) => setUserEmail(e.target.value)}
-              placeholder="user@example.com"
-            />
+            <div className="flex gap-2">
+              <Input
+                type="email"
+                value={userEmail}
+                onChange={(e) => {
+                  setUserEmail(e.target.value);
+                  setSelectedUserData(null);
+                }}
+                placeholder="user@example.com"
+                className="flex-1"
+              />
+              <Button 
+                onClick={handleLookupUser}
+                disabled={lookingUp || !userEmail}
+                variant="outline"
+              >
+                {lookingUp ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Search className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
           </div>
+
+          {selectedUserData && (
+            <Card className="bg-muted/50">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm">Current Settings</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Name:</span>
+                  <span className="font-medium">
+                    {selectedUserData.first_name || ''} {selectedUserData.last_name || ''}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Plan Tier:</span>
+                  <Badge variant="secondary">
+                    {selectedUserData.plan_override || selectedUserData.plan_tier || 'None'}
+                  </Badge>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Status:</span>
+                  <Badge variant={selectedUserData.account_status === 'active' ? 'default' : 'outline'}>
+                    {selectedUserData.account_status || 'Unknown'}
+                  </Badge>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Max Bank Connections:</span>
+                  <span className="font-medium">
+                    {selectedUserData.max_bank_connections || 'Plan Default'}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Max Team Members:</span>
+                  <span className="font-medium">
+                    {selectedUserData.max_team_members || 'Plan Default'}
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           <div className="space-y-2">
             <Label>Plan Tier</Label>
             <Select value={planTier} onValueChange={setPlanTier}>
