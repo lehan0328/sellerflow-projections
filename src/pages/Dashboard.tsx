@@ -2256,6 +2256,21 @@ const Dashboard = () => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
+    // Step 1: Find GLOBAL minimum balance and its date
+    let minBalance = Infinity;
+    let minBalanceDate = '';
+    
+    for (const day of projectedDailyBalances) {
+      if (day.runningBalance < minBalance) {
+        minBalance = day.runningBalance;
+        minBalanceDate = day.date;
+      }
+    }
+    
+    // Step 2: Calculate safe spending from GLOBAL minimum
+    let remainingSafeSpending = Math.max(0, minBalance - reserveAmount);
+    
+    // Step 3: Find valleys (balance increases) but only AFTER min balance date
     for (let i = 1; i < projectedDailyBalances.length - 1; i++) {
       const currentDay = projectedDailyBalances[i];
       const nextDay = projectedDailyBalances[i + 1];
@@ -2263,9 +2278,13 @@ const Dashboard = () => {
       const currentDate = new Date(currentDay.date);
       if (currentDate <= today) continue;
       
+      // Skip opportunities before the global minimum date
+      const minDate = new Date(minBalanceDate);
+      if (currentDate < minDate) continue;
+      
       // Find valleys where balance increases
       if (nextDay.runningBalance > currentDay.runningBalance) {
-        const opportunityAmount = Math.max(0, currentDay.runningBalance - reserveAmount);
+        const opportunityAmount = remainingSafeSpending;
         
         if (opportunityAmount > 0) {
           // Find earliest safe date to spend
@@ -2288,8 +2307,11 @@ const Dashboard = () => {
             date: currentDay.date,
             balance: opportunityAmount,
             available_date: earliestDate,
-            lowPointDate: currentDay.date
+            lowPointDate: minBalanceDate  // Always reference GLOBAL minimum
           });
+          
+          // First opportunity consumes all safe spending
+          remainingSafeSpending = 0;
         }
       }
     }
