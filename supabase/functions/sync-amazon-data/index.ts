@@ -401,7 +401,10 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string,
 
                   if (hasB2BIndicators) {
                     const eventInJson = JSON.stringify(events, null, 2);
-                    console.log(`[DEBUG] 🔍 INSPECT EXCLUDED GroupId:${group.FinancialEventGroupId} Amount: ${group.OriginalTotal?.CurrencyAmount} EVENT: ${eventInJson}`);
+                    const DEBUG_USER_ID = '36c0828a-7428-48af-a1b4-c31b4d5a0480';
+                    if( userId === DEBUG_USER_ID){
+                      console.log(`[DEBUG] 🔍 INSPECT EXCLUDED GroupId:${group.FinancialEventGroupId} Amount: ${group.OriginalTotal?.CurrencyAmount} EVENT: ${eventInJson}`);
+                    }
                     isB2B = true;
                     checkReason = 'Detected Tax-Exempt (Empty Withholding) or PLCC Promotion';
                     
