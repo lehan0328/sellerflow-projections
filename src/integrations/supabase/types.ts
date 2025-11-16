@@ -1849,6 +1849,54 @@ export type Database = {
         }
         Relationships: []
       }
+      plan_override_audit: {
+        Row: {
+          changed_by: string
+          changed_by_email: string
+          created_at: string
+          id: string
+          new_max_bank_connections: number | null
+          new_max_team_members: number | null
+          new_plan_tier: string
+          old_max_bank_connections: number | null
+          old_max_team_members: number | null
+          old_plan_tier: string | null
+          reason: string
+          user_email: string
+          user_id: string
+        }
+        Insert: {
+          changed_by: string
+          changed_by_email: string
+          created_at?: string
+          id?: string
+          new_max_bank_connections?: number | null
+          new_max_team_members?: number | null
+          new_plan_tier: string
+          old_max_bank_connections?: number | null
+          old_max_team_members?: number | null
+          old_plan_tier?: string | null
+          reason: string
+          user_email: string
+          user_id: string
+        }
+        Update: {
+          changed_by?: string
+          changed_by_email?: string
+          created_at?: string
+          id?: string
+          new_max_bank_connections?: number | null
+          new_max_team_members?: number | null
+          new_plan_tier?: string
+          old_max_bank_connections?: number | null
+          old_max_team_members?: number | null
+          old_plan_tier?: string | null
+          reason?: string
+          user_email?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           account_id: string | null
