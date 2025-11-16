@@ -147,9 +147,6 @@ verify_jwt = true
 [functions.recalculate-daily-payouts]
 verify_jwt = true
 
-[functions.track-forecast-accuracy]
-verify_jwt = false
-
 [functions.create-sample-user-data]
 verify_jwt = false
 
