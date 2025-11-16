@@ -1867,6 +1867,7 @@ export type Database = {
           is_account_owner: boolean
           last_amazon_connection: string | null
           last_name: string | null
+          max_bank_connections: number | null
           max_team_members: number
           monthly_amazon_revenue: string | null
           monthly_revenue: string | null
@@ -1899,6 +1900,7 @@ export type Database = {
           is_account_owner?: boolean
           last_amazon_connection?: string | null
           last_name?: string | null
+          max_bank_connections?: number | null
           max_team_members?: number
           monthly_amazon_revenue?: string | null
           monthly_revenue?: string | null
@@ -1931,6 +1933,7 @@ export type Database = {
           is_account_owner?: boolean
           last_amazon_connection?: string | null
           last_name?: string | null
+          max_bank_connections?: number | null
           max_team_members?: number
           monthly_amazon_revenue?: string | null
           monthly_revenue?: string | null
