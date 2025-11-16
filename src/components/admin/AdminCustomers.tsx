@@ -22,6 +22,7 @@ interface Customer {
   company?: string;
   created_at: string;
   plan_override?: string;
+  plan_override_reason?: string;
   plan_tier?: string;
   discount_redeemed_at?: string;
   trial_end?: string;
@@ -93,7 +94,7 @@ export const AdminCustomers = () => {
       // Fetch all customer profiles (admin/staff are now excluded at database level)
       const { data: profiles, error } = await supabase
         .from('profiles')
-        .select('user_id, first_name, last_name, company, created_at, plan_override, plan_tier, discount_redeemed_at, trial_end, churn_date, account_status, payment_failure_date, stripe_customer_id, account_id, is_account_owner, monthly_amazon_revenue')
+        .select('user_id, first_name, last_name, company, created_at, plan_override, plan_override_reason, plan_tier, discount_redeemed_at, trial_end, churn_date, account_status, payment_failure_date, stripe_customer_id, account_id, is_account_owner, monthly_amazon_revenue')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -407,6 +408,11 @@ export const AdminCustomers = () => {
     // Check for admin status (website admin, not company admin)
     if (customer.plan_override === 'admin') {
       return { label: 'Admin', variant: 'default' as const };
+    }
+    
+    // Check for Lifetime in plan_override_reason (manual lifetime grants by admin)
+    if (customer.plan_override_reason?.toLowerCase().includes('lifetime')) {
+      return { label: 'Lifetime', variant: 'default' as const };
     }
     
     // Check for EXPLICIT lifetime grants by admin ONLY
