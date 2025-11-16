@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { Loader2, UserPlus, Trash2, Shield, Search } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { PLAN_LIMITS, getPlanDefault, getAccountStatus, formatPlanName } from "@/lib/adminUtils";
 
 interface AdminPermission {
   id: string;
@@ -37,7 +38,6 @@ export const SetPlanOverride = () => {
   const [adminPermissions, setAdminPermissions] = useState<AdminPermission[]>([]);
   const [loadingAdmins, setLoadingAdmins] = useState(false);
 
-
   const handleLookupUser = async () => {
     if (!userEmail) {
       toast.error("Please enter an email address");
@@ -48,7 +48,7 @@ export const SetPlanOverride = () => {
     try {
       const { data: profileData, error } = await supabase
         .from('profiles')
-        .select('*')
+        .select('user_id, first_name, last_name, email, plan_override, plan_override_reason, plan_tier, account_status, trial_end, max_bank_connections, max_team_members, stripe_customer_id')
         .eq('email', userEmail.toLowerCase())
         .single();
         
@@ -367,20 +367,22 @@ export const SetPlanOverride = () => {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Status:</span>
-                  <Badge variant={selectedUserData.account_status === 'active' ? 'default' : 'outline'}>
-                    {selectedUserData.account_status || 'Unknown'}
+                  <Badge variant={getAccountStatus(selectedUserData).variant}>
+                    {getAccountStatus(selectedUserData).label}
                   </Badge>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Max Bank Connections:</span>
                   <span className="font-medium">
-                    {selectedUserData.max_bank_connections || 'Plan Default'}
+                    {selectedUserData.max_bank_connections || 
+                     `${getPlanDefault(selectedUserData.plan_override || selectedUserData.plan_tier, 'bank')} (Plan Default)`}
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Max Team Members:</span>
                   <span className="font-medium">
-                    {selectedUserData.max_team_members || 'Plan Default'}
+                    {selectedUserData.max_team_members || 
+                     `${getPlanDefault(selectedUserData.plan_override || selectedUserData.plan_tier, 'team')} (Plan Default)`}
                   </span>
                 </div>
               </CardContent>

@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Search, DollarSign, TrendingUp, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { getAccountStatus } from "@/lib/adminUtils";
 
 interface SubscriptionSummary {
   totalSubscriptions: number;
@@ -31,10 +32,17 @@ interface UserSubscription {
   last_name: string | null;
   company: string | null;
   plan_override: string | null;
+  plan_override_reason?: string | null;
+  plan_tier?: string | null;
   stripe_customer_id: string | null;
   account_status: string;
+  trial_end?: string | null;
   created_at: string;
   stripe_data: StripeData | null;
+  stripe_subscription_status?: string | null;
+  renewal_date?: string | null;
+  last_paid_date?: string | null;
+  churn_date?: string | null;
 }
 
 export const AdminSubscriptions = () => {
@@ -192,8 +200,8 @@ export const AdminSubscriptions = () => {
                           {sub.stripe_data.plan_name || sub.plan_override}
                         </Badge>
                       )}
-                      <Badge variant={sub.account_status === 'active' ? 'default' : 'outline'}>
-                        {sub.account_status}
+                      <Badge variant={getAccountStatus(sub).variant}>
+                        {getAccountStatus(sub).label}
                       </Badge>
                     </div>
                   </div>
