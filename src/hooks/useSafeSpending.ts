@@ -664,7 +664,7 @@ export const useSafeSpending = (
         // This means current day is a low point (valley bottom)
         if (nextDay.balance > currentDay.balance) {
           const lowPointBalance = currentDay.balance;
-          const opportunityAmount = Math.max(0, lowPointBalance - reserve);
+          const opportunityAmount = Math.max(0, minBalance - reserve);
           
           // Only add if there's actually money to spend
           if (opportunityAmount > 0) {
@@ -677,7 +677,7 @@ export const useSafeSpending = (
               // between j and i to drop below reserve
               let canSpendOnDayJ = true;
               
-              for (let k = j; k <= i; k++) {
+              for (let k = j; k < dailyBalances.length; k++) {
                 // If we spend opportunityAmount on day j, what would the balance be on day k?
                 // We need to subtract it from all days >= j
                 const balanceAfterSpending = dailyBalances[k].balance - opportunityAmount;
@@ -716,7 +716,7 @@ export const useSafeSpending = (
         
         // If last day is at high or equal level and wasn't already captured
         if (isFuture && lastDay.balance >= secondLastDay.balance) {
-          const opportunityAmount = Math.max(0, lastDay.balance - reserve);
+          const opportunityAmount = Math.max(0, minBalance - reserve);
           const alreadyCaptured = allBuyingOpportunities.some(opp => opp.date === lastDay.date);
           
           if (!alreadyCaptured && opportunityAmount > 0) {
