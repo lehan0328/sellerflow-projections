@@ -100,13 +100,13 @@ export function TransactionsListModal({
           {/* Summary */}
           <div className={`p-4 rounded-lg border ${
             type === 'incoming' 
-              ? 'bg-green-50 border-green-200' 
-              : 'bg-amber-50 border-amber-200'
+              ? 'bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800' 
+              : 'bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800'
           }`}>
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-slate-600">Total Amount</span>
+              <span className="text-sm font-medium text-slate-600 dark:text-slate-300">Total Amount</span>
               <span className={`text-2xl font-bold ${
-                type === 'incoming' ? 'text-green-700' : 'text-amber-700'
+                type === 'incoming' ? 'text-green-700 dark:text-green-400' : 'text-amber-700 dark:text-amber-400'
               }`}>
                 {formatCurrency(totalAmount)}
               </span>
@@ -117,36 +117,36 @@ export function TransactionsListModal({
           <ScrollArea className="h-[400px] pr-4">
             <div className="space-y-2">
               {sortedTransactions.length === 0 ? (
-                <div className="text-center py-8 text-slate-500">
+                <div className="text-center py-8 text-slate-500 dark:text-slate-400">
                   No transactions found in this period
                 </div>
               ) : (
                 sortedTransactions.map((transaction, index) => (
                   <div
                     key={`${transaction.id || ''}-${index}`}
-                    className="flex items-center justify-between p-3 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition-colors"
+                    className="flex items-center justify-between p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
                   >
                     <div className="flex items-center space-x-3 flex-1">
-                      <div className="p-2 rounded-full bg-slate-100">
+                      <div className="p-2 rounded-full bg-slate-100 dark:bg-slate-700">
                         {getTransactionIcon(transaction)}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center space-x-2">
-                          <p className="text-sm font-medium text-slate-900 truncate">
+                          <p className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">
                             {getTransactionDescription(transaction)}
                           </p>
-                          <Badge variant="outline" className="text-xs">
+                          <Badge variant="outline" className="text-xs dark:text-slate-200 dark:border-slate-600">
                             {getTransactionLabel(transaction)}
                           </Badge>
                         </div>
-                        <p className="text-xs text-slate-500">
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
                           {format(new Date(transaction.date), 'MMM dd, yyyy')}
                         </p>
                       </div>
                     </div>
                     <div className="text-right ml-4">
                       <p className={`text-sm font-semibold ${
-                        transaction.type === 'inflow' ? 'text-green-600' : 'text-red-600'
+                        transaction.type === 'inflow' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
                       }`}>
                         {transaction.type === 'inflow' ? '+' : '-'}{formatCurrency(transaction.amount)}
                       </p>
