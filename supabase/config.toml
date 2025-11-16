@@ -6,9 +6,6 @@ verify_jwt = false
 [functions.get-admin-staff-list]
 verify_jwt = true
 
-[functions.compact-amazon-data]
-verify_jwt = false
-
 [functions.daily-account-check]
 verify_jwt = false
 
@@ -102,22 +99,10 @@ verify_jwt = false
 [functions.get-amazon-client-id]
 verify_jwt = true
 
-[functions.create-stripe-link-session]
-verify_jwt = true
-
-[functions.exchange-stripe-session]
-verify_jwt = true
-
-[functions.sync-stripe-transactions]
-verify_jwt = true
-
 [functions.send-team-invitation]
 verify_jwt = true
 
 [functions.accept-team-invitation]
-verify_jwt = true
-
-[functions.convert-pdf-to-png]
 verify_jwt = true
 
 [functions.cleanup-orphaned-transactions]
@@ -175,9 +160,6 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.regenerate-all-forecasts]
-verify_jwt = false
-
-[functions.aggregate-old-transactions]
 verify_jwt = false
 
 [functions.reset-amazon-sync]
