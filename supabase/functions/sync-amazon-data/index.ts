@@ -386,6 +386,8 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string,
                 // Standard settlements usually have some overhead fees mixed in
                 if (hasShipments && !hasServiceFees && !hasProductAds) {
                   // Strong indicator of B2B/Invoiced isolated payout
+                  const eventInJson = JSON.stringify(events, null, 2)
+                  console.log(`[DEBUG] 🔍 INSPECT EXCLUDED EVENT: ${eventInJson}`);
                   isB2B = true;
                   checkReason = 'Zero balance + Only Shipments (No Fees/Ads) detected';
                 }
