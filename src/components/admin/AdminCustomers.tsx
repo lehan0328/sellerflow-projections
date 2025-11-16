@@ -14,6 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { getAccountStatus, formatPlanName } from "@/lib/adminUtils";
 
 interface Customer {
   user_id: string;
@@ -402,73 +403,6 @@ export const AdminCustomers = () => {
     });
   };
 
-  const getAccountStatus = (customer: Customer) => {
-    const now = new Date();
-    
-    // Check for admin status (website admin, not company admin)
-    if (customer.plan_override === 'admin') {
-      return { label: 'Admin', variant: 'default' as const };
-    }
-    
-    // Check for Lifetime in plan_override_reason (manual lifetime grants by admin)
-    if (customer.plan_override_reason?.toLowerCase().includes('lifetime')) {
-      return { label: 'Lifetime', variant: 'default' as const };
-    }
-    
-    // Check for EXPLICIT lifetime grants by admin ONLY
-    // Only 'lifetime' and 'lifetime_access' = true lifetime status
-    if (customer.plan_override && (
-      customer.plan_override === 'lifetime' || 
-      customer.plan_override === 'lifetime_access'
-    )) {
-      return { label: 'Lifetime', variant: 'default' as const };
-    }
-    
-    // Check for active Stripe subscription (paid monthly/yearly)
-    if (customer.stripe_subscription_status === 'active' || customer.stripe_subscription_status === 'trialing') {
-      return { label: 'Active', variant: 'default' as const };
-    }
-    
-    // Enterprise tiers (tier1/tier2/tier3) without Stripe subscription
-    // These are admin-granted enterprise access but NOT lifetime unless explicitly marked
-    if (customer.plan_override && customer.plan_override.match(/^tier[1-3]$/)) {
-      return { label: 'Active', variant: 'secondary' as const };
-    }
-    
-    // If renewal_date is set and in the future, they have an active subscription
-    if (customer.renewal_date && new Date(customer.renewal_date) > now) {
-      return { label: 'Active', variant: 'default' as const };
-    }
-    
-    // Check trial status - either trial_end is set and in future, OR user is newly created (last 7 days) without Stripe customer
-    const createdAt = new Date(customer.created_at);
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    
-    // Trial if trial_end exists and is in future
-    if (customer.trial_end && new Date(customer.trial_end) > now) {
-      return { label: 'Trial', variant: 'secondary' as const };
-    }
-    
-    // Trial if created within last 7 days and no Stripe customer (new signup in trial)
-    if (createdAt > sevenDaysAgo && !customer.stripe_customer_id) {
-      return { label: 'Trial', variant: 'secondary' as const };
-    }
-    
-    // Check if suspended
-    if (customer.account_status === 'suspended_payment') {
-      return { label: 'Suspended', variant: 'destructive' as const };
-    }
-    
-    // Check if they ever had a subscription but it expired
-    if (customer.stripe_customer_id || customer.last_paid_date) {
-      return { label: 'Expired', variant: 'destructive' as const };
-    }
-    
-    // Trial expired or never had trial
-    return { label: 'Expired', variant: 'destructive' as const };
-  };
-
   const filteredCustomers = customers.filter(customer => {
     const matchesSearch = customer.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       customer.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -606,15 +540,6 @@ export const AdminCustomers = () => {
       </Card>
     );
   }
-
-  const formatPlanName = (planOverride: string | undefined) => {
-    if (!planOverride) return '-';
-    // Capitalize first letter of each word
-    return planOverride
-      .split('_')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
-  };
 
   return (
     <div className="space-y-4">
