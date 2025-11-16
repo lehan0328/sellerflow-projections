@@ -387,7 +387,7 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string,
                 if (hasShipments && !hasServiceFees && !hasProductAds) {
                   // Strong indicator of B2B/Invoiced isolated payout
                   const eventInJson = JSON.stringify(events, null, 2)
-                  console.log(`[DEBUG] 🔍 INSPECT EXCLUDED EVENT: ${eventInJson}`);
+                  console.log(`[DEBUG] 🔍 INSPECT EXCLUDED GroupId:${group.FinancialEventGroupId} Amount: ${group.OriginalTotal?.CurrencyAmount} EVENT: ${eventInJson}`);
                   isB2B = true;
                   checkReason = 'Zero balance + Only Shipments (No Fees/Ads) detected';
                 }
@@ -399,7 +399,7 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string,
             }
             
             if (isB2B) {
-              console.log(`[SYNC] 🚫 EXCLUDING B2B/Invoiced Settlement: ${group.FinancialEventGroupId} (${checkReason}) - Amount: ${group.OriginalTotal?.CurrencyAmount}`);
+              // console.log(`[SYNC] 🚫 EXCLUDING B2B/Invoiced Settlement: ${group.FinancialEventGroupId} (${checkReason}) - Amount: ${group.OriginalTotal?.CurrencyAmount}`);
               return null;
             }
             
