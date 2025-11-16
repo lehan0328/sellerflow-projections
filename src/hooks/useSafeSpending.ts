@@ -641,6 +641,10 @@ export const useSafeSpending = (
         last10Days: dailyBalances.slice(-10).map(d => ({ date: d.date, balance: d.balance }))
       });
       
+      // Track remaining safe spending to make opportunities non-additive
+      const minBalanceDate = minDay.date;
+      let remainingSafeSpending = Math.max(0, minBalance - reserve);
+      
       // Find ALL buying opportunities using a simple approach:
       // An opportunity occurs when balance INCREASES from one day to the next
       // The opportunity is the amount you can spend on the LOW day (before the increase)
@@ -663,8 +667,15 @@ export const useSafeSpending = (
         // Check if balance increases from current to next day
         // This means current day is a low point (valley bottom)
         if (nextDay.balance > currentDay.balance) {
-          const lowPointBalance = currentDay.balance;
-          const opportunityAmount = Math.max(0, minBalance - reserve);
+          // Only allow opportunities on or after the minimum balance date
+          const currentDate = new Date(currentDay.date);
+          const minDate = new Date(minBalanceDate);
+          
+          if (currentDate < minDate) {
+            continue; // Skip opportunities before the minimum balance date
+          }
+          
+          const opportunityAmount = remainingSafeSpending;
           
           // Only add if there's actually money to spend
           if (opportunityAmount > 0) {
@@ -700,6 +711,9 @@ export const useSafeSpending = (
               balance: opportunityAmount, // This is what can safely be spent (low point balance - reserve)
               available_date: earliestAvailableDate
             });
+            
+            // First opportunity consumes all remaining safe spending
+            remainingSafeSpending = 0;
           }
         }
       }
@@ -716,28 +730,37 @@ export const useSafeSpending = (
         
         // If last day is at high or equal level and wasn't already captured
         if (isFuture && lastDay.balance >= secondLastDay.balance) {
-          const opportunityAmount = Math.max(0, minBalance - reserve);
-          const alreadyCaptured = allBuyingOpportunities.some(opp => opp.date === lastDay.date);
+          // Only if last day is on or after min balance date
+          const lastDate = new Date(lastDay.date);
+          const minDate = new Date(minBalanceDate);
           
-          if (!alreadyCaptured && opportunityAmount > 0) {
-            // Work backward to find the EARLIEST date when balance first reached this level
-            // while maintaining reserve buffer
-            let earliestAvailableDate = lastDay.date; // Default to last day
-            const terminalBalance = lastDay.balance;
+          if (lastDate >= minDate) {
+            const opportunityAmount = remainingSafeSpending;
+            const alreadyCaptured = allBuyingOpportunities.some(opp => opp.date === lastDay.date);
             
-            for (let j = 0; j < dailyBalances.length - 1; j++) {
-              // Check if balance at day j is high enough to spend this amount while keeping reserve
-              if (dailyBalances[j].balance >= (opportunityAmount + reserve)) {
-                earliestAvailableDate = dailyBalances[j].date;
-                break; // Found the earliest date
+            if (!alreadyCaptured && opportunityAmount > 0) {
+              // Work backward to find the EARLIEST date when balance first reached this level
+              // while maintaining reserve buffer
+              let earliestAvailableDate = lastDay.date; // Default to last day
+              const terminalBalance = lastDay.balance;
+              
+              for (let j = 0; j < dailyBalances.length - 1; j++) {
+                // Check if balance at day j is high enough to spend this amount while keeping reserve
+                if (dailyBalances[j].balance >= (opportunityAmount + reserve)) {
+                  earliestAvailableDate = dailyBalances[j].date;
+                  break; // Found the earliest date
+                }
               }
+              
+              allBuyingOpportunities.push({
+                date: lastDay.date,
+                balance: opportunityAmount,
+                available_date: earliestAvailableDate
+              });
+              
+              // Consume remaining safe spending
+              remainingSafeSpending = 0;
             }
-            
-            allBuyingOpportunities.push({
-              date: lastDay.date,
-              balance: opportunityAmount,
-              available_date: earliestAvailableDate
-            });
           }
         }
       }
