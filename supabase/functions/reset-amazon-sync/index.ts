@@ -44,8 +44,8 @@ Deno.serve(async (req) => {
         sync_status: 'idle',
         sync_progress: 0,
         sync_message: 'Ready to start fresh sync',
-        initial_sync_complete: false, // Forces the sync to look back 365 days
-        payout_frequency: null // Reset this so it redetects frequency
+        initial_sync_complete: false
+        // Removed payout_frequency: null because the DB requires a value
       })
       .eq('id', accountId)
       .select()
