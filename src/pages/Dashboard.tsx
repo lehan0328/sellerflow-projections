@@ -2265,7 +2265,7 @@ const Dashboard = () => {
       
       // Find valleys where balance increases
       if (nextDay.runningBalance > currentDay.runningBalance) {
-        const opportunityAmount = Math.max(0, currentDay.runningBalance - reserveAmount);
+        const opportunityAmount = Math.max(0, nextDay.runningBalance - reserveAmount);
         
         if (opportunityAmount > 0) {
           // Find earliest safe date to spend
@@ -2296,6 +2296,22 @@ const Dashboard = () => {
     
     return opportunities;
   }, [projectedDailyBalances, reserveAmount]);
+
+  // Calculate safe spending from projected balances
+  const safeSpendingFromProjection = useMemo(() => {
+    if (!projectedDailyBalances || projectedDailyBalances.length === 0) {
+      return { safeSpendingLimit: 0, nextOpportunity: null };
+    }
+    
+    // Find minimum projected balance
+    const minBalance = Math.min(...projectedDailyBalances.map(d => d.runningBalance));
+    const safeSpendingLimit = Math.max(0, minBalance - reserveAmount);
+    
+    // Get next (first) buying opportunity
+    const nextOpportunity = buyingOpportunities[0] || null;
+    
+    return { safeSpendingLimit, nextOpportunity };
+  }, [projectedDailyBalances, reserveAmount, buyingOpportunities]);
 
   // Trigger safe spending recalculation when any financial data changes
   useEffect(() => {
@@ -2814,11 +2830,9 @@ const Dashboard = () => {
                       upcomingExpenses={upcomingExpenses}
                       incomeItems={incomeItems}
                       bankAccountBalance={displayBankBalance}
-                      projectedDailyBalances={(
-                        safeSpendingData?.calculation?.daily_balances || []
-                      ).map((d) => ({
-                        date: new Date(d.date),
-                        balance: d.balance,
+                      projectedDailyBalances={projectedDailyBalances.map(d => ({ 
+                        date: new Date(d.date), 
+                        balance: d.runningBalance 
                       }))}
                       vendors={vendors}
                       onVendorClick={handleEditVendorOrder}
@@ -2845,31 +2859,14 @@ const Dashboard = () => {
                       events={allCalendarEvents}
                       vendors={vendors}
                       income={incomeItems}
-                      safeSpendingLimit={
-                        safeSpendingData?.safe_spending_limit || 0
-                      }
+                      safeSpendingLimit={safeSpendingFromProjection.safeSpendingLimit}
                       reserveAmount={reserveAmount}
-                      projectedLowestBalance={
-                        safeSpendingData?.calculation?.lowest_projected_balance ||
-                        calendarMinimum.balance
-                      }
+                      projectedLowestBalance={calendarMinimum.balance}
                       lowestBalanceDate={calendarMinimum.date}
-                      safeSpendingAvailableDate={
-                        safeSpendingData?.calculation
-                          ?.safe_spending_available_date
-                      }
-                      nextBuyingOpportunityBalance={
-                        safeSpendingData?.calculation
-                          ?.next_buying_opportunity_balance
-                      }
-                      nextBuyingOpportunityDate={
-                        safeSpendingData?.calculation
-                          ?.next_buying_opportunity_date
-                      }
-                      nextBuyingOpportunityAvailableDate={
-                        safeSpendingData?.calculation
-                          ?.next_buying_opportunity_available_date
-                      }
+                      safeSpendingAvailableDate={safeSpendingFromProjection.nextOpportunity?.available_date}
+                      nextBuyingOpportunityBalance={safeSpendingFromProjection.nextOpportunity?.balance}
+                      nextBuyingOpportunityDate={safeSpendingFromProjection.nextOpportunity?.date}
+                      nextBuyingOpportunityAvailableDate={safeSpendingFromProjection.nextOpportunity?.available_date}
                       allBuyingOpportunities={buyingOpportunities}
                       dailyBalances={projectedDailyBalances.map(d => ({ date: d.date, balance: d.runningBalance }))}
                       onUpdateReserveAmount={updateReserveAmount}
