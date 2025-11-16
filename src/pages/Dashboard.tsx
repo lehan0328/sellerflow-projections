@@ -464,9 +464,9 @@ const Dashboard = () => {
   const { reserveAmount, updateReserveAmount } = useReserveAmount();
   const { excludeToday } = useExcludeToday();
   
-  // Initialize safe spending with 30-day projection for faster initial load
+  // Initialize safe spending - projected balances will be used once calculated below
   const { data: safeSpendingData, refetch: refetchSafeSpending, isLoading: isSafeSpendingLoading } =
-    useSafeSpending(reserveAmount, excludeToday, useAvailableBalance, 30); // 30 days for fast load
+    useSafeSpending(reserveAmount, excludeToday, useAvailableBalance, 90, undefined);
   
   const {
     isOverBankLimit,
@@ -2241,6 +2241,62 @@ const Dashboard = () => {
     ...amazonPayoutEvents,
   ];
 
+  // Calculate projected daily balances using the same logic as the calendar
+  // This is the single source of truth for balance projections
+  const projectedDailyBalances = useMemo(() => {
+    const { dailyBalances } = calculateCalendarBalances(displayBankBalance, allCalendarEvents, 90);
+    return dailyBalances;
+  }, [displayBankBalance, allCalendarEvents]);
+
+  // Calculate buying opportunities from projected balances
+  const buyingOpportunities = useMemo(() => {
+    if (!projectedDailyBalances || projectedDailyBalances.length === 0) return [];
+    
+    const opportunities: Array<{ date: string; balance: number; available_date?: string; lowPointDate?: string }> = [];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    for (let i = 1; i < projectedDailyBalances.length - 1; i++) {
+      const currentDay = projectedDailyBalances[i];
+      const nextDay = projectedDailyBalances[i + 1];
+      
+      const currentDate = new Date(currentDay.date);
+      if (currentDate <= today) continue;
+      
+      // Find valleys where balance increases
+      if (nextDay.runningBalance > currentDay.runningBalance) {
+        const opportunityAmount = Math.max(0, currentDay.runningBalance - reserveAmount);
+        
+        if (opportunityAmount > 0) {
+          // Find earliest safe date to spend
+          let earliestDate = currentDay.date;
+          for (let j = 0; j <= i; j++) {
+            let canSpend = true;
+            for (let k = j; k <= i; k++) {
+              if (projectedDailyBalances[k].runningBalance - opportunityAmount < reserveAmount) {
+                canSpend = false;
+                break;
+              }
+            }
+            if (canSpend) {
+              earliestDate = projectedDailyBalances[j].date;
+              break;
+            }
+          }
+          
+          opportunities.push({
+            date: nextDay.date,
+            balance: opportunityAmount,
+            available_date: earliestDate,
+            lowPointDate: currentDay.date
+          });
+        }
+      }
+    }
+    
+    return opportunities;
+  }, [projectedDailyBalances, reserveAmount]);
+
   // Trigger safe spending recalculation when any financial data changes
   useEffect(() => {
     refetchSafeSpending();
@@ -2772,13 +2828,8 @@ const Dashboard = () => {
                       safeSpendingLimit={
                         safeSpendingData?.safe_spending_limit || 0
                       }
-                      allBuyingOpportunities={
-                        safeSpendingData?.calculation?.all_buying_opportunities ||
-                        []
-                      }
-                      dailyBalances={
-                        safeSpendingData?.calculation?.daily_balances || []
-                      }
+                      allBuyingOpportunities={buyingOpportunities}
+                      dailyBalances={projectedDailyBalances.map(d => ({ date: d.date, balance: d.runningBalance }))}
                     />
                   ) : (
                     <CashFlowCalendarSkeleton />
@@ -2819,13 +2870,8 @@ const Dashboard = () => {
                         safeSpendingData?.calculation
                           ?.next_buying_opportunity_available_date
                       }
-                      allBuyingOpportunities={
-                        safeSpendingData?.calculation?.all_buying_opportunities ||
-                        []
-                      }
-                      dailyBalances={
-                        safeSpendingData?.calculation?.daily_balances || []
-                      }
+                      allBuyingOpportunities={buyingOpportunities}
+                      dailyBalances={projectedDailyBalances.map(d => ({ date: d.date, balance: d.runningBalance }))}
                       onUpdateReserveAmount={updateReserveAmount}
                       transactionMatchButton={
                         <TransactionMatchButton
@@ -3584,9 +3630,7 @@ const Dashboard = () => {
               onSubmitOrder={handlePurchaseOrderSubmit}
               onDeleteAllVendors={deleteAllVendors}
               onAddVendor={addVendor}
-              allBuyingOpportunities={
-                safeSpendingData?.calculation?.all_buying_opportunities
-              }
+              allBuyingOpportunities={buyingOpportunities}
             />
           )}
 

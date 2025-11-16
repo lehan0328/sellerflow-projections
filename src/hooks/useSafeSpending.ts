@@ -60,7 +60,8 @@ export const useSafeSpending = (
   reserveAmountInput: number = 0, 
   excludeTodayTransactions: boolean = false, 
   useAvailableBalance: boolean = true,
-  daysToProject: number = 30 // Reduced from 90 to 30 days for faster calculation
+  daysToProject: number = 30, // Reduced from 90 to 30 days for faster calculation
+  projectedDailyBalances?: Array<{ date: string; runningBalance: number }> // Accept pre-calculated balances from Dashboard
 ) => {
   const { amazonPayouts, forecastsEnabled } = useAmazonPayouts();
   const [data, setData] = useState<SafeSpendingData | null>(null);
@@ -258,12 +259,29 @@ export const useSafeSpending = (
         (creditCardsResult.data && creditCardsResult.data.some(c => c.balance > 0 && c.payment_due_date))
       );
 
-      // Simple calculation: Track Total Projected Cash for each day, find minimum, subtract reserve
-      const dailyBalances: DailyBalance[] = [];
-      let runningBalance = bankBalance;
+      // Use provided projected balances if available, otherwise calculate
+      let dailyBalances: DailyBalance[] = [];
+      
+      if (projectedDailyBalances && projectedDailyBalances.length > 0) {
+        // Convert provided balances to DailyBalance format
+        dailyBalances = projectedDailyBalances.map(pb => ({
+          date: pb.date,
+          balance: pb.runningBalance,
+          starting_balance: pb.runningBalance,
+          net_change: 0,
+          transactions: []
+        }));
+        console.log('📊 Using provided projected balances from Dashboard:', {
+          totalDays: dailyBalances.length,
+          firstDay: dailyBalances[0],
+          lastDay: dailyBalances[dailyBalances.length - 1]
+        });
+      } else {
+        // Calculate balances (existing logic)
+        let runningBalance = bankBalance;
 
-      // Process each day based on daysToProject parameter
-      for (let i = 0; i <= daysToProject; i++) {
+        // Process each day based on daysToProject parameter
+        for (let i = 0; i <= daysToProject; i++) {
         const targetDate = new Date(today);
         targetDate.setDate(targetDate.getDate() + i);
         targetDate.setHours(0, 0, 0, 0);
@@ -599,6 +617,7 @@ export const useSafeSpending = (
           });
         }
       }
+      } // End of else block for balance calculation
 
       // Find the absolute minimum balance over the entire 90-day period (3 months) ONLY
       // This ensures we ONLY look at the next 3 months, not beyond
@@ -834,7 +853,7 @@ export const useSafeSpending = (
     } finally {
       setIsLoading(false);
     }
-  }, [reserveAmountInput, excludeTodayTransactions, useAvailableBalance, amazonPayouts, forecastsEnabled]);
+  }, [reserveAmountInput, excludeTodayTransactions, useAvailableBalance, amazonPayouts, forecastsEnabled, projectedDailyBalances]);
 
 
   useEffect(() => {
