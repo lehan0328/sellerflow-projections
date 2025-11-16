@@ -2317,8 +2317,20 @@ const Dashboard = () => {
       }
     }
   }
+  
+  // Step 3: Deduplicate - keep only the last opportunity in sequences with identical balances
+  const deduplicatedOpportunities = [];
+  for (let i = 0; i < opportunities.length; i++) {
+    const current = opportunities[i];
+    const next = opportunities[i + 1];
     
-    return opportunities;
+    // Keep this opportunity if it's the last one OR the next has a different balance
+    if (!next || next.balance !== current.balance) {
+      deduplicatedOpportunities.push(current);
+    }
+  }
+    
+    return deduplicatedOpportunities;
   }, [projectedDailyBalances, reserveAmount]);
 
   // Calculate safe spending from projected balances
