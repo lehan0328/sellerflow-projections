@@ -612,9 +612,6 @@ const Landing = () => {
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             {/* Left Content */}
             <div className="space-y-8 z-10">
-              <p className="text-sm font-medium text-muted-foreground/80 animate-fade-in">
-                Bills must be paid in cash, not profit.
-              </p>
               <div className="animate-fade-in space-y-6" style={{
               animationDelay: '200ms'
             }}>
