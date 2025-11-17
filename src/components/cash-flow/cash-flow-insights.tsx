@@ -317,7 +317,7 @@ export const CashFlowInsights = memo(({
       .from('transactions')
       .select('credit_card_id, amount')
       .eq('account_id', profile.account_id)
-      .eq('type', 'purchase_order')
+      .in('type', ['purchase_order', 'expense'])
       .eq('status', 'pending')
       .eq('archived', false)
       .not('credit_card_id', 'is', null);
