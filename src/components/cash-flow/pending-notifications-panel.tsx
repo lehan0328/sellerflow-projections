@@ -66,11 +66,11 @@ export const PendingNotificationsPanel = ({
     const today = startOfDay(new Date());
     const overdue = [];
 
-    // Overdue expenses
+    // Overdue expenses (including today's due items)
     const overdueExpenses = expenseTransactions.filter(tx => 
       tx.type === 'expense' && 
       tx.status === 'pending' && 
-      startOfDay(new Date(tx.transactionDate)) < today
+      startOfDay(new Date(tx.transactionDate)) <= today
     );
     overdueExpenses.forEach(expense => {
       overdue.push({
@@ -85,10 +85,10 @@ export const PendingNotificationsPanel = ({
       });
     });
 
-    // Overdue income
+    // Overdue income (including today's due items)
     const overdueIncome = fetchedIncomeItems.filter(inc => 
       inc.status === 'pending' && 
-      startOfDay(new Date(inc.paymentDate)) < today
+      startOfDay(new Date(inc.paymentDate)) <= today
     );
     overdueIncome.forEach(inc => {
       overdue.push({
@@ -103,11 +103,11 @@ export const PendingNotificationsPanel = ({
       });
     });
 
-    // Overdue purchase orders
+    // Overdue purchase orders (including today's due items)
     const overduePOs = purchaseOrders.filter(po => 
       po.status === 'pending' && 
       po.dueDate &&
-      startOfDay(new Date(po.dueDate)) < today
+      startOfDay(new Date(po.dueDate)) <= today
     );
     overduePOs.forEach(po => {
       overdue.push({
