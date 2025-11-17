@@ -1127,7 +1127,18 @@ export const PurchaseOrderForm = ({
                         
                         <Input placeholder="Description" value={payment.description} onChange={e => updatePayment(payment.id, "description", e.target.value)} />
                         
-                        <Input type="number" step="0.01" placeholder="Amount" value={payment.amount} onChange={e => updatePayment(payment.id, "amount", e.target.value)} />
+                        <Input 
+                          type="number" 
+                          step="0.01" 
+                          placeholder="Amount" 
+                          value={payment.amount} 
+                          onChange={e => updatePayment(payment.id, "amount", e.target.value)}
+                          onKeyDown={(e) => {
+                            if (['e', 'E', '+', '-'].includes(e.key)) {
+                              e.preventDefault();
+                            }
+                          }}
+                        />
                         
                         <Popover open={openPaymentDatePickers[payment.id]} onOpenChange={open => setOpenPaymentDatePickers(prev => ({
                     ...prev,
