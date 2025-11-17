@@ -185,12 +185,6 @@ export function PayeeForm({
                 className="flex gap-4"
               >
                 <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="cash" id="cash" />
-                  <Label htmlFor="cash" className="font-normal cursor-pointer">
-                    Cash
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
                   <RadioGroupItem value="bank-transfer" id="bank-transfer" />
                   <Label htmlFor="bank-transfer" className="font-normal cursor-pointer">
                     Bank Transfer
