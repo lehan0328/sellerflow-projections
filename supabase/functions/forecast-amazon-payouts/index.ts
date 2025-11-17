@@ -932,17 +932,16 @@ serve(async (req) => {
           duplicates: settlementIds.length - uniqueSettlementIds.size
         });
       }
-<<<<<<< HEAD
-      
-      // Insert the unique forecasts (duplicates already removed, old forecasts already deleted)
-=======
 
       // Use upsert instead of insert to be robust against race conditions or delete failures
       // We ignore duplicates on constraint "unique_forecasted_payout_per_account_date"
->>>>>>> e4458e85 (change regen logic)
       const { error: insertError } = await supabase
         .from('amazon_payouts')
-        .insert(uniqueForecasts);
+        .upsert(uniqueForecasts, {
+          // This must match the columns in your constraint exactly
+          onConflict: 'amazon_account_id,payout_date,status',
+          ignoreDuplicates: false
+        });
 
       if (insertError) {
         console.error('[FORECAST] ❌ Error storing forecasted payouts:', JSON.stringify(insertError, null, 2));
