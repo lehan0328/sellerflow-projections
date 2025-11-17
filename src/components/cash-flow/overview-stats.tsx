@@ -206,9 +206,9 @@ export function OverviewStats({
   }, 0);
   const todaysIncome = regularIncome + recurringIncome + amazonIncomeToday;
 
-  // Regular expenses (vendor transactions)
+  // Regular expenses (vendor transactions) - based on due date
   const regularExpenses = vendorTransactions.filter(tx => {
-    const txDate = new Date(tx.transactionDate);
+    const txDate = new Date(tx.dueDate);
     txDate.setHours(0, 0, 0, 0);
     return txDate.toDateString() === todayStr && tx.status === 'pending';
   }).reduce((sum, tx) => sum + tx.amount, 0);
