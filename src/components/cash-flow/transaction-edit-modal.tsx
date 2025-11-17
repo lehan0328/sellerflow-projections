@@ -233,7 +233,10 @@ export const TransactionEditModal = ({ open, onOpenChange, transaction, onSucces
                 onValueChange={(value) => handleInputChange("creditCardId", value === 'cash' ? null : value)}
                 disabled={transaction?.type === 'expense' || transaction?.type === 'purchase_order'}
               >
-                <SelectTrigger className="w-full">
+                <SelectTrigger className={cn(
+                  "w-full",
+                  (transaction?.type === 'expense' || transaction?.type === 'purchase_order') && "opacity-50 cursor-not-allowed"
+                )}>
                   <div className="flex items-center gap-2">
                     <CreditCard className="h-4 w-4" />
                     <SelectValue />
