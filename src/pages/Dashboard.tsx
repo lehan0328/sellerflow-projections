@@ -2322,7 +2322,7 @@ const Dashboard = () => {
         opportunities.push({
           date: currentDay.date,
           balance: opportunityAmount,
-          available_date: earliestDate,
+          available_date: format(addDays(new Date(earliestDate), 1), 'yyyy-MM-dd'),
           lowPointDate: globalMinBalanceDate  // Reference to global minimum
         });
       }
