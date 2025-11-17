@@ -949,21 +949,23 @@ export const PurchaseOrderForm = ({
                             Earliest you can afford: {format(new Date(suggestedDate.available_date || suggestedDate.date), "MMM d, yyyy")}
                           </span>
                         </div>
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="ghost"
-                          className="h-6 px-2 text-xs hover:bg-green-100 dark:hover:bg-green-900/30"
-                          onClick={() => {
-                            setFormData(prev => ({
-                              ...prev,
-                              poDate: new Date(suggestedDate.available_date || suggestedDate.date)
-                            }));
-                            toast.success("Date updated to suggested date");
-                          }}
-                        >
-                          Use This Date
-                        </Button>
+                        {formData.paymentType === "due-upon-order" && (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            className="h-6 px-2 text-xs hover:bg-green-100 dark:hover:bg-green-900/30"
+                            onClick={() => {
+                              setFormData(prev => ({
+                                ...prev,
+                                poDate: new Date(suggestedDate.available_date || suggestedDate.date)
+                              }));
+                              toast.success("Date updated to suggested date");
+                            }}
+                          >
+                            Use This Date
+                          </Button>
+                        )}
                       </div>
                     ) : (
                       <div className="flex items-center gap-2 p-2 bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-900/30 rounded-md">
