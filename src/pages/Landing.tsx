@@ -642,6 +642,14 @@ const Landing = () => {
                 </div>
               </div>
               
+              <blockquote className="border-l-4 border-primary bg-primary/5 px-6 py-4 animate-fade-in hover-scale" style={{
+              animationDelay: '350ms'
+            }}>
+                <p className="text-lg font-semibold text-foreground italic">
+                  "Bills must be paid in cash, not profit."
+                </p>
+              </blockquote>
+              
               <p className="text-xl text-muted-foreground max-w-xl animate-fade-in leading-relaxed" style={{
               animationDelay: '400ms'
             }}>Auren forecasts 90-day precise Amazon payout forecast based on your amazon data, tracks every purchase order, recurring expense, credit card payment, and additional income to provide you your cashflow for the next 3 months.</p>
