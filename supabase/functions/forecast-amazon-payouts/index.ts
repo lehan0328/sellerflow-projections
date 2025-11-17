@@ -936,7 +936,11 @@ serve(async (req) => {
       // Insert the unique forecasts (duplicates already removed, old forecasts already deleted)
       const { error: insertError } = await supabase
         .from('amazon_payouts')
-        .insert(uniqueForecasts);
+        .upsert(uniqueForecasts, {
+          // This now matches the standard UNIQUE constraint we just created
+          onConflict: 'amazon_account_id,payout_date,status',
+          ignoreDuplicates: false
+        });
 
       if (insertError) {
         console.error('[FORECAST] ❌ Error storing forecasted payouts:', JSON.stringify(insertError, null, 2));
