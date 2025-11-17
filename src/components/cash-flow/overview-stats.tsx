@@ -185,7 +185,7 @@ export function OverviewStats({
     // Amazon payouts that become available today
     const todayStrISO = todayDate.toISOString().split('T')[0];
     const amazonIncomeToday = amazonPayouts.filter(payout => {
-      // For confirmed payouts, check settlement_end_date
+      // Only include confirmed payouts, check settlement_end_date
       if (payout.status === 'confirmed') {
         const rawData = (payout as any).raw_settlement_data;
         const settlementEndStr = rawData?.FinancialEventGroupEnd || rawData?.settlement_end_date;
@@ -195,13 +195,6 @@ export function OverviewStats({
           return availableDateStr === todayStrISO;
         }
         return false;
-      }
-      
-      // For forecasted payouts, check payout_date
-      if (payout.status === 'forecasted') {
-        const payoutDate = new Date(payout.payout_date);
-        payoutDate.setHours(0, 0, 0, 0);
-        return payoutDate.toDateString() === todayStr;
       }
       
       return false;
