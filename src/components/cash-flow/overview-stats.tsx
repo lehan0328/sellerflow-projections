@@ -213,6 +213,13 @@ export function OverviewStats({
     return txDate.toDateString() === todayStr && tx.status === 'pending';
   }).reduce((sum, tx) => sum + tx.amount, 0);
 
+  // One-time expenses from income table
+  const oneTimeExpenses = incomeItems.filter(item => {
+    const itemDate = new Date(item.paymentDate);
+    itemDate.setHours(0, 0, 0, 0);
+    return itemDate.toDateString() === todayStr && item.status === 'pending' && (item as any).type === 'expense';
+  }).reduce((sum, item) => sum + item.amount, 0);
+
   // Recurring expenses that occur today
   const recurringExpensesToday = recurringExpenses.filter(exp => exp.type === 'expense' && exp.is_active).reduce((sum, exp) => {
     const dates = generateRecurringDates({
@@ -227,7 +234,7 @@ export function OverviewStats({
     }, todayDate, todayDate);
     return dates.length > 0 ? sum + exp.amount : sum;
   }, 0);
-  const todaysExpenses = regularExpenses + recurringExpensesToday;
+  const todaysExpenses = regularExpenses + oneTimeExpenses + recurringExpensesToday;
 
   // Calculate hours until next update is allowed
   const hoursUntilNextUpdate = lastUpdated && !canUpdate ? Math.ceil(24 - (Date.now() - lastUpdated.getTime()) / (1000 * 60 * 60)) : 0;
