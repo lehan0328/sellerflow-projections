@@ -772,7 +772,8 @@ export const IncomeForm = ({
                               </div>
                             ) : (
                               creditCards.map(card => {
-                                const availableCredit = (card.credit_limit || 0) - (card.balance || 0);
+                                const effectiveCreditLimit = card.credit_limit_override || card.credit_limit;
+                                const availableCredit = (effectiveCreditLimit || 0) - (card.balance || 0);
                                 const amount = parseFloat(formData.amount) || 0;
                                 const isInsufficient = amount > availableCredit;
                                 
