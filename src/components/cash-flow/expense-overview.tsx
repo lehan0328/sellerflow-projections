@@ -13,6 +13,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { useCreditCards } from "@/hooks/useCreditCards";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 interface ExpenseItem {
   id: string;
@@ -43,6 +44,26 @@ export const ExpenseOverview = ({ expenses, onEditExpense, onDeleteExpense, onCr
   const [paymentMethodFilter, setPaymentMethodFilter] = useState<'all' | 'cash' | 'credit'>('all');
   const [customFromDate, setCustomFromDate] = useState<Date | undefined>();
   const [customToDate, setCustomToDate] = useState<Date | undefined>();
+  const [deletingExpense, setDeletingExpense] = useState<ExpenseItem | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+
+  const handleDeleteClick = (expense: ExpenseItem) => {
+    setDeletingExpense(expense);
+    setShowDeleteDialog(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (deletingExpense) {
+      onDeleteExpense?.(deletingExpense);
+    }
+    setShowDeleteDialog(false);
+    setDeletingExpense(null);
+  };
+
+  const handleCancelDelete = () => {
+    setShowDeleteDialog(false);
+    setDeletingExpense(null);
+  };
 
   // Filter and sort expenses
   const filteredAndSortedExpenses = useMemo(() => {
@@ -495,7 +516,7 @@ export const ExpenseOverview = ({ expenses, onEditExpense, onDeleteExpense, onCr
                                   <Button
                                     variant="ghost"
                                     size="sm"
-                                    onClick={() => onDeleteExpense(expense)}
+                                    onClick={() => handleDeleteClick(expense)}
                                     className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
                                   >
                                     <Trash2 className="h-3.5 w-3.5" />
@@ -515,6 +536,31 @@ export const ExpenseOverview = ({ expenses, onEditExpense, onDeleteExpense, onCr
           )}
         </CardContent>
       </Card>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Expense</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{deletingExpense?.description}"?
+              <br /><br />
+              <strong className="text-destructive">This action is permanent and cannot be recovered.</strong> The transaction will be completely removed from your records.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCancelDelete}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleConfirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete Permanently
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
