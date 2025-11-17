@@ -1166,8 +1166,17 @@ export const CashFlowInsights = memo(({
                   <div className="space-y-3">
                     {(() => {
                       const amount = parseFloat(searchAmount);
-                      // Find the earliest opportunity where balance >= amount
-                      const matchingOpp = mergedOpportunities.find(opp => opp.balance >= amount);
+                      // Find ALL opportunities with sufficient balance
+                      const matchingOpps = mergedOpportunities.filter(opp => opp.balance >= amount);
+                      
+                      // Sort by available_date to find the earliest one
+                      const matchingOpp = matchingOpps.length > 0
+                        ? matchingOpps.sort((a, b) => {
+                            const dateA = new Date(a.available_date || a.date).getTime();
+                            const dateB = new Date(b.available_date || b.date).getTime();
+                            return dateA - dateB;
+                          })[0]
+                        : null;
                       
                       if (!matchingOpp) {
                         return (
