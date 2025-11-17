@@ -206,21 +206,27 @@ export function OverviewStats({
   }, 0);
   const todaysIncome = regularIncome + recurringIncome + amazonIncomeToday;
 
-  // Regular expenses (vendor transactions) - based on due date
-  const regularExpenses = vendorTransactions.filter(tx => {
+  // Split regular expenses by payment method
+  const regularBankExpenses = vendorTransactions.filter(tx => {
     const txDate = new Date(tx.dueDate);
     txDate.setHours(0, 0, 0, 0);
-    return txDate.toDateString() === todayStr && tx.status === 'pending';
+    return txDate.toDateString() === todayStr && tx.status === 'pending' && !tx.creditCardId;
   }).reduce((sum, tx) => sum + tx.amount, 0);
 
-  // One-time expenses from income table
+  const regularCreditCardExpenses = vendorTransactions.filter(tx => {
+    const txDate = new Date(tx.dueDate);
+    txDate.setHours(0, 0, 0, 0);
+    return txDate.toDateString() === todayStr && tx.status === 'pending' && tx.creditCardId;
+  }).reduce((sum, tx) => sum + tx.amount, 0);
+
+  // One-time expenses from income table (assume bank unless specified)
   const oneTimeExpenses = incomeItems.filter(item => {
     const itemDate = new Date(item.paymentDate);
     itemDate.setHours(0, 0, 0, 0);
     return itemDate.toDateString() === todayStr && item.status === 'pending' && (item as any).type === 'expense';
   }).reduce((sum, item) => sum + item.amount, 0);
 
-  // Recurring expenses that occur today
+  // Recurring expenses that occur today (assume bank)
   const recurringExpensesToday = recurringExpenses.filter(exp => exp.type === 'expense' && exp.is_active).reduce((sum, exp) => {
     const dates = generateRecurringDates({
       id: exp.id,
@@ -234,7 +240,10 @@ export function OverviewStats({
     }, todayDate, todayDate);
     return dates.length > 0 ? sum + exp.amount : sum;
   }, 0);
-  const todaysExpenses = regularExpenses + oneTimeExpenses + recurringExpensesToday;
+
+  const todaysBankExpenses = regularBankExpenses + oneTimeExpenses + recurringExpensesToday;
+  const todaysCreditCardExpenses = regularCreditCardExpenses;
+  const todaysExpenses = todaysBankExpenses + todaysCreditCardExpenses;
 
   // Calculate hours until next update is allowed
   const hoursUntilNextUpdate = lastUpdated && !canUpdate ? Math.ceil(24 - (Date.now() - lastUpdated.getTime()) / (1000 * 60 * 60)) : 0;
@@ -487,21 +496,33 @@ export function OverviewStats({
             </div>
           </div>
           <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-3 gap-2">
               <div className="text-center">
                 <p className="text-xs text-muted-foreground mb-1">Inflow</p>
                 <p className="text-lg font-bold text-green-600">{formatCurrency(todaysIncome)}</p>
               </div>
               <div className="text-center">
-                <p className="text-xs text-muted-foreground mb-1">Outflow</p>
-                <p className="text-lg font-bold text-red-600">{formatCurrency(todaysExpenses)}</p>
+                <p className="text-xs text-muted-foreground mb-1">Bank Outflow</p>
+                <p className="text-lg font-bold text-red-600">{formatCurrency(todaysBankExpenses)}</p>
+              </div>
+              <div className="text-center">
+                <p className="text-xs text-muted-foreground mb-1">CC Outflow</p>
+                <p className="text-lg font-bold text-orange-600">{formatCurrency(todaysCreditCardExpenses)}</p>
               </div>
             </div>
-            <div className="text-center pt-2 border-t">
-              <p className="text-xs text-muted-foreground mb-1">Net</p>
-              <p className={`text-lg font-bold ${todaysIncome - todaysExpenses >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {formatCurrency(todaysIncome - todaysExpenses)}
-              </p>
+            <div className="grid grid-cols-2 gap-3 pt-2 border-t">
+              <div className="text-center">
+                <p className="text-xs text-muted-foreground mb-1">Bank Net</p>
+                <p className={`text-lg font-bold ${todaysIncome - todaysBankExpenses >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {formatCurrency(todaysIncome - todaysBankExpenses)}
+                </p>
+              </div>
+              <div className="text-center">
+                <p className="text-xs text-muted-foreground mb-1">Total Net</p>
+                <p className={`text-lg font-bold ${todaysIncome - todaysExpenses >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {formatCurrency(todaysIncome - todaysExpenses)}
+                </p>
+              </div>
             </div>
           </div>
         </div>
