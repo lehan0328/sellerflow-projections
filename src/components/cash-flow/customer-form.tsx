@@ -17,11 +17,13 @@ interface CustomerFormProps {
   onOpenChange: (open: boolean) => void;
   onAddCustomer: (customer: any) => void;
   onCategoryAdded?: () => void;
+  existingCustomers?: Array<{ name: string }>;
 }
 
-export const CustomerForm = ({ open, onOpenChange, onAddCustomer, onCategoryAdded }: CustomerFormProps) => {
+export const CustomerForm = ({ open, onOpenChange, onAddCustomer, onCategoryAdded, existingCustomers = [] }: CustomerFormProps) => {
   const { categories, addCategory, refetch: refetchCategories } = useCategories('income', false);
   const [showAddCategory, setShowAddCategory] = useState(false);
+  const [duplicateError, setDuplicateError] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     category: ""
@@ -30,9 +32,21 @@ export const CustomerForm = ({ open, onOpenChange, onAddCustomer, onCategoryAdde
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Check for duplicate customer name (case-insensitive)
+    const normalizedName = capitalizeName(formData.name);
+    const isDuplicate = existingCustomers.some(
+      customer => customer.name.toLowerCase() === normalizedName.toLowerCase()
+    );
+    
+    if (isDuplicate) {
+      setDuplicateError(true);
+      toast.error("Duplicate customer name. Please use a different name.");
+      return;
+    }
+    
     const customer = {
       id: Date.now().toString(),
-      name: capitalizeName(formData.name),
+      name: normalizedName,
       category: formData.category
     };
     
@@ -48,10 +62,15 @@ export const CustomerForm = ({ open, onOpenChange, onAddCustomer, onCategoryAdde
       name: "",
       category: ""
     });
+    setDuplicateError(false);
   };
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    // Clear duplicate error when user starts typing
+    if (field === "name" && duplicateError) {
+      setDuplicateError(false);
+    }
   };
 
   return (
@@ -73,7 +92,11 @@ export const CustomerForm = ({ open, onOpenChange, onAddCustomer, onCategoryAdde
                 value={formData.name}
                 onChange={(e) => handleInputChange("name", e.target.value)}
                 required
+                className={duplicateError ? "border-destructive" : ""}
               />
+              {duplicateError && (
+                <p className="text-sm text-destructive">Duplicate customer name. Please use a different name.</p>
+              )}
             </div>
 
             <div className="space-y-2">
