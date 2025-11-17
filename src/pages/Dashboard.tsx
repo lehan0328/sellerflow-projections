@@ -2909,6 +2909,7 @@ const Dashboard = () => {
                       allBuyingOpportunities={buyingOpportunities}
                       dailyBalances={projectedDailyBalances.map(d => ({ date: d.date, balance: d.runningBalance }))}
                       onUpdateReserveAmount={updateReserveAmount}
+                      excludeToday={excludeToday}
                       transactionMatchButton={
                         <TransactionMatchButton
                           matches={matches}
