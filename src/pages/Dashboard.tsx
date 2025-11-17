@@ -1529,7 +1529,7 @@ const Dashboard = () => {
 
     // For one-time expenses, create as 'expense' type transaction (not purchase_order)
     const paymentDate = expenseData.paymentDate || new Date();
-    const isPaymentDatePassed = startOfDay(paymentDate) <= startOfDay(new Date());
+    const isPaymentDatePassed = startOfDay(paymentDate) < startOfDay(new Date());
     
     await addTransaction({
       type: "expense",
