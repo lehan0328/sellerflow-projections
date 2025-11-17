@@ -21,6 +21,8 @@ import {
   Moon,
   Monitor,
   DollarSign,
+  Pencil,
+  Check,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -169,6 +171,7 @@ const Dashboard = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [companyName, setCompanyName] = useState("");
+  const [isEditingCompany, setIsEditingCompany] = useState(false);
   const [selectedCurrency, setSelectedCurrency] = useState<string>("USD");
   const [clearDataConfirmation, setClearDataConfirmation] = useState(false);
   const { theme, setTheme } = useTheme();
@@ -2498,69 +2501,60 @@ const Dashboard = () => {
                       Email cannot be changed here. Contact support if needed.
                     </p>
                   </div>
-                  <div>
-                    <Label htmlFor="company">Company Name</Label>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="company">Company Name</Label>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setIsEditingCompany(!isEditingCompany)}
+                        className="h-8 px-2"
+                      >
+                        {isEditingCompany ? (
+                          <><Check className="h-4 w-4 mr-1" /> Save</>
+                        ) : (
+                          <><Pencil className="h-4 w-4 mr-1" /> Edit</>
+                        )}
+                      </Button>
+                    </div>
                     <Input
                       id="company"
                       value={companyName}
                       onChange={(e) => setCompanyName(e.target.value)}
                       placeholder="Enter your company name"
+                      disabled={!isEditingCompany}
+                      className={!isEditingCompany ? "bg-muted" : ""}
                       onBlur={(e) => {
-                        const trimmed = e.target.value.trim();
-                        if (trimmed !== profile?.company) {
-                          handleProfileChange("company", trimmed);
+                        if (isEditingCompany) {
+                          const trimmed = e.target.value.trim();
+                          if (trimmed !== profile?.company) {
+                            handleProfileChange("company", trimmed);
+                          }
+                          setIsEditingCompany(false);
                         }
                       }}
                       maxLength={255}
                     />
                     <p className="text-xs text-muted-foreground mt-1">
-                      Changes are saved automatically when you click away.
+                      {isEditingCompany 
+                        ? "Changes are saved automatically when you click away."
+                        : "Click Edit to modify your company name"}
                     </p>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="default-currency">Default Currency</Label>
-                    <Select
-                      value={selectedCurrency}
-                      onValueChange={(value) => {
-                        setSelectedCurrency(value);
-                        updateProfileMutation.mutate({ currency: value });
-                      }}
-                    >
+                    <Select value="USD" disabled>
                       <SelectTrigger
                         id="default-currency"
-                        className="bg-background"
+                        className="bg-muted cursor-not-allowed"
                       >
-                        <SelectValue placeholder="Select currency" />
+                        <SelectValue placeholder="USD - US Dollar ($)" />
                       </SelectTrigger>
-                      <SelectContent className="bg-popover z-50">
-                        <SelectItem value="USD">USD - US Dollar ($)</SelectItem>
-                        <SelectItem value="EUR">EUR - Euro (€)</SelectItem>
-                        <SelectItem value="GBP">
-                          GBP - British Pound (£)
-                        </SelectItem>
-                        <SelectItem value="CAD">
-                          CAD - Canadian Dollar (C$)
-                        </SelectItem>
-                        <SelectItem value="AUD">
-                          AUD - Australian Dollar (A$)
-                        </SelectItem>
-                        <SelectItem value="JPY">
-                          JPY - Japanese Yen (¥)
-                        </SelectItem>
-                        <SelectItem value="CNY">
-                          CNY - Chinese Yuan (¥)
-                        </SelectItem>
-                        <SelectItem value="INR">
-                          INR - Indian Rupee (₹)
-                        </SelectItem>
-                        <SelectItem value="MXN">
-                          MXN - Mexican Peso ($)
-                        </SelectItem>
-                        <SelectItem value="BRL">
-                          BRL - Brazilian Real (R$)
-                        </SelectItem>
-                      </SelectContent>
                     </Select>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      We currently only support US region/USD with plans to expand in the upcoming months.
+                    </p>
                   </div>
                 </div>
               )}
