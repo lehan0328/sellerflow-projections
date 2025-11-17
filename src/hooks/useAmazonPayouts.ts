@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
 import { toast } from "sonner";
+import { useEffect, useMemo } from "react";
 
 export interface AmazonPayout {
   id: string;
@@ -51,28 +52,37 @@ export interface AmazonPayout {
 
 export const useAmazonPayouts = () => {
   const { user } = useAuth();
-  const [amazonPayouts, setAmazonPayouts] = useState<AmazonPayout[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [forecastsEnabled, setForecastsEnabled] = useState(true);
-  const [advancedModelingEnabled, setAdvancedModelingEnabled] = useState(false);
+  const queryClient = useQueryClient();
 
-  const fetchAmazonPayouts = async () => {
-    if (!user) {
-      setIsLoading(false);
-      return;
-    }
-
-    try {
-      // Check if forecasts and advanced modeling are enabled
-      const { data: settings } = await supabase
+  // 1. Fetch User Settings (Forecasts & Advanced Modeling)
+  const { data: settings } = useQuery({
+    queryKey: ['user_settings', user?.id],
+    enabled: !!user,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    queryFn: async () => {
+      const { data, error } = await supabase
         .from('user_settings')
         .select('forecasts_enabled, advanced_modeling_enabled')
-        .eq('user_id', user.id)
+        .eq('user_id', user!.id)
         .maybeSingle();
 
-      const forecastsEnabled = settings?.forecasts_enabled ?? true;
-      const advancedModelingEnabled = settings?.advanced_modeling_enabled ?? false;
+      if (error) {
+        console.error("Error fetching user settings:", error);
+        return null;
+      }
+      return data;
+    }
+  });
 
+  const forecastsEnabled = settings?.forecasts_enabled ?? true;
+  const advancedModelingEnabled = settings?.advanced_modeling_enabled ?? false;
+
+  // 2. Fetch and Filter Amazon Payouts
+  const { data: amazonPayouts = [], isLoading, error } = useQuery({
+    queryKey: ['amazon_payouts', user?.id],
+    enabled: !!user,
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    queryFn: async () => {
       const { data, error } = await supabase
         .from("amazon_payouts")
         .select(`
@@ -84,15 +94,16 @@ export const useAmazonPayouts = () => {
             payout_frequency
           )
         `)
-        .eq("user_id", user.id)
+        .eq("user_id", user!.id)
         .order("payout_date", { ascending: false });
 
       if (error) {
+        console.error("Error fetching Amazon payouts:", error);
         toast.error("Failed to load Amazon payouts");
-        return;
+        throw error;
       }
 
-      // Filter payouts based on settings
+      // Filter payouts based on logic
       const filteredPayouts = (data || []).filter((payout) => {
         // Always include open settlements (estimated) - let the component decide display logic
         if (payout.status === 'estimated') {
@@ -123,7 +134,6 @@ export const useAmazonPayouts = () => {
             const maxDays = payoutFrequency === 'bi-weekly' ? 20 : 3;
             
             if (daysSinceStart > maxDays) {
-              console.log(`[FILTER] Hiding stale settlement from ${settlementStartStr} (${daysSinceStart} days old)`);
               return false;
             }
             
@@ -153,20 +163,8 @@ export const useAmazonPayouts = () => {
           return true;
         }
         
-        // Always show confirmed settlements
-        if (payout.status === 'confirmed') {
-          return true;
-        }
-        
-        // Always include mathematical forecasts - let the consuming components decide display logic
-        // The forecast toggle should only affect calculations, not data availability
-        if (payout.status === 'forecasted') {
-          return true;
-        }
-        
-        // Include rolled-over forecasts (these are past forecasts that were combined with future dates)
-        // They should display on the chart to show rollover history
-        if (payout.status === 'rolled_over') {
+        // Always show confirmed, forecasted, and rolled_over settlements
+        if (['confirmed', 'forecasted', 'rolled_over'].includes(payout.status)) {
           return true;
         }
         
@@ -174,14 +172,14 @@ export const useAmazonPayouts = () => {
       });
 
       // Parse and enrich with metadata
-      setAmazonPayouts(filteredPayouts.map(payout => {
+      return filteredPayouts.map(payout => {
         const rawData = payout.raw_settlement_data as any;
         const metadata = rawData?.forecast_metadata;
         
         return {
           ...payout,
-          status: payout.status as "confirmed" | "estimated" | "processing" | "forecasted" | "rolled_over",
-          payout_type: payout.payout_type as "bi-weekly" | "reserve-release" | "adjustment" | "daily",
+          status: payout.status as AmazonPayout['status'],
+          payout_type: payout.payout_type as AmazonPayout['payout_type'],
           amazon_accounts: payout.amazon_accounts ? {
             ...payout.amazon_accounts,
             payout_frequency: payout.amazon_accounts.payout_frequency as 'daily' | 'bi-weekly' | undefined
@@ -201,35 +199,12 @@ export const useAmazonPayouts = () => {
           settlement_start_date: (payout as any).settlement_start_date || metadata?.settlement_period?.start,
           settlement_end_date: (payout as any).settlement_end_date || metadata?.settlement_period?.end,
           days_accumulated: metadata?.days_accumulated || 0
-        };
-      }));
-    } catch (error) {
-      console.error("Error fetching Amazon payouts:", error);
-      toast.error("Failed to load Amazon payouts");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchAmazonPayouts();
-  }, [user]);
-
-  // Fetch forecasts_enabled and advanced_modeling_enabled settings
-  useEffect(() => {
-    if (!user) return;
-    supabase
-      .from('user_settings')
-      .select('forecasts_enabled, advanced_modeling_enabled')
-      .eq('user_id', user.id)
-      .maybeSingle()
-      .then(({ data }) => {
-        setForecastsEnabled(data?.forecasts_enabled ?? true);
-        setAdvancedModelingEnabled(data?.advanced_modeling_enabled ?? false);
+        } as AmazonPayout;
       });
-  }, [user]);
+    }
+  });
 
-  // Subscribe to real-time updates
+  // 3. Real-time Subscription
   useEffect(() => {
     if (!user) return;
 
@@ -237,13 +212,10 @@ export const useAmazonPayouts = () => {
       .channel("amazon_payouts_changes")
       .on(
         "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "amazon_payouts",
-        },
+        { event: "*", schema: "public", table: "amazon_payouts" },
         () => {
-          fetchAmazonPayouts();
+          // Only invalidate the query, don't manually fetch
+          queryClient.invalidateQueries({ queryKey: ['amazon_payouts'] });
         }
       )
       .subscribe();
@@ -251,84 +223,89 @@ export const useAmazonPayouts = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user]);
+  }, [user, queryClient]);
 
-  // Calculate summary statistics
-  // EXCLUDE open settlements (status='estimated') to prevent double-counting with forecasts
-  const totalUpcoming = amazonPayouts
-    .filter(payout => 
-      payout.status === 'forecasted' && 
-      new Date(payout.payout_date) >= new Date()
-    )
-    .reduce((sum, payout) => sum + payout.total_amount, 0);
+  // 4. Derived Calculations (Memoized)
+  const stats = useMemo(() => {
+    const totalUpcoming = amazonPayouts
+      .filter(payout => 
+        payout.status === 'forecasted' && 
+        new Date(payout.payout_date) >= new Date()
+      )
+      .reduce((sum, payout) => sum + payout.total_amount, 0);
 
-  const totalConfirmed = amazonPayouts
-    .filter(payout => payout.status === 'confirmed')
-    .reduce((sum, payout) => sum + payout.total_amount, 0);
+    const totalConfirmed = amazonPayouts
+      .filter(payout => payout.status === 'confirmed')
+      .reduce((sum, payout) => sum + payout.total_amount, 0);
 
-  // Exclude ALL estimated settlements for DAILY accounts (they use forecasts instead)
-  const totalEstimated = amazonPayouts
-    .filter(payout => {
-      if (payout.status !== 'estimated') return false;
-      
-      // For daily accounts, COMPLETELY exclude all estimated settlements
-      const accountFrequency = payout.amazon_accounts?.payout_frequency;
-      if (accountFrequency === 'daily') {
-        return false;
-      }
-      
-      // For bi-weekly accounts, only count if forecasts are disabled
-      if (forecastsEnabled || advancedModelingEnabled) {
-        return false;
-      }
-      
-      return true; // Count bi-weekly open settlements when forecasts disabled
-    })
-    .reduce((sum, payout) => sum + payout.total_amount, 0);
-  
-  // Calculate available today (for daily payout accounts)
-  const todayStr = new Date().toISOString().split('T')[0];
-  const availableToday = amazonPayouts
-    .filter(payout => payout.payout_date === todayStr)
-    .reduce((sum, payout) => sum + (payout.available_for_daily_transfer || 0), 0);
+    // Exclude ALL estimated settlements for DAILY accounts (they use forecasts instead)
+    const totalEstimated = amazonPayouts
+      .filter(payout => {
+        if (payout.status !== 'estimated') return false;
+        
+        // For daily accounts, COMPLETELY exclude all estimated settlements
+        const accountFrequency = payout.amazon_accounts?.payout_frequency;
+        if (accountFrequency === 'daily') {
+          return false;
+        }
+        
+        // For bi-weekly accounts, only count if forecasts are disabled
+        if (forecastsEnabled || advancedModelingEnabled) {
+          return false;
+        }
+        
+        return true; // Count bi-weekly open settlements when forecasts disabled
+      })
+      .reduce((sum, payout) => sum + payout.total_amount, 0);
+    
+    // Calculate available today (for daily payout accounts)
+    const todayStr = new Date().toISOString().split('T')[0];
+    const availableToday = amazonPayouts
+      .filter(payout => payout.payout_date === todayStr)
+      .reduce((sum, payout) => sum + (payout.available_for_daily_transfer || 0), 0);
 
-  // Calculate cumulative available for daily settlements (today's accumulated amount)
-  const todayForecast = amazonPayouts.find((p) => 
-    p.status === 'forecasted' && 
-    p.payout_date === todayStr &&
-    p.payout_type === 'daily'
-  );
-  
-  const cumulativeAvailable = todayForecast?.raw_settlement_data?.forecast_metadata?.cumulative_available || 0;
-  const daysSinceLastCashOut = todayForecast?.raw_settlement_data?.forecast_metadata?.days_since_last_cashout || 0;
-  const lastCashOutDate = todayForecast?.raw_settlement_data?.forecast_metadata?.last_cashout_date || null;
+    // Calculate cumulative available for daily settlements
+    const todayForecast = amazonPayouts.find((p) => 
+      p.status === 'forecasted' && 
+      p.payout_date === todayStr &&
+      p.payout_type === 'daily'
+    );
+    
+    const cumulativeAvailable = todayForecast?.raw_settlement_data?.forecast_metadata?.cumulative_available || 0;
+    const daysSinceLastCashOut = todayForecast?.raw_settlement_data?.forecast_metadata?.days_since_last_cashout || 0;
+    const lastCashOutDate = todayForecast?.raw_settlement_data?.forecast_metadata?.last_cashout_date || null;
 
-  // Calculate orders total for current month
-  const now = new Date();
-  const currentMonth = now.getMonth();
-  const currentYear = now.getFullYear();
-  
-  const monthlyOrdersTotal = amazonPayouts
-    .filter(payout => {
-      const payoutDate = new Date(payout.payout_date);
-      return payoutDate.getMonth() === currentMonth && 
-             payoutDate.getFullYear() === currentYear;
-    })
-    .reduce((sum, payout) => sum + (payout.orders_total || 0), 0);
+    // Calculate orders total for current month
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    
+    const monthlyOrdersTotal = amazonPayouts
+      .filter(payout => {
+        const payoutDate = new Date(payout.payout_date);
+        return payoutDate.getMonth() === currentMonth && 
+               payoutDate.getFullYear() === currentYear;
+      })
+      .reduce((sum, payout) => sum + (payout.orders_total || 0), 0);
+
+    return {
+      totalUpcoming,
+      totalConfirmed,
+      totalEstimated,
+      availableToday,
+      cumulativeAvailable,
+      daysSinceLastCashOut,
+      lastCashOutDate,
+      monthlyOrdersTotal
+    };
+  }, [amazonPayouts, forecastsEnabled, advancedModelingEnabled]);
 
   return {
     amazonPayouts,
     isLoading,
-    totalUpcoming,
-    totalConfirmed,
-    totalEstimated,
-    monthlyOrdersTotal,
-    availableToday,
-    cumulativeAvailable,
-    daysSinceLastCashOut,
-    lastCashOutDate,
     forecastsEnabled,
     advancedModelingEnabled,
-    refetch: fetchAmazonPayouts
+    ...stats,
+    refetch: () => queryClient.invalidateQueries({ queryKey: ['amazon_payouts'] })
   };
 };

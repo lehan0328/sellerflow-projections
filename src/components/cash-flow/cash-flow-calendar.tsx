@@ -128,7 +128,6 @@ export const CashFlowCalendar = ({
   const [selectedDayTransactions, setSelectedDayTransactions] = useState<CashFlowEvent[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [showDayTransactionsModal, setShowDayTransactionsModal] = useState(false);
-  const [draggedTransaction, setDraggedTransaction] = useState<CashFlowEvent | null>(null);
   const [showCashFlowLine, setShowCashFlowLine] = useState(chartPreferences.showCashFlowLine);
   const [showTotalResourcesLine, setShowTotalResourcesLine] = useState(chartPreferences.showTotalResourcesLine);
   const [showCreditCardLine, setShowCreditCardLine] = useState(chartPreferences.showCreditCardLine);

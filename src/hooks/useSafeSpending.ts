@@ -139,23 +139,8 @@ export const useSafeSpending = (
           ? (acc.available_balance ?? acc.balance)
           : acc.balance;
         
-        console.log('🏦 [useSafeSpending] Bank account:', {
-          name: acc.account_name,
-          balance: acc.balance,
-          available_balance: acc.available_balance,
-          using: balanceToUse,
-          mode: useAvailableBalance ? 'available' : 'current'
-        });
-        
         return sum + Number(balanceToUse || 0);
       }, 0) || 0;
-      
-      console.log('💵 [useSafeSpending] Starting calculation:', {
-        totalBankBalance: bankBalance,
-        useAvailableBalance,
-        excludeTodayTransactions,
-        reserve
-      });
 
       // Get ALL events (transactions, income, recurring, vendors, etc.)
       // This should match what the calendar receives
@@ -233,20 +218,6 @@ export const useSafeSpending = (
         
         // For forecasted payouts, use standard date range check
         return payoutDate >= today && payoutDate <= futureDate;
-      });
-      
-      console.log('🔍 [useSafeSpending] Filtered Amazon payouts:', {
-        total: filteredAmazonPayouts.length,
-        confirmed: filteredAmazonPayouts.filter(p => p.status === 'confirmed').length,
-        estimated: filteredAmazonPayouts.filter(p => p.status === 'estimated').length,
-        forecasted: filteredAmazonPayouts.filter(p => p.status === 'forecasted').length,
-        confirmedPayouts: filteredAmazonPayouts
-          .filter(p => p.status === 'confirmed')
-          .map(p => ({
-            settlement_id: p.settlement_id,
-            payout_date: p.payout_date,
-            amount: p.total_amount
-          }))
       });
 
       // Check if we have any forecast data
@@ -607,15 +578,6 @@ export const useSafeSpending = (
           }))
         });
         
-        // Log transactions for target date range
-        if (isTargetDateRange && (dayChange !== 0 || targetDateStr === '2024-10-31' || targetDateStr === '2025-12-12')) {
-          console.log(`💰 [useSafeSpending] ${targetDateStr}:`, {
-            transactions: transactionLog,
-            dayChange: dayChange.toFixed(2),
-            runningBalance: runningBalance.toFixed(2),
-            previousBalance: (runningBalance - dayChange).toFixed(2)
-          });
-        }
       }
       } // End of else block for balance calculation
 
@@ -627,19 +589,6 @@ export const useSafeSpending = (
       
       // Find any negative days
       const negativeDays = dailyBalances.filter(d => d.balance < 0);
-      
-      console.log('💰 Safe Spending Calculation:', {
-        currentBankBalance: bankBalance,
-        totalDaysCalculated: dailyBalances.length,
-        lowestProjectedBalance: minBalance,
-        lowestBalanceDate: minDay.date,
-        reserveAmount: reserve,
-        negativeDaysCount: negativeDays.length,
-        negativeDays: negativeDays.map(d => ({ date: d.date, balance: d.balance })),
-        safeSpendingCalc: `${minBalance} - ${reserve} = ${minBalance - reserve}`,
-        first10Days: dailyBalances.slice(0, 10).map(d => ({ date: d.date, balance: d.balance })),
-        last10Days: dailyBalances.slice(-10).map(d => ({ date: d.date, balance: d.balance }))
-      });
       
       // Track remaining safe spending to make opportunities non-additive
       const minBalanceDate = minDay.date;
@@ -786,14 +735,6 @@ export const useSafeSpending = (
       // If minimum balance is negative, safe spending MUST be 0 or negative
       // Don't artificially inflate it
       const safeSpendingLimit = calculatedSafeSpending;
-      
-      console.log('💰 Final Safe Spending:', {
-        minBalance,
-        reserve,
-        calculated: calculatedSafeSpending,
-        finalValue: safeSpendingLimit,
-        isNegative: safeSpendingLimit < 0
-      });
       
       // Find earliest date when you can make purchases for safe spending
       // If we have enough cash TODAY, set available date to today

@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useEffect } from "react";
 
 export interface Transaction {
   id: string;
@@ -17,9 +18,8 @@ export interface Transaction {
 }
 
 export const useTransactions = () => {
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   // Helper function to format date for database without timezone issues
   const formatDateForDB = (date: Date) => {
@@ -35,14 +35,13 @@ export const useTransactions = () => {
     return new Date(y, (m || 1) - 1, d || 1);
   };
 
-  const fetchTransactions = async () => {
-    try {
+  // 1. Use useQuery for fetching data with caching
+  const { data: transactions = [], isLoading: loading, error } = useQuery({
+    queryKey: ['transactions'], // Unique key for this data
+    staleTime: 5 * 60 * 1000,   // Consider data fresh for 5 minutes
+    queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        setTransactions([]);
-        setLoading(false);
-        return;
-      }
+      if (!user) return [];
 
       const { data, error } = await supabase
         .from('transactions')
@@ -50,9 +49,12 @@ export const useTransactions = () => {
         .eq('archived', false)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching transactions:', error);
+        throw error;
+      }
 
-      const formattedTransactions = data?.map(transaction => ({
+      return data.map(transaction => ({
         id: transaction.id,
         type: transaction.type as Transaction['type'],
         amount: Number(transaction.amount),
@@ -64,23 +66,13 @@ export const useTransactions = () => {
         dueDate: transaction.due_date ? parseDateFromDB(transaction.due_date) : undefined,
         status: transaction.status as Transaction['status'],
         category: transaction.category
-      })) || [];
+      }));
+    },
+  });
 
-      setTransactions(formattedTransactions);
-    } catch (error) {
-      console.error('Error fetching transactions:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load transactions",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const addTransaction = async (transactionData: Omit<Transaction, 'id'>) => {
-    try {
+  // 2. Use mutations for updates to automatically invalidate cache
+  const addTransactionMutation = useMutation({
+    mutationFn: async (transactionData: Omit<Transaction, 'id'>) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
@@ -103,137 +95,80 @@ export const useTransactions = () => {
         .single();
 
       if (error) throw error;
-
-      const newTransaction: Transaction = {
-        id: data.id,
-        type: data.type as Transaction['type'],
-        amount: Number(data.amount),
-        description: data.description || '',
-        vendorId: data.vendor_id,
-        customerId: data.customer_id,
-        creditCardId: data.credit_card_id,
-        transactionDate: parseDateFromDB(data.transaction_date),
-        dueDate: data.due_date ? parseDateFromDB(data.due_date) : undefined,
-        status: data.status as Transaction['status'],
-        category: data.category
-      };
-
-      setTransactions(prev => [newTransaction, ...prev]);
-      return newTransaction;
-    } catch (error) {
+      return data;
+    },
+    onSuccess: () => {
+      // Forces a refetch of the 'transactions' query everywhere in the app
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      toast({ title: "Success", description: "Transaction added successfully" });
+    },
+    onError: (error) => {
       console.error('Error adding transaction:', error);
-      toast({
-        title: "Error",
-        description: "Failed to add transaction",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "Failed to add transaction", variant: "destructive" });
     }
-  };
+  });
 
-  const deleteTransaction = async (id: string) => {
-    try {
-      const { error } = await supabase
-        .from('transactions')
-        .delete()
-        .eq('id', id);
-
+  const deleteTransactionMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('transactions').delete().eq('id', id);
       if (error) throw error;
-
-      setTransactions(prev => prev.filter(t => t.id !== id));
-      
-      toast({
-        title: "Success",
-        description: "Transaction deleted successfully",
-      });
-    } catch (error) {
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      toast({ title: "Success", description: "Transaction deleted successfully" });
+    },
+    onError: (error) => {
       console.error('Error deleting transaction:', error);
-      toast({
-        title: "Error",
-        description: "Failed to delete transaction",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "Failed to delete transaction", variant: "destructive" });
     }
-  };
+  });
 
-   const deleteAllTransactions = async () => {
-     try {
-       const { data: { user } } = await supabase.auth.getUser();
-       if (!user) throw new Error('User not authenticated');
- 
-       const { error } = await supabase
-          .from('transactions')
-          .delete()
-          .is('transaction_id', null);
- 
+  const deleteAllTransactionsMutation = useMutation({
+     mutationFn: async () => {
+       const { error } = await supabase.from('transactions').delete().is('transaction_id', null);
        if (error) throw error;
- 
-       setTransactions([]);
-     } catch (error) {
-       console.error('Error deleting all transactions:', error);
-       // Only show toast for actual errors, not for successful cleanup
+     },
+     onSuccess: () => {
+       queryClient.invalidateQueries({ queryKey: ['transactions'] });
      }
-   };
- 
-   // Delete all transactions associated with a specific vendor (server-side filter)
-   const deleteTransactionsByVendor = async (vendorId: string) => {
-     try {
-       const { error } = await supabase
-         .from('transactions')
-         .delete()
-         .eq('vendor_id', vendorId);
- 
-       if (error) throw error;
- 
-       setTransactions(prev => prev.filter(t => t.vendorId !== vendorId));
-       toast({
-         title: "Success",
-         description: "Vendor transactions deleted successfully",
-       });
-     } catch (error) {
-       console.error('Error deleting vendor transactions:', error);
-       toast({
-         title: "Error",
-         description: "Failed to delete vendor transactions",
-         variant: "destructive",
-       });
-     }
-   };
+  });
 
+  const deleteTransactionsByVendorMutation = useMutation({
+    mutationFn: async (vendorId: string) => {
+      const { error } = await supabase.from('transactions').delete().eq('vendor_id', vendorId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      toast({ title: "Success", description: "Vendor transactions deleted successfully" });
+    },
+    onError: (error) => {
+      console.error('Error deleting vendor transactions:', error);
+      toast({ title: "Error", description: "Failed to delete vendor transactions", variant: "destructive" });
+    }
+  });
+
+  // Realtime subscription setup
   useEffect(() => {
-    fetchTransactions();
-  }, []);
+    const channel = supabase
+      .channel('transactions-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      })
+      .subscribe();
 
-  // Realtime subscription for transactions
-  useEffect(() => {
-    let channel: any;
-    const setup = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      channel = supabase
-        .channel('transactions-changes')
-        .on('postgres_changes', {
-          event: '*',
-          schema: 'public',
-          table: 'transactions',
-        }, () => {
-          fetchTransactions();
-        })
-        .subscribe();
-    };
-    setup();
     return () => {
-      if (channel) supabase.removeChannel(channel);
+      supabase.removeChannel(channel);
     };
-  }, []);
+  }, [queryClient]);
 
-   return {
-     transactions,
-     loading,
-     addTransaction,
-     deleteTransaction,
-     deleteAllTransactions,
-     deleteTransactionsByVendor,
-     refetch: fetchTransactions
-   };
+  return {
+    transactions,
+    loading,
+    addTransaction: addTransactionMutation.mutateAsync,
+    deleteTransaction: deleteTransactionMutation.mutateAsync,
+    deleteAllTransactions: deleteAllTransactionsMutation.mutateAsync,
+    deleteTransactionsByVendor: deleteTransactionsByVendorMutation.mutateAsync,
+    refetch: () => queryClient.invalidateQueries({ queryKey: ['transactions'] })
+  };
 };
