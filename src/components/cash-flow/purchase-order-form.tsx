@@ -118,6 +118,7 @@ export const PurchaseOrderForm = ({
   const [extractedVendorName, setExtractedVendorName] = useState<string>("");
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [showTotalMismatchDialog, setShowTotalMismatchDialog] = useState(false);
   const [saveToStorage, setSaveToStorage] = useState(() => {
     const saved = localStorage.getItem('po-save-to-storage');
     return saved !== null ? saved === 'true' : true;
@@ -354,6 +355,23 @@ export const PurchaseOrderForm = ({
       return;
     }
 
+    // Check if line items total matches order total
+    if (lineItems.length > 0) {
+      const orderTotal = parseFloat(formData.amount) || 0;
+      const itemsTotal = lineItemsTotal;
+      const difference = Math.abs(orderTotal - itemsTotal);
+      
+      // Allow small floating point differences (less than 1 cent)
+      if (difference >= 0.01) {
+        setShowTotalMismatchDialog(true);
+        return;
+      }
+    }
+
+    await processOrderSubmission();
+  };
+
+  const processOrderSubmission = async () => {
     // Check credit card availability and limits if using credit card
     if (formData.paymentMethod === "credit-card") {
       if (formData.splitPayment) {
@@ -384,6 +402,10 @@ export const PurchaseOrderForm = ({
       }
     }
 
+    await finalizeOrderSubmission();
+  };
+
+  const finalizeOrderSubmission = async () => {
     const calculatedDueDate = calculateDueDate();
     const orderData = {
       ...formData,
@@ -477,6 +499,7 @@ export const PurchaseOrderForm = ({
       }
     }
     toast.success(`Purchase Order "${formData.poName}" created successfully!`);
+    setShowTotalMismatchDialog(false);
     onOpenChange(false);
   };
   const handleDeleteAllVendors = () => {
@@ -1548,6 +1571,41 @@ export const PurchaseOrderForm = ({
     }}
     type="purchase_order"
   />
+
+  {/* Total Mismatch Confirmation Dialog */}
+  <AlertDialog open={showTotalMismatchDialog} onOpenChange={setShowTotalMismatchDialog}>
+    <AlertDialogContent>
+      <AlertDialogHeader>
+        <AlertDialogTitle>Order Total Mismatch</AlertDialogTitle>
+        <AlertDialogDescription className="space-y-2">
+          <p>The line items total does not match the order total amount:</p>
+          <div className="bg-muted p-3 rounded-md space-y-1 text-sm">
+            <div className="flex justify-between">
+              <span>Order Total:</span>
+              <span className="font-semibold">${parseFloat(formData.amount || "0").toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Line Items Total:</span>
+              <span className="font-semibold">${lineItemsTotal.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between border-t pt-1 mt-1">
+              <span>Difference:</span>
+              <span className="font-semibold text-destructive">
+                ${Math.abs(parseFloat(formData.amount || "0") - lineItemsTotal).toFixed(2)}
+              </span>
+            </div>
+          </div>
+          <p className="text-sm">Do you want to proceed anyway?</p>
+        </AlertDialogDescription>
+      </AlertDialogHeader>
+      <AlertDialogFooter>
+        <AlertDialogCancel>Cancel</AlertDialogCancel>
+        <AlertDialogAction onClick={processOrderSubmission}>
+          Proceed Anyway
+        </AlertDialogAction>
+      </AlertDialogFooter>
+    </AlertDialogContent>
+  </AlertDialog>
 
   {/* Delete All Vendors Confirmation Dialog */}
   <AlertDialog open={showDeleteAllDialog} onOpenChange={setShowDeleteAllDialog}>
