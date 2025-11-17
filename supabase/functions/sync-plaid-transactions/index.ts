@@ -31,14 +31,43 @@ serve(async (req) => {
     }
     
     const token = authHeader.replace('Bearer ', '');
-    
-    // Create admin client to verify user
     const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
     
-    if (authError) {
-      console.error('Auth error:', authError);
-      throw new Error('Authentication failed: ' + authError.message);
+    let user;
+
+    // CHECK 1: Is this a call from the Cron Job/Admin (Service Role)?
+    if (token === SUPABASE_SERVICE_ROLE_KEY) {
+      console.log('Admin/Cron access detected. Fetching owner for account:', accountId);
+      
+      // We need to find out who owns this account to perform the sync
+      const tableName = accountType === 'credit' ? 'credit_cards' : 'bank_accounts';
+      const { data: accountData, error: accountError } = await supabaseAdmin
+        .from(tableName)
+        .select('user_id')
+        .eq('id', accountId)
+        .single();
+
+      if (accountError || !accountData) {
+        throw new Error('Target account not found for admin sync');
+      }
+
+      // Fetch the specific user details needed for Stripe checks later
+      const { data: userData, error: userError } = await supabaseAdmin.auth.admin.getUserById(accountData.user_id);
+      
+      if (userError || !userData.user) {
+        throw new Error('Account owner not found');
+      }
+      user = userData.user;
+
+    } else {
+      // CHECK 2: Standard Frontend User Call
+      const { data: { user: authUser }, error: authError } = await supabaseAdmin.auth.getUser(token);
+      
+      if (authError) {
+        console.error('Auth error:', authError);
+        throw new Error('Authentication failed: ' + authError.message);
+      }
+      user = authUser;
     }
     
     if (!user) {
