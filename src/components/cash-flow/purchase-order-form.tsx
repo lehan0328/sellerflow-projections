@@ -153,12 +153,12 @@ export const PurchaseOrderForm = ({
     return lineItems.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
   }, [lineItems]);
 
-  // Auto-suggest earliest affordable date based on amount or line items total
+  // Auto-suggest earliest affordable date based on total amount only
   const suggestedDate = React.useMemo(() => {
     if (!allBuyingOpportunities || allBuyingOpportunities.length === 0) return null;
     
-    // Use line items total if available, otherwise use manual amount
-    const targetAmount = lineItems.length > 0 ? lineItemsTotal : parseFloat(formData.amount || "0");
+    // Only use the manual total amount field
+    const targetAmount = parseFloat(formData.amount || "0");
     
     if (targetAmount <= 0) return null;
     
@@ -175,7 +175,7 @@ export const PurchaseOrderForm = ({
       : null;
     
     return opportunity;
-  }, [allBuyingOpportunities, formData.amount, lineItemsTotal, lineItems.length]);
+  }, [allBuyingOpportunities, formData.amount]);
 
   // Reset form when dialog opens/closes
   useEffect(() => {
@@ -927,7 +927,7 @@ export const PurchaseOrderForm = ({
                 {/* Suggested Affordable Date */}
                 {suggestedDate && (
                   <div className="animate-fade-in">
-                    {suggestedDate.balance >= (lineItems.length > 0 ? lineItemsTotal : parseFloat(formData.amount || "0")) ? (
+                    {suggestedDate.balance >= parseFloat(formData.amount || "0") ? (
                       <div className="flex items-center justify-between gap-2 p-2 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900/30 rounded-md">
                         <div className="flex items-center gap-2">
                           <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
