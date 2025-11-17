@@ -806,12 +806,18 @@ export const IncomeForm = ({
                         {formData.creditCardId && (() => {
                           const selectedCard = creditCards.find(c => c.id === formData.creditCardId);
                           if (selectedCard) {
-                            const availableCredit = (selectedCard.credit_limit || 0) - (selectedCard.balance || 0);
+                            const effectiveCreditLimit = selectedCard.credit_limit_override || selectedCard.credit_limit;
+                            const availableCredit = (effectiveCreditLimit || 0) - (selectedCard.balance || 0);
                             return (
                               <div className="flex items-center gap-2 text-xs text-muted-foreground bg-background p-2 rounded border">
                                 <CreditCard className="h-4 w-4 text-primary" />
                                 <span className="font-medium">{selectedCard.account_name}</span>
-                                <span className="ml-auto">${availableCredit.toLocaleString()} available</span>
+                                <span className={cn("ml-auto", availableCredit < 0 && "text-destructive")}>
+                                  {availableCredit < 0 
+                                    ? `Over limit by $${Math.abs(availableCredit).toLocaleString()}`
+                                    : `$${availableCredit.toLocaleString()} available`
+                                  }
+                                </span>
                               </div>
                             );
                           }
@@ -822,14 +828,15 @@ export const IncomeForm = ({
                       {formData.creditCardId && formData.amount && (() => {
                         const selectedCard = creditCards.find(c => c.id === formData.creditCardId);
                         if (selectedCard) {
-                          const availableCredit = (selectedCard.credit_limit || 0) - (selectedCard.balance || 0);
+                          const effectiveCreditLimit = selectedCard.credit_limit_override || selectedCard.credit_limit;
+                          const availableCredit = (effectiveCreditLimit || 0) - (selectedCard.balance || 0);
                           const amount = parseFloat(formData.amount) || 0;
                           if (amount > availableCredit) {
                             return (
                               <Alert variant="destructive">
                                 <AlertCircle className="h-4 w-4" />
                                 <AlertDescription>
-                                  This amount (${amount.toLocaleString()}) exceeds the available credit (${availableCredit.toLocaleString()}) on this card. You can still proceed, but ensure credit is available when the charge occurs.
+                                  This amount (${amount.toLocaleString()}) exceeds the available credit ({availableCredit < 0 ? `over limit by $${Math.abs(availableCredit).toLocaleString()}` : `$${availableCredit.toLocaleString()} available`}) on this card. You can still proceed, but ensure credit is available when the charge occurs.
                                 </AlertDescription>
                               </Alert>
                             );
