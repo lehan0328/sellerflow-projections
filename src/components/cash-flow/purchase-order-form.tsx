@@ -1425,8 +1425,10 @@ export const PurchaseOrderForm = ({
             {/* Line Items Section */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <Label className="text-sm font-medium">Line Items</Label>
-                <Button 
+                <Label className="text-sm font-medium">
+                  Line Items <span className="text-muted-foreground font-normal">(optional)</span>
+                </Label>
+                <Button
                   type="button" 
                   variant="outline" 
                   size="sm"
