@@ -480,30 +480,20 @@ const Dashboard = () => {
     type: "bank_connection" | "amazon_connection" | "user";
   }>({ open: false, type: "bank_connection" });
 
-  // Refetch safe spending whenever reserve amount changes
-  useEffect(() => {
-    refetchSafeSpending();
-  }, [reserveAmount, refetchSafeSpending]);
-
-  // Refetch safe spending whenever exclude today changes
-  useEffect(() => {
-    refetchSafeSpending();
-  }, [excludeToday, refetchSafeSpending]);
-
-  // Refetch safe spending whenever balance toggle changes
+  // Refetch safe spending whenever any dependency changes
+  // Combined into a single effect to prevent waterfall requests
   useEffect(() => {
     refetchSafeSpending();
   }, [
+    reserveAmount,
+    excludeToday,
     useAvailableBalance,
-    refetchSafeSpending,
     bankAccountBalance,
     totalAvailableBalance,
+    accounts.length,
+    displayBankBalance,
+    refetchSafeSpending
   ]);
-
-  // Refetch safe spending whenever bank accounts change (added, removed, or balance updated)
-  useEffect(() => {
-    refetchSafeSpending();
-  }, [accounts.length, displayBankBalance, refetchSafeSpending]);
 
   // Invalidate Amazon payout forecasts when bank balance changes to ensure fresh data
   useEffect(() => {
@@ -526,7 +516,10 @@ const Dashboard = () => {
   } = useUserSettings();
 
   // Real-time updates for bank account balance changes
+  // Debounced to prevent request spamming during bulk updates
   useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+
     const channel = supabase
       .channel("bank-accounts-changes")
       .on(
@@ -537,13 +530,21 @@ const Dashboard = () => {
           table: "bank_accounts",
         },
         (payload) => {
-          refetchBankAccounts();
-          refetchSafeSpending();
+          // Clear existing timeout to reset the timer
+          if (timeoutId) clearTimeout(timeoutId);
+          
+          // Wait 1000ms after the last update before refetching
+          timeoutId = setTimeout(() => {
+            console.log("Processing debounced bank account update");
+            refetchBankAccounts();
+            refetchSafeSpending();
+          }, 1000);
         }
       )
       .subscribe();
 
     return () => {
+      if (timeoutId) clearTimeout(timeoutId);
       supabase.removeChannel(channel);
     };
   }, [refetchBankAccounts, refetchSafeSpending]);
