@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Bell, X, CheckCheck, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -15,6 +15,9 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { format, isBefore, startOfDay } from "date-fns";
 import { useNotifications } from "@/hooks/useNotifications";
+import { useTransactions } from "@/hooks/useTransactions";
+import { useIncome } from "@/hooks/useIncome";
+import { useVendorTransactions } from "@/hooks/useVendorTransactions";
 
 interface Vendor {
   id: string;
@@ -52,6 +55,82 @@ export const PendingNotificationsPanel = ({
 }: PendingNotificationsPanelProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const { notifications, unreadCount, markAsRead, markAllAsRead, clearNotification, clearAllNotifications } = useNotifications();
+  
+  // Fetch overdue data
+  const { transactions: expenseTransactions } = useTransactions();
+  const { incomeItems: fetchedIncomeItems } = useIncome();
+  const { transactions: purchaseOrders } = useVendorTransactions();
+
+  // Calculate overdue items
+  const overdueNotifications = useMemo(() => {
+    const today = startOfDay(new Date());
+    const overdue = [];
+
+    // Overdue expenses
+    const overdueExpenses = expenseTransactions.filter(tx => 
+      tx.type === 'expense' && 
+      tx.status === 'pending' && 
+      startOfDay(new Date(tx.transactionDate)) < today
+    );
+    overdueExpenses.forEach(expense => {
+      overdue.push({
+        id: `expense-${expense.id}`,
+        type: 'reminder',
+        category: 'payment',
+        title: 'Overdue Expense',
+        message: `${expense.description || 'Expense'} - Payment overdue`,
+        amount: expense.amount,
+        date: expense.transactionDate,
+        read: false
+      });
+    });
+
+    // Overdue income
+    const overdueIncome = fetchedIncomeItems.filter(inc => 
+      inc.status === 'pending' && 
+      startOfDay(new Date(inc.paymentDate)) < today
+    );
+    overdueIncome.forEach(inc => {
+      overdue.push({
+        id: `income-${inc.id}`,
+        type: 'reminder',
+        category: 'payment',
+        title: 'Overdue Income',
+        message: `${inc.description} - Payment overdue`,
+        amount: inc.amount,
+        date: inc.paymentDate,
+        read: false
+      });
+    });
+
+    // Overdue purchase orders
+    const overduePOs = purchaseOrders.filter(po => 
+      po.status === 'pending' && 
+      po.dueDate &&
+      startOfDay(new Date(po.dueDate)) < today
+    );
+    overduePOs.forEach(po => {
+      overdue.push({
+        id: `po-${po.id}`,
+        type: 'urgent',
+        category: 'payment',
+        title: 'Overdue Purchase Order',
+        message: `${po.vendorName || 'Purchase Order'} - Payment overdue`,
+        amount: po.amount,
+        date: po.dueDate,
+        read: false
+      });
+    });
+
+    return overdue;
+  }, [expenseTransactions, fetchedIncomeItems, purchaseOrders]);
+
+  // Combine all notifications
+  const allNotifications = useMemo(() => {
+    return [...overdueNotifications, ...notifications];
+  }, [overdueNotifications, notifications]);
+
+  const totalUnreadCount = unreadCount + overdueNotifications.length;
 
   const handleNotificationClick = (notification: any, read: boolean) => {
     if (!read) {
@@ -156,11 +235,11 @@ export const PendingNotificationsPanel = ({
       <SheetTrigger asChild>
         <Button variant="ghost" size="icon" className="relative h-10 w-10 rounded-full hover:bg-accent">
           <Bell className="h-5 w-5" />
-          {unreadCount > 0 && (
+          {totalUnreadCount > 0 && (
             <Badge 
               className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-[10px] bg-primary text-primary-foreground"
             >
-              {unreadCount > 9 ? '9+' : unreadCount}
+              {totalUnreadCount > 9 ? '9+' : totalUnreadCount}
             </Badge>
           )}
         </Button>
@@ -170,7 +249,7 @@ export const PendingNotificationsPanel = ({
           <div className="flex items-center justify-between">
             <SheetTitle>Notifications</SheetTitle>
             <div className="flex gap-2">
-              {unreadCount > 0 && (
+              {totalUnreadCount > 0 && (
                 <Button
                   variant="ghost"
                   size="sm"
@@ -181,7 +260,7 @@ export const PendingNotificationsPanel = ({
                   Mark all read
                 </Button>
               )}
-              {notifications.length > 0 && (
+              {allNotifications.length > 0 && (
                 <Button
                   variant="ghost"
                   size="sm"
@@ -201,14 +280,14 @@ export const PendingNotificationsPanel = ({
         
         <div className="mt-6">
           <ScrollArea className="h-[calc(100vh-200px)]">
-            {notifications.length === 0 ? (
+            {allNotifications.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
                 <Bell className="h-12 w-12 mx-auto mb-3 opacity-20" />
                 <p>No notifications</p>
               </div>
             ) : (
               <div className="space-y-3">
-                {notifications.map((notification) => (
+                {allNotifications.map((notification) => (
                   <div
                     key={notification.id}
                     onClick={() => handleNotificationClick(notification, notification.read)}
