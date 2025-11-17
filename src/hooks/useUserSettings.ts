@@ -106,8 +106,8 @@ export const useUserSettings = () => {
         totalCash: Number(data.total_cash),
         forecastsEnabled: data.forecasts_enabled ?? false,
         safeSpendingReserve: Number(data.safe_spending_reserve || 0), // Map from DB
-        // Temporarily defaulting until types match DB
-        safetyNetLevel: (data.safety_net_level as SafetyNetLevel) || 'medium',
+        // Default to medium until safety_net_level column is added to DB
+        safetyNetLevel: 'medium',
         chartPreferences: {
           showCashFlowLine: data.chart_show_cashflow_line ?? true,
           showTotalResourcesLine: data.chart_show_resources_line ?? true,
@@ -269,9 +269,9 @@ export const useUserSettings = () => {
         ];
   
         // Delete dependents in parallel where possible or sequential if constrained
-        await Promise.allSettled(dependentTables.map(table => 
-          supabase.from(table).delete().eq('account_id', accountId)
-        ));
+        for (const table of dependentTables) {
+          await supabase.from(table as any).delete().eq('account_id', accountId);
+        }
         
         // Special case for deleted_transactions (uses user_id)
         await supabase.from('deleted_transactions').delete().eq('user_id', user.id);
@@ -284,9 +284,9 @@ export const useUserSettings = () => {
           'recurring_expenses', 'scenarios', 'categories', 'notification_preferences'
         ];
   
-        await Promise.allSettled(parentTables.map(table => 
-          supabase.from(table).delete().eq('account_id', accountId)
-        ));
+        for (const table of parentTables) {
+          await supabase.from(table as any).delete().eq('account_id', accountId);
+        }
   
         // Reset user_settings to defaults
         const { error: upsertError } = await supabase
