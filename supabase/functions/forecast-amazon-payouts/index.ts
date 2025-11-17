@@ -17,25 +17,40 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Get user ID from the JWT token
+    // Parse request body first (we need it for userId if using admin auth)
+    const requestBody = await req.json().catch(() => ({}));
+    const customWeights = requestBody.customWeights;
+    
+    // Get user ID from the JWT token OR request body (if admin)
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
       throw new Error('No authorization header');
     }
 
     const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    let userId = requestBody.userId;
 
-    if (userError || !user) {
-      throw new Error('Invalid or expired token');
+    // Authentication Logic:
+    // 1. If token matches Service Role Key (Admin), trust the userId from body
+    // 2. If not, validate as a User JWT and force userId from the token
+    if (token === supabaseKey) {
+      console.log('[FORECAST] Authorized via Service Role Key (Admin Task)');
+      if (!userId) {
+        throw new Error('UserId is required in body when calling with Service Role');
+      }
+    } else {
+      // Standard User Authentication
+      const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+      
+      if (userError || !user) {
+        console.error('[FORECAST] Auth error:', userError);
+        throw new Error('Invalid or expired token');
+      }
+      // Securely set userId from the verified token, ignoring body injection
+      userId = user.id;
     }
 
-    const userId = user.id;
     console.log('[FORECAST] Fetching Amazon data for user:', userId);
-
-    // Parse request body for custom weights
-    const requestBody = await req.json().catch(() => ({}));
-    const customWeights = requestBody.customWeights;
 
     // Get user's account_id and forecast settings
     const { data: profile, error: profileError } = await supabase
@@ -205,8 +220,6 @@ serve(async (req) => {
         } else {
           baselineAmount = 3500; // Conservative bi-weekly estimate (~$7k/month)
         }
-
-        console.log(`[FORECAST] Using default baseline for ${amazonAccount.account_name}: $${baselineAmount} (${payoutFrequency})`);
 
         console.log(`[FORECAST] Using default baseline for ${amazonAccount.account_name}: $${baselineAmount} (${payoutFrequency})`);
 
@@ -473,7 +486,7 @@ serve(async (req) => {
               const closeDate = new Date(settlementEndDate);
               closeDate.setHours(0, 0, 0, 0);
               lastPayoutDate = closeDate;
-              console.log(`[FORECAST] DAILY: Last confirmed settlement closed ${lastPayoutDate.toISOString().split('T')[0]} (payout: ${lastPayout.payout_date})`);
+              console.log(`[FORECAST] DAILY: Last confirmed settlement closed ${lastPayoutDate.toISOString().split('T')[0]}`);
               console.log(`[FORECAST] DAILY: Forecasts will start ${new Date(closeDate.getTime() + 86400000).toISOString().split('T')[0]} (next day)`);
             } else if (!settlementEndDate && payoutFrequency === 'daily') {
               // Fallback to payout date for daily if no settlement data
