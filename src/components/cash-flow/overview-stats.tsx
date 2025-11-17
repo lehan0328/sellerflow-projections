@@ -35,6 +35,14 @@ interface OverviewStatsProps {
     amount: number;
     count: number;
   };
+  transactions?: Array<{
+    id: string;
+    type: string;
+    amount: number;
+    transactionDate: Date;
+    status: string;
+    creditCardId?: string;
+  }>;
 }
 const timeRangeOptions = [{
   value: "today",
@@ -81,7 +89,8 @@ export function OverviewStats({
   onUpdateCashBalance,
   onTransactionUpdate,
   pendingIncomeToday,
-  useAvailableBalance
+  useAvailableBalance,
+  transactions = []
 }: OverviewStatsProps & {
   useAvailableBalance?: boolean;
 }) {
@@ -235,12 +244,25 @@ export function OverviewStats({
       return txDate.toDateString() === todayStr && tx.status === 'pending' && tx.creditCardId;
     }).reduce((sum, tx) => sum + tx.amount, 0);
 
-    // One-time expenses from income table (always bank - no credit_card_id field)
-    const oneTimeExpenses = incomeItems.filter(item => {
-      const itemDate = new Date(item.paymentDate);
-      itemDate.setHours(0, 0, 0, 0);
-      return itemDate.toDateString() === todayStr && item.status === 'pending' && (item as any).type === 'expense';
-    }).reduce((sum, item) => sum + item.amount, 0);
+    // One-time expenses from transactions table (filter by credit_card_id for bank vs credit)
+    const oneTimeExpenses = transactions.filter(tx => {
+      const txDate = new Date(tx.transactionDate);
+      txDate.setHours(0, 0, 0, 0);
+      return txDate.toDateString() === todayStr && 
+             tx.status === 'pending' && 
+             tx.type === 'expense' && 
+             !tx.creditCardId; // Bank expenses only
+    }).reduce((sum, tx) => sum + tx.amount, 0);
+
+    // Credit card expenses from transactions table
+    const oneTimeCreditCardExpenses = transactions.filter(tx => {
+      const txDate = new Date(tx.transactionDate);
+      txDate.setHours(0, 0, 0, 0);
+      return txDate.toDateString() === todayStr && 
+             tx.status === 'pending' && 
+             tx.type === 'expense' && 
+             tx.creditCardId; // Credit card expenses only
+    }).reduce((sum, tx) => sum + tx.amount, 0);
 
     // Split recurring expenses by credit_card_id
     const recurringBankExpensesToday = recurringExpenses.filter(exp => 
@@ -276,7 +298,7 @@ export function OverviewStats({
     }, 0);
 
     todaysBankExpenses = regularBankExpenses + oneTimeExpenses + recurringBankExpensesToday;
-    todaysCreditCardExpenses = regularCreditCardExpenses + recurringCreditCardExpensesToday;
+    todaysCreditCardExpenses = regularCreditCardExpenses + oneTimeCreditCardExpenses + recurringCreditCardExpensesToday;
     todaysExpenses = todaysBankExpenses + todaysCreditCardExpenses;
   }
 
