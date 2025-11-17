@@ -210,12 +210,21 @@ export const IncomeForm = ({
           notes: payeeData.notes
         });
         
+        // Refetch categories first to ensure the new category is in the list
+        await refetchExpenseCategories();
+        
         // Auto-select the new payee and import their category
         setSelectedPayeeId(`temp-${Date.now()}`);
+        
+        // Capitalize the category name to match database format
+        const capitalizedCategory = payeeData.category 
+          ? payeeData.category.charAt(0).toUpperCase() + payeeData.category.slice(1).toLowerCase()
+          : '';
+        
         setFormData(prev => ({
           ...prev,
           description: payeeData.name,
-          category: payeeData.category || ''
+          category: capitalizedCategory
         }));
         
         setPayeeSearchTerm(payeeData.name);
