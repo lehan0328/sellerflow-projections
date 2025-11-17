@@ -890,7 +890,20 @@ serve(async (req) => {
 
     // Insert all forecasted payouts for all accounts
     if (allForecasts.length > 0) {
-      console.log(`[FORECAST] Inserting ${allForecasts.length} total forecasted payouts for ${amazonAccounts.length} account(s)...`);
+      // Remove duplicates from allForecasts before inserting to prevent unique constraint violations
+      // This handles potential edge cases where logic might produce the same date twice for an account
+      const uniqueForecastsMap = new Map();
+      allForecasts.forEach(forecast => {
+        const key = `${forecast.amazon_account_id}_${forecast.payout_date}`;
+        if (!uniqueForecastsMap.has(key)) {
+          uniqueForecastsMap.set(key, forecast);
+        } else {
+          console.warn(`[FORECAST] ⚠️ Duplicate forecast generated for account ${forecast.amazon_account_id} date ${forecast.payout_date}. Keeping first.`);
+        }
+      });
+      const uniqueForecasts = Array.from(uniqueForecastsMap.values());
+      
+      console.log(`[FORECAST] Inserting ${uniqueForecasts.length} unique forecasted payouts (filtered from ${allForecasts.length}) for ${amazonAccounts.length} account(s)...`);
       
       // First, delete existing forecasted payouts for these accounts
       const accountIds = amazonAccounts.map(acc => acc.id);
@@ -907,11 +920,10 @@ serve(async (req) => {
       }
       
       // Log sample of forecasts being inserted for debugging
-      console.log('[FORECAST] Sample forecast data being inserted:', JSON.stringify(allForecasts[0], null, 2));
-      console.log(`[FORECAST] Total forecasts to insert: ${allForecasts.length}`);
+      console.log('[FORECAST] Sample forecast data being inserted:', JSON.stringify(uniqueForecasts[0], null, 2));
       
       // Check for duplicate settlement_ids
-      const settlementIds = allForecasts.map(f => f.settlement_id);
+      const settlementIds = uniqueForecasts.map(f => f.settlement_id);
       const uniqueSettlementIds = new Set(settlementIds);
       if (settlementIds.length !== uniqueSettlementIds.size) {
         console.error('[FORECAST] ⚠️ WARNING: Duplicate settlement_ids detected!', {
@@ -921,9 +933,14 @@ serve(async (req) => {
         });
       }
       
+      // Use upsert instead of insert to be robust against race conditions or delete failures
+      // We ignore duplicates on constraint "unique_forecasted_payout_per_account_date"
       const { error: insertError } = await supabase
         .from('amazon_payouts')
-        .insert(allForecasts);
+        .upsert(uniqueForecasts, { 
+          onConflict: 'amazon_account_id,payout_date,status',
+          ignoreDuplicates: false // Update if exists is fine, or we can set true to skip
+        });
 
       if (insertError) {
         console.error('[FORECAST] ❌ Error storing forecasted payouts:', JSON.stringify(insertError, null, 2));
@@ -933,7 +950,7 @@ serve(async (req) => {
         console.error('[FORECAST] Error hint:', insertError.hint);
         throw new Error(`Failed to store forecasted payouts: ${insertError.message}`);
       } else {
-        console.log(`[FORECAST] ✅ Successfully stored ${allForecasts.length} total forecasted payouts`);
+        console.log(`[FORECAST] ✅ Successfully stored ${uniqueForecasts.length} total forecasted payouts`);
       }
     }
 
