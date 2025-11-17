@@ -148,12 +148,12 @@ export function BankAccounts({ useAvailableBalance, onToggleBalance }: { useAvai
     }
   };
 
-  const handleSyncTransactions = async (accountId: string, stripeAccountId: string) => {
+  const handleSyncTransactions = async (accountId: string) => {
     setSyncingAccounts(prev => new Set(prev).add(accountId));
     try {
       const { data, error } = await supabase.functions.invoke('sync-plaid-transactions', {
         body: { 
-          accountId: stripeAccountId,
+          accountId: accountId,
           isInitialSync: false,
           accountType: 'bank'
         }
@@ -186,7 +186,7 @@ export function BankAccounts({ useAvailableBalance, onToggleBalance }: { useAvai
     // Sync all accounts with Plaid data
     for (const account of accounts) {
       if (account.plaid_account_id) {
-        await handleSyncTransactions(account.id, account.plaid_account_id);
+        await handleSyncTransactions(account.id);
       }
     }
   };
@@ -531,7 +531,7 @@ export function BankAccounts({ useAvailableBalance, onToggleBalance }: { useAvai
                   <Button 
                     variant="outline" 
                     size="sm"
-                    onClick={() => handleSyncTransactions(account.id, account.plaid_account_id!)}
+                    onClick={() => handleSyncTransactions(account.id)}
                     disabled={syncingAccounts.has(account.id)}
                   >
                     <RefreshCw className={`h-4 w-4 mr-1 ${syncingAccounts.has(account.id) ? 'animate-spin' : ''}`} />

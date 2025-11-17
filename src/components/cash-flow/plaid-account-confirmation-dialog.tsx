@@ -11,27 +11,19 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Building2, CreditCard, AlertCircle, Zap, Calendar as CalendarIcon } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Calendar } from "@/components/ui/calendar";
 import { usePlanLimits } from "@/hooks/usePlanLimits";
 import { format } from "date-fns";
 
 interface PlaidAccount {
-  account_id: string; // Plaid uses 'account_id' as the field name
+  id: string; // Plaid uses 'account_id' as the field name
   name: string;
   type: string;
   subtype: string;
@@ -72,7 +64,7 @@ export function PlaidAccountConfirmationDialog({
   // Generate stable unique IDs for each account
   const accountsWithIds = accounts.map((acc, index) => ({
     ...acc,
-    uniqueId: acc.account_id || `temp-account-${index}-${acc.name.replace(/\s/g, '-')}`
+    uniqueId: acc.id || `temp-account-${index}-${acc.name.replace(/\s/g, '-')}`
   }));
 
   // Initialize with empty selection
@@ -139,14 +131,14 @@ export function PlaidAccountConfirmationDialog({
       // Map uniqueIds back to actual Plaid account IDs for the API call
       const selectedAccounts = accountsWithIds
         .filter(acc => selectedAccountIds.has(acc.uniqueId))
-        .map(acc => acc.account_id);
+        .map(acc => acc.id);
       
       // Map priorities back to Plaid account IDs
       const mappedPriorities: Record<string, number> = {};
       Object.entries(priorities).forEach(([uniqueId, priority]) => {
         const account = accountsWithIds.find(acc => acc.uniqueId === uniqueId);
-        if (account?.account_id) {
-          mappedPriorities[account.account_id] = priority;
+        if (account?.id) {
+          mappedPriorities[account.id] = priority;
         }
       });
       
@@ -154,8 +146,8 @@ export function PlaidAccountConfirmationDialog({
       const mappedCreditCardData: Record<string, CreditCardData> = {};
       Object.entries(creditCardData).forEach(([uniqueId, data]) => {
         const account = accountsWithIds.find(acc => acc.uniqueId === uniqueId);
-        if (account?.account_id) {
-          mappedCreditCardData[account.account_id] = data;
+        if (account?.id) {
+          mappedCreditCardData[account.id] = data;
         }
       });
       

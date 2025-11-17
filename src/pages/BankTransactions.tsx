@@ -38,7 +38,6 @@ const BankTransactions = () => {
     selectedAccountType
   );
   
-  const { vendors } = useVendors();
   const { incomeItems } = useIncome();
   
   // Combine bank accounts and credit cards for selection
