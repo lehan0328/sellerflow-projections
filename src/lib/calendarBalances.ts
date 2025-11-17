@@ -31,7 +31,7 @@ export const calculateCalendarBalances = (
   
   const dailyBalances: DailyBalance[] = [];
   let runningBalance = startingBalance;
-  let minBalance = startingBalance;
+  let minBalance = Infinity;
   let minDate = format(today, 'yyyy-MM-dd');
   
   let currentDate = new Date(today);
