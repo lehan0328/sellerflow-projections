@@ -96,7 +96,7 @@ export const PurchaseOrderForm = ({
     splitPayment: false,
     documentType: "purchase_order" as "sales_order" | "invoice" | "proforma_invoice" | "purchase_order",
     shipping: "",
-    fees: ""
+    discount: ""
   });
   
   const [lineItems, setLineItems] = useState<LineItem[]>([]);
@@ -155,13 +155,15 @@ export const PurchaseOrderForm = ({
     return lineItems.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
   }, [lineItems]);
 
-  // Calculate grand total including line items, shipping, and fees
+  // Calculate grand total including line items, shipping, and discount percentage
   const grandTotal = React.useMemo(() => {
     const items = lineItemsTotal;
     const shippingAmount = parseFloat(formData.shipping || "0");
-    const feesAmount = parseFloat(formData.fees || "0");
-    return items + shippingAmount + feesAmount;
-  }, [lineItemsTotal, formData.shipping, formData.fees]);
+    const subtotalWithShipping = items + shippingAmount;
+    const discountPercentage = parseFloat(formData.discount || "0");
+    const discountAmount = (subtotalWithShipping * discountPercentage) / 100;
+    return subtotalWithShipping - discountAmount;
+  }, [lineItemsTotal, formData.shipping, formData.discount]);
 
   // Auto-suggest earliest affordable date based on total amount only
   const suggestedDate = React.useMemo(() => {
@@ -212,7 +214,7 @@ export const PurchaseOrderForm = ({
         splitPayment: false,
         documentType: "purchase_order",
         shipping: "",
-        fees: ""
+        discount: ""
       });
       setLineItems([]);
       setCardSplits([{
@@ -1555,16 +1557,17 @@ export const PurchaseOrderForm = ({
                         </tr>
                         
                         <tr>
-                          <td className="p-2" colSpan={4}>Fees</td>
+                          <td className="p-2" colSpan={4}>Discount (%)</td>
                           <td className="p-2">
                             <Input
                               type="number"
-                              value={formData.fees}
-                              onChange={(e) => setFormData(prev => ({...prev, fees: e.target.value}))}
-                              placeholder="0.00"
+                              value={formData.discount}
+                              onChange={(e) => setFormData(prev => ({...prev, discount: e.target.value}))}
+                              placeholder="0"
                               className="h-8 text-sm"
                               min="0"
-                              step="0.01"
+                              max="100"
+                              step="0.1"
                             />
                           </td>
                           <td className="p-2"></td>
