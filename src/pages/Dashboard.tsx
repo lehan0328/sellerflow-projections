@@ -2349,6 +2349,37 @@ const Dashboard = () => {
     return deduplicatedOpportunities;
   }, [projectedDailyBalances, reserveAmount, excludeToday]);
 
+  // Merge buying opportunities with credit card available credit
+  const mergedBuyingOpportunities = useMemo(() => {
+    // Get user settings for credit inclusion preference (default to false for cash-only)
+    const includeCreditInOpps = false;
+    
+    if (!includeCreditInOpps || creditCards.length === 0) {
+      return buyingOpportunities; // Return cash-only
+    }
+    
+    // Calculate total available credit
+    const totalAvailableCredit = creditCards.reduce((sum, card) => {
+      const effectiveCreditLimit = card.credit_limit_override || card.credit_limit;
+      const effectiveAvailableCredit = effectiveCreditLimit - card.balance;
+      return sum + effectiveAvailableCredit;
+    }, 0);
+    
+    // Calculate pending credit card transactions
+    const totalPending = transactions
+      .filter(tx => tx.creditCardId && tx.status === 'pending')
+      .reduce((sum, tx) => sum + tx.amount, 0);
+    
+    const netAvailableCredit = totalAvailableCredit - totalPending;
+    
+    // Add net available credit to each opportunity
+    return buyingOpportunities.map(opp => ({
+      ...opp,
+      balance: opp.balance + netAvailableCredit,
+      includesCredit: true
+    }));
+  }, [buyingOpportunities, creditCards, transactions]);
+
   // Calculate safe spending from projected balances
   const safeSpendingFromProjection = useMemo(() => {
     if (!projectedDailyBalances || projectedDailyBalances.length === 0) {
@@ -2886,7 +2917,7 @@ const Dashboard = () => {
                       safeSpendingLimit={
                         safeSpendingData?.safe_spending_limit || 0
                       }
-                      allBuyingOpportunities={buyingOpportunities}
+                      allBuyingOpportunities={mergedBuyingOpportunities}
                       dailyBalances={projectedDailyBalances.map(d => ({ date: d.date, balance: d.runningBalance }))}
                     />
                   ) : (
@@ -3672,7 +3703,7 @@ const Dashboard = () => {
               onSubmitOrder={handlePurchaseOrderSubmit}
               onDeleteAllVendors={deleteAllVendors}
               onAddVendor={addVendor}
-              allBuyingOpportunities={buyingOpportunities}
+              allBuyingOpportunities={mergedBuyingOpportunities}
             />
           )}
 
