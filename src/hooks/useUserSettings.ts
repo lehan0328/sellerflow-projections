@@ -23,6 +23,7 @@ interface ChartPreferences {
 interface UserSettingsData {
   totalCash: number;
   forecastsEnabled: boolean;
+  safeSpendingReserve: number; // Added field
   safetyNetLevel: SafetyNetLevel;
   chartPreferences: ChartPreferences;
 }
@@ -94,6 +95,7 @@ export const useUserSettings = () => {
         return {
           totalCash: 0,
           forecastsEnabled: false,
+          safeSpendingReserve: 0, // Default
           safetyNetLevel: 'medium',
           chartPreferences: DEFAULT_CHART_PREFERENCES
         };
@@ -103,6 +105,7 @@ export const useUserSettings = () => {
       return {
         totalCash: Number(data.total_cash),
         forecastsEnabled: data.forecasts_enabled ?? false,
+        safeSpendingReserve: Number(data.safe_spending_reserve || 0), // Map from DB
         // Temporarily defaulting until types match DB
         safetyNetLevel: (data.safety_net_level as SafetyNetLevel) || 'medium',
         chartPreferences: {
@@ -123,201 +126,204 @@ export const useUserSettings = () => {
     }
   });
 
-  // 2. Mutations
+  // ... (Mutations remain unchanged) ...
+  // Copy the rest of the file exactly as it was, just ensure the mutations are still there.
+  // I will omit them here for brevity but ensure you keep lines 108-226 from your original file.
+  
   const updateChartPreferencesMutation = useMutation({
     mutationFn: async (preferences: Partial<ChartPreferences>) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('User not authenticated');
-
-      // Account check
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('account_id')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (!profile?.account_id) throw new Error('Account not found');
-
-      const dbUpdates: Record<string, any> = {};
-      if (preferences.showCashFlowLine !== undefined) dbUpdates.chart_show_cashflow_line = preferences.showCashFlowLine;
-      if (preferences.showTotalResourcesLine !== undefined) dbUpdates.chart_show_resources_line = preferences.showTotalResourcesLine;
-      if (preferences.showCreditCardLine !== undefined) dbUpdates.chart_show_credit_line = preferences.showCreditCardLine;
-      if (preferences.showReserveLine !== undefined) dbUpdates.chart_show_reserve_line = preferences.showReserveLine;
-      if (preferences.showForecastLine !== undefined) dbUpdates.chart_show_forecast_line = preferences.showForecastLine;
-      if (preferences.showLowestBalanceLine !== undefined) dbUpdates.chart_show_lowest_balance_line = preferences.showLowestBalanceLine;
-      if (preferences.cashFlowColor !== undefined) dbUpdates.chart_cashflow_color = preferences.cashFlowColor;
-      if (preferences.totalResourcesColor !== undefined) dbUpdates.chart_resources_color = preferences.totalResourcesColor;
-      if (preferences.creditCardColor !== undefined) dbUpdates.chart_credit_color = preferences.creditCardColor;
-      if (preferences.reserveColor !== undefined) dbUpdates.chart_reserve_color = preferences.reserveColor;
-      if (preferences.forecastColor !== undefined) dbUpdates.chart_forecast_color = preferences.forecastColor;
-      if (preferences.lowestBalanceColor !== undefined) dbUpdates.chart_lowest_balance_color = preferences.lowestBalanceColor;
-
-      const { error } = await supabase
-        .from('user_settings')
-        .update(dbUpdates)
-        .eq('user_id', user.id);
-
-      if (error) throw error;
-    },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['user-settings'] })
-  });
-
-  const updateTotalCashMutation = useMutation({
-    mutationFn: async (amountToAdd: number) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('User not authenticated');
-
-      const currentTotal = settings?.totalCash || 0;
-      const newTotal = currentTotal + amountToAdd;
-
-      const { error } = await supabase
-        .from('user_settings')
-        .update({ total_cash: newTotal })
-        .eq('user_id', user.id);
-
-      if (error) throw error;
-      console.info('Cash updated in database:', newTotal, '(added:', amountToAdd, ')');
-    },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['user-settings'] }),
-    onError: (error) => {
-      console.error('Error updating total cash:', error);
-      toast({ title: "Error", description: "Failed to update cash amount", variant: "destructive" });
-    }
-  });
-
-  const setStartingBalanceMutation = useMutation({
-    mutationFn: async (amount: number) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('User not authenticated');
-
-      const { error } = await supabase
-        .from('user_settings')
-        .update({ total_cash: amount })
-        .eq('user_id', user.id);
-
-      if (error) throw error;
-    },
-    onSuccess: (_, amount) => {
-      queryClient.invalidateQueries({ queryKey: ['user-settings'] });
-      toast({ title: "Success", description: `Starting balance set to $${amount.toLocaleString()}` });
-    },
-    onError: (error) => {
-      console.error('Error setting starting balance:', error);
-      toast({ title: "Error", description: "Failed to set starting balance", variant: "destructive" });
-    }
-  });
-
-  const updateSafetyNetLevelMutation = useMutation({
-    mutationFn: async (level: SafetyNetLevel) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('User not authenticated');
-
-      // Check profile/account existence
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('account_id')
-        .eq('user_id', user.id)
-        .maybeSingle();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('User not authenticated');
+  
+        // Account check
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('account_id')
+          .eq('user_id', user.id)
+          .maybeSingle();
+  
+        if (!profile?.account_id) throw new Error('Account not found');
+  
+        const dbUpdates: Record<string, any> = {};
+        if (preferences.showCashFlowLine !== undefined) dbUpdates.chart_show_cashflow_line = preferences.showCashFlowLine;
+        if (preferences.showTotalResourcesLine !== undefined) dbUpdates.chart_show_resources_line = preferences.showTotalResourcesLine;
+        if (preferences.showCreditCardLine !== undefined) dbUpdates.chart_show_credit_line = preferences.showCreditCardLine;
+        if (preferences.showReserveLine !== undefined) dbUpdates.chart_show_reserve_line = preferences.showReserveLine;
+        if (preferences.showForecastLine !== undefined) dbUpdates.chart_show_forecast_line = preferences.showForecastLine;
+        if (preferences.showLowestBalanceLine !== undefined) dbUpdates.chart_show_lowest_balance_line = preferences.showLowestBalanceLine;
+        if (preferences.cashFlowColor !== undefined) dbUpdates.chart_cashflow_color = preferences.cashFlowColor;
+        if (preferences.totalResourcesColor !== undefined) dbUpdates.chart_resources_color = preferences.totalResourcesColor;
+        if (preferences.creditCardColor !== undefined) dbUpdates.chart_credit_color = preferences.creditCardColor;
+        if (preferences.reserveColor !== undefined) dbUpdates.chart_reserve_color = preferences.reserveColor;
+        if (preferences.forecastColor !== undefined) dbUpdates.chart_forecast_color = preferences.forecastColor;
+        if (preferences.lowestBalanceColor !== undefined) dbUpdates.chart_lowest_balance_color = preferences.lowestBalanceColor;
+  
+        const { error } = await supabase
+          .from('user_settings')
+          .update(dbUpdates)
+          .eq('user_id', user.id);
+  
+        if (error) throw error;
+      },
+      onSuccess: () => queryClient.invalidateQueries({ queryKey: ['user-settings'] })
+    });
+  
+    const updateTotalCashMutation = useMutation({
+      mutationFn: async (amountToAdd: number) => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('User not authenticated');
+  
+        const currentTotal = settings?.totalCash || 0;
+        const newTotal = currentTotal + amountToAdd;
+  
+        const { error } = await supabase
+          .from('user_settings')
+          .update({ total_cash: newTotal })
+          .eq('user_id', user.id);
+  
+        if (error) throw error;
+        console.info('Cash updated in database:', newTotal, '(added:', amountToAdd, ')');
+      },
+      onSuccess: () => queryClient.invalidateQueries({ queryKey: ['user-settings'] }),
+      onError: (error) => {
+        console.error('Error updating total cash:', error);
+        toast({ title: "Error", description: "Failed to update cash amount", variant: "destructive" });
+      }
+    });
+  
+    const setStartingBalanceMutation = useMutation({
+      mutationFn: async (amount: number) => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('User not authenticated');
+  
+        const { error } = await supabase
+          .from('user_settings')
+          .update({ total_cash: amount })
+          .eq('user_id', user.id);
+  
+        if (error) throw error;
+      },
+      onSuccess: (_, amount) => {
+        queryClient.invalidateQueries({ queryKey: ['user-settings'] });
+        toast({ title: "Success", description: `Starting balance set to $${amount.toLocaleString()}` });
+      },
+      onError: (error) => {
+        console.error('Error setting starting balance:', error);
+        toast({ title: "Error", description: "Failed to set starting balance", variant: "destructive" });
+      }
+    });
+  
+    const updateSafetyNetLevelMutation = useMutation({
+      mutationFn: async (level: SafetyNetLevel) => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('User not authenticated');
+  
+        // Check profile/account existence
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('account_id')
+          .eq('user_id', user.id)
+          .maybeSingle();
+          
+        if (!profile?.account_id) throw new Error('Account not found');
+  
+        const { error } = await supabase
+          .from('user_settings')
+          .update({ safety_net_level: level } as any) // Cast to any to bypass current type mismatch if exists
+          .eq('user_id', user.id);
+  
+        if (error) throw error;
+      },
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['user-settings'] });
+        toast({ title: "Success", description: "Safety net level updated successfully" });
+      },
+      onError: (error: any) => {
+        console.error('Error updating safety net level:', error);
+        toast({ title: "Error", description: error.message || "Failed to update safety net level", variant: "destructive" });
+      }
+    });
+  
+    const resetAccountMutation = useMutation({
+      mutationFn: async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('User not authenticated');
+  
+        console.log('🗑️ Starting account reset for user:', user.id);
+  
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('account_id')
+          .eq('user_id', user.id)
+          .maybeSingle();
+  
+        if (!profile?.account_id) throw new Error('Account not found');
+        const accountId = profile.account_id;
+  
+        // Execute deletions (simplified for brevity, keeping order from original)
+        const dependentTables = [
+          'bank_transactions', 'amazon_daily_rollups', 'amazon_daily_draws', 
+          'amazon_payouts', 'amazon_transactions', 'transactions', 
+          'cash_flow_events', 'cash_flow_insights', 'documents_metadata', 
+          'notification_history', 'forecast_accuracy_log'
+        ];
+  
+        // Delete dependents in parallel where possible or sequential if constrained
+        await Promise.allSettled(dependentTables.map(table => 
+          supabase.from(table).delete().eq('account_id', accountId)
+        ));
         
-      if (!profile?.account_id) throw new Error('Account not found');
-
-      const { error } = await supabase
-        .from('user_settings')
-        .update({ safety_net_level: level } as any) // Cast to any to bypass current type mismatch if exists
-        .eq('user_id', user.id);
-
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['user-settings'] });
-      toast({ title: "Success", description: "Safety net level updated successfully" });
-    },
-    onError: (error: any) => {
-      console.error('Error updating safety net level:', error);
-      toast({ title: "Error", description: error.message || "Failed to update safety net level", variant: "destructive" });
-    }
-  });
-
-  const resetAccountMutation = useMutation({
-    mutationFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('User not authenticated');
-
-      console.log('🗑️ Starting account reset for user:', user.id);
-
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('account_id')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (!profile?.account_id) throw new Error('Account not found');
-      const accountId = profile.account_id;
-
-      // Execute deletions (simplified for brevity, keeping order from original)
-      const dependentTables = [
-        'bank_transactions', 'amazon_daily_rollups', 'amazon_daily_draws', 
-        'amazon_payouts', 'amazon_transactions', 'transactions', 
-        'cash_flow_events', 'cash_flow_insights', 'documents_metadata', 
-        'notification_history', 'forecast_accuracy_log'
-      ];
-
-      // Delete dependents in parallel where possible or sequential if constrained
-      await Promise.allSettled(dependentTables.map(table => 
-        supabase.from(table).delete().eq('account_id', accountId)
-      ));
-      
-      // Special case for deleted_transactions (uses user_id)
-      await supabase.from('deleted_transactions').delete().eq('user_id', user.id);
-
-      // Delete parent records
-      await supabase.from('amazon_accounts').delete().eq('account_id', accountId);
-      
-      const parentTables = [
-        'bank_accounts', 'credit_cards', 'income', 'vendors', 'customers',
-        'recurring_expenses', 'scenarios', 'categories', 'notification_preferences'
-      ];
-
-      await Promise.allSettled(parentTables.map(table => 
-        supabase.from(table).delete().eq('account_id', accountId)
-      ));
-
-      // Reset user_settings to defaults
-      const { error: upsertError } = await supabase
-        .from('user_settings')
-        .upsert({
-          user_id: user.id,
-          account_id: accountId,
-          total_cash: 0,
-          safe_spending_percentage: 20,
-          safe_spending_reserve: 0,
-          forecasts_enabled: false,
-          use_available_balance: true,
-          chart_show_cashflow_line: true,
-          chart_show_resources_line: true,
-          chart_show_credit_line: true,
-          chart_show_reserve_line: true,
-          chart_show_forecast_line: false,
-          chart_cashflow_color: 'hsl(221, 83%, 53%)',
-          chart_resources_color: '#10b981',
-          chart_credit_color: '#f59e0b',
-          chart_reserve_color: '#ef4444',
-          chart_forecast_color: '#a855f7',
-        }, { onConflict: 'user_id' });
-
-      if (upsertError) throw upsertError;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['user-settings'] });
-      localStorage.clear();
-      toast({ title: "Success", description: "All account data has been completely reset" });
-      setTimeout(() => { window.location.href = '/onboarding'; }, 500);
-    },
-    onError: (error) => {
-      console.error('Error resetting account:', error);
-      toast({ title: "Error", description: "Failed to reset account data", variant: "destructive" });
-    }
-  });
+        // Special case for deleted_transactions (uses user_id)
+        await supabase.from('deleted_transactions').delete().eq('user_id', user.id);
+  
+        // Delete parent records
+        await supabase.from('amazon_accounts').delete().eq('account_id', accountId);
+        
+        const parentTables = [
+          'bank_accounts', 'credit_cards', 'income', 'vendors', 'customers',
+          'recurring_expenses', 'scenarios', 'categories', 'notification_preferences'
+        ];
+  
+        await Promise.allSettled(parentTables.map(table => 
+          supabase.from(table).delete().eq('account_id', accountId)
+        ));
+  
+        // Reset user_settings to defaults
+        const { error: upsertError } = await supabase
+          .from('user_settings')
+          .upsert({
+            user_id: user.id,
+            account_id: accountId,
+            total_cash: 0,
+            safe_spending_percentage: 20,
+            safe_spending_reserve: 0,
+            forecasts_enabled: false,
+            use_available_balance: true,
+            chart_show_cashflow_line: true,
+            chart_show_resources_line: true,
+            chart_show_credit_line: true,
+            chart_show_reserve_line: true,
+            chart_show_forecast_line: false,
+            chart_cashflow_color: 'hsl(221, 83%, 53%)',
+            chart_resources_color: '#10b981',
+            chart_credit_color: '#f59e0b',
+            chart_reserve_color: '#ef4444',
+            chart_forecast_color: '#a855f7',
+          }, { onConflict: 'user_id' });
+  
+        if (upsertError) throw upsertError;
+      },
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['user-settings'] });
+        localStorage.clear();
+        toast({ title: "Success", description: "All account data has been completely reset" });
+        setTimeout(() => { window.location.href = '/onboarding'; }, 500);
+      },
+      onError: (error) => {
+        console.error('Error resetting account:', error);
+        toast({ title: "Error", description: "Failed to reset account data", variant: "destructive" });
+      }
+    });
 
   // 3. Realtime Subscription
   useEffect(() => {
@@ -343,6 +349,7 @@ export const useUserSettings = () => {
     totalCash: settings?.totalCash ?? 0,
     loading,
     forecastsEnabled: settings?.forecastsEnabled ?? false,
+    safeSpendingReserve: settings?.safeSpendingReserve ?? 0, // Expose the value
     safetyNetLevel: settings?.safetyNetLevel ?? 'medium',
     chartPreferences: settings?.chartPreferences ?? DEFAULT_CHART_PREFERENCES,
     
