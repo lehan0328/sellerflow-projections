@@ -162,8 +162,17 @@ export const PurchaseOrderForm = ({
     
     if (targetAmount <= 0) return null;
     
-    // Find the earliest opportunity where balance is sufficient
-    const opportunity = allBuyingOpportunities.find(opp => opp.balance >= targetAmount);
+    // Find ALL opportunities with sufficient balance
+    const matchingOpps = allBuyingOpportunities.filter(opp => opp.balance >= targetAmount);
+    
+    // Sort by available_date to find the earliest one
+    const opportunity = matchingOpps.length > 0
+      ? matchingOpps.sort((a, b) => {
+          const dateA = new Date(a.available_date || a.date).getTime();
+          const dateB = new Date(b.available_date || b.date).getTime();
+          return dateA - dateB;
+        })[0]
+      : null;
     
     return opportunity;
   }, [allBuyingOpportunities, formData.amount, lineItemsTotal, lineItems.length]);
