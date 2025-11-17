@@ -927,6 +927,7 @@ export const IncomeForm = ({
         onOpenChange={setShowCustomerForm}
         onAddCustomer={handleAddCustomerFromForm}
         onCategoryAdded={refetchIncomeCategories}
+        existingCustomers={customers}
       />
       )}
 
