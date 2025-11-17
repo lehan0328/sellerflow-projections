@@ -23,7 +23,8 @@ export interface DailyBalance {
 export const calculateCalendarBalances = (
   startingBalance: number,
   calendarEvents: CalendarEvent[],
-  daysToProject: number = 90
+  daysToProject: number = 90,
+  excludeToday: boolean = false
 ): { dailyBalances: DailyBalance[]; minimumBalance: number; minimumDate: string } => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -42,7 +43,12 @@ export const calculateCalendarBalances = (
     // Get all events that impact balance on this day
     const dayEvents = calendarEvents.filter(event => {
       const impactDate = event.balanceImpactDate || event.date;
-      return format(impactDate, 'yyyy-MM-dd') === dateStr;
+      const eventDateStr = format(impactDate, 'yyyy-MM-dd');
+      // Skip today's events if excludeToday is enabled
+      if (excludeToday && eventDateStr === format(today, 'yyyy-MM-dd')) {
+        return false;
+      }
+      return eventDateStr === dateStr;
     });
     
     // Calculate net change for the day
