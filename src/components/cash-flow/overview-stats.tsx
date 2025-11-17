@@ -166,84 +166,119 @@ export function OverviewStats({
   todayDate.setHours(0, 0, 0, 0);
   const todayStr = todayDate.toDateString();
 
-  // Amazon payouts that become available today (confirmed payouts with settlement_end_date + 1 day = today)
-  const todayStrISO = todayDate.toISOString().split('T')[0];
-  const amazonIncomeToday = amazonPayouts.filter(payout => {
-    if (payout.status !== 'confirmed') return false;
+  // Calculate today's income and expenses with excludeToday flag applied
+  let todaysIncome = 0;
+  let todaysBankExpenses = 0;
+  let todaysCreditCardExpenses = 0;
+  let todaysExpenses = 0;
 
-    // For confirmed payouts, funds are available on settlement_end_date (no extra day)
-    const rawData = (payout as any).raw_settlement_data;
-    const settlementEndStr = rawData?.FinancialEventGroupEnd || rawData?.settlement_end_date;
-    if (settlementEndStr) {
-      const fundsAvailableDate = new Date(settlementEndStr);
-      // No extra day added for confirmed payouts
-      const availableDateStr = fundsAvailableDate.toISOString().split('T')[0];
-      return availableDateStr === todayStrISO;
-    }
-    return false;
-  }).reduce((sum, payout) => sum + payout.total_amount, 0);
+  if (!excludeToday) {
+    // Amazon payouts that become available today
+    const todayStrISO = todayDate.toISOString().split('T')[0];
+    const amazonIncomeToday = amazonPayouts.filter(payout => {
+      // For confirmed payouts, check settlement_end_date
+      if (payout.status === 'confirmed') {
+        const rawData = (payout as any).raw_settlement_data;
+        const settlementEndStr = rawData?.FinancialEventGroupEnd || rawData?.settlement_end_date;
+        if (settlementEndStr) {
+          const fundsAvailableDate = new Date(settlementEndStr);
+          const availableDateStr = fundsAvailableDate.toISOString().split('T')[0];
+          return availableDateStr === todayStrISO;
+        }
+        return false;
+      }
+      
+      // For forecasted payouts, check payout_date
+      if (payout.status === 'forecasted') {
+        const payoutDate = new Date(payout.payout_date);
+        payoutDate.setHours(0, 0, 0, 0);
+        return payoutDate.toDateString() === todayStr;
+      }
+      
+      return false;
+    }).reduce((sum, payout) => sum + payout.total_amount, 0);
 
-  // Regular income
-  const regularIncome = incomeItems.filter(item => {
-    const itemDate = new Date(item.paymentDate);
-    itemDate.setHours(0, 0, 0, 0);
-    return itemDate.toDateString() === todayStr && item.status !== 'received';
-  }).reduce((sum, item) => sum + item.amount, 0);
+    // Regular income
+    const regularIncome = incomeItems.filter(item => {
+      const itemDate = new Date(item.paymentDate);
+      itemDate.setHours(0, 0, 0, 0);
+      return itemDate.toDateString() === todayStr && item.status !== 'received';
+    }).reduce((sum, item) => sum + item.amount, 0);
 
-  // Recurring income that occurs today
-  const recurringIncome = recurringExpenses.filter(exp => exp.type === 'income' && exp.is_active).reduce((sum, exp) => {
-    const dates = generateRecurringDates({
-      id: exp.id,
-      transaction_name: exp.transaction_name || exp.name,
-      amount: exp.amount,
-      frequency: exp.frequency,
-      start_date: exp.start_date,
-      end_date: exp.end_date,
-      is_active: exp.is_active,
-      type: exp.type
-    }, todayDate, todayDate);
-    return dates.length > 0 ? sum + exp.amount : sum;
-  }, 0);
-  const todaysIncome = regularIncome + recurringIncome + amazonIncomeToday;
+    // Recurring income that occurs today
+    const recurringIncome = recurringExpenses.filter(exp => exp.type === 'income' && exp.is_active).reduce((sum, exp) => {
+      const dates = generateRecurringDates({
+        id: exp.id,
+        transaction_name: exp.transaction_name || exp.name,
+        amount: exp.amount,
+        frequency: exp.frequency,
+        start_date: exp.start_date,
+        end_date: exp.end_date,
+        is_active: exp.is_active,
+        type: exp.type
+      }, todayDate, todayDate);
+      return dates.length > 0 ? sum + exp.amount : sum;
+    }, 0);
+    
+    todaysIncome = regularIncome + recurringIncome + amazonIncomeToday;
 
-  // Split regular expenses by payment method
-  const regularBankExpenses = vendorTransactions.filter(tx => {
-    const txDate = new Date(tx.dueDate);
-    txDate.setHours(0, 0, 0, 0);
-    return txDate.toDateString() === todayStr && tx.status === 'pending' && !tx.creditCardId;
-  }).reduce((sum, tx) => sum + tx.amount, 0);
+    // Split regular expenses (purchase orders) by payment method
+    const regularBankExpenses = vendorTransactions.filter(tx => {
+      const txDate = new Date(tx.dueDate);
+      txDate.setHours(0, 0, 0, 0);
+      return txDate.toDateString() === todayStr && tx.status === 'pending' && !tx.creditCardId;
+    }).reduce((sum, tx) => sum + tx.amount, 0);
 
-  const regularCreditCardExpenses = vendorTransactions.filter(tx => {
-    const txDate = new Date(tx.dueDate);
-    txDate.setHours(0, 0, 0, 0);
-    return txDate.toDateString() === todayStr && tx.status === 'pending' && tx.creditCardId;
-  }).reduce((sum, tx) => sum + tx.amount, 0);
+    const regularCreditCardExpenses = vendorTransactions.filter(tx => {
+      const txDate = new Date(tx.dueDate);
+      txDate.setHours(0, 0, 0, 0);
+      return txDate.toDateString() === todayStr && tx.status === 'pending' && tx.creditCardId;
+    }).reduce((sum, tx) => sum + tx.amount, 0);
 
-  // One-time expenses from income table (assume bank unless specified)
-  const oneTimeExpenses = incomeItems.filter(item => {
-    const itemDate = new Date(item.paymentDate);
-    itemDate.setHours(0, 0, 0, 0);
-    return itemDate.toDateString() === todayStr && item.status === 'pending' && (item as any).type === 'expense';
-  }).reduce((sum, item) => sum + item.amount, 0);
+    // One-time expenses from income table (always bank - no credit_card_id field)
+    const oneTimeExpenses = incomeItems.filter(item => {
+      const itemDate = new Date(item.paymentDate);
+      itemDate.setHours(0, 0, 0, 0);
+      return itemDate.toDateString() === todayStr && item.status === 'pending' && (item as any).type === 'expense';
+    }).reduce((sum, item) => sum + item.amount, 0);
 
-  // Recurring expenses that occur today (assume bank)
-  const recurringExpensesToday = recurringExpenses.filter(exp => exp.type === 'expense' && exp.is_active).reduce((sum, exp) => {
-    const dates = generateRecurringDates({
-      id: exp.id,
-      transaction_name: exp.transaction_name || exp.name,
-      amount: exp.amount,
-      frequency: exp.frequency,
-      start_date: exp.start_date,
-      end_date: exp.end_date,
-      is_active: exp.is_active,
-      type: exp.type
-    }, todayDate, todayDate);
-    return dates.length > 0 ? sum + exp.amount : sum;
-  }, 0);
+    // Split recurring expenses by credit_card_id
+    const recurringBankExpensesToday = recurringExpenses.filter(exp => 
+      exp.type === 'expense' && exp.is_active && !exp.credit_card_id
+    ).reduce((sum, exp) => {
+      const dates = generateRecurringDates({
+        id: exp.id,
+        transaction_name: exp.transaction_name || exp.name,
+        amount: exp.amount,
+        frequency: exp.frequency,
+        start_date: exp.start_date,
+        end_date: exp.end_date,
+        is_active: exp.is_active,
+        type: exp.type
+      }, todayDate, todayDate);
+      return dates.length > 0 ? sum + exp.amount : sum;
+    }, 0);
 
-  const todaysBankExpenses = regularBankExpenses + oneTimeExpenses + recurringExpensesToday;
-  const todaysCreditCardExpenses = regularCreditCardExpenses;
-  const todaysExpenses = todaysBankExpenses + todaysCreditCardExpenses;
+    const recurringCreditCardExpensesToday = recurringExpenses.filter(exp => 
+      exp.type === 'expense' && exp.is_active && exp.credit_card_id
+    ).reduce((sum, exp) => {
+      const dates = generateRecurringDates({
+        id: exp.id,
+        transaction_name: exp.transaction_name || exp.name,
+        amount: exp.amount,
+        frequency: exp.frequency,
+        start_date: exp.start_date,
+        end_date: exp.end_date,
+        is_active: exp.is_active,
+        type: exp.type
+      }, todayDate, todayDate);
+      return dates.length > 0 ? sum + exp.amount : sum;
+    }, 0);
+
+    todaysBankExpenses = regularBankExpenses + oneTimeExpenses + recurringBankExpensesToday;
+    todaysCreditCardExpenses = regularCreditCardExpenses + recurringCreditCardExpensesToday;
+    todaysExpenses = todaysBankExpenses + todaysCreditCardExpenses;
+  }
 
   // Calculate hours until next update is allowed
   const hoursUntilNextUpdate = lastUpdated && !canUpdate ? Math.ceil(24 - (Date.now() - lastUpdated.getTime()) / (1000 * 60 * 60)) : 0;
