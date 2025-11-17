@@ -1230,17 +1230,23 @@ export const PurchaseOrderForm = ({
                       {formData.selectedCreditCard && (() => {
                   const selectedCard = creditCards.find(card => card.id === formData.selectedCreditCard);
                   const orderAmount = parseFloat(formData.amount) || 0;
+                  const effectiveLimit = selectedCard ? (selectedCard.credit_limit_override || selectedCard.credit_limit) : 0;
                   const remainingCredit = selectedCard ? selectedCard.available_credit - orderAmount : 0;
                   const hasInsufficientCredit = selectedCard ? selectedCard.available_credit < orderAmount : false;
                   return selectedCard ? <div className="space-y-2">
                             <div className="text-sm">
                               <div className="flex justify-between">
-                                <span>Credit Limit:</span>
-                                <span className="font-medium">${selectedCard.credit_limit.toFixed(2)}</span>
+                                <span>Credit Limit{selectedCard.credit_limit_override ? ' (Extended)' : ''}:</span>
+                                <span className="font-medium">${effectiveLimit.toFixed(2)}</span>
                               </div>
                               <div className="flex justify-between">
                                 <span>Available Credit:</span>
-                                <span className="font-medium">${selectedCard.available_credit.toFixed(2)}</span>
+                                <span className="font-medium">
+                                  {selectedCard.available_credit < 0 
+                                    ? `Over limit by $${Math.abs(selectedCard.available_credit).toFixed(2)}`
+                                    : `$${selectedCard.available_credit.toFixed(2)}`
+                                  }
+                                </span>
                               </div>
                               <div className="flex justify-between">
                                 <span>Order Amount:</span>
@@ -1249,7 +1255,10 @@ export const PurchaseOrderForm = ({
                               <div className="flex justify-between border-t pt-1 mt-2">
                                 <span>Remaining After Purchase:</span>
                                 <span className={cn("font-semibold", hasInsufficientCredit ? "text-red-600" : remainingCredit < 1000 ? "text-yellow-600" : "text-green-600")}>
-                                  ${remainingCredit.toFixed(2)}
+                                  {remainingCredit < 0
+                                    ? `Over limit by $${Math.abs(remainingCredit).toFixed(2)}`
+                                    : `$${remainingCredit.toFixed(2)}`
+                                  }
                                 </span>
                               </div>
                             </div>
