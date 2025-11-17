@@ -253,6 +253,10 @@ export const CashFlowCalendar = ({
   const getAvailableCreditForDay = (date: Date) => {
     const target = new Date(date);
     target.setHours(0, 0, 0, 0);
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const isToday = target.getTime() === today.getTime();
 
     // Start with current total available credit
     let availableCredit = totalAvailableCredit;
@@ -262,6 +266,12 @@ export const CashFlowCalendar = ({
       if (!event.creditCardId) return false; // Only credit card purchases
       const ed = new Date(event.date);
       ed.setHours(0, 0, 0, 0);
+      
+      // If excludeToday is true and we're looking at today, exclude today's purchases
+      if (excludeToday && isToday && ed.getTime() === today.getTime()) {
+        return false;
+      }
+      
       return ed <= target;
     });
 

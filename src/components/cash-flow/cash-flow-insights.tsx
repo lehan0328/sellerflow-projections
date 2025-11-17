@@ -42,6 +42,7 @@ interface CashFlowInsightsProps {
   dailyBalances?: Array<{ date: string; balance: number }>;
   onUpdateReserveAmount?: (amount: number) => Promise<void>;
   transactionMatchButton?: React.ReactNode;
+  excludeToday?: boolean;
 }
 export const CashFlowInsights = memo(({
   currentBalance,
@@ -62,7 +63,8 @@ export const CashFlowInsights = memo(({
   allBuyingOpportunities = [],
   dailyBalances = [],
   onUpdateReserveAmount,
-  transactionMatchButton
+  transactionMatchButton,
+  excludeToday = false
 }: CashFlowInsightsProps) => {
   const {
     toast
@@ -866,7 +868,21 @@ export const CashFlowInsights = memo(({
                             return sum + effectiveAvailableCredit;
                           }, 0);
                           const totalPending = Object.values(pendingOrdersByCard).reduce((sum, amount) => sum + amount, 0);
-                          return (totalAvailable - totalPending).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                          
+                          // Calculate today's credit card outflow (pending expenses with credit card)
+                          const today = new Date();
+                          today.setHours(0, 0, 0, 0);
+                          const todayCreditCardOutflow = excludeToday ? 0 : events
+                            .filter(e => {
+                              const eventDate = new Date(e.date);
+                              eventDate.setHours(0, 0, 0, 0);
+                              return e.creditCardId && 
+                                     e.type === 'outflow' && 
+                                     eventDate.getTime() === today.getTime();
+                            })
+                            .reduce((sum, e) => sum + e.amount, 0);
+                          
+                          return (totalAvailable - totalPending - todayCreditCardOutflow).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                         })()}
                       </span>
                       <span className="text-xs text-muted-foreground">
