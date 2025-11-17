@@ -94,7 +94,9 @@ export const PurchaseOrderForm = ({
     paymentMethod: "bank-transfer" as "bank-transfer" | "credit-card",
     selectedCreditCard: "",
     splitPayment: false,
-    documentType: "purchase_order" as "sales_order" | "invoice" | "proforma_invoice" | "purchase_order"
+    documentType: "purchase_order" as "sales_order" | "invoice" | "proforma_invoice" | "purchase_order",
+    shipping: "",
+    fees: ""
   });
   
   const [lineItems, setLineItems] = useState<LineItem[]>([]);
@@ -153,6 +155,14 @@ export const PurchaseOrderForm = ({
     return lineItems.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
   }, [lineItems]);
 
+  // Calculate grand total including line items, shipping, and fees
+  const grandTotal = React.useMemo(() => {
+    const items = lineItemsTotal;
+    const shippingAmount = parseFloat(formData.shipping || "0");
+    const feesAmount = parseFloat(formData.fees || "0");
+    return items + shippingAmount + feesAmount;
+  }, [lineItemsTotal, formData.shipping, formData.fees]);
+
   // Auto-suggest earliest affordable date based on total amount only
   const suggestedDate = React.useMemo(() => {
     if (!allBuyingOpportunities || allBuyingOpportunities.length === 0) return null;
@@ -200,7 +210,9 @@ export const PurchaseOrderForm = ({
         paymentMethod: "bank-transfer",
         selectedCreditCard: "",
         splitPayment: false,
-        documentType: "purchase_order"
+        documentType: "purchase_order",
+        shipping: "",
+        fees: ""
       });
       setLineItems([]);
       setCardSplits([{
@@ -1509,7 +1521,7 @@ export const PurchaseOrderForm = ({
                       </tbody>
                       <tfoot className="bg-muted/30 border-t-2">
                         <tr className="font-semibold">
-                          <td className="p-2" colSpan={2}>Totals</td>
+                          <td className="p-2" colSpan={2}>Subtotal</td>
                           <td className="p-2">
                             <div className="h-8 flex items-center px-3 bg-primary/10 rounded-md">
                               {lineItems.reduce((sum, item) => sum + (item.quantity || 0), 0)}
@@ -1518,7 +1530,49 @@ export const PurchaseOrderForm = ({
                           <td className="p-2"></td>
                           <td className="p-2">
                             <div className="h-8 flex items-center px-3 bg-primary/10 rounded-md">
-                              ${lineItems.reduce((sum, item) => sum + ((item.quantity || 0) * (item.unitPrice || 0)), 0).toFixed(2)}
+                              ${lineItemsTotal.toFixed(2)}
+                            </div>
+                          </td>
+                          <td className="p-2"></td>
+                        </tr>
+                        
+                        <tr>
+                          <td className="p-2" colSpan={4}>Shipping</td>
+                          <td className="p-2">
+                            <Input
+                              type="number"
+                              value={formData.shipping}
+                              onChange={(e) => setFormData(prev => ({...prev, shipping: e.target.value}))}
+                              placeholder="0.00"
+                              className="h-8 text-sm"
+                              min="0"
+                              step="0.01"
+                            />
+                          </td>
+                          <td className="p-2"></td>
+                        </tr>
+                        
+                        <tr>
+                          <td className="p-2" colSpan={4}>Fees</td>
+                          <td className="p-2">
+                            <Input
+                              type="number"
+                              value={formData.fees}
+                              onChange={(e) => setFormData(prev => ({...prev, fees: e.target.value}))}
+                              placeholder="0.00"
+                              className="h-8 text-sm"
+                              min="0"
+                              step="0.01"
+                            />
+                          </td>
+                          <td className="p-2"></td>
+                        </tr>
+                        
+                        <tr className="font-bold border-t-2">
+                          <td className="p-2" colSpan={4}>Grand Total</td>
+                          <td className="p-2">
+                            <div className="h-8 flex items-center px-3 bg-primary/20 rounded-md">
+                              ${grandTotal.toFixed(2)}
                             </div>
                           </td>
                           <td className="p-2"></td>
@@ -1533,7 +1587,7 @@ export const PurchaseOrderForm = ({
             {/* Disclaimer */}
             {lineItems.length > 0 && (
               <p className="text-xs text-muted-foreground italic">
-                Note: If the total here and total amount extracted from AI does not match, check for credits applied
+                Note: If the subtotal here and total amount extracted from AI does not match, check for credits applied
               </p>
             )}
 
