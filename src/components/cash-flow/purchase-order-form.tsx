@@ -310,21 +310,6 @@ export const PurchaseOrderForm = ({
       [field]: value
     } : p);
     
-    // If amount was updated, recalculate the last payment's remaining balance
-    if (field === "amount") {
-      const totalAmount = parseFloat(formData.amount) || 0;
-      const lastPaymentIndex = updatedSchedule.length - 1;
-      
-      // Calculate sum of all payments except the last one
-      const paidAmountExceptLast = updatedSchedule.slice(0, -1).reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
-      const remainingBalance = Math.max(0, totalAmount - paidAmountExceptLast);
-      
-      // Update the last payment if it has "Remaining Balance" description
-      if (updatedSchedule[lastPaymentIndex]?.description === "Remaining Balance") {
-        updatedSchedule[lastPaymentIndex].amount = remainingBalance > 0 ? remainingBalance.toFixed(2) : "";
-      }
-    }
-    
     setPaymentSchedule(updatedSchedule);
   };
   
