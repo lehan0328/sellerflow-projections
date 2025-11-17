@@ -214,6 +214,19 @@ export const PurchaseOrderForm = ({
     }
   }, [showVendorForm, open]);
 
+  // Auto-calculate amount from payment schedule for preorders
+  useEffect(() => {
+    if (formData.paymentType === "preorder" && paymentSchedule.length > 0) {
+      const scheduleTotal = paymentSchedule.reduce((sum, payment) => {
+        return sum + (parseFloat(payment.amount) || 0);
+      }, 0);
+      setFormData(prev => ({
+        ...prev,
+        amount: scheduleTotal.toFixed(2)
+      }));
+    }
+  }, [formData.paymentType, paymentSchedule]);
+
   // Auto-update vendorId and category when a matching vendor is found (after adding new vendor)
   useEffect(() => {
     if (formData.vendor && !formData.vendorId) {
@@ -368,19 +381,6 @@ export const PurchaseOrderForm = ({
           toast.error(`Insufficient credit limit. Available: $${selectedCard.available_credit.toFixed(2)}, Required: $${orderAmount.toFixed(2)}`);
           return;
         }
-      }
-    }
-
-    // Validate payment schedule matches total amount for preorders
-    if (formData.paymentType === "preorder" && paymentSchedule.length > 0) {
-      const scheduleTotal = paymentSchedule.reduce((sum, payment) => {
-        return sum + (parseFloat(payment.amount) || 0);
-      }, 0);
-      const orderAmount = parseFloat(formData.amount) || 0;
-      
-      if (Math.abs(scheduleTotal - orderAmount) > 0.01) { // Allow for minor floating point differences
-        toast.error(`Payment schedule total ($${scheduleTotal.toFixed(2)}) must equal order amount ($${orderAmount.toFixed(2)}). Difference: $${Math.abs(scheduleTotal - orderAmount).toFixed(2)}`);
-        return;
       }
     }
 
@@ -871,11 +871,26 @@ export const PurchaseOrderForm = ({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="amount" className="text-sm font-medium">Total Amount *</Label>
-                <Input id="amount" type="number" step="0.01" placeholder="0.00" value={formData.amount} onChange={e => setFormData(prev => ({
-                ...prev,
-                amount: e.target.value
-              }))} required className="h-10" />
+                <Label htmlFor="amount" className="text-sm font-medium">
+                  Total Amount *
+                  {formData.paymentType === "preorder" && (
+                    <span className="text-xs text-muted-foreground ml-2">(auto-calculated from payment schedule)</span>
+                  )}
+                </Label>
+                <Input 
+                  id="amount" 
+                  type="number" 
+                  step="0.01" 
+                  placeholder="0.00" 
+                  value={formData.amount} 
+                  onChange={e => setFormData(prev => ({
+                    ...prev,
+                    amount: e.target.value
+                  }))} 
+                  disabled={formData.paymentType === "preorder"}
+                  required 
+                  className="h-10" 
+                />
                 
                 {/* Suggested Affordable Date */}
                 {suggestedDate && (
