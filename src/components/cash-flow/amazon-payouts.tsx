@@ -80,7 +80,8 @@ export function AmazonPayouts() {
   // Function to get color for an account
   const getAccountColor = (accountId: string) => {
     const index = amazonAccounts.findIndex(acc => acc.id === accountId);
-    return ACCOUNT_COLORS[index % ACCOUNT_COLORS.length];
+    const colorIndex = index >= 0 ? index % ACCOUNT_COLORS.length : 0;
+    return ACCOUNT_COLORS[colorIndex];
   };
   
   // Date range filter - default to current month
