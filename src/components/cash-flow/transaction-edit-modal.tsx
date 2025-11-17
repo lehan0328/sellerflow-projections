@@ -55,9 +55,21 @@ export const TransactionEditModal = ({ open, onOpenChange, transaction, onSucces
 
   useEffect(() => {
     if (open && transaction) {
+      // Handle dueDate whether it's a Date object or string
+      let dueDateValue = '';
+      if (transaction.dueDate) {
+        if (transaction.dueDate instanceof Date) {
+          dueDateValue = formatDateInputLocal(transaction.dueDate);
+        } else if (typeof transaction.dueDate === 'string') {
+          // Parse string date and format for input
+          const parsedDate = new Date(transaction.dueDate);
+          dueDateValue = formatDateInputLocal(parsedDate);
+        }
+      }
+      
       setFormData({
         amount: transaction.amount || 0,
-        dueDate: transaction.dueDate ? formatDateInputLocal(transaction.dueDate) : '',
+        dueDate: dueDateValue,
         description: transaction.description || '',
         remarks: transaction.remarks || '',
         creditCardId: transaction.creditCardId || null
