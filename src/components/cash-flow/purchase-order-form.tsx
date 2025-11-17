@@ -370,6 +370,20 @@ export const PurchaseOrderForm = ({
         }
       }
     }
+
+    // Validate payment schedule matches total amount for preorders
+    if (formData.paymentType === "preorder" && paymentSchedule.length > 0) {
+      const scheduleTotal = paymentSchedule.reduce((sum, payment) => {
+        return sum + (parseFloat(payment.amount) || 0);
+      }, 0);
+      const orderAmount = parseFloat(formData.amount) || 0;
+      
+      if (Math.abs(scheduleTotal - orderAmount) > 0.01) { // Allow for minor floating point differences
+        toast.error(`Payment schedule total ($${scheduleTotal.toFixed(2)}) must equal order amount ($${orderAmount.toFixed(2)}). Difference: $${Math.abs(scheduleTotal - orderAmount).toFixed(2)}`);
+        return;
+      }
+    }
+
     const calculatedDueDate = calculateDueDate();
     const orderData = {
       ...formData,
