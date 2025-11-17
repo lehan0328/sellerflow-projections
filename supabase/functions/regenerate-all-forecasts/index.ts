@@ -67,14 +67,16 @@ serve(async (req) => {
           continue;
         }
 
-        // Verify at least one account meets the 24-hour and 50+ transaction requirements
+        // Verify at least one account meets the requirements
+        // MODIFIED: Removed the 50 transaction limit requirement
         const now = new Date();
         const readyAccounts = amazonAccounts.filter(acc => {
           const createdAt = new Date(acc.created_at);
           const hoursSinceCreation = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
-          return acc.initial_sync_complete && 
-                 (acc.transaction_count || 0) >= 50 && 
-                 hoursSinceCreation >= 24;
+          
+          // Only check if initial sync is done and account is at least 24 hours old
+          // (You can also remove hoursSinceCreation if you want it to run immediately after sync)
+          return acc.initial_sync_complete && hoursSinceCreation >= 24;
         });
 
         if (readyAccounts.length === 0) {
@@ -82,7 +84,8 @@ serve(async (req) => {
           results.push({
             user_id: userSetting.user_id,
             success: false,
-            reason: 'Amazon accounts not ready (need 24 hours + 50 transactions)'
+            // Updated reason text
+            reason: 'Amazon accounts not ready (need 24 hours since creation)'
           });
           continue;
         }
