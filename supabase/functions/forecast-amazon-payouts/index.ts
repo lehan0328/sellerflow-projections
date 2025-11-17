@@ -264,30 +264,12 @@ serve(async (req) => {
         .gte('transaction_date', thirtyDaysAgo.toISOString())
         .order('transaction_date', { ascending: false });
 
-      // Fetch aggregated historical data (30 days - 12 months ago) for seasonal patterns
-      const { data: historicalSummary, error: historicalError } = await supabase
-        .from('amazon_transactions_daily_summary')
-        .select('*')
-        .eq('amazon_account_id', amazonAccount.id)
-        .gte('transaction_date', twelveMonthsAgo.toISOString().split('T')[0])
-        .lt('transaction_date', thirtyDaysAgo.toISOString().split('T')[0])
-        .order('transaction_date', { ascending: false });
 
       // Combine recent detailed + historical aggregated for full picture
       const amazonTransactions = recentTransactions || [];
 
-      // Convert daily summaries to transaction-like format for compatibility
-      const historicalTransactions = (historicalSummary || []).map(summary => ({
-        transaction_date: summary.transaction_date,
-        transaction_type: 'Daily Summary',
-        amount: summary.net_amount,
-        gross_amount: summary.orders_total,
-        marketplace_name: summary.marketplace_name,
-        currency_code: summary.currency_code,
-        settlement_id: summary.settlement_id
-      }));
 
-      const transactionsError = rollupsError || recentTxError || historicalError;
+      const transactionsError = rollupsError || recentTxError;
 
       if (transactionsError) {
         console.error(`[FORECAST] Error fetching data for account ${amazonAccount.id}:`, transactionsError);
