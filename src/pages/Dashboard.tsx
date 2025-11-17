@@ -2308,7 +2308,12 @@ const Dashboard = () => {
           
           let canSpend = true;
           for (let k = j; k <= i; k++) {
-            if (projectedDailyBalances[k].runningBalance - opportunityAmount < reserveAmount) {
+            // For spending on date k, check if we have funds at START of day k (= end of day k-1)
+            const balanceToCheck = k === 0 
+              ? projectedDailyBalances[k].runningBalance  // First day uses its own balance
+              : projectedDailyBalances[k - 1].runningBalance;  // Other days use previous day's ending
+            
+            if (balanceToCheck - opportunityAmount < reserveAmount) {
               canSpend = false;
               break;
             }
@@ -2322,7 +2327,7 @@ const Dashboard = () => {
         opportunities.push({
           date: currentDay.date,
           balance: opportunityAmount,
-          available_date: format(addDays(new Date(earliestDate), 1), 'yyyy-MM-dd'),
+          available_date: earliestDate,
           lowPointDate: globalMinBalanceDate  // Reference to global minimum
         });
       }
