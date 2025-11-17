@@ -552,9 +552,10 @@ export default function Analytics() {
     })).filter(item => item.value > 0).sort((a, b) => b.value - a.value);
   }, [recurringExpenses, vendorDateRange, customStartDate, customEndDate]);
 
-  // Combined expense data (purchase orders + recurring expenses)
+  // Combined expense data (purchase orders + recurring expenses + one-time expenses)
   const vendorCategoryData = useMemo(() => {
     const categoryTotals: Record<string, number> = {};
+    const { start, end } = getDateRange(vendorDateRange);
 
     // Merge purchase order data
     purchaseOrderCategoryData.forEach(item => {
@@ -565,11 +566,22 @@ export default function Analytics() {
     recurringExpenseCategoryData.forEach(item => {
       categoryTotals[item.name] = (categoryTotals[item.name] || 0) + item.value;
     });
+
+    // Add one-time expense transactions from dbTransactions
+    dbTransactions.forEach(tx => {
+      if (tx.type === 'expense' && tx.status !== 'cancelled' && tx.category && tx.category.trim()) {
+        const txDate = new Date(tx.transactionDate);
+        if (txDate >= start && txDate <= end) {
+          categoryTotals[tx.category] = (categoryTotals[tx.category] || 0) + tx.amount;
+        }
+      }
+    });
+
     return Object.entries(categoryTotals).map(([category, total]) => ({
       name: category,
       value: total
     })).filter(item => item.value > 0).sort((a, b) => b.value - a.value);
-  }, [purchaseOrderCategoryData, recurringExpenseCategoryData]);
+  }, [purchaseOrderCategoryData, recurringExpenseCategoryData, dbTransactions, vendorDateRange, customStartDate, customEndDate]);
 
   // Top vendors by spending
   const topVendors = useMemo(() => {
