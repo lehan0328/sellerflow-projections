@@ -41,19 +41,7 @@ import { useIncome } from "@/hooks/useIncome";
 import { toast } from "sonner";
 import { formatCurrency } from "@/lib/utils";
 
-interface DeletedTransaction {
-  id: string;
-  transaction_type: 'vendor' | 'income';
-  name: string;
-  amount: number;
-  description: string;
-  payment_date: string;
-  status: string;
-  category: string;
-  deleted_at: string;
-}
-
-type TransactionType = 'all' | 'bank' | 'vendor' | 'income' | 'deleted';
+type TransactionType = 'all' | 'bank' | 'purchase_order' | 'income' | 'expense';
 type SortField = 'date' | 'amount' | 'name';
 type SortOrder = 'asc' | 'desc';
 
@@ -63,11 +51,11 @@ export default function TransactionLog() {
   const [typeFilter, setTypeFilter] = useState<TransactionType>('all');
   const [sortField, setSortField] = useState<SortField>('date');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
-  const [deletedTransactions, setDeletedTransactions] = useState<DeletedTransaction[]>([]);
 
   const { transactions: archivedBankTx, isLoading: bankLoading } = useArchivedBankTransactions();
   const { transactions: vendorTransactions } = useVendorTransactions();
   const [archivedIncomeItems, setArchivedIncomeItems] = useState<any[]>([]);
+  const [archivedExpenses, setArchivedExpenses] = useState<any[]>([]);
 
   // Fetch archived income transactions
   const fetchArchivedIncome = useCallback(async () => {
@@ -97,29 +85,39 @@ export default function TransactionLog() {
     setArchivedIncomeItems(data || []);
   }, []);
 
-  // Fetch deleted transactions
-  const fetchDeletedTransactions = useCallback(async () => {
+  // Fetch archived expenses
+  const fetchArchivedExpenses = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    const { data, error } = await supabase
-      .from('deleted_transactions')
-      .select('*')
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('account_id')
       .eq('user_id', user.id)
-      .order('deleted_at', { ascending: false });
+      .maybeSingle();
+
+    if (!profile?.account_id) return;
+
+    const { data, error } = await supabase
+      .from('transactions')
+      .select('*')
+      .eq('account_id', profile.account_id)
+      .eq('type', 'expense')
+      .eq('archived', true)
+      .order('transaction_date', { ascending: false });
 
     if (error) {
-      console.error('Error fetching deleted transactions:', error);
+      console.error('Error fetching archived expenses:', error);
       return;
     }
 
-    setDeletedTransactions((data || []) as DeletedTransaction[]);
+    setArchivedExpenses(data || []);
   }, []);
 
   useEffect(() => {
-    fetchDeletedTransactions();
     fetchArchivedIncome();
-  }, [fetchDeletedTransactions, fetchArchivedIncome]);
+    fetchArchivedExpenses();
+  }, [fetchArchivedIncome, fetchArchivedExpenses]);
 
   // Delete all archived transactions permanently
   const handleDeleteAll = async () => {
@@ -142,14 +140,6 @@ export default function TransactionLog() {
         return;
       }
 
-      // Delete all from deleted_transactions table
-      const { error: deletedError } = await supabase
-        .from('deleted_transactions')
-        .delete()
-        .eq('user_id', user.id);
-
-      if (deletedError) throw deletedError;
-
       // Delete all archived bank transactions
       const { error: bankError } = await supabase
         .from('bank_transactions')
@@ -168,7 +158,7 @@ export default function TransactionLog() {
 
       if (incomeError) throw incomeError;
 
-      // Delete all archived vendor transactions (status = 'completed' or 'paid')
+      // Delete all archived purchase orders (status = 'completed' or 'paid')
       const { error: vendorError } = await supabase
         .from('transactions')
         .delete()
@@ -178,9 +168,18 @@ export default function TransactionLog() {
 
       if (vendorError) throw vendorError;
 
+      // Delete all archived expenses
+      const { error: expenseError } = await supabase
+        .from('transactions')
+        .delete()
+        .eq('type', 'expense')
+        .eq('archived', true);
+
+      if (expenseError) throw expenseError;
+
       // Refresh the page data
-      fetchDeletedTransactions();
       fetchArchivedIncome();
+      fetchArchivedExpenses();
       
       toast.success('All archived transactions deleted permanently');
     } catch (error) {
@@ -189,8 +188,8 @@ export default function TransactionLog() {
     }
   };
 
-  // Get completed/paid vendor transactions (these are effectively archived)
-  const archivedVendorTx = vendorTransactions.filter(tx => tx.status === 'completed' || tx.status === 'paid');
+  // Get completed/paid purchase order transactions (these are effectively archived)
+  const archivedPurchaseOrderTx = vendorTransactions.filter(tx => tx.status === 'completed' || tx.status === 'paid');
   
   // Format archived income items
   const archivedIncomeTx = archivedIncomeItems.map(item => ({
@@ -198,6 +197,16 @@ export default function TransactionLog() {
     source: item.source,
     amount: Number(item.amount),
     paymentDate: new Date(item.payment_date),
+    description: item.description,
+    category: item.category || undefined,
+    status: item.status
+  }));
+
+  // Format archived expense items
+  const archivedExpenseTx = archivedExpenses.map(item => ({
+    id: item.id,
+    amount: Number(item.amount),
+    date: new Date(item.transaction_date),
     description: item.description,
     category: item.category || undefined,
     status: item.status
@@ -217,9 +226,9 @@ export default function TransactionLog() {
         category: tx.category?.join(', ') || undefined,
         status: 'archived',
       })),
-      ...archivedVendorTx.map(tx => ({
+      ...archivedPurchaseOrderTx.map(tx => ({
         id: tx.id,
-        type: 'vendor' as const,
+        type: 'purchase_order' as const,
         name: tx.vendorName,
         amount: tx.amount,
         date: new Date(tx.dueDate || tx.transactionDate),
@@ -239,21 +248,21 @@ export default function TransactionLog() {
         category: tx.category || undefined,
         status: tx.status,
       })),
-      ...deletedTransactions.map(tx => ({
+      ...archivedExpenseTx.map(tx => ({
         id: tx.id,
-        type: 'deleted' as const,
-        name: tx.name,
+        type: 'expense' as const,
+        name: 'Expense',
         amount: tx.amount,
-        date: new Date(tx.payment_date),
+        date: tx.date,
         description: tx.description,
         matchedWith: undefined,
         category: tx.category || undefined,
-        status: 'deleted',
+        status: tx.status,
       })),
     ];
 
     return transactions;
-  }, [archivedBankTx, archivedVendorTx, archivedIncomeTx, deletedTransactions]);
+  }, [archivedBankTx, archivedPurchaseOrderTx, archivedIncomeTx, archivedExpenseTx]);
 
   // Filter and sort transactions
   const filteredTransactions = useMemo(() => {
@@ -307,18 +316,18 @@ export default function TransactionLog() {
   // Calculate statistics
   const stats = useMemo(() => {
     const bankCount = filteredTransactions.filter(tx => tx.type === 'bank').length;
-    const vendorCount = filteredTransactions.filter(tx => tx.type === 'vendor').length;
+    const purchaseOrderCount = filteredTransactions.filter(tx => tx.type === 'purchase_order').length;
     const incomeCount = filteredTransactions.filter(tx => tx.type === 'income').length;
-    const deletedCount = filteredTransactions.filter(tx => tx.type === 'deleted').length;
+    const expenseCount = filteredTransactions.filter(tx => tx.type === 'expense').length;
     
     const totalAmount = filteredTransactions.reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
 
     return {
       total: filteredTransactions.length,
       bank: bankCount,
-      vendor: vendorCount,
+      purchaseOrder: purchaseOrderCount,
       income: incomeCount,
-      deleted: deletedCount,
+      expense: expenseCount,
       totalAmount,
     };
   }, [filteredTransactions]);
@@ -327,12 +336,12 @@ export default function TransactionLog() {
     switch (type) {
       case 'bank':
         return <Building2 className="h-4 w-4" />;
-      case 'vendor':
-        return <TrendingDown className="h-4 w-4" />;
+      case 'purchase_order':
+        return <Receipt className="h-4 w-4" />;
       case 'income':
         return <TrendingUp className="h-4 w-4" />;
-      case 'deleted':
-        return <Archive className="h-4 w-4" />;
+      case 'expense':
+        return <TrendingDown className="h-4 w-4" />;
       default:
         return <Receipt className="h-4 w-4" />;
     }
@@ -342,14 +351,29 @@ export default function TransactionLog() {
     switch (type) {
       case 'bank':
         return 'default';
-      case 'vendor':
-        return 'destructive';
+      case 'purchase_order':
+        return 'outline';
       case 'income':
         return 'secondary';
-      case 'deleted':
-        return 'outline';
+      case 'expense':
+        return 'destructive';
       default:
         return 'default';
+    }
+  };
+
+  const getTypeLabel = (type: string) => {
+    switch (type) {
+      case 'bank':
+        return 'Bank';
+      case 'purchase_order':
+        return 'Purchase Order';
+      case 'income':
+        return 'Income';
+      case 'expense':
+        return 'Expense';
+      default:
+        return type;
     }
   };
 
@@ -439,12 +463,12 @@ export default function TransactionLog() {
           <Card className="border-border/50 bg-card/50 backdrop-blur">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <TrendingDown className="h-4 w-4" />
-                Vendor
+                <Receipt className="h-4 w-4" />
+                Purchase Orders
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.vendor}</div>
+              <div className="text-2xl font-bold">{stats.purchaseOrder}</div>
             </CardContent>
           </Card>
 
@@ -463,12 +487,12 @@ export default function TransactionLog() {
           <Card className="border-border/50 bg-card/50 backdrop-blur">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <Archive className="h-4 w-4" />
-                Deleted
+                <TrendingDown className="h-4 w-4" />
+                Expenses
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.deleted}</div>
+              <div className="text-2xl font-bold">{stats.expense}</div>
             </CardContent>
           </Card>
         </div>
@@ -496,9 +520,9 @@ export default function TransactionLog() {
                   <SelectContent>
                     <SelectItem value="all">All Types</SelectItem>
                     <SelectItem value="bank">Bank Matched</SelectItem>
-                    <SelectItem value="vendor">Vendor</SelectItem>
+                    <SelectItem value="purchase_order">Purchase Orders</SelectItem>
                     <SelectItem value="income">Income</SelectItem>
-                    <SelectItem value="deleted">Deleted</SelectItem>
+                    <SelectItem value="expense">Expenses</SelectItem>
                   </SelectContent>
                 </Select>
 
@@ -563,7 +587,7 @@ export default function TransactionLog() {
                         <div className="flex items-center gap-2 mb-2">
                           <Badge variant={getTypeBadgeVariant(tx.type)} className="gap-1">
                             {getTypeIcon(tx.type)}
-                            <span className="capitalize">{tx.type}</span>
+                            <span>{getTypeLabel(tx.type)}</span>
                           </Badge>
                           {tx.matchedWith && (
                             <Badge variant="outline" className="text-xs">
@@ -601,11 +625,11 @@ export default function TransactionLog() {
                         <div className={`text-lg font-bold ${
                           tx.type === 'income' 
                             ? 'text-green-600 dark:text-green-500' 
-                            : tx.type === 'vendor'
+                            : (tx.type === 'purchase_order' || tx.type === 'expense')
                             ? 'text-red-600 dark:text-red-500'
                             : 'text-foreground'
                         }`}>
-                          {tx.type === 'income' ? '+' : tx.type === 'vendor' ? '-' : ''}
+                          {tx.type === 'income' ? '+' : (tx.type === 'purchase_order' || tx.type === 'expense') ? '-' : ''}
                           ${Math.abs(tx.amount).toLocaleString()}
                         </div>
                       </div>
