@@ -2245,9 +2245,9 @@ const Dashboard = () => {
   // Calculate projected daily balances using the same logic as the calendar
   // This is the single source of truth for balance projections
   const projectedDailyBalances = useMemo(() => {
-    const { dailyBalances } = calculateCalendarBalances(displayBankBalance, allCalendarEvents, 90);
+    const { dailyBalances } = calculateCalendarBalances(displayBankBalance, allCalendarEvents, 90, excludeToday);
     return dailyBalances;
-  }, [displayBankBalance, allCalendarEvents]);
+  }, [displayBankBalance, allCalendarEvents, excludeToday]);
 
   // Calculate buying opportunities from projected balances
   const buyingOpportunities = useMemo(() => {
@@ -2274,7 +2274,7 @@ const Dashboard = () => {
     const nextDay = projectedDailyBalances[i + 1];
     
     const currentDate = new Date(currentDay.date);
-    if (currentDate <= today) continue;
+    if (currentDate < today) continue;
     
     // Find valleys where balance increases
     if (nextDay.runningBalance > currentDay.runningBalance) {
@@ -2294,7 +2294,7 @@ const Dashboard = () => {
         let earliestDate = currentDay.date;
         for (let j = 0; j <= i; j++) {
           const checkDate = new Date(projectedDailyBalances[j].date);
-          if (checkDate <= today) continue;
+          if (checkDate < today) continue;
           
           let canSpend = true;
           for (let k = j; k <= i; k++) {
@@ -2332,7 +2332,7 @@ const Dashboard = () => {
   }
     
     return deduplicatedOpportunities;
-  }, [projectedDailyBalances, reserveAmount]);
+  }, [projectedDailyBalances, reserveAmount, excludeToday]);
 
   // Calculate safe spending from projected balances
   const safeSpendingFromProjection = useMemo(() => {
