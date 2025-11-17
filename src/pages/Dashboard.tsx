@@ -1065,7 +1065,7 @@ const Dashboard = () => {
           vendorId: vendorId,
           transactionDate: orderData.poDate || new Date(),
           dueDate: paymentDueDate,
-          status: (paymentDueDateStartOfDay <= today
+          status: (paymentDueDateStartOfDay < today
             ? "completed"
             : "pending") as "completed" | "pending",
           creditCardId:
@@ -1091,7 +1091,7 @@ const Dashboard = () => {
         vendorId: vendorId,
         transactionDate: orderData.poDate || new Date(),
         dueDate: dueDate,
-        status: (dueDateStartOfDay <= today ? "completed" : "pending") as
+        status: (dueDateStartOfDay < today ? "completed" : "pending") as
           | "completed"
           | "pending",
         creditCardId:
