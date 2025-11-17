@@ -2841,6 +2841,7 @@ const Dashboard = () => {
                     }}
                     pendingIncomeToday={pendingIncomeToday}
                     useAvailableBalance={useAvailableBalance}
+                    transactions={transactions}
                   />
                 ) : (
                   <OverviewStatsSkeleton />
