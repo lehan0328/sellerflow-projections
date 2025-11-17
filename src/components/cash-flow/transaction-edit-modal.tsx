@@ -231,6 +231,7 @@ export const TransactionEditModal = ({ open, onOpenChange, transaction, onSucces
               <Select 
                 value={formData.creditCardId || 'cash'} 
                 onValueChange={(value) => handleInputChange("creditCardId", value === 'cash' ? null : value)}
+                disabled={transaction?.type === 'expense' || transaction?.type === 'purchase_order'}
               >
                 <SelectTrigger className="w-full">
                   <div className="flex items-center gap-2">
