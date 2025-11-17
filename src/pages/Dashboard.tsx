@@ -1068,6 +1068,7 @@ const Dashboard = () => {
           status: (paymentDueDateStartOfDay < today
             ? "completed"
             : "pending") as "completed" | "pending",
+          archived: paymentDueDateStartOfDay < today,
           creditCardId:
             orderData.paymentMethod === "credit-card"
               ? orderData.selectedCreditCard
@@ -1094,6 +1095,7 @@ const Dashboard = () => {
         status: (dueDateStartOfDay < today ? "completed" : "pending") as
           | "completed"
           | "pending",
+        archived: dueDateStartOfDay < today,
         creditCardId:
           orderData.paymentMethod === "credit-card"
             ? orderData.selectedCreditCard
@@ -1540,6 +1542,7 @@ const Dashboard = () => {
       description: expenseData.description || "Expense",
       transactionDate: paymentDate,
       status: isPaymentDatePassed ? "completed" : "pending",
+      archived: isPaymentDatePassed,
       category: expenseData.category || null,
       creditCardId: expenseData.creditCardId || null,
     });

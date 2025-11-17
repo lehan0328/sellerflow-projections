@@ -15,6 +15,7 @@ export interface Transaction {
   dueDate?: Date;
   status: 'pending' | 'completed' | 'cancelled';
   category?: string;
+  archived?: boolean;
 }
 
 export const useTransactions = () => {
@@ -89,7 +90,8 @@ export const useTransactions = () => {
           transaction_date: formatDateForDB(transactionData.transactionDate),
           due_date: transactionData.dueDate ? formatDateForDB(transactionData.dueDate) : null,
           status: transactionData.status,
-          category: transactionData.category
+          category: transactionData.category,
+          archived: transactionData.archived || false
         })
         .select()
         .single();
