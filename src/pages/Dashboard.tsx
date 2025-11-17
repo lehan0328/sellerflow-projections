@@ -2055,13 +2055,20 @@ const Dashboard = () => {
 
   // Convert expenses to calendar events
   const expenseEvents: CashFlowEvent[] = transactions
-    .filter((t) => t.type === "expense")
+    .filter((t) => {
+      // Exclude completed credit card expenses (already reflected in card balance)
+      if (t.type === "expense" && t.creditCardId && t.status === "completed") {
+        return false;
+      }
+      return t.type === "expense";
+    })
     .map((t) => ({
       id: `expense-${t.id}`,
       type: "outflow" as const,
       amount: t.amount,
       description: t.description,
       vendor: "Expense",
+      creditCardId: t.creditCardId,
       date: t.transactionDate,
     }));
 
