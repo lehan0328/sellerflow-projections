@@ -2316,7 +2316,7 @@ const Dashboard = () => {
               ? projectedDailyBalances[k].runningBalance  // First day uses its own balance
               : projectedDailyBalances[k - 1].runningBalance;  // Other days use previous day's ending
             
-            if (balanceToCheck - opportunityAmount < reserveAmount) {
+            if (balanceToCheck < opportunityAmount + reserveAmount) {
               canSpend = false;
               break;
             }
