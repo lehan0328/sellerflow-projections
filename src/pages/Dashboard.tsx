@@ -118,6 +118,7 @@ import { useCreditCards } from "@/hooks/useCreditCards";
 import { usePlanLimits } from "@/hooks/usePlanLimits";
 import { LimitEnforcementModal } from "@/components/LimitEnforcementModal";
 import { LimitCheckProvider } from "@/contexts/LimitCheckContext";
+import { CreditCardPaymentDialog } from "@/components/cash-flow/credit-card-payment-dialog";
 
 import { useVendors, type Vendor } from "@/hooks/useVendors";
 import { usePayees } from "@/hooks/usePayees";
@@ -388,6 +389,7 @@ const Dashboard = () => {
   const [showIncomeForm, setShowIncomeForm] = useState(false);
   const [showExpenseForm, setShowExpenseForm] = useState(false);
   const [showRecurringIncomeForm, setShowRecurringIncomeForm] = useState(false);
+  const [showPayCreditCardDialog, setShowPayCreditCardDialog] = useState(false);
   const [editingIncome, setEditingIncome] = useState<any>(null);
   const [showEditIncomeForm, setShowEditIncomeForm] = useState(false);
   const [editingExpense, setEditingExpense] = useState<any>(null);
@@ -3697,6 +3699,7 @@ const Dashboard = () => {
             onAddIncome={() => setShowIncomeForm(true)}
             onAddExpense={() => setShowExpenseForm(true)}
             onAddRecurringIncome={() => setShowRecurringIncomeForm(true)}
+            onPayCreditCard={() => setShowPayCreditCardDialog(true)}
           />
 
           {showPurchaseOrderForm && (
@@ -3733,6 +3736,13 @@ const Dashboard = () => {
               isRecurring={true}
               customers={customers}
               onAddCustomer={addCustomer}
+            />
+          )}
+
+          {showPayCreditCardDialog && (
+            <CreditCardPaymentDialog
+              open={showPayCreditCardDialog}
+              onOpenChange={setShowPayCreditCardDialog}
             />
           )}
 
