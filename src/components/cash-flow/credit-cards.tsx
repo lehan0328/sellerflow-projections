@@ -443,7 +443,9 @@ export function CreditCards() {
             </Button>
           </div>
         ) : (
-          creditCards.map((card) => {
+          creditCards
+            .sort((a, b) => (a.priority || 3) - (b.priority || 3))
+            .map((card) => {
             const effectiveCreditLimit = card.credit_limit_override || card.credit_limit;
             const effectiveAvailableCredit = effectiveCreditLimit - card.balance;
             const utilizationPercentage = getUtilizationPercentage(card.balance, effectiveCreditLimit);

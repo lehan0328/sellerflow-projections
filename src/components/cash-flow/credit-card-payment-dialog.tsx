@@ -210,9 +210,20 @@ export function CreditCardPaymentDialog({
                 <SelectValue placeholder="Select credit card" />
               </SelectTrigger>
               <SelectContent>
-                {creditCards.map((card) => (
+                {creditCards
+                  .filter(card => card.is_active)
+                  .sort((a, b) => (a.priority || 3) - (b.priority || 3))
+                  .map((card) => (
                   <SelectItem key={card.id} value={card.id}>
-                    {card.account_name} - Balance: ${card.balance.toFixed(2)}
+                    <div className="flex items-center gap-2 w-full">
+                      <span className="flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 text-primary text-xs font-semibold">
+                        {card.priority || 3}
+                      </span>
+                      <span>{card.account_name}</span>
+                      <span className="text-sm text-muted-foreground ml-auto">
+                        Balance: ${card.balance.toFixed(2)}
+                      </span>
+                    </div>
                   </SelectItem>
                 ))}
               </SelectContent>
