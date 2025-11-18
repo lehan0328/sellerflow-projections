@@ -30,7 +30,7 @@ jobs:
 
       # New Step: Push database migrations
       - name: Deploy Database Migrations
-        run: supabase db push --include-all
+        run: supabase db push 
 
       # Deploy Edge Functions
       - name: Deploy Edge Functions
