@@ -103,12 +103,6 @@ export function CreditCardPaymentDialog({
       return;
     }
 
-    // Validate bank account has sufficient funds
-    if (defaultBankAccount.available_balance && amount > defaultBankAccount.available_balance) {
-      toast.error("Insufficient funds in bank account");
-      return;
-    }
-
     // Validate payment doesn't exceed credit card balance
     if (amount > selectedCreditCard.balance) {
       toast.error("Payment amount exceeds credit card balance");
@@ -118,59 +112,36 @@ export function CreditCardPaymentDialog({
     setIsSubmitting(true);
 
     try {
-      // Update credit card balance (decrease balance, increase available credit)
-      const newCreditCardBalance = selectedCreditCard.balance - amount;
-      const newAvailableCredit = selectedCreditCard.available_credit + amount;
+      // Fetch user's account_id from profiles
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('account_id')
+        .eq('user_id', user.id)
+        .single();
 
-      const { error: creditCardError } = await supabase
-        .from("credit_cards")
-        .update({
-          balance: newCreditCardBalance,
-          available_credit: newAvailableCredit,
-          updated_at: new Date().toISOString()
-        })
-        .eq("id", selectedCreditCardId);
+      // Create a pending transaction record only - no immediate balance changes
+      const isPastDate = new Date(format(paymentDate, "yyyy-MM-dd")) < new Date(format(new Date(), "yyyy-MM-dd"));
 
-      if (creditCardError) throw creditCardError;
-
-      // Update bank account balance (decrease available balance)
-      const newBankBalance = defaultBankAccount.balance - amount;
-      const newBankAvailable = (defaultBankAccount.available_balance || defaultBankAccount.balance) - amount;
-
-      const { error: bankAccountError } = await supabase
-        .from("bank_accounts")
-        .update({
-          balance: newBankBalance,
-          available_balance: newBankAvailable,
-          updated_at: new Date().toISOString()
-        })
-        .eq("id", defaultBankAccount.id);
-
-      if (bankAccountError) throw bankAccountError;
-
-      // Record the transaction in bank_transactions table
       const { error: transactionError } = await supabase
         .from("bank_transactions")
         .insert({
           user_id: user.id,
+          account_id: profile?.account_id,
           bank_account_id: defaultBankAccount.id,
           credit_card_id: selectedCreditCardId,
           amount: -amount, // Negative because money is leaving the bank account
           date: format(paymentDate, "yyyy-MM-dd"),
           name: `Credit Card Payment - ${selectedCreditCard.account_name}`,
           merchant_name: selectedCreditCard.institution_name,
-          pending: false,
+          pending: !isPastDate, // Pending if future date, completed if past
           plaid_transaction_id: `manual_cc_payment_${Date.now()}`,
           transaction_type: "payment",
           category: ["Credit Card Payment"]
         });
 
-      if (transactionError) {
-        console.error("Error recording transaction:", transactionError);
-        // Don't throw here - the payment was already recorded
-      }
+      if (transactionError) throw transactionError;
 
-      toast.success(`Payment of $${amount.toFixed(2)} recorded successfully`);
+      toast.success(`Payment of $${amount.toFixed(2)} scheduled for ${format(paymentDate, "PPP")}`);
       
       // Refresh data
       await Promise.all([refetchCreditCards(), refetchBankAccounts()]);
