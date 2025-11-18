@@ -3,7 +3,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { VendorsOverview } from "@/components/cash-flow/vendors-overview";
 import { IncomeOverview } from "@/components/cash-flow/income-overview";
 import { ExpenseOverview } from "@/components/cash-flow/expense-overview";
-import { TrendingDown, TrendingUp, Receipt } from "lucide-react";
+import { CreditCardPaymentsOverview } from "@/components/cash-flow/credit-card-payments-overview";
+import { TrendingDown, TrendingUp, Receipt, CreditCard } from "lucide-react";
 
 interface TransactionsViewProps {
   // Vendors props
@@ -23,6 +24,9 @@ interface TransactionsViewProps {
   onEditExpense?: (expense: any) => void;
   onDeleteExpense?: (expense: any) => void;
   onCreditCardChange?: () => void;
+  
+  // Credit Card Payment props
+  creditCardPayments?: any[];
 }
 
 export function TransactionsView({
@@ -38,10 +42,11 @@ export function TransactionsView({
   onEditExpense,
   onDeleteExpense,
   onCreditCardChange,
+  creditCardPayments = [],
 }: TransactionsViewProps) {
   return (
     <Tabs defaultValue="vendors" className="w-full">
-      <TabsList className="grid w-full max-w-2xl mx-auto grid-cols-3">
+      <TabsList className="grid w-full max-w-3xl mx-auto grid-cols-4">
         <TabsTrigger value="vendors" className="flex items-center gap-2">
           <TrendingDown className="h-4 w-4" />
           Vendors
@@ -53,6 +58,10 @@ export function TransactionsView({
         <TabsTrigger value="income" className="flex items-center gap-2">
           <TrendingUp className="h-4 w-4" />
           Income
+        </TabsTrigger>
+        <TabsTrigger value="cc-payments" className="flex items-center gap-2">
+          <CreditCard className="h-4 w-4" />
+          CC Payments
         </TabsTrigger>
       </TabsList>
       
@@ -82,6 +91,10 @@ export function TransactionsView({
           onDeleteIncome={onDeleteIncome}
           onMatchTransaction={onMatchTransaction}
         />
+      </TabsContent>
+      
+      <TabsContent value="cc-payments" className="mt-6">
+        <CreditCardPaymentsOverview payments={creditCardPayments} />
       </TabsContent>
     </Tabs>
   );
