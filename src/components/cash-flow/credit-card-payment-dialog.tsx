@@ -232,7 +232,7 @@ export function CreditCardPaymentDialog({
             {selectedCreditCard && (
               <div className="space-y-1">
                 <p className="text-sm text-muted-foreground">
-                  Current Balance: ${selectedCreditCard.balance.toFixed(2)} | 
+                  Credit Limit: ${(selectedCreditCard.credit_limit_override || selectedCreditCard.credit_limit).toFixed(2)} | 
                   Available Credit: ${getAdjustedAvailableCredit(selectedCreditCard).toFixed(2)}
                 </p>
                 {selectedCreditCard.payment_due_date && (
