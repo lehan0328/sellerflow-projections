@@ -3744,6 +3744,8 @@ const Dashboard = () => {
               open={showPayCreditCardDialog}
               onOpenChange={setShowPayCreditCardDialog}
               allBuyingOpportunities={mergedBuyingOpportunities}
+              projectedDailyBalances={projectedDailyBalances}
+              reserveAmount={reserveAmount}
             />
           )}
 
