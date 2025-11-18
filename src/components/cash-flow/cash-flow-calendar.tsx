@@ -292,7 +292,19 @@ export const CashFlowCalendar = ({
     creditPaymentsUpToDay.forEach(payment => {
       availableCredit += payment.amount;
     });
-    return Math.max(0, availableCredit);
+    
+    // Cap available credit at 0 and calculate overflow
+    if (availableCredit < 0) {
+      return {
+        availableCredit: 0,
+        overflow: Math.abs(availableCredit)
+      };
+    }
+    
+    return {
+      availableCredit: availableCredit,
+      overflow: 0
+    };
   };
 
 
@@ -383,8 +395,8 @@ export const CashFlowCalendar = ({
         return paymentDate < today;
       }).reduce((sum, vendor) => sum + vendor.nextPaymentAmount, 0);
 
-      // Calculate available credit for this specific day
-      const availableCreditForDay = getAvailableCreditForDay(day);
+      // Calculate available credit and overflow for this specific day
+      const { availableCredit: availableCreditForDay } = getAvailableCreditForDay(day);
       return {
         date: format(day, 'MMM dd'),
         fullDate: day,
