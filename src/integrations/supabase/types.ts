@@ -1926,6 +1926,7 @@ export type Database = {
           plan_tier: string | null
           referral_code: string | null
           stripe_customer_id: string | null
+          theme_preference: string | null
           trial_end: string | null
           trial_start: string | null
           updated_at: string
@@ -1959,6 +1960,7 @@ export type Database = {
           plan_tier?: string | null
           referral_code?: string | null
           stripe_customer_id?: string | null
+          theme_preference?: string | null
           trial_end?: string | null
           trial_start?: string | null
           updated_at?: string
@@ -1992,6 +1994,7 @@ export type Database = {
           plan_tier?: string | null
           referral_code?: string | null
           stripe_customer_id?: string | null
+          theme_preference?: string | null
           trial_end?: string | null
           trial_start?: string | null
           updated_at?: string
