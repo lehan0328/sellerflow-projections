@@ -101,11 +101,11 @@ export function CategoryManagement() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <Tabs defaultValue="expense" className="w-full">
+        <Tabs defaultValue="purchase-order" className="w-full">
           <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="expense">Expense Categories</TabsTrigger>
             <TabsTrigger value="purchase-order">Purchase Order Categories</TabsTrigger>
             <TabsTrigger value="income">Income Categories</TabsTrigger>
+            <TabsTrigger value="expense">Expense Categories</TabsTrigger>
             <TabsTrigger value="recurring-expense">Recurring Expenses</TabsTrigger>
             <TabsTrigger value="recurring-income">Recurring Income</TabsTrigger>
           </TabsList>
