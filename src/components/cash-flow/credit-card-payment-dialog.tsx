@@ -26,13 +26,12 @@ export function CreditCardPaymentDialog({ open, onOpenChange }: CreditCardPaymen
   const { accounts: bankAccounts, refetch: refetchBankAccounts } = useBankAccounts();
   
   const [selectedCreditCardId, setSelectedCreditCardId] = useState<string>("");
-  const [selectedBankAccountId, setSelectedBankAccountId] = useState<string>("");
   const [paymentAmount, setPaymentAmount] = useState<string>("");
   const [paymentDate, setPaymentDate] = useState<Date>(new Date());
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const selectedCreditCard = creditCards.find(card => card.id === selectedCreditCardId);
-  const selectedBankAccount = bankAccounts.find(account => account.id === selectedBankAccountId);
+  const defaultBankAccount = bankAccounts[0];
   
   // Calculate adjusted available credit (respecting extended buying power)
   const getAdjustedAvailableCredit = (card: typeof selectedCreditCard) => {
@@ -42,7 +41,7 @@ export function CreditCardPaymentDialog({ open, onOpenChange }: CreditCardPaymen
   };
 
   const handleSubmit = async () => {
-    if (!user || !selectedCreditCardId || !selectedBankAccountId || !paymentAmount) {
+    if (!user || !selectedCreditCardId || !paymentAmount) {
       toast.error("Please fill in all fields");
       return;
     }
@@ -53,14 +52,14 @@ export function CreditCardPaymentDialog({ open, onOpenChange }: CreditCardPaymen
       return;
     }
 
-    if (!selectedCreditCard || !selectedBankAccount) {
-      toast.error("Please select a credit card and bank account");
+    if (!selectedCreditCard || !defaultBankAccount) {
+      toast.error("Please select a credit card");
       return;
     }
 
     // Validate bank account has sufficient funds
-    if (selectedBankAccount.available_balance && amount > selectedBankAccount.available_balance) {
-      toast.error("Insufficient funds in selected bank account");
+    if (defaultBankAccount.available_balance && amount > defaultBankAccount.available_balance) {
+      toast.error("Insufficient funds in bank account");
       return;
     }
 
@@ -89,8 +88,8 @@ export function CreditCardPaymentDialog({ open, onOpenChange }: CreditCardPaymen
       if (creditCardError) throw creditCardError;
 
       // Update bank account balance (decrease available balance)
-      const newBankBalance = selectedBankAccount.balance - amount;
-      const newBankAvailable = (selectedBankAccount.available_balance || selectedBankAccount.balance) - amount;
+      const newBankBalance = defaultBankAccount.balance - amount;
+      const newBankAvailable = (defaultBankAccount.available_balance || defaultBankAccount.balance) - amount;
 
       const { error: bankAccountError } = await supabase
         .from("bank_accounts")
@@ -99,7 +98,7 @@ export function CreditCardPaymentDialog({ open, onOpenChange }: CreditCardPaymen
           available_balance: newBankAvailable,
           updated_at: new Date().toISOString()
         })
-        .eq("id", selectedBankAccountId);
+        .eq("id", defaultBankAccount.id);
 
       if (bankAccountError) throw bankAccountError;
 
@@ -108,7 +107,7 @@ export function CreditCardPaymentDialog({ open, onOpenChange }: CreditCardPaymen
         .from("bank_transactions")
         .insert({
           user_id: user.id,
-          bank_account_id: selectedBankAccountId,
+          bank_account_id: defaultBankAccount.id,
           credit_card_id: selectedCreditCardId,
           amount: -amount, // Negative because money is leaving the bank account
           date: format(paymentDate, "yyyy-MM-dd"),
@@ -132,7 +131,6 @@ export function CreditCardPaymentDialog({ open, onOpenChange }: CreditCardPaymen
       
       // Reset form and close
       setSelectedCreditCardId("");
-      setSelectedBankAccountId("");
       setPaymentAmount("");
       setPaymentDate(new Date());
       onOpenChange(false);
@@ -182,23 +180,6 @@ export function CreditCardPaymentDialog({ open, onOpenChange }: CreditCardPaymen
             )}
           </div>
 
-          {/* Select Bank Account */}
-          <div className="space-y-2">
-            <Label htmlFor="bank-account">Pay From Bank Account</Label>
-            <Select value={selectedBankAccountId} onValueChange={setSelectedBankAccountId}>
-              <SelectTrigger id="bank-account">
-                <SelectValue placeholder="Select bank account" />
-              </SelectTrigger>
-              <SelectContent>
-                {bankAccounts.map((account) => (
-                  <SelectItem key={account.id} value={account.id}>
-                    {account.account_name} - Available: ${(account.available_balance || account.balance).toFixed(2)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
           {/* Payment Amount */}
           <div className="space-y-2">
             <Label htmlFor="payment-amount">Payment Amount</Label>
@@ -211,7 +192,7 @@ export function CreditCardPaymentDialog({ open, onOpenChange }: CreditCardPaymen
               value={paymentAmount}
               onChange={(e) => setPaymentAmount(e.target.value)}
             />
-            {selectedCreditCard && selectedBankAccount && paymentAmount && (
+            {selectedCreditCard && defaultBankAccount && paymentAmount && (
               <div className="text-sm space-y-1">
                 <p className="text-muted-foreground">
                   New Credit Card Balance: ${(selectedCreditCard.balance - parseFloat(paymentAmount || "0")).toFixed(2)}
@@ -220,7 +201,7 @@ export function CreditCardPaymentDialog({ open, onOpenChange }: CreditCardPaymen
                   New Available Credit: ${(selectedCreditCard.available_credit + parseFloat(paymentAmount || "0")).toFixed(2)}
                 </p>
                 <p className="text-muted-foreground">
-                  New Bank Balance: ${((selectedBankAccount.available_balance || selectedBankAccount.balance) - parseFloat(paymentAmount || "0")).toFixed(2)}
+                  New Bank Balance: ${((defaultBankAccount.available_balance || defaultBankAccount.balance) - parseFloat(paymentAmount || "0")).toFixed(2)}
                 </p>
               </div>
             )}
@@ -259,7 +240,7 @@ export function CreditCardPaymentDialog({ open, onOpenChange }: CreditCardPaymen
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
             Cancel
           </Button>
-          <Button onClick={handleSubmit} disabled={isSubmitting || !selectedCreditCardId || !selectedBankAccountId || !paymentAmount}>
+          <Button onClick={handleSubmit} disabled={isSubmitting || !selectedCreditCardId || !paymentAmount}>
             {isSubmitting ? "Processing..." : "Record Payment"}
           </Button>
         </DialogFooter>
