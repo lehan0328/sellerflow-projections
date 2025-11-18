@@ -160,11 +160,12 @@ export const RecurringExpensesOverview = () => {
     
     const card = creditCards.find(c => c.id === expense.credit_card_id);
     if (card) {
-      const last4 = card.masked_account_number?.slice(-4) || '****';
+      // Extract just the last 4 digits from masked_account_number
+      const last4 = card.masked_account_number?.replace(/[^\d]/g, '').slice(-4) || '****';
       return { 
         icon: CreditCard, 
         label: card.account_name || 'Credit Card',
-        details: `••${last4}`
+        details: `••••${last4}`
       };
     }
     
