@@ -2,7 +2,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useVendorTransactions } from "@/hooks/useVendorTransactions";
+import { useVendorTransactions, VendorTransaction } from "@/hooks/useVendorTransactions";
 import { useIncome } from "@/hooks/useIncome";
 import { useTransactions } from "@/hooks/useTransactions";
 import { AlertCircle, Trash2, CheckCircle, Calendar } from "lucide-react";
@@ -173,10 +173,10 @@ export function OverdueTransactionsModal({ open, onOpenChange, onUpdate, initial
     }
   };
 
-  const handleChangePODate = async (id: string, newDate: Date) => {
-    setProcessingId(id);
+  const handleChangePODate = async (tx: VendorTransaction, newDate: Date) => {
+    setProcessingId(tx.id);
     try {
-      await updatePODate(id, newDate);
+      await updatePODate(tx.id, newDate);
       setChangingDateId(null);
       onUpdate?.();
     } finally {
@@ -347,6 +347,72 @@ export function OverdueTransactionsModal({ open, onOpenChange, onUpdate, initial
                           disabled={processingId === income.id}
                         >
                           <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
+          {/* Purchase Orders Tab */}
+          <TabsContent value="purchaseOrders" className="space-y-4">
+            {overduePurchaseOrders.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">No overdue purchase orders</p>
+            ) : (
+              <div className="space-y-3">
+                {overduePurchaseOrders.map((tx) => (
+                  <div key={tx.id} className="border rounded-lg p-4 bg-destructive/5">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1">
+                        <div className="font-medium">{tx.vendorName}</div>
+                        <div className="text-sm text-muted-foreground">{tx.description}</div>
+                        <div className="text-sm text-destructive mt-1">
+                          Due: {formatDate(new Date(tx.dueDate))}
+                        </div>
+                        <div className="text-lg font-bold mt-2">{formatCurrency(tx.amount)}</div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Popover open={changingDateId === tx.id} onOpenChange={(open) => !open && setChangingDateId(null)}>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setChangingDateId(tx.id)}
+                              disabled={processingId === tx.id}
+                            >
+                              <Calendar className="h-4 w-4 mr-1" />
+                              Change Date
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <CalendarComponent
+                              mode="single"
+                              selected={new Date(tx.dueDate)}
+                              onSelect={(date) => date && handleChangePODate(tx, date)}
+                              initialFocus
+                              className={cn("p-3 pointer-events-auto")}
+                            />
+                          </PopoverContent>
+                        </Popover>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleMarkPOPaid(tx.id)}
+                          disabled={processingId === tx.id}
+                        >
+                          <CheckCircle className="h-4 w-4 mr-1" />
+                          Mark Paid
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openDeleteConfirm(tx.id, 'purchaseOrder', tx.description || 'Purchase Order')}
+                          disabled={processingId === tx.id}
+                          className="text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
                     </div>
