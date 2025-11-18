@@ -478,8 +478,9 @@ const Dashboard = () => {
   const { excludeToday } = useExcludeToday();
   
   // Initialize safe spending - projected balances will be used once calculated below
+  // PERFORMANCE: Reduced from 90 to 60 days for faster calculation
   const { data: safeSpendingData, refetch: refetchSafeSpending, isLoading: isSafeSpendingLoading } =
-    useSafeSpending(reserveAmount, excludeToday, useAvailableBalance, 90, undefined);
+    useSafeSpending(reserveAmount, excludeToday, useAvailableBalance, 60, undefined);
   
   const {
     isOverBankLimit,
