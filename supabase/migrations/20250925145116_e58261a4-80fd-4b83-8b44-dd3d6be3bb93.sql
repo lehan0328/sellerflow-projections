@@ -8,7 +8,7 @@ VALUES (
   5000.00,
   'upcoming',
   'Inventory Purchase',
-  'total',
+  'due-upon-order',
   30,
   'Ali-101',
   'Amazon Inventory',
