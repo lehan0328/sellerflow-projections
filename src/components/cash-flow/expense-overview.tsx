@@ -44,6 +44,8 @@ export const ExpenseOverview = ({ expenses, onEditExpense, onDeleteExpense, onCr
   const [paymentMethodFilter, setPaymentMethodFilter] = useState<'all' | 'cash' | 'credit'>('all');
   const [customFromDate, setCustomFromDate] = useState<Date | undefined>();
   const [customToDate, setCustomToDate] = useState<Date | undefined>();
+  const [isFromDatePickerOpen, setIsFromDatePickerOpen] = useState(false);
+  const [isToDatePickerOpen, setIsToDatePickerOpen] = useState(false);
   const [deletingExpense, setDeletingExpense] = useState<ExpenseItem | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
@@ -335,24 +337,30 @@ export const ExpenseOverview = ({ expenses, onEditExpense, onDeleteExpense, onCr
 
               {dateRange === "custom" && (
                 <>
-                  <Popover>
+                  <Popover open={isFromDatePickerOpen} onOpenChange={setIsFromDatePickerOpen}>
                     <PopoverTrigger asChild>
                       <Button variant="outline" size="sm" className={cn(!customFromDate && "text-muted-foreground")}>
                         {customFromDate ? format(customFromDate, "MMM dd") : "From"}
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
-                      <CalendarComponent mode="single" selected={customFromDate} onSelect={setCustomFromDate} initialFocus className="pointer-events-auto" />
+                      <CalendarComponent mode="single" selected={customFromDate} onSelect={(date) => {
+                        setCustomFromDate(date);
+                        setIsFromDatePickerOpen(false);
+                      }} initialFocus className="pointer-events-auto" />
                     </PopoverContent>
                   </Popover>
-                  <Popover>
+                  <Popover open={isToDatePickerOpen} onOpenChange={setIsToDatePickerOpen}>
                     <PopoverTrigger asChild>
                       <Button variant="outline" size="sm" className={cn(!customToDate && "text-muted-foreground")}>
                         {customToDate ? format(customToDate, "MMM dd") : "To"}
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
-                      <CalendarComponent mode="single" selected={customToDate} onSelect={setCustomToDate} initialFocus className="pointer-events-auto" />
+                      <CalendarComponent mode="single" selected={customToDate} onSelect={(date) => {
+                        setCustomToDate(date);
+                        setIsToDatePickerOpen(false);
+                      }} initialFocus className="pointer-events-auto" />
                     </PopoverContent>
                   </Popover>
                 </>
