@@ -89,13 +89,19 @@ export const useCreditCards = () => {
     if (!user || cardIds.length === 0) return;
 
     try {
-      // Fetch pending transactions (purchase orders and expenses)
+      // Calculate date 30 days ago
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      const thirtyDaysAgoStr = thirtyDaysAgo.toISOString().split('T')[0];
+
+      // Fetch pending transactions (purchase orders and expenses) from last 30 days only
       const { data: pendingTransactions, error: txError } = await supabase
         .from("transactions")
         .select("credit_card_id, amount")
         .in("credit_card_id", cardIds)
         .eq("status", "pending")
-        .in("type", ["purchase_order", "expense"]);
+        .in("type", ["purchase_order", "expense"])
+        .gte("due_date", thirtyDaysAgoStr);
 
       if (txError) {
         console.error("Error fetching pending transactions:", txError);
