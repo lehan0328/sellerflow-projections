@@ -336,6 +336,7 @@ export const CashFlowCalendar = ({
     // Day 2 = Day 1 + Day 2 net cash flow, etc.
 
     let runningTotal = bankAccountBalance; // Start with actual bank balance today
+    let previousOverflow = 0;
     let cumulativeInflow = 0;
     let cumulativeOutflow = 0;
     return days.map((day, dayIndex) => {
@@ -397,7 +398,11 @@ export const CashFlowCalendar = ({
 
       // Calculate available credit and overflow for this specific day
       const { availableCredit: availableCreditForDay, overflow } = getAvailableCreditForDay(day);
-      runningTotal -= overflow; // Deduct credit overflow from cash balance
+      
+      // Only deduct the CHANGE in overflow from previous day, not the cumulative total
+      const overflowDelta = overflow - previousOverflow;
+      runningTotal -= overflowDelta;
+      previousOverflow = overflow;
       return {
         date: format(day, 'MMM dd'),
         fullDate: day,
