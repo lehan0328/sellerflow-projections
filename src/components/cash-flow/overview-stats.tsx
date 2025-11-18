@@ -593,10 +593,6 @@ export function OverviewStats({
             <p className="text-sm text-muted-foreground mb-2 text-center">
               {accounts.length === 0 ? 'No accounts connected' : useAvailableBalance ? 'Available balance' : 'Current balance'}
             </p>
-            {totalOverdueCount > 0 && <Button variant="outline" size="sm" onClick={() => setShowOverdueModal(true)} className="mb-1.5 h-7 px-2 text-xs border-destructive text-destructive">
-                <AlertCircle className="h-3 w-3 mr-1" />
-                Overdue ({totalOverdueCount})
-              </Button>}
             {accounts.length > 0 && <Button variant="link" size="sm" onClick={() => setShowBankAccountsModal(true)} className="h-6 px-0 text-xs mx-auto block">
                 View {accounts.length} account{accounts.length !== 1 ? 's' : ''}
               </Button>}
