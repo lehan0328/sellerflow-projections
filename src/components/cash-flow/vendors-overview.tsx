@@ -16,6 +16,7 @@ import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useMemo } from "react";
 import { useVendorTransactions, type VendorTransaction } from "@/hooks/useVendorTransactions";
 import { useVendors, type Vendor } from "@/hooks/useVendors";
+import { useCreditCards } from "@/hooks/useCreditCards";
 import { VendorOrderDetailModal } from "./vendor-order-detail-modal";
 import { TransactionEditModal } from "./transaction-edit-modal";
 import { PartialPaymentModal } from "./partial-payment-modal";
@@ -51,6 +52,7 @@ export const VendorsOverview = ({
   const {
     vendors
   } = useVendors();
+  const { creditCards } = useCreditCards();
   const {
     getMatchesForVendorTransaction
   } = useTransactionMatching(bankTransactions, transactions, []);
@@ -736,7 +738,13 @@ export const VendorsOverview = ({
                               </div>
                             </TooltipTrigger>
                             <TooltipContent>
-                              <p>{tx.creditCardId ? 'Credit card purchase' : 'Cash purchase'}</p>
+                              {tx.creditCardId ? (
+                                <p>
+                                  {creditCards.find(card => card.id === tx.creditCardId)?.account_name || 'Credit card purchase'}
+                                </p>
+                              ) : (
+                                <p>Cash purchase</p>
+                              )}
                             </TooltipContent>
                           </Tooltip>
                         </TooltipProvider>
