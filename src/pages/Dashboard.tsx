@@ -3708,6 +3708,8 @@ const Dashboard = () => {
               onDeleteAllVendors={deleteAllVendors}
               onAddVendor={addVendor}
               allBuyingOpportunities={mergedBuyingOpportunities}
+              projectedDailyBalances={projectedDailyBalances}
+              reserveAmount={reserveAmount}
             />
           )}
 

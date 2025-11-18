@@ -42,6 +42,8 @@ interface PurchaseOrderFormProps {
   onDeleteAllVendors?: () => void;
   onAddVendor: (vendorData: any) => void;
   allBuyingOpportunities?: Array<{ date: string; balance: number; available_date?: string }>;
+  projectedDailyBalances?: Array<{ date: string; runningBalance: number }>;
+  reserveAmount?: number;
 }
 interface PaymentSchedule {
   id: string;
@@ -64,7 +66,9 @@ export const PurchaseOrderForm = ({
   onSubmitOrder,
   onDeleteAllVendors,
   onAddVendor,
-  allBuyingOpportunities
+  allBuyingOpportunities,
+  projectedDailyBalances,
+  reserveAmount = 0
 }: PurchaseOrderFormProps) => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -165,17 +169,30 @@ export const PurchaseOrderForm = ({
     return subtotalWithShipping - discountAmount;
   }, [lineItemsTotal, formData.shipping, formData.discount]);
 
-  // Auto-suggest earliest affordable date based on total amount only
+  // Auto-suggest earliest affordable date based on total amount with projected balance validation
   const suggestedDate = React.useMemo(() => {
     if (!allBuyingOpportunities || allBuyingOpportunities.length === 0) return null;
+    if (!projectedDailyBalances || projectedDailyBalances.length === 0) return null;
     
     // Only use the manual total amount field
     const targetAmount = parseFloat(formData.amount || "0");
     
     if (targetAmount <= 0) return null;
     
+    // Total required = purchase amount + reserve
+    const totalRequired = targetAmount + reserveAmount;
+    
     // Find ALL opportunities with sufficient balance
-    const matchingOpps = allBuyingOpportunities.filter(opp => opp.balance >= targetAmount);
+    const matchingOpps = allBuyingOpportunities.filter(opp => {
+      // First check: opportunity balance must be >= purchase amount
+      if (opp.balance < targetAmount) return false;
+      
+      // Second check: actual projected balance on that date must be >= purchase + reserve
+      const dateStr = opp.available_date || opp.date;
+      const projectedBalance = projectedDailyBalances.find(d => d.date === dateStr);
+      
+      return projectedBalance && projectedBalance.runningBalance >= totalRequired;
+    });
     
     // Sort by available_date to find the earliest one
     const opportunity = matchingOpps.length > 0
@@ -187,7 +204,7 @@ export const PurchaseOrderForm = ({
       : null;
     
     return opportunity;
-  }, [allBuyingOpportunities, formData.amount]);
+  }, [allBuyingOpportunities, formData.amount, projectedDailyBalances, reserveAmount]);
 
   // Reset form when dialog opens/closes
   useEffect(() => {
