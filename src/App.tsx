@@ -28,6 +28,7 @@ import Guides from "./pages/Guides";
 import GuidesPurchaseOrders from "./pages/GuidesPurchaseOrders";
 import GuidesAiPOAutofill from "./pages/GuidesAiPOAutofill";
 import GuidesAddingIncome from "./pages/GuidesAddingIncome";
+import GuidesAddingExpenses from "./pages/GuidesAddingExpenses";
 import GuidesAddRecurringIncome from "./pages/GuidesAddRecurringIncome";
 import GuidesAddRecurringExpense from "./pages/GuidesAddRecurringExpense";
 import GuidesEditingTransactions from "./pages/GuidesEditingTransactions";
@@ -148,6 +149,11 @@ const App = () => (
           <Route path="/guides/adding-income" element={
             <ProtectedRoute>
               <GuidesAddingIncome />
+            </ProtectedRoute>
+          } />
+          <Route path="/guides/adding-expenses" element={
+            <ProtectedRoute>
+              <GuidesAddingExpenses />
             </ProtectedRoute>
           } />
           <Route path="/guides/add-recurring-income" element={
