@@ -258,40 +258,58 @@ export const CashFlowCalendar = ({
     today.setHours(0, 0, 0, 0);
     const isToday = target.getTime() === today.getTime();
 
-    // Start with current total available credit
+    // Start with current total available credit (already reflects all past purchases via card.balance)
     let availableCredit = totalAvailableCredit;
 
-    // Get all credit card PURCHASES up to target date (these DECREASE available credit)
-    const creditCardPurchasesUpToDay = events.filter(event => {
-      if (!event.creditCardId) return false; // Only credit card purchases
+    // Only process FUTURE events (after today, up to target date)
+    // This avoids double-counting past purchases already in card.balance
+    const futureEventsUpToDay = events.filter(event => {
       const ed = new Date(event.date);
       ed.setHours(0, 0, 0, 0);
       
-      // If excludeToday is true and we're looking at today, exclude today's purchases
-      if (excludeToday && isToday && ed.getTime() === today.getTime()) {
+      // Skip today if excludeToday is enabled
+      if (excludeToday && ed.getTime() === today.getTime()) {
         return false;
       }
       
-      return ed <= target;
+      // Only include events AFTER today and up to target date
+      return ed > today && ed <= target;
     });
 
-    // Subtract purchases made with credit cards
-    creditCardPurchasesUpToDay.forEach(purchase => {
-      availableCredit -= purchase.amount;
-    });
+    // Process future credit card PURCHASES (decrease available credit)
+    futureEventsUpToDay
+      .filter(event => event.creditCardId && event.type !== 'credit-payment')
+      .forEach(purchase => {
+        availableCredit -= purchase.amount;
+      });
 
-    // Get all credit card PAYMENTS up to target date (these INCREASE available credit when paid)
-    const creditPaymentsUpToDay = events.filter(event => {
-      if (event.type !== 'credit-payment') return false;
-      const ed = new Date(event.date);
-      ed.setHours(0, 0, 0, 0);
-      return ed <= target;
-    });
-
-    // Add back credit when payments are made (paying off the card increases available credit)
-    creditPaymentsUpToDay.forEach(payment => {
-      availableCredit += payment.amount;
-    });
+    // Process future credit card PAYMENTS (increase available credit)
+    futureEventsUpToDay
+      .filter(event => event.type === 'credit-payment')
+      .forEach(payment => {
+        availableCredit += payment.amount;
+      });
+    
+    // For today specifically, if NOT excluding today, process today's events
+    if (isToday && !excludeToday) {
+      const todayEvents = events.filter(event => {
+        const ed = new Date(event.date);
+        ed.setHours(0, 0, 0, 0);
+        return ed.getTime() === today.getTime();
+      });
+      
+      todayEvents
+        .filter(event => event.creditCardId && event.type !== 'credit-payment')
+        .forEach(purchase => {
+          availableCredit -= purchase.amount;
+        });
+      
+      todayEvents
+        .filter(event => event.type === 'credit-payment')
+        .forEach(payment => {
+          availableCredit += payment.amount;
+        });
+    }
     
     // Cap available credit at 0 and calculate overflow
     if (availableCredit < 0) {
