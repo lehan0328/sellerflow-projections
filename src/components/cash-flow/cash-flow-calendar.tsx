@@ -251,103 +251,6 @@ const CashFlowCalendarComponent = ({
   const gridRowsClass = is6Rows ? 'grid-rows-6' : 'grid-rows-5';
   const cellHeightClass = is6Rows ? 'h-[70px]' : 'h-[85px]';
 
-  const getAvailableCreditForDay = (date: Date) => {
-    const target = new Date(date);
-    target.setHours(0, 0, 0, 0);
-    
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const isToday = target.getTime() === today.getTime();
-
-    // Initialize per-card credit map with current state
-    const cardCreditMap = new Map<string, number>();
-    creditCards.forEach(card => {
-      const effectiveLimit = card.credit_limit_override || card.credit_limit;
-      const currentAvailable = effectiveLimit - card.balance;
-      cardCreditMap.set(card.id, currentAvailable);
-    });
-
-    // Only process FUTURE events (after today, up to target date)
-    // This avoids double-counting past purchases already in card.balance
-    const futureEventsUpToDay = events.filter(event => {
-      const ed = new Date(event.date);
-      ed.setHours(0, 0, 0, 0);
-      
-      // Skip today if excludeToday is enabled
-      if (excludeToday && ed.getTime() === today.getTime()) {
-        return false;
-      }
-      
-      // Only include events AFTER today and up to target date
-      return ed > today && ed <= target;
-    });
-
-    // Process future credit card PURCHASES (decrease specific card's available credit)
-    futureEventsUpToDay
-      .filter(event => event.creditCardId && event.type !== 'credit-payment')
-      .forEach(purchase => {
-        if (purchase.creditCardId) {
-          const currentCredit = cardCreditMap.get(purchase.creditCardId) || 0;
-          cardCreditMap.set(purchase.creditCardId, currentCredit - purchase.amount);
-        }
-      });
-
-    // Process future credit card PAYMENTS (increase specific card's available credit)
-    futureEventsUpToDay
-      .filter(event => event.type === 'credit-payment' && event.creditCardId)
-      .forEach(payment => {
-        if (payment.creditCardId) {
-          const currentCredit = cardCreditMap.get(payment.creditCardId) || 0;
-          cardCreditMap.set(payment.creditCardId, currentCredit + payment.amount);
-        }
-      });
-    
-    // For today specifically, if NOT excluding today, process today's events
-    if (isToday && !excludeToday) {
-      const todayEvents = events.filter(event => {
-        const ed = new Date(event.date);
-        ed.setHours(0, 0, 0, 0);
-        return ed.getTime() === today.getTime();
-      });
-      
-      todayEvents
-        .filter(event => event.creditCardId && event.type !== 'credit-payment')
-        .forEach(purchase => {
-          if (purchase.creditCardId) {
-            const currentCredit = cardCreditMap.get(purchase.creditCardId) || 0;
-            cardCreditMap.set(purchase.creditCardId, currentCredit - purchase.amount);
-          }
-        });
-      
-      todayEvents
-        .filter(event => event.type === 'credit-payment' && event.creditCardId)
-        .forEach(payment => {
-          if (payment.creditCardId) {
-            const currentCredit = cardCreditMap.get(payment.creditCardId) || 0;
-            cardCreditMap.set(payment.creditCardId, currentCredit + payment.amount);
-          }
-        });
-    }
-    
-    // Calculate overflow (sum of all negative card balances) and total positive credit
-    let totalOverflow = 0;
-    let totalPositiveCredit = 0;
-    
-    cardCreditMap.forEach((availableCredit, cardId) => {
-      if (availableCredit < 0) {
-        // This card is over its limit, overflow to cash
-        totalOverflow += Math.abs(availableCredit);
-      } else {
-        // This card still has available credit
-        totalPositiveCredit += availableCredit;
-      }
-    });
-    
-    return {
-      availableCredit: totalPositiveCredit,
-      overflow: totalOverflow
-    };
-  };
 
 
   // Calculate average Amazon payout from historical confirmed payouts
@@ -393,6 +296,15 @@ const CashFlowCalendarComponent = ({
     let previousOverflow = 0;
     let cumulativeInflow = 0;
     let cumulativeOutflow = 0;
+
+    // Initialize per-card credit tracking BEFORE the loop
+    const cardCreditMap = new Map<string, number>();
+    creditCards.forEach(card => {
+      const effectiveLimit = card.credit_limit_override || card.credit_limit;
+      const currentAvailable = effectiveLimit - card.balance;
+      cardCreditMap.set(card.id, currentAvailable);
+    });
+
     return days.map((day, dayIndex) => {
       const dayEvents = events.filter(event => {
         // Use balanceImpactDate if available (for forecasted payouts), otherwise use date
@@ -450,13 +362,42 @@ const CashFlowCalendarComponent = ({
         return paymentDate < today;
       }).reduce((sum, vendor) => sum + vendor.nextPaymentAmount, 0);
 
-      // Calculate available credit and overflow for this specific day
-      const { availableCredit: availableCreditForDay, overflow } = getAvailableCreditForDay(day);
-      
-      // Only deduct the CHANGE in overflow from previous day, not the cumulative total
-      const overflowDelta = overflow - previousOverflow;
-      runningTotal -= overflowDelta;
-      previousOverflow = overflow;
+      // Process credit card purchases for this specific day (decrease card's available credit)
+      const creditCardPurchases = dayEvents.filter(e => e.creditCardId && e.type !== 'credit-payment');
+      creditCardPurchases.forEach(purchase => {
+        if (purchase.creditCardId) {
+          const currentCredit = cardCreditMap.get(purchase.creditCardId) || 0;
+          cardCreditMap.set(purchase.creditCardId, currentCredit - purchase.amount);
+        }
+      });
+
+      // Process credit card payments for this specific day (increase card's available credit)
+      const creditCardPayments = dayEvents.filter(e => e.type === 'credit-payment' && e.creditCardId);
+      creditCardPayments.forEach(payment => {
+        if (payment.creditCardId) {
+          const currentCredit = cardCreditMap.get(payment.creditCardId) || 0;
+          cardCreditMap.set(payment.creditCardId, currentCredit + payment.amount);
+        }
+      });
+
+      // Calculate overflow for this day (cards over their limit)
+      let totalOverflow = 0;
+      let totalAvailableCredit = 0;
+
+      cardCreditMap.forEach((availableCredit, cardId) => {
+        if (availableCredit < 0) {
+          // This card is over its limit - overflow goes to cash
+          totalOverflow += Math.abs(availableCredit);
+          // Reset this card to 0 available (can't go negative)
+          cardCreditMap.set(cardId, 0);
+        } else {
+          // This card still has available credit
+          totalAvailableCredit += availableCredit;
+        }
+      });
+
+      // Deduct overflow from cash balance
+      runningTotal -= totalOverflow;
       return {
         date: format(day, 'MMM dd'),
         fullDate: day,
@@ -464,10 +405,10 @@ const CashFlowCalendarComponent = ({
         cashBalance: runningTotal,
         forecastPayout: runningTotal,
         // Now aligned with cash balance
-        totalResources: runningTotal + availableCreditForDay,
-        availableCredit: runningTotal + availableCreditForDay,
-        creditCardBalance: availableCreditForDay,
-        creditCardCredit: availableCreditForDay,
+        totalResources: runningTotal + totalAvailableCredit,
+        availableCredit: runningTotal + totalAvailableCredit,
+        creditCardBalance: totalAvailableCredit,
+        creditCardCredit: totalAvailableCredit,
         reserve: reserveAmount,
         reserveAmount: reserveAmount,
         // Projected balance line: now same as cash balance (unified calculation)
