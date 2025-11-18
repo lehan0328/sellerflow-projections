@@ -32,14 +32,6 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
         return;
       }
 
-      // Clear subscription cache to ensure fresh check
-      try {
-        localStorage.removeItem('auren_subscription_cache');
-        sessionStorage.removeItem(`trial_status_${user.id}`);
-      } catch (e) {
-        console.error('Failed to clear cache:', e);
-      }
-
       // Get user's profile to check if they're part of a team
       const { data: profile } = await supabase
         .from('profiles')

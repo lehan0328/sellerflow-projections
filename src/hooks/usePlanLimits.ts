@@ -104,7 +104,9 @@ export const usePlanLimits = () => {
     if (tier === 'enterprise') return 'enterprise';
     
     // Free users get starter limits (2 connections)
-    console.warn('[usePlanLimits] No plan match found, defaulting to starter');
+    if (!subscription.isLoading) {
+      console.warn('[usePlanLimits] No plan match found, defaulting to starter');
+    }
     return 'starter';
   };
   
