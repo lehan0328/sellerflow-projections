@@ -2114,7 +2114,7 @@ const Dashboard = () => {
       const dates = generateRecurringDates(recurring, rangeStart, rangeEnd);
 
       dates.forEach((date) => {
-        events.push({
+        const event: CashFlowEvent = {
           id: `recurring-${recurring.id}-${date.getTime()}`,
           type: recurring.type === "income" ? "inflow" : "outflow",
           amount: Number(recurring.amount),
@@ -2123,7 +2123,20 @@ const Dashboard = () => {
           source: recurring.type === "income" ? "Recurring" : undefined,
           vendor: recurring.type === "expense" ? "Recurring" : undefined, // Show "Recurring" as vendor name
           creditCardId: recurring.credit_card_id,
-        });
+        };
+        
+        // Debug logging for credit card recurring expenses
+        if (recurring.type === "expense" && recurring.credit_card_id) {
+          console.log("✅ Recurring CC Expense Event:", {
+            name: recurring.name,
+            creditCardId: event.creditCardId,
+            amount: event.amount,
+            type: event.type,
+            date: format(date, 'yyyy-MM-dd')
+          });
+        }
+        
+        events.push(event);
       });
     });
 
