@@ -953,7 +953,7 @@ export const PurchaseOrderForm = ({
                         <div className="flex items-center gap-2">
                           <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
                           <span className="text-xs font-medium text-green-800 dark:text-green-300">
-                            Earliest you can afford: {format(new Date(suggestedDate.available_date || suggestedDate.date), "MMM d, yyyy")}
+                            Earliest you can afford: {format(addDays(new Date(suggestedDate.available_date || suggestedDate.date), 1), "MMM d, yyyy")}
                           </span>
                         </div>
                         {formData.paymentType === "due-upon-order" && (
@@ -965,7 +965,7 @@ export const PurchaseOrderForm = ({
                             onClick={() => {
                               setFormData(prev => ({
                                 ...prev,
-                                poDate: new Date(suggestedDate.available_date || suggestedDate.date)
+                                poDate: addDays(new Date(suggestedDate.available_date || suggestedDate.date), 1)
                               }));
                               toast.success("Date updated to suggested date");
                             }}
