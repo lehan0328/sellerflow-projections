@@ -383,10 +383,10 @@ export function BankAccounts({ useAvailableBalance, onToggleBalance }: { useAvai
               <Button 
                 variant="outline" 
                 size="sm" 
-                onClick={() => setShowTransactions(!showTransactions)}
+                onClick={() => setShowTransactions(true)}
               >
                 <CreditCard className="h-4 w-4 mr-1" />
-                {showTransactions ? "Hide" : "View"} Bank Transactions
+                Bank Transactions
               </Button>
             <div className="flex items-center gap-2 mr-4">
               <div className="flex items-center gap-1">
@@ -663,11 +663,13 @@ export function BankAccounts({ useAvailableBalance, onToggleBalance }: { useAvai
       </CardContent>
     </Card>
     
-    {showTransactions && (
-      <div className="mt-4">
-        <BankTransactionLog />
-      </div>
-    )}
+    <Dialog open={showTransactions} onOpenChange={setShowTransactions}>
+      <DialogContent className="max-w-[95vw] max-h-[90vh] p-0">
+        <div className="p-4 h-full overflow-auto">
+          <BankTransactionLog />
+        </div>
+      </DialogContent>
+    </Dialog>
     </>
   );
 }
