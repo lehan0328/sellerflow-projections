@@ -1356,7 +1356,6 @@ export default function Analytics() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent className="z-[100] bg-background border border-border shadow-lg">
-                        <SelectItem value="custom">Custom Range</SelectItem>
                         <SelectItem value="this-month">This Month</SelectItem>
                         <SelectItem value="last-month">Last Month</SelectItem>
                         <SelectItem value="last-2-months">Last 2 Months</SelectItem>
@@ -1415,7 +1414,6 @@ export default function Analytics() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="z-[100] bg-background border border-border shadow-lg">
-                      <SelectItem value="custom">Custom Range</SelectItem>
                       <SelectItem value="this-month">This Month</SelectItem>
                       <SelectItem value="last-month">Last Month</SelectItem>
                       <SelectItem value="last-2-months">Last 2 Months</SelectItem>
