@@ -75,7 +75,7 @@ serve(async (req) => {
       currentItems: activeSubscription.items.data.length
     });
     
-    // Add each item to the subscription a
+    // Add each item to the subscription 
     const addedItems = [];
     for (const item of lineItems) {
       logStep("Adding subscription item", { priceId: item.price, quantity: item.quantity });
