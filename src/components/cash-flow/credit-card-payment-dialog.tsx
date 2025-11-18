@@ -22,7 +22,7 @@ interface CreditCardPaymentDialogProps {
 
 export function CreditCardPaymentDialog({ open, onOpenChange }: CreditCardPaymentDialogProps) {
   const { user } = useAuth();
-  const { creditCards, refetch: refetchCreditCards } = useCreditCards();
+  const { creditCards, creditCardPendingAmounts, refetch: refetchCreditCards } = useCreditCards();
   const { accounts: bankAccounts, refetch: refetchBankAccounts } = useBankAccounts();
   
   const [selectedCreditCardId, setSelectedCreditCardId] = useState<string>("");
@@ -33,6 +33,13 @@ export function CreditCardPaymentDialog({ open, onOpenChange }: CreditCardPaymen
 
   const selectedCreditCard = creditCards.find(card => card.id === selectedCreditCardId);
   const selectedBankAccount = bankAccounts.find(account => account.id === selectedBankAccountId);
+  
+  // Calculate adjusted available credit (respecting extended buying power)
+  const getAdjustedAvailableCredit = (card: typeof selectedCreditCard) => {
+    if (!card) return 0;
+    const pendingAmount = creditCardPendingAmounts.get(card.id) || 0;
+    return card.available_credit - pendingAmount;
+  };
 
   const handleSubmit = async () => {
     if (!user || !selectedCreditCardId || !selectedBankAccountId || !paymentAmount) {
@@ -170,7 +177,7 @@ export function CreditCardPaymentDialog({ open, onOpenChange }: CreditCardPaymen
             {selectedCreditCard && (
               <p className="text-sm text-muted-foreground">
                 Current Balance: ${selectedCreditCard.balance.toFixed(2)} | 
-                Available Credit: ${selectedCreditCard.available_credit.toFixed(2)}
+                Available Credit: ${getAdjustedAvailableCredit(selectedCreditCard).toFixed(2)}
               </p>
             )}
           </div>
