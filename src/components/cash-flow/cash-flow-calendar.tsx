@@ -396,7 +396,8 @@ export const CashFlowCalendar = ({
       }).reduce((sum, vendor) => sum + vendor.nextPaymentAmount, 0);
 
       // Calculate available credit and overflow for this specific day
-      const { availableCredit: availableCreditForDay } = getAvailableCreditForDay(day);
+      const { availableCredit: availableCreditForDay, overflow } = getAvailableCreditForDay(day);
+      runningTotal -= overflow; // Deduct credit overflow from cash balance
       return {
         date: format(day, 'MMM dd'),
         fullDate: day,
