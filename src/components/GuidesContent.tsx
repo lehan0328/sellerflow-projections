@@ -35,6 +35,10 @@ export const GuidesContent = () => {
           path: "/guides/adding-income"
         },
         {
+          title: "Adding Expenses",
+          path: "/guides/adding-expenses"
+        },
+        {
           title: "Add Recurring Income",
           path: "/guides/add-recurring-income"
         },
