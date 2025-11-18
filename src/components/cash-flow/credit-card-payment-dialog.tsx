@@ -255,19 +255,6 @@ export function CreditCardPaymentDialog({
                 ) : null}
               </div>
             )}
-            {selectedCreditCard && defaultBankAccount && paymentAmount && (
-              <div className="text-sm space-y-1">
-                <p className="text-muted-foreground">
-                  New Credit Card Balance: ${(selectedCreditCard.balance - parseFloat(paymentAmount || "0")).toFixed(2)}
-                </p>
-                <p className="text-muted-foreground">
-                  New Available Credit: ${(selectedCreditCard.available_credit + parseFloat(paymentAmount || "0")).toFixed(2)}
-                </p>
-                <p className="text-muted-foreground">
-                  New Bank Balance: ${((defaultBankAccount.available_balance || defaultBankAccount.balance) - parseFloat(paymentAmount || "0")).toFixed(2)}
-                </p>
-              </div>
-            )}
           </div>
 
           {/* Payment Date */}

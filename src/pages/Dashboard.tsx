@@ -2096,12 +2096,12 @@ const Dashboard = () => {
     )
     .map(tx => ({
       id: `cc-payment-${tx.id}`,
-      type: "outflow" as const,
+      type: "credit-payment" as const, // Special type for credit card payments
       amount: Math.abs(tx.amount),
       description: tx.name || `Credit Card Payment`,
       vendor: "Credit Card Payment",
       date: new Date(tx.date),
-      creditCardId: null, // null so it's counted as cash outflow
+      creditCardId: tx.creditCardId, // Keep creditCardId to increase card's available credit
     })) || [];
 
   // Generate recurring transaction events for calendar (show next 12 months)
