@@ -241,23 +241,27 @@ export const useCreditCards = () => {
           .from("transactions")
           .select("id, description, amount")
           .eq("credit_card_id", cardId)
+          .eq("user_id", user.id)
           .eq("type", "expense"),
         // Check for purchase orders
         supabase
           .from("transactions")
           .select("id, description, amount")
           .eq("credit_card_id", cardId)
+          .eq("user_id", user.id)
           .eq("type", "purchase_order"),
         // Check for bank transactions
         supabase
           .from("bank_transactions")
           .select("id, name, amount")
-          .eq("credit_card_id", cardId),
+          .eq("credit_card_id", cardId)
+          .eq("user_id", user.id),
         // Check for recurring expenses
         supabase
           .from("recurring_expenses")
           .select("id, description, amount")
           .eq("credit_card_id", cardId)
+          .eq("user_id", user.id)
       ]);
 
       if (expensesError || ordersError || bankError || recurringError) {
