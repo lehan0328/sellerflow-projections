@@ -57,6 +57,10 @@ export const PendingNotificationsPanel = ({
   const [isOpen, setIsOpen] = useState(false);
   const [overdueModalOpen, setOverdueModalOpen] = useState(false);
   const [overdueModalTab, setOverdueModalTab] = useState<'expenses' | 'income' | 'purchaseOrders'>('expenses');
+  const [dismissedOverdue, setDismissedOverdue] = useState<Set<string>>(() => {
+    const stored = localStorage.getItem('dismissedOverdue');
+    return stored ? new Set(JSON.parse(stored)) : new Set();
+  });
   const { notifications, unreadCount, markAsRead, markAllAsRead, clearNotification, clearAllNotifications } = useNotifications();
   
   // Fetch overdue data
@@ -113,9 +117,26 @@ export const PendingNotificationsPanel = ({
     return overdueGroups.expenses.length + overdueGroups.income.length + overdueGroups.purchaseOrders.length;
   }, [overdueGroups]);
 
-  const totalUnreadCount = unreadCount + totalOverdueCount;
+  const totalUnreadCount = unreadCount + visibleOverdueCount;
 
   const handleNotificationClick = (notification: any, read: boolean) => {
+    if (!read) {
+      markAsRead(notification.id);
+    }
+    
+    // Check if this is a credit card notification
+    if (notification.category === 'credit' && onCreditCardNotificationClick) {
+      setIsOpen(false);
+      onCreditCardNotificationClick(notification);
+    }
+  };
+
+  const handleClearNotification = (e: React.MouseEvent, notificationId: string) => {
+    e.stopPropagation();
+    clearNotification(notificationId);
+  };
+
+  const getTypeColor = (type: string) => {
     if (!read) {
       markAsRead(notification.id);
     }
@@ -138,7 +159,25 @@ export const PendingNotificationsPanel = ({
     setIsOpen(false);
   };
 
-  const getTypeColor = (type: string) => {
+  const handleDismissOverdue = (type: 'expenses' | 'income' | 'purchaseOrders') => {
+    const newDismissed = new Set(dismissedOverdue);
+    newDismissed.add(type);
+    setDismissedOverdue(newDismissed);
+    localStorage.setItem('dismissedOverdue', JSON.stringify(Array.from(newDismissed)));
+  };
+
+  // Filter overdue groups based on dismissal
+  const visibleOverdueGroups = useMemo(() => ({
+    expenses: dismissedOverdue.has('expenses') ? [] : overdueGroups.expenses,
+    income: dismissedOverdue.has('income') ? [] : overdueGroups.income,
+    purchaseOrders: dismissedOverdue.has('purchaseOrders') ? [] : overdueGroups.purchaseOrders,
+  }), [overdueGroups, dismissedOverdue]);
+
+  const visibleOverdueCount = useMemo(() => {
+    return visibleOverdueGroups.expenses.length + visibleOverdueGroups.income.length + visibleOverdueGroups.purchaseOrders.length;
+  }, [visibleOverdueGroups]);
+
+  const totalUnreadCount = unreadCount + visibleOverdueCount;
     switch (type) {
       case 'urgent':
       case 'security':
@@ -272,22 +311,33 @@ export const PendingNotificationsPanel = ({
           <ScrollArea className="h-[calc(100vh-200px)]">
             <div className="space-y-6">
               {/* Overdue Action Tabs */}
-              {totalOverdueCount > 0 && (
+              {visibleOverdueCount > 0 && (
                 <div className="space-y-3">
                   <h3 className="text-sm font-semibold text-muted-foreground px-1">Overdue Items - Action Required</h3>
                   
                   {/* Overdue Expenses */}
-                  {overdueGroups.expenses.length > 0 && (
-                    <div className="p-4 rounded-lg border bg-red-500/5 border-red-500/30">
-                      <div className="flex items-center justify-between">
+                  {visibleOverdueGroups.expenses.length > 0 && (
+                    <div className="p-4 rounded-lg border bg-red-500/5 border-red-500/30 relative">
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDismissOverdue('expenses');
+                        }}
+                        className="absolute top-2 right-2 h-6 w-6 opacity-50 hover:opacity-100"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                      <div className="flex items-center justify-between pr-8">
                         <div className="flex items-center gap-3">
                           <Badge className="bg-red-500 text-white">
-                            {overdueGroups.expenses.length}
+                            {visibleOverdueGroups.expenses.length}
                           </Badge>
                           <div>
                             <p className="font-semibold text-sm">Overdue Expenses</p>
                             <p className="text-xs text-muted-foreground">
-                              ${overdueGroups.expenses.reduce((sum, exp) => sum + Math.abs(exp.amount), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} total
+                              ${visibleOverdueGroups.expenses.reduce((sum, exp) => sum + Math.abs(exp.amount), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} total
                             </p>
                           </div>
                         </div>
@@ -305,17 +355,28 @@ export const PendingNotificationsPanel = ({
                   )}
                   
                   {/* Overdue Income */}
-                  {overdueGroups.income.length > 0 && (
-                    <div className="p-4 rounded-lg border bg-amber-500/5 border-amber-500/30">
-                      <div className="flex items-center justify-between">
+                  {visibleOverdueGroups.income.length > 0 && (
+                    <div className="p-4 rounded-lg border bg-amber-500/5 border-amber-500/30 relative">
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDismissOverdue('income');
+                        }}
+                        className="absolute top-2 right-2 h-6 w-6 opacity-50 hover:opacity-100"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                      <div className="flex items-center justify-between pr-8">
                         <div className="flex items-center gap-3">
                           <Badge className="bg-amber-500 text-white">
-                            {overdueGroups.income.length}
+                            {visibleOverdueGroups.income.length}
                           </Badge>
                           <div>
                             <p className="font-semibold text-sm">Overdue Income</p>
                             <p className="text-xs text-muted-foreground">
-                              ${overdueGroups.income.reduce((sum, inc) => sum + Math.abs(inc.amount), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} expected
+                              ${visibleOverdueGroups.income.reduce((sum, inc) => sum + Math.abs(inc.amount), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} expected
                             </p>
                           </div>
                         </div>
@@ -333,17 +394,28 @@ export const PendingNotificationsPanel = ({
                   )}
                   
                   {/* Overdue Purchase Orders */}
-                  {overdueGroups.purchaseOrders.length > 0 && (
-                    <div className="p-4 rounded-lg border bg-orange-500/5 border-orange-500/30">
-                      <div className="flex items-center justify-between">
+                  {visibleOverdueGroups.purchaseOrders.length > 0 && (
+                    <div className="p-4 rounded-lg border bg-orange-500/5 border-orange-500/30 relative">
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDismissOverdue('purchaseOrders');
+                        }}
+                        className="absolute top-2 right-2 h-6 w-6 opacity-50 hover:opacity-100"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                      <div className="flex items-center justify-between pr-8">
                         <div className="flex items-center gap-3">
                           <Badge className="bg-orange-500 text-white">
-                            {overdueGroups.purchaseOrders.length}
+                            {visibleOverdueGroups.purchaseOrders.length}
                           </Badge>
                           <div>
                             <p className="font-semibold text-sm">Overdue Purchase Orders</p>
                             <p className="text-xs text-muted-foreground">
-                              ${overdueGroups.purchaseOrders.reduce((sum, po) => sum + Math.abs(po.amount), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} total
+                              ${visibleOverdueGroups.purchaseOrders.reduce((sum, po) => sum + Math.abs(po.amount), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} total
                             </p>
                           </div>
                         </div>
@@ -363,14 +435,14 @@ export const PendingNotificationsPanel = ({
               )}
 
               {/* Regular Notifications */}
-              {notifications.length === 0 && totalOverdueCount === 0 ? (
+              {notifications.length === 0 && visibleOverdueCount === 0 ? (
                 <div className="text-center py-12 text-muted-foreground">
                   <Bell className="h-12 w-12 mx-auto mb-3 opacity-20" />
                   <p>No notifications</p>
                 </div>
               ) : notifications.length > 0 && (
                 <div className="space-y-3">
-                  {totalOverdueCount > 0 && (
+                  {visibleOverdueCount > 0 && (
                     <h3 className="text-sm font-semibold text-muted-foreground px-1">Other Notifications</h3>
                   )}
                   {notifications.map((notification) => (
