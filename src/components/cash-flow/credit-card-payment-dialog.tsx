@@ -155,7 +155,7 @@ export function CreditCardPaymentDialog({ open, onOpenChange, allBuyingOpportuni
             Pay Credit Card
           </DialogTitle>
           <DialogDescription>
-            Record a payment from your bank account to a credit card
+            Record a payment from your bank account to a credit card. Note: Available credit shown reflects pending transactions from the last 30 days only, so it may differ from what you see in the graph.
           </DialogDescription>
         </DialogHeader>
 
