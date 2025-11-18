@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import React from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -12,9 +12,10 @@ import { useBankAccounts } from "@/hooks/useBankAccounts";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import { CreditCard, CalendarIcon } from "lucide-react";
-import { format } from "date-fns";
+import { CreditCard, CalendarIcon, Info } from "lucide-react";
+import { format, startOfDay } from "date-fns";
 import { cn } from "@/lib/utils";
+import type { CalendarEvent } from "@/lib/calendarBalances";
 
 interface CreditCardPaymentDialogProps {
   open: boolean;
@@ -22,6 +23,7 @@ interface CreditCardPaymentDialogProps {
   allBuyingOpportunities?: Array<{ date: string; balance: number; available_date?: string }>;
   projectedDailyBalances?: Array<{ date: string; runningBalance: number }>;
   reserveAmount?: number;
+  allCalendarEvents?: CalendarEvent[];
 }
 
 export function CreditCardPaymentDialog({ 
@@ -29,7 +31,8 @@ export function CreditCardPaymentDialog({
   onOpenChange, 
   allBuyingOpportunities = [],
   projectedDailyBalances = [],
-  reserveAmount = 0
+  reserveAmount = 0,
+  allCalendarEvents = []
 }: CreditCardPaymentDialogProps) {
   const { user } = useAuth();
   const { creditCards, creditCardPendingAmounts, refetch: refetchCreditCards } = useCreditCards();
@@ -40,6 +43,41 @@ export function CreditCardPaymentDialog({
   const [paymentDate, setPaymentDate] = useState<Date>(new Date());
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+
+  const selectedCreditCard = creditCards.find(card => card.id === selectedCreditCardId);
+
+  // Calculate projected available credit on selected date for selected card
+  const projectedAvailableCredit = useMemo(() => {
+    if (!selectedCreditCardId || !paymentDate || !selectedCreditCard) return null;
+
+    const today = startOfDay(new Date());
+    const targetDate = startOfDay(paymentDate);
+
+    // Start with current available credit
+    const currentAvailableCredit = (selectedCreditCard.credit_limit_override || selectedCreditCard.credit_limit) - selectedCreditCard.balance;
+    let projectedCredit = currentAvailableCredit;
+
+    // Only process future events (after today) to avoid double-counting
+    const futureEvents = allCalendarEvents.filter(event => {
+      const eventDate = startOfDay(new Date(event.date));
+      return eventDate > today && eventDate <= targetDate;
+    });
+
+    // Process events that affect this specific card
+    futureEvents.forEach(event => {
+      if (event.creditCardId === selectedCreditCardId) {
+        if (event.type === 'credit-payment') {
+          // Payment increases available credit
+          projectedCredit += event.amount;
+        } else {
+          // Purchase decreases available credit
+          projectedCredit -= event.amount;
+        }
+      }
+    });
+
+    return projectedCredit;
+  }, [selectedCreditCardId, paymentDate, selectedCreditCard, allCalendarEvents]);
 
   // Auto-suggest earliest affordable date based on payment amount
   const suggestedDate = React.useMemo(() => {
@@ -76,7 +114,6 @@ export function CreditCardPaymentDialog({
     return opportunity;
   }, [allBuyingOpportunities, paymentAmount, projectedDailyBalances, reserveAmount]);
 
-  const selectedCreditCard = creditCards.find(card => card.id === selectedCreditCardId);
   const defaultBankAccount = bankAccounts[0];
   
   // Calculate adjusted available credit (respecting extended credit limit override)
@@ -247,6 +284,35 @@ export function CreditCardPaymentDialog({
                 />
               </PopoverContent>
             </Popover>
+
+            {/* Display projected available credit */}
+            {selectedCreditCardId && paymentDate && projectedAvailableCredit !== null && (
+              <div className={cn(
+                "mt-2 p-3 rounded-md flex items-start gap-2",
+                projectedAvailableCredit >= 0 
+                  ? "bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800" 
+                  : "bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800"
+              )}>
+                <Info className={cn(
+                  "h-4 w-4 mt-0.5 flex-shrink-0",
+                  projectedAvailableCredit >= 0 ? "text-blue-600 dark:text-blue-400" : "text-red-600 dark:text-red-400"
+                )} />
+                <div className="flex-1 text-sm">
+                  <p className={cn(
+                    "font-medium",
+                    projectedAvailableCredit >= 0 ? "text-blue-900 dark:text-blue-100" : "text-red-900 dark:text-red-100"
+                  )}>
+                    Available credit on {format(paymentDate, "MMM d, yyyy")}:
+                  </p>
+                  <p className={cn(
+                    "font-semibold",
+                    projectedAvailableCredit >= 0 ? "text-blue-700 dark:text-blue-300" : "text-red-700 dark:text-red-300"
+                  )}>
+                    ${projectedAvailableCredit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Payment Amount */}
