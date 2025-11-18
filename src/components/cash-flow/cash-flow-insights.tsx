@@ -1686,7 +1686,7 @@ export const CashFlowInsights = memo(({
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium text-muted-foreground">Total Available Funds</span>
                   <span className="text-xl font-bold text-blue-600">
-                    ${(dateSearchResults.projectedCash + dateSearchResults.availableCredit).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    ${(dateSearchResults.projectedCash + (includeCreditInOpportunities ? dateSearchResults.availableCredit : 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </span>
                 </div>
               </div>
