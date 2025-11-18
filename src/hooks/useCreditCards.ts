@@ -32,8 +32,23 @@ export interface CreditCard {
   updated_at: string;
 }
 
+// Helper to calculate monthly amount from recurring frequency
+const getMonthlyRecurringAmount = (amount: number, frequency: string): number => {
+  switch (frequency) {
+    case 'daily': return amount * 30;
+    case 'weekly': return amount * 4;
+    case 'bi-weekly': return amount * 2;
+    case 'monthly': return amount;
+    case '2-months': return amount * 0.5;
+    case '3-months': return amount * 0.33;
+    case 'weekdays': return amount * 22;
+    default: return amount;
+  }
+};
+
 export const useCreditCards = () => {
   const [creditCards, setCreditCards] = useState<CreditCard[]>([]);
+  const [creditCardPendingAmounts, setCreditCardPendingAmounts] = useState<Map<string, number>>(new Map());
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
 
@@ -57,11 +72,72 @@ export const useCreditCards = () => {
       }
 
       setCreditCards((data || []) as CreditCard[]);
+      
+      // Fetch pending commitments for each card
+      if (data && data.length > 0) {
+        await fetchPendingCommitments(data.map(card => card.id));
+      }
     } catch (error) {
       console.error("Error:", error);
       toast.error("Failed to fetch credit cards");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const fetchPendingCommitments = async (cardIds: string[]) => {
+    if (!user || cardIds.length === 0) return;
+
+    try {
+      // Fetch pending transactions (purchase orders and expenses)
+      const { data: pendingTransactions, error: txError } = await supabase
+        .from("transactions")
+        .select("credit_card_id, amount")
+        .in("credit_card_id", cardIds)
+        .eq("status", "pending")
+        .in("type", ["purchase_order", "expense"]);
+
+      if (txError) {
+        console.error("Error fetching pending transactions:", txError);
+        return;
+      }
+
+      // Fetch active recurring expenses on credit cards
+      const { data: recurringExpenses, error: recurringError } = await supabase
+        .from("recurring_expenses")
+        .select("credit_card_id, amount, frequency")
+        .in("credit_card_id", cardIds)
+        .eq("is_active", true)
+        .eq("type", "expense");
+
+      if (recurringError) {
+        console.error("Error fetching recurring expenses:", recurringError);
+        return;
+      }
+
+      // Calculate total pending for each card
+      const pendingMap = new Map<string, number>();
+      
+      // Add pending transactions
+      pendingTransactions?.forEach(tx => {
+        if (tx.credit_card_id) {
+          const current = pendingMap.get(tx.credit_card_id) || 0;
+          pendingMap.set(tx.credit_card_id, current + Math.abs(tx.amount));
+        }
+      });
+
+      // Add monthly equivalent of recurring expenses
+      recurringExpenses?.forEach(expense => {
+        if (expense.credit_card_id) {
+          const current = pendingMap.get(expense.credit_card_id) || 0;
+          const monthlyAmount = getMonthlyRecurringAmount(Math.abs(expense.amount), expense.frequency);
+          pendingMap.set(expense.credit_card_id, current + monthlyAmount);
+        }
+      });
+
+      setCreditCardPendingAmounts(pendingMap);
+    } catch (error) {
+      console.error("Error fetching pending commitments:", error);
     }
   };
 
@@ -233,6 +309,7 @@ export const useCreditCards = () => {
     totalCreditLimit,
     totalBalance,
     totalAvailableCredit,
+    creditCardPendingAmounts,
     addCreditCard,
     updateCreditCard,
     removeCreditCard,
