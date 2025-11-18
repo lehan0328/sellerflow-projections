@@ -78,11 +78,12 @@ export function CreditCardPaymentDialog({
   const selectedCreditCard = creditCards.find(card => card.id === selectedCreditCardId);
   const defaultBankAccount = bankAccounts[0];
   
-  // Calculate adjusted available credit (respecting extended buying power)
+  // Calculate adjusted available credit (respecting extended credit limit override)
   const getAdjustedAvailableCredit = (card: typeof selectedCreditCard) => {
     if (!card) return 0;
+    const effectiveCreditLimit = card.credit_limit_override || card.credit_limit;
     const pendingAmount = creditCardPendingAmounts.get(card.id) || 0;
-    return card.available_credit - pendingAmount;
+    return effectiveCreditLimit - card.balance - pendingAmount;
   };
 
   const handleSubmit = async () => {
