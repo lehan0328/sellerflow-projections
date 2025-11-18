@@ -31,6 +31,7 @@ import GuidesAddingIncome from "./pages/GuidesAddingIncome";
 import GuidesAddingExpenses from "./pages/GuidesAddingExpenses";
 import GuidesAddRecurringIncome from "./pages/GuidesAddRecurringIncome";
 import GuidesAddRecurringExpense from "./pages/GuidesAddRecurringExpense";
+import GuidesConnectingBankCreditCard from "./pages/GuidesConnectingBankCreditCard";
 import GuidesEditingTransactions from "./pages/GuidesEditingTransactions";
 import GuidesPartialPayment from "./pages/GuidesPartialPayment";
 import GuidesEarlyPaymentReceived from "./pages/GuidesEarlyPaymentReceived";
@@ -164,6 +165,11 @@ const App = () => (
           <Route path="/guides/add-recurring-expense" element={
             <ProtectedRoute>
               <GuidesAddRecurringExpense />
+            </ProtectedRoute>
+          } />
+          <Route path="/guides/connecting-bank-credit-card" element={
+            <ProtectedRoute>
+              <GuidesConnectingBankCreditCard />
             </ProtectedRoute>
           } />
           <Route path="/guides/editing-transactions" element={

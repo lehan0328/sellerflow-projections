@@ -86,7 +86,10 @@ export const GuidesContent = () => {
       icon: <CreditCard className="h-6 w-6" />,
       path: "/guides/bank-accounts",
       guides: [
-        "Connecting Bank Accounts",
+        {
+          title: "Connecting bank/credit card",
+          path: "/guides/connecting-bank-credit-card"
+        },
         "Reviewing Transactions",
         "Categorizing Expenses"
       ]
