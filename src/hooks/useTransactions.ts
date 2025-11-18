@@ -77,6 +77,19 @@ export const useTransactions = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
+      // Auto-complete and archive if due date is in the past
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const dueDate = transactionData.dueDate ? new Date(transactionData.dueDate) : null;
+      
+      let finalStatus = transactionData.status;
+      let finalArchived = transactionData.archived || false;
+      
+      if (dueDate && dueDate < today) {
+        finalStatus = 'completed';
+        finalArchived = true;
+      }
+
       const { data, error } = await supabase
         .from('transactions')
         .insert({
@@ -89,9 +102,9 @@ export const useTransactions = () => {
           credit_card_id: transactionData.creditCardId,
           transaction_date: formatDateForDB(transactionData.transactionDate),
           due_date: transactionData.dueDate ? formatDateForDB(transactionData.dueDate) : null,
-          status: transactionData.status,
+          status: finalStatus,
           category: transactionData.category,
-          archived: transactionData.archived || false
+          archived: finalArchived
         })
         .select()
         .single();

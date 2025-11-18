@@ -169,6 +169,17 @@ export const TransactionEditModal = ({ open, onOpenChange, transaction, onSucces
         }
       }
 
+      // Auto-archive if status is 'paid' or 'completed' and due date is in the past
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      if (updates.status === 'paid' || updates.status === 'completed') {
+        const dueDate = formData.dueDate ? parseDateInputLocal(formData.dueDate) : transaction.dueDate;
+        if (dueDate && dueDate < today) {
+          updates.archived = true;
+        }
+      }
+
       const { error } = await supabase
         .from('transactions')
         .update(updates)
