@@ -808,7 +808,8 @@ export const IncomeForm = ({
                           const selectedCard = creditCards.find(c => c.id === formData.creditCardId);
                           if (selectedCard) {
                             const effectiveCreditLimit = selectedCard.credit_limit_override || selectedCard.credit_limit;
-                            const availableCredit = (effectiveCreditLimit || 0) - (selectedCard.balance || 0);
+                            const pendingCommitments = creditCardPendingAmounts.get(selectedCard.id) || 0;
+                            const availableCredit = (effectiveCreditLimit || 0) - (selectedCard.balance || 0) - pendingCommitments;
                             return (
                               <div className="flex items-center gap-2 text-xs text-muted-foreground bg-background p-2 rounded border">
                                 <CreditCard className="h-4 w-4 text-primary" />
@@ -830,7 +831,8 @@ export const IncomeForm = ({
                         const selectedCard = creditCards.find(c => c.id === formData.creditCardId);
                         if (selectedCard) {
                           const effectiveCreditLimit = selectedCard.credit_limit_override || selectedCard.credit_limit;
-                          const availableCredit = (effectiveCreditLimit || 0) - (selectedCard.balance || 0);
+                          const pendingCommitments = creditCardPendingAmounts.get(selectedCard.id) || 0;
+                          const availableCredit = (effectiveCreditLimit || 0) - (selectedCard.balance || 0) - pendingCommitments;
                           const amount = parseFloat(formData.amount) || 0;
                           if (amount > availableCredit) {
                             return (
