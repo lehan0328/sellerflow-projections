@@ -3090,26 +3090,28 @@ const Dashboard = () => {
               refetchTransactions();
               refetchCreditCards();
             }}
-            creditCardPayments={bankTransactions
-              .filter(tx => 
-                tx.merchantName?.toLowerCase().includes('credit card payment') ||
-                tx.description?.toLowerCase().includes('credit card payment')
+            creditCardPayments={bankTransactionsData
+              ?.filter(tx => 
+                // Credit card payments have transaction_type "payment" 
+                // OR category "Credit Card Payment"
+                // OR have both bank_account_id and credit_card_id set
+                tx.transactionType === 'payment' ||
+                (tx.category && tx.category.includes('Credit Card Payment')) ||
+                (tx.bankAccountId && tx.creditCardId)
               )
               .map(tx => {
-                // Find the original transaction data to get credit card and bank account IDs
-                const originalTx = bankTransactionsData?.find(btx => btx.id === tx.id);
-                const creditCard = creditCards.find(cc => cc.id === originalTx?.creditCardId);
-                const bankAccount = accounts?.find(ba => ba.id === originalTx?.bankAccountId);
+                const creditCard = creditCards.find(cc => cc.id === tx.creditCardId);
+                const bankAccount = accounts?.find(ba => ba.id === tx.bankAccountId);
                 
                 return {
                   id: tx.id,
                   date: new Date(tx.date),
-                  amount: tx.amount,
-                  name: tx.description || tx.merchantName || 'Credit Card Payment',
+                  amount: Math.abs(tx.amount),
+                  name: tx.name,
                   creditCardName: creditCard?.account_name || creditCard?.nickname,
                   bankAccountName: bankAccount?.account_name,
                 };
-              })
+              }) || []
             }
           />
         );
