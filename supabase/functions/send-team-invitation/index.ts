@@ -143,8 +143,7 @@ serve(async (req) => {
     }
 
     const resend = new Resend(resendApiKey);
-    const origin = req.headers.get("origin") || "http://localhost:3000";
-    const inviteUrl = `${origin}/auth?invite=${token_string}`;
+    const inviteUrl = `https://aurenapp.com/auth?invite=${token_string}`;
 
     console.log("[SEND-INVITATION] ==========================================");
     console.log("[SEND-INVITATION] PREPARING TO SEND EMAIL");
