@@ -111,6 +111,7 @@ const CashFlowCalendarComponent = ({
   dailyBalances = [] // NEW: Daily balance projections
 }: CashFlowCalendarProps) => {
   const {
+    creditCards,
     totalAvailableCredit
   } = useCreditCards();
   const {
@@ -258,8 +259,13 @@ const CashFlowCalendarComponent = ({
     today.setHours(0, 0, 0, 0);
     const isToday = target.getTime() === today.getTime();
 
-    // Start with current total available credit (already reflects all past purchases via card.balance)
-    let availableCredit = totalAvailableCredit;
+    // Initialize per-card credit map with current state
+    const cardCreditMap = new Map<string, number>();
+    creditCards.forEach(card => {
+      const effectiveLimit = card.credit_limit_override || card.credit_limit;
+      const currentAvailable = effectiveLimit - card.balance;
+      cardCreditMap.set(card.id, currentAvailable);
+    });
 
     // Only process FUTURE events (after today, up to target date)
     // This avoids double-counting past purchases already in card.balance
@@ -276,18 +282,24 @@ const CashFlowCalendarComponent = ({
       return ed > today && ed <= target;
     });
 
-    // Process future credit card PURCHASES (decrease available credit)
+    // Process future credit card PURCHASES (decrease specific card's available credit)
     futureEventsUpToDay
       .filter(event => event.creditCardId && event.type !== 'credit-payment')
       .forEach(purchase => {
-        availableCredit -= purchase.amount;
+        if (purchase.creditCardId) {
+          const currentCredit = cardCreditMap.get(purchase.creditCardId) || 0;
+          cardCreditMap.set(purchase.creditCardId, currentCredit - purchase.amount);
+        }
       });
 
-    // Process future credit card PAYMENTS (increase available credit)
+    // Process future credit card PAYMENTS (increase specific card's available credit)
     futureEventsUpToDay
-      .filter(event => event.type === 'credit-payment')
+      .filter(event => event.type === 'credit-payment' && event.creditCardId)
       .forEach(payment => {
-        availableCredit += payment.amount;
+        if (payment.creditCardId) {
+          const currentCredit = cardCreditMap.get(payment.creditCardId) || 0;
+          cardCreditMap.set(payment.creditCardId, currentCredit + payment.amount);
+        }
       });
     
     // For today specifically, if NOT excluding today, process today's events
@@ -301,27 +313,39 @@ const CashFlowCalendarComponent = ({
       todayEvents
         .filter(event => event.creditCardId && event.type !== 'credit-payment')
         .forEach(purchase => {
-          availableCredit -= purchase.amount;
+          if (purchase.creditCardId) {
+            const currentCredit = cardCreditMap.get(purchase.creditCardId) || 0;
+            cardCreditMap.set(purchase.creditCardId, currentCredit - purchase.amount);
+          }
         });
       
       todayEvents
-        .filter(event => event.type === 'credit-payment')
+        .filter(event => event.type === 'credit-payment' && event.creditCardId)
         .forEach(payment => {
-          availableCredit += payment.amount;
+          if (payment.creditCardId) {
+            const currentCredit = cardCreditMap.get(payment.creditCardId) || 0;
+            cardCreditMap.set(payment.creditCardId, currentCredit + payment.amount);
+          }
         });
     }
     
-    // Cap available credit at 0 and calculate overflow
-    if (availableCredit < 0) {
-      return {
-        availableCredit: 0,
-        overflow: Math.abs(availableCredit)
-      };
-    }
+    // Calculate overflow (sum of all negative card balances) and total positive credit
+    let totalOverflow = 0;
+    let totalPositiveCredit = 0;
+    
+    cardCreditMap.forEach((availableCredit, cardId) => {
+      if (availableCredit < 0) {
+        // This card is over its limit, overflow to cash
+        totalOverflow += Math.abs(availableCredit);
+      } else {
+        // This card still has available credit
+        totalPositiveCredit += availableCredit;
+      }
+    });
     
     return {
-      availableCredit: availableCredit,
-      overflow: 0
+      availableCredit: totalPositiveCredit,
+      overflow: totalOverflow
     };
   };
 
