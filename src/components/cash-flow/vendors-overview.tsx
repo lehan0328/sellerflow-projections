@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Building2, Calendar, DollarSign, AlertTriangle, Edit, CreditCard, Search, ArrowUpDown, Filter, Trash2, Link2, ExternalLink, Banknote, Landmark } from "lucide-react";
+import { Building2, Calendar, DollarSign, AlertTriangle, Edit, CreditCard, Search, ArrowUpDown, Filter, Trash2, Link2, ExternalLink, Banknote, Landmark, Package, ChevronDown, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
 import { cn, formatCurrency } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
@@ -57,6 +57,7 @@ export const VendorsOverview = ({
     getMatchesForVendorTransaction
   } = useTransactionMatching(bankTransactions, transactions, []);
   const [searchTerm, setSearchTerm] = useState('');
+  const [lineItemSearch, setLineItemSearch] = useState('');
   const [selectedVendor, setSelectedVendor] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'overdue' | 'paid'>('all');
   const [sortBy, setSortBy] = useState<'vendorName' | 'amount' | 'dueDate'>('dueDate');
@@ -84,17 +85,29 @@ export const VendorsOverview = ({
     }
   };
 
+  // Auto-fetch line items for all transactions when line item search is active
+  useEffect(() => {
+    if (lineItemSearch && transactions.length > 0) {
+      transactions.forEach(tx => {
+        if (!lineItemsByTransaction[tx.id]) {
+          fetchLineItems(tx.id);
+        }
+      });
+    }
+  }, [lineItemSearch, transactions]);
+
   const fetchLineItems = async (transactionId: string) => {
     try {
-      const { data, error } = await supabase
+      // @ts-ignore - Suppress excessive type depth error from Supabase generated types
+      const result = await supabase
         .from('purchase_order_line_items')
-        .select('*')
-        .eq('vendor_id', transactionId) // Using vendor_id to match transaction's vendor
+        .select('id, transaction_id, product_name, sku, quantity, unit_price, total_price, created_at')
+        .eq('transaction_id', transactionId)
         .order('created_at', { ascending: true });
 
-      if (error) throw error;
+      if (result.error) throw result.error;
       
-      const lineItems = data || [];
+      const lineItems: any[] = result.data || [];
       setLineItemsByTransaction(prev => ({
         ...prev,
         [transactionId]: lineItems
@@ -241,6 +254,21 @@ export const VendorsOverview = ({
         if (!matchesSearch) return false;
       }
 
+      // Line item search filter
+      if (lineItemSearch) {
+        // We need to load line items for filtering - fetch if not loaded
+        if (!lineItemsByTransaction[tx.id]) {
+          // Skip this transaction for now if line items not loaded
+          return false;
+        }
+        const lineItems = lineItemsByTransaction[tx.id] || [];
+        const matchesLineItem = lineItems.some(item => 
+          item.product_name?.toLowerCase().includes(lineItemSearch.toLowerCase()) ||
+          item.sku?.toLowerCase().includes(lineItemSearch.toLowerCase())
+        );
+        if (!matchesLineItem) return false;
+      }
+
       // Status filter - automatically exclude overdue and completed from 'all' filter
       let matchesStatus = true;
       if (statusFilter === 'all') {
@@ -290,7 +318,7 @@ export const VendorsOverview = ({
       }
       return 0;
     });
-  }, [transactions, searchTerm, selectedVendor, statusFilter, sortBy, sortOrder, dateRange, customFromDate, customToDate, paymentMethodFilter]);
+  }, [transactions, searchTerm, selectedVendor, statusFilter, sortBy, sortOrder, dateRange, customFromDate, customToDate, paymentMethodFilter, lineItemSearch]);
 
   const handleVendorSearch = (value: string) => {
     // Check if the value matches one of our vendor options exactly
@@ -611,6 +639,21 @@ export const VendorsOverview = ({
               </Button>}
           </div>
           
+          <div className="flex-1 max-w-sm flex items-center space-x-2">
+            <Search className="h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search line items..."
+              value={lineItemSearch}
+              onChange={(e) => setLineItemSearch(e.target.value)}
+              className="flex-1"
+            />
+            {lineItemSearch && (
+              <Button variant="outline" size="sm" onClick={() => setLineItemSearch('')} className="px-3">
+                Clear
+              </Button>
+            )}
+          </div>
+          
           <div className="flex items-center space-x-2">
             <Filter className="h-4 w-4 text-muted-foreground" />
             <Select value={statusFilter} onValueChange={(value: any) => setStatusFilter(value)}>
@@ -796,6 +839,26 @@ export const VendorsOverview = ({
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                onClick={() => toggleRow(tx.id)}
+                              >
+                                {expandedRows[tx.id] ? (
+                                  <ChevronDown className="h-3 w-3" />
+                                ) : (
+                                  <ChevronRight className="h-3 w-3" />
+                                )}
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>{expandedRows[tx.id] ? 'Hide' : 'View'} line items</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
                               <Button variant="outline" size="sm" onClick={() => setEditingTransaction(tx)}>
                                 <Edit className="h-3 w-3" />
                               </Button>
@@ -876,6 +939,59 @@ export const VendorsOverview = ({
                       </div>
                     </TableCell>
                   </TableRow>
+                  
+                  {/* Expanded row for line items */}
+                  {expandedRows[tx.id] && (
+                    <TableRow>
+                      <TableCell colSpan={7} className="bg-muted/30 p-4">
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground mb-3">
+                            <Package className="h-4 w-4" />
+                            <span>Line Items</span>
+                          </div>
+                          {lineItemsByTransaction[tx.id]?.length > 0 ? (
+                            <div className="grid gap-2">
+                              {lineItemsByTransaction[tx.id].map((item: any, idx: number) => (
+                                <div 
+                                  key={idx}
+                                  className="flex items-center justify-between p-3 bg-background rounded-md border"
+                                >
+                                  <div className="flex-1">
+                                    <div className="font-medium">{item.product_name}</div>
+                                    {item.sku && (
+                                      <div className="text-sm text-muted-foreground">SKU: {item.sku}</div>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center gap-6 text-sm">
+                                    <div className="text-right">
+                                      <div className="text-muted-foreground">Qty</div>
+                                      <div className="font-medium">{item.quantity || 1}</div>
+                                    </div>
+                                    {item.unit_price && (
+                                      <div className="text-right">
+                                        <div className="text-muted-foreground">Unit Price</div>
+                                        <div className="font-medium">{formatCurrency(item.unit_price)}</div>
+                                      </div>
+                                    )}
+                                    {item.total_price && (
+                                      <div className="text-right">
+                                        <div className="text-muted-foreground">Total</div>
+                                        <div className="font-semibold">{formatCurrency(item.total_price)}</div>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="text-sm text-muted-foreground text-center py-4">
+                              No line items found for this purchase order
+                            </div>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )}
                   
                 </React.Fragment>)}
             </TableBody>
