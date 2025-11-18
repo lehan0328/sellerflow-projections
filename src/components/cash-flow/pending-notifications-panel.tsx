@@ -75,11 +75,25 @@ export const PendingNotificationsPanel = ({
     });
 
     // Overdue expenses (not including today's due items - only past due)
-    const overdueExpenses = expenseTransactions.filter(tx => 
-      tx.type === 'expense' && 
-      tx.status === 'pending' && 
-      startOfDay(new Date(tx.transactionDate)) < today
-    );
+    const overdueExpenses = expenseTransactions.filter((tx, index) => {
+      if (index < 3) { // Log first 3 for debugging
+        const txDate = startOfDay(new Date(tx.transactionDate));
+        console.log('[Overdue Debug] Transaction:', {
+          description: tx.description,
+          transactionDate: tx.transactionDate,
+          transactionDateType: typeof tx.transactionDate,
+          txDateAfterParsing: txDate,
+          today: today,
+          isLessThan: txDate < today,
+          type: tx.type,
+          status: tx.status
+        });
+      }
+      
+      return tx.type === 'expense' && 
+        tx.status === 'pending' && 
+        startOfDay(new Date(tx.transactionDate)) < today;
+    });
 
     // Overdue income (not including today's due items - only past due)
     const overdueIncome = fetchedIncomeItems.filter(inc => 
