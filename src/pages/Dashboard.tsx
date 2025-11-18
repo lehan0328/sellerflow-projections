@@ -3806,6 +3806,7 @@ const Dashboard = () => {
               allBuyingOpportunities={mergedBuyingOpportunities}
               projectedDailyBalances={projectedDailyBalances}
               reserveAmount={reserveAmount}
+              allCalendarEvents={allCalendarEvents}
             />
           )}
 
