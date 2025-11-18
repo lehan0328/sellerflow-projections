@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Bell, X, CheckCheck, ExternalLink } from "lucide-react";
+import { Bell, X, CheckCheck, ExternalLink, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -18,6 +18,7 @@ import { useNotifications } from "@/hooks/useNotifications";
 import { useTransactions } from "@/hooks/useTransactions";
 import { useIncome } from "@/hooks/useIncome";
 import { useVendorTransactions } from "@/hooks/useVendorTransactions";
+import { OverdueTransactionsModal } from "./overdue-transactions-modal";
 
 interface Vendor {
   id: string;
@@ -54,6 +55,8 @@ export const PendingNotificationsPanel = ({
   onCreditCardNotificationClick,
 }: PendingNotificationsPanelProps) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [overdueModalOpen, setOverdueModalOpen] = useState(false);
+  const [overdueModalTab, setOverdueModalTab] = useState<'expenses' | 'income' | 'purchaseOrders'>('expenses');
   const { notifications, unreadCount, markAsRead, markAllAsRead, clearNotification, clearAllNotifications } = useNotifications();
   
   // Fetch overdue data
@@ -61,76 +64,43 @@ export const PendingNotificationsPanel = ({
   const { incomeItems: fetchedIncomeItems } = useIncome();
   const { transactions: purchaseOrders } = useVendorTransactions();
 
-  // Calculate overdue items
-  const overdueNotifications = useMemo(() => {
+  // Calculate overdue items grouped by type
+  const overdueGroups = useMemo(() => {
     const today = startOfDay(new Date());
-    const overdue = [];
 
-    // Overdue expenses (including today's due items)
+    // Overdue expenses (not including today's due items - only past due)
     const overdueExpenses = expenseTransactions.filter(tx => 
       tx.type === 'expense' && 
       tx.status === 'pending' && 
-      startOfDay(new Date(tx.transactionDate)) <= today
+      startOfDay(new Date(tx.transactionDate)) < today
     );
-    overdueExpenses.forEach(expense => {
-      overdue.push({
-        id: `expense-${expense.id}`,
-        type: 'reminder',
-        category: 'payment',
-        title: 'Overdue Expense',
-        message: `${expense.description || 'Expense'} - Payment overdue`,
-        amount: expense.amount,
-        date: expense.transactionDate,
-        read: false
-      });
-    });
 
-    // Overdue income (including today's due items)
+    // Overdue income (not including today's due items - only past due)
     const overdueIncome = fetchedIncomeItems.filter(inc => 
       inc.status === 'pending' && 
-      startOfDay(new Date(inc.paymentDate)) <= today
+      startOfDay(new Date(inc.paymentDate)) < today
     );
-    overdueIncome.forEach(inc => {
-      overdue.push({
-        id: `income-${inc.id}`,
-        type: 'reminder',
-        category: 'payment',
-        title: 'Overdue Income',
-        message: `${inc.description} - Payment overdue`,
-        amount: inc.amount,
-        date: inc.paymentDate,
-        read: false
-      });
-    });
 
-    // Overdue purchase orders (including today's due items)
+    // Overdue purchase orders (not including today's due items - only past due)
     const overduePOs = purchaseOrders.filter(po => 
       po.status === 'pending' && 
       po.dueDate &&
-      startOfDay(new Date(po.dueDate)) <= today
+      startOfDay(new Date(po.dueDate)) < today
     );
-    overduePOs.forEach(po => {
-      overdue.push({
-        id: `po-${po.id}`,
-        type: 'urgent',
-        category: 'payment',
-        title: 'Overdue Purchase Order',
-        message: `${po.vendorName || 'Purchase Order'} - Payment overdue`,
-        amount: po.amount,
-        date: po.dueDate,
-        read: false
-      });
-    });
 
-    return overdue;
+    return {
+      expenses: overdueExpenses,
+      income: overdueIncome,
+      purchaseOrders: overduePOs
+    };
   }, [expenseTransactions, fetchedIncomeItems, purchaseOrders]);
 
-  // Combine all notifications
-  const allNotifications = useMemo(() => {
-    return [...overdueNotifications, ...notifications];
-  }, [overdueNotifications, notifications]);
+  // Calculate total overdue count
+  const totalOverdueCount = useMemo(() => {
+    return overdueGroups.expenses.length + overdueGroups.income.length + overdueGroups.purchaseOrders.length;
+  }, [overdueGroups]);
 
-  const totalUnreadCount = unreadCount + overdueNotifications.length;
+  const totalUnreadCount = unreadCount + totalOverdueCount;
 
   const handleNotificationClick = (notification: any, read: boolean) => {
     if (!read) {
@@ -147,6 +117,12 @@ export const PendingNotificationsPanel = ({
   const handleClearNotification = (e: React.MouseEvent, notificationId: string) => {
     e.stopPropagation();
     clearNotification(notificationId);
+  };
+
+  const handleViewOverdue = (tab: 'expenses' | 'income' | 'purchaseOrders') => {
+    setOverdueModalTab(tab);
+    setOverdueModalOpen(true);
+    setIsOpen(false);
   };
 
   const getTypeColor = (type: string) => {
@@ -231,6 +207,7 @@ export const PendingNotificationsPanel = ({
   };
 
   return (
+    <>
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetTrigger asChild>
         <Button variant="ghost" size="icon" className="relative h-10 w-10 rounded-full hover:bg-accent">
@@ -249,7 +226,7 @@ export const PendingNotificationsPanel = ({
           <div className="flex items-center justify-between">
             <SheetTitle>Notifications</SheetTitle>
             <div className="flex gap-2">
-              {totalUnreadCount > 0 && (
+              {unreadCount > 0 && (
                 <Button
                   variant="ghost"
                   size="sm"
@@ -260,7 +237,7 @@ export const PendingNotificationsPanel = ({
                   Mark all read
                 </Button>
               )}
-              {allNotifications.length > 0 && (
+              {notifications.length > 0 && (
                 <Button
                   variant="ghost"
                   size="sm"
@@ -274,20 +251,116 @@ export const PendingNotificationsPanel = ({
             </div>
           </div>
           <SheetDescription>
-            View your notification history
+            View your notification history and overdue items
           </SheetDescription>
         </SheetHeader>
         
         <div className="mt-6">
           <ScrollArea className="h-[calc(100vh-200px)]">
-            {allNotifications.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">
-                <Bell className="h-12 w-12 mx-auto mb-3 opacity-20" />
-                <p>No notifications</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {allNotifications.map((notification) => (
+            <div className="space-y-6">
+              {/* Overdue Action Tabs */}
+              {totalOverdueCount > 0 && (
+                <div className="space-y-3">
+                  <h3 className="text-sm font-semibold text-muted-foreground px-1">Overdue Items - Action Required</h3>
+                  
+                  {/* Overdue Expenses */}
+                  {overdueGroups.expenses.length > 0 && (
+                    <div className="p-4 rounded-lg border bg-red-500/5 border-red-500/30">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <Badge className="bg-red-500 text-white">
+                            {overdueGroups.expenses.length}
+                          </Badge>
+                          <div>
+                            <p className="font-semibold text-sm">Overdue Expenses</p>
+                            <p className="text-xs text-muted-foreground">
+                              ${overdueGroups.expenses.reduce((sum, exp) => sum + Math.abs(exp.amount), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} total
+                            </p>
+                          </div>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleViewOverdue('expenses')}
+                          className="gap-2"
+                        >
+                          <Eye className="h-4 w-4" />
+                          View & Manage
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Overdue Income */}
+                  {overdueGroups.income.length > 0 && (
+                    <div className="p-4 rounded-lg border bg-amber-500/5 border-amber-500/30">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <Badge className="bg-amber-500 text-white">
+                            {overdueGroups.income.length}
+                          </Badge>
+                          <div>
+                            <p className="font-semibold text-sm">Overdue Income</p>
+                            <p className="text-xs text-muted-foreground">
+                              ${overdueGroups.income.reduce((sum, inc) => sum + Math.abs(inc.amount), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} expected
+                            </p>
+                          </div>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleViewOverdue('income')}
+                          className="gap-2"
+                        >
+                          <Eye className="h-4 w-4" />
+                          View & Manage
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Overdue Purchase Orders */}
+                  {overdueGroups.purchaseOrders.length > 0 && (
+                    <div className="p-4 rounded-lg border bg-orange-500/5 border-orange-500/30">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <Badge className="bg-orange-500 text-white">
+                            {overdueGroups.purchaseOrders.length}
+                          </Badge>
+                          <div>
+                            <p className="font-semibold text-sm">Overdue Purchase Orders</p>
+                            <p className="text-xs text-muted-foreground">
+                              ${overdueGroups.purchaseOrders.reduce((sum, po) => sum + Math.abs(po.amount), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} total
+                            </p>
+                          </div>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleViewOverdue('purchaseOrders')}
+                          className="gap-2"
+                        >
+                          <Eye className="h-4 w-4" />
+                          View & Manage
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Regular Notifications */}
+              {notifications.length === 0 && totalOverdueCount === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <Bell className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                  <p>No notifications</p>
+                </div>
+              ) : notifications.length > 0 && (
+                <div className="space-y-3">
+                  {totalOverdueCount > 0 && (
+                    <h3 className="text-sm font-semibold text-muted-foreground px-1">Other Notifications</h3>
+                  )}
+                  {notifications.map((notification) => (
                   <div
                     key={notification.id}
                     onClick={() => handleNotificationClick(notification, notification.read)}
@@ -363,9 +436,18 @@ export const PendingNotificationsPanel = ({
                 ))}
               </div>
             )}
+            </div>
           </ScrollArea>
         </div>
       </SheetContent>
     </Sheet>
+
+    {/* Overdue Transactions Modal */}
+    <OverdueTransactionsModal
+      open={overdueModalOpen}
+      onOpenChange={setOverdueModalOpen}
+      initialTab={overdueModalTab}
+    />
+    </>
   );
 };
