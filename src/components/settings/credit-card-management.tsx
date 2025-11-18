@@ -158,10 +158,9 @@ export function CreditCardManagement() {
     
     const result = await removeCreditCard(selectedCard);
     
-    // Check if deletion was blocked due to pending orders
+    // Check if deletion was blocked due to linked transactions
     if (result && typeof result === 'object' && 'blocked' in result && result.blocked) {
-      setPendingOrdersForRemoval(result.orders || []);
-      // Keep dialog open to show the pending orders
+      // Deletion was blocked - toast message already shown by removeCreditCard
       return;
     }
     
