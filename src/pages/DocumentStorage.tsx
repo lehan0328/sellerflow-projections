@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Upload, FileText, Download, Trash2, Search, Calendar as CalendarIcon, Plus, Loader2, RefreshCw, Edit, HardDrive, ChevronDown, ChevronRight } from "lucide-react";
+import { ArrowLeft, Upload, FileText, Download, Trash2, Search, Calendar as CalendarIcon, Plus, Loader2, RefreshCw, Edit, HardDrive, Eye } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
@@ -1098,11 +1098,7 @@ export default function DocumentStorage() {
                                 onClick={() => toggleRow(doc.id)}
                                 title={expandedRows.has(doc.id) ? "Hide line items" : "Show line items"}
                               >
-                                {expandedRows.has(doc.id) ? (
-                                  <ChevronDown className="h-4 w-4" />
-                                ) : (
-                                  <ChevronRight className="h-4 w-4" />
-                                )}
+                                <Eye className="h-4 w-4" />
                               </Button>
                             )}
                             {doc.document_type === 'purchase_order' && (
