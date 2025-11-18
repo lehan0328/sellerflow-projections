@@ -229,68 +229,6 @@ export const useCreditCards = () => {
     }
 
     try {
-      // Check for all transactions linked to this card
-      const [
-        { data: expenses, error: expensesError },
-        { data: purchaseOrders, error: ordersError },
-        { data: bankTransactions, error: bankError },
-        { data: recurringExpenses, error: recurringError }
-      ] = await Promise.all([
-        // Check for expenses
-        supabase
-          .from("transactions")
-          .select("id, description, amount")
-          .eq("credit_card_id", cardId)
-          .eq("user_id", user.id)
-          .eq("type", "expense"),
-        // Check for purchase orders
-        supabase
-          .from("transactions")
-          .select("id, description, amount")
-          .eq("credit_card_id", cardId)
-          .eq("user_id", user.id)
-          .eq("type", "purchase_order"),
-        // Check for bank transactions
-        supabase
-          .from("bank_transactions")
-          .select("id, name, amount")
-          .eq("credit_card_id", cardId)
-          .eq("user_id", user.id),
-        // Check for recurring expenses
-        supabase
-          .from("recurring_expenses")
-          .select("id, description, amount")
-          .eq("credit_card_id", cardId)
-          .eq("user_id", user.id)
-      ]);
-
-      if (expensesError || ordersError || bankError || recurringError) {
-        console.error("Error checking for linked transactions");
-        toast.error("Failed to verify transactions");
-        return false;
-      }
-
-      // Count all linked transactions
-      const totalTransactions = 
-        (expenses?.length || 0) + 
-        (purchaseOrders?.length || 0) + 
-        (bankTransactions?.length || 0) + 
-        (recurringExpenses?.length || 0);
-
-      if (totalTransactions > 0) {
-        const details: string[] = [];
-        if (expenses?.length) details.push(`${expenses.length} expense${expenses.length !== 1 ? 's' : ''}`);
-        if (purchaseOrders?.length) details.push(`${purchaseOrders.length} purchase order${purchaseOrders.length !== 1 ? 's' : ''}`);
-        if (bankTransactions?.length) details.push(`${bankTransactions.length} bank transaction${bankTransactions.length !== 1 ? 's' : ''}`);
-        if (recurringExpenses?.length) details.push(`${recurringExpenses.length} recurring expense${recurringExpenses.length !== 1 ? 's' : ''}`);
-        
-        toast.error(
-          `Cannot delete card: ${details.join(', ')} linked to this card. Please delete these transactions first.`,
-          { duration: 6000 }
-        );
-        return { blocked: true, transactions: totalTransactions };
-      }
-
       const { error } = await supabase
         .from("credit_cards")
         .delete()
