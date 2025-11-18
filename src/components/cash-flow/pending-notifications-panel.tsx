@@ -117,26 +117,7 @@ export const PendingNotificationsPanel = ({
     return overdueGroups.expenses.length + overdueGroups.income.length + overdueGroups.purchaseOrders.length;
   }, [overdueGroups]);
 
-  const totalUnreadCount = unreadCount + visibleOverdueCount;
-
   const handleNotificationClick = (notification: any, read: boolean) => {
-    if (!read) {
-      markAsRead(notification.id);
-    }
-    
-    // Check if this is a credit card notification
-    if (notification.category === 'credit' && onCreditCardNotificationClick) {
-      setIsOpen(false);
-      onCreditCardNotificationClick(notification);
-    }
-  };
-
-  const handleClearNotification = (e: React.MouseEvent, notificationId: string) => {
-    e.stopPropagation();
-    clearNotification(notificationId);
-  };
-
-  const getTypeColor = (type: string) => {
     if (!read) {
       markAsRead(notification.id);
     }
@@ -178,6 +159,8 @@ export const PendingNotificationsPanel = ({
   }, [visibleOverdueGroups]);
 
   const totalUnreadCount = unreadCount + visibleOverdueCount;
+
+  const getTypeColor = (type: string) => {
     switch (type) {
       case 'urgent':
       case 'security':
