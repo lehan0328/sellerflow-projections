@@ -1,5 +1,5 @@
--- Create bank_accounts table
-CREATE TABLE public.bank_accounts (
+-- Create bank_accounts table if it doesn't exist
+CREATE TABLE IF NOT EXISTS public.bank_accounts (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID NOT NULL,
   account_id TEXT NOT NULL, -- Plaid account ID
@@ -18,25 +18,29 @@ CREATE TABLE public.bank_accounts (
   updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
 );
 
--- Enable Row Level Security
+-- Enable Row Level Security (safe to run multiple times)
 ALTER TABLE public.bank_accounts ENABLE ROW LEVEL SECURITY;
 
--- Create policies for user access
+-- Create policies for user access (Drop first to ensure update)
+DROP POLICY IF EXISTS "Users can view their own bank accounts" ON public.bank_accounts;
 CREATE POLICY "Users can view their own bank accounts" 
 ON public.bank_accounts 
 FOR SELECT 
 USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can create their own bank accounts" ON public.bank_accounts;
 CREATE POLICY "Users can create their own bank accounts" 
 ON public.bank_accounts 
 FOR INSERT 
 WITH CHECK (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can update their own bank accounts" ON public.bank_accounts;
 CREATE POLICY "Users can update their own bank accounts" 
 ON public.bank_accounts 
 FOR UPDATE 
 USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can delete their own bank accounts" ON public.bank_accounts;
 CREATE POLICY "Users can delete their own bank accounts" 
 ON public.bank_accounts 
 FOR DELETE 
@@ -51,12 +55,13 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SET search_path = public;
 
--- Create trigger for automatic timestamp updates
+-- Create trigger for automatic timestamp updates (Drop first to avoid error)
+DROP TRIGGER IF EXISTS update_bank_accounts_updated_at ON public.bank_accounts;
 CREATE TRIGGER update_bank_accounts_updated_at
 BEFORE UPDATE ON public.bank_accounts
 FOR EACH ROW
 EXECUTE FUNCTION public.update_bank_accounts_updated_at();
 
--- Add index for better performance
-CREATE INDEX idx_bank_accounts_user_id ON public.bank_accounts(user_id);
-CREATE INDEX idx_bank_accounts_plaid_item_id ON public.bank_accounts(plaid_item_id);
+-- Add indexes if they don't exist
+CREATE INDEX IF NOT EXISTS idx_bank_accounts_user_id ON public.bank_accounts(user_id);
+CREATE INDEX IF NOT EXISTS idx_bank_accounts_plaid_item_id ON public.bank_accounts(plaid_item_id);
