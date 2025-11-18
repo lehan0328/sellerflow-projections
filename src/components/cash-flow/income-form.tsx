@@ -63,7 +63,7 @@ export const IncomeForm = ({
 }: IncomeFormProps) => {
   const { categories: incomeCategories, addCategory: addIncomeCategory, refetch: refetchIncomeCategories } = useCategories('income', isRecurring);
   const { categories: expenseCategories, addCategory: addExpenseCategory, refetch: refetchExpenseCategories } = useCategories('expense', isRecurring);
-  const { creditCards } = useCreditCards();
+  const { creditCards, creditCardPendingAmounts } = useCreditCards();
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [formData, setFormData] = useState({
     type: initialType as "income" | "expense",
@@ -773,7 +773,8 @@ export const IncomeForm = ({
                             ) : (
                               creditCards.map(card => {
                                 const effectiveCreditLimit = card.credit_limit_override || card.credit_limit;
-                                const availableCredit = (effectiveCreditLimit || 0) - (card.balance || 0);
+                                const pendingCommitments = creditCardPendingAmounts.get(card.id) || 0;
+                                const availableCredit = (effectiveCreditLimit || 0) - (card.balance || 0) - pendingCommitments;
                                 const amount = parseFloat(formData.amount) || 0;
                                 const isInsufficient = amount > availableCredit;
                                 
