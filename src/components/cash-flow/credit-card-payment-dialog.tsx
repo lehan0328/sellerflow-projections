@@ -216,6 +216,39 @@ export function CreditCardPaymentDialog({
             )}
           </div>
 
+          {/* Payment Date */}
+          <div className="space-y-2">
+            <Label>Payment Date</Label>
+            <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-full justify-start text-left font-normal",
+                    !paymentDate && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {paymentDate ? format(paymentDate, "PPP") : <span>Pick a date</span>}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={paymentDate}
+                  onSelect={(date) => {
+                    if (date) {
+                      setPaymentDate(date);
+                      setIsCalendarOpen(false);
+                    }
+                  }}
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+
           {/* Payment Amount */}
           <div className="space-y-2">
             <Label htmlFor="payment-amount">Payment Amount</Label>
@@ -256,39 +289,6 @@ export function CreditCardPaymentDialog({
                 ) : null}
               </div>
             )}
-          </div>
-
-          {/* Payment Date */}
-          <div className="space-y-2">
-            <Label>Payment Date</Label>
-            <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-full justify-start text-left font-normal",
-                    !paymentDate && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {paymentDate ? format(paymentDate, "PPP") : <span>Pick a date</span>}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={paymentDate}
-                  onSelect={(date) => {
-                    if (date) {
-                      setPaymentDate(date);
-                      setIsCalendarOpen(false);
-                    }
-                  }}
-                  initialFocus
-                  className={cn("p-3 pointer-events-auto")}
-                />
-              </PopoverContent>
-            </Popover>
           </div>
         </div>
 
