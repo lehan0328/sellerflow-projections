@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback, memo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -87,7 +87,7 @@ interface CashFlowCalendarProps {
     balance: number;
   }>; // NEW: Daily balance projections
 }
-export const CashFlowCalendar = ({
+const CashFlowCalendarComponent = ({
   events: propEvents = [],
   totalCash = 0,
   onEditTransaction,
@@ -334,8 +334,20 @@ export const CashFlowCalendar = ({
     return total / confirmedPayouts.length;
   })();
 
-  // Generate chart data based on selected time range
-  const generateChartData = () => {
+  // Create event index map for O(1) lookups - PERFORMANCE OPTIMIZATION
+  const eventsByDate = useMemo(() => {
+    const map = new Map<string, CashFlowEvent[]>();
+    events.forEach(event => {
+      const impactDate = event.balanceImpactDate || event.date;
+      const key = format(new Date(impactDate), 'yyyy-MM-dd');
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(event);
+    });
+    return map;
+  }, [events]);
+
+  // Generate chart data based on selected time range - MEMOIZED FOR PERFORMANCE
+  const chartData = useMemo(() => {
     // Calculate date range based on selected time range (starting from today)
     const monthsToShow = parseInt(chartTimeRange);
     const today = new Date();
@@ -454,8 +466,7 @@ export const CashFlowCalendar = ({
         hasCreditCardTransaction
       };
     });
-  };
-  const chartData = generateChartData();
+  }, [events, bankAccountBalance, chartTimeRange, excludeToday, reserveAmount, incomeItems, vendors, totalAvailableCredit, eventsByDate]);
 
   // Get zoomed data based on zoom state
   const getDisplayData = () => {
@@ -1302,3 +1313,19 @@ export const CashFlowCalendar = ({
       </Dialog>
     </Card>;
 };
+
+// Export memoized component for performance optimization
+export const CashFlowCalendar = memo(CashFlowCalendarComponent, (prevProps, nextProps) => {
+  // Custom comparison function to prevent unnecessary re-renders
+  return (
+    prevProps.events === nextProps.events &&
+    prevProps.bankAccountBalance === nextProps.bankAccountBalance &&
+    prevProps.reserveAmount === nextProps.reserveAmount &&
+    prevProps.excludeToday === nextProps.excludeToday &&
+    prevProps.incomeItems === nextProps.incomeItems &&
+    prevProps.vendors === nextProps.vendors &&
+    prevProps.safeSpendingLimit === nextProps.safeSpendingLimit &&
+    prevProps.allBuyingOpportunities === nextProps.allBuyingOpportunities &&
+    prevProps.dailyBalances === nextProps.dailyBalances
+  );
+});
