@@ -54,8 +54,6 @@ export function CustomerManagement() {
     try {
       await addCustomer({ 
         name: capitalizeName(formData.name),
-        paymentTerms: 'immediate',
-        netTermsDays: undefined,
         category: formData.category
       });
       setShowAddDialog(false);
@@ -81,8 +79,6 @@ export function CustomerManagement() {
     try {
       await updateCustomer(editingCustomer.id, { 
         name: capitalizeName(formData.name),
-        paymentTerms: 'immediate',
-        netTermsDays: undefined,
         category: formData.category
       });
       setShowEditDialog(false);
@@ -257,10 +253,6 @@ export function CustomerManagement() {
                       {customer.category && (
                         <p className="text-xs text-muted-foreground">{customer.category}</p>
                       )}
-                      <p className="text-sm text-muted-foreground">
-                        Payment Terms: {customer.paymentTerms || 'immediate'}
-                        {customer.netTermsDays && ` (Net ${customer.netTermsDays} days)`}
-                      </p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
