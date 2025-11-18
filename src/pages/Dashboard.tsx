@@ -2093,6 +2093,7 @@ const Dashboard = () => {
           date: date,
           source: recurring.type === "income" ? "Recurring" : undefined,
           vendor: recurring.type === "expense" ? "Recurring" : undefined, // Show "Recurring" as vendor name
+          creditCardId: recurring.credit_card_id,
         });
       });
     });
