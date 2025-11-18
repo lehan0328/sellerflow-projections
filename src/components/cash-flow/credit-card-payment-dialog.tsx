@@ -1,4 +1,5 @@
 import { useState } from "react";
+import React from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -11,18 +12,25 @@ import { useBankAccounts } from "@/hooks/useBankAccounts";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import { CreditCard, CalendarIcon, Search } from "lucide-react";
+import { CreditCard, CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import { SearchByAmountDialog } from "./search-by-amount-dialog";
 
 interface CreditCardPaymentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   allBuyingOpportunities?: Array<{ date: string; balance: number; available_date?: string }>;
+  projectedDailyBalances?: Array<{ date: string; runningBalance: number }>;
+  reserveAmount?: number;
 }
 
-export function CreditCardPaymentDialog({ open, onOpenChange, allBuyingOpportunities = [] }: CreditCardPaymentDialogProps) {
+export function CreditCardPaymentDialog({ 
+  open, 
+  onOpenChange, 
+  allBuyingOpportunities = [],
+  projectedDailyBalances = [],
+  reserveAmount = 0
+}: CreditCardPaymentDialogProps) {
   const { user } = useAuth();
   const { creditCards, creditCardPendingAmounts, refetch: refetchCreditCards } = useCreditCards();
   const { accounts: bankAccounts, refetch: refetchBankAccounts } = useBankAccounts();
@@ -31,7 +39,41 @@ export function CreditCardPaymentDialog({ open, onOpenChange, allBuyingOpportuni
   const [paymentAmount, setPaymentAmount] = useState<string>("");
   const [paymentDate, setPaymentDate] = useState<Date>(new Date());
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showSearchDialog, setShowSearchDialog] = useState(false);
+
+  // Auto-suggest earliest affordable date based on payment amount
+  const suggestedDate = React.useMemo(() => {
+    if (!allBuyingOpportunities || allBuyingOpportunities.length === 0) return null;
+    if (!projectedDailyBalances || projectedDailyBalances.length === 0) return null;
+    
+    const targetAmount = parseFloat(paymentAmount || "0");
+    if (targetAmount <= 0) return null;
+    
+    // Total required = payment amount + reserve
+    const totalRequired = targetAmount + reserveAmount;
+    
+    // Find ALL opportunities with sufficient balance
+    const matchingOpps = allBuyingOpportunities.filter(opp => {
+      // First check: opportunity balance must be >= payment amount
+      if (opp.balance < targetAmount) return false;
+      
+      // Second check: actual projected balance on that date must be >= payment + reserve
+      const dateStr = opp.available_date || opp.date;
+      const projectedBalance = projectedDailyBalances.find(d => d.date === dateStr);
+      
+      return projectedBalance && projectedBalance.runningBalance >= totalRequired;
+    });
+    
+    // Sort by available_date to find the earliest one
+    const opportunity = matchingOpps.length > 0
+      ? matchingOpps.sort((a, b) => {
+          const dateA = new Date(a.available_date || a.date).getTime();
+          const dateB = new Date(b.available_date || b.date).getTime();
+          return dateA - dateB;
+        })[0]
+      : null;
+    
+    return opportunity;
+  }, [allBuyingOpportunities, paymentAmount, projectedDailyBalances, reserveAmount]);
 
   const selectedCreditCard = creditCards.find(card => card.id === selectedCreditCardId);
   const defaultBankAccount = bankAccounts[0];
@@ -186,28 +228,43 @@ export function CreditCardPaymentDialog({ open, onOpenChange, allBuyingOpportuni
           {/* Payment Amount */}
           <div className="space-y-2">
             <Label htmlFor="payment-amount">Payment Amount</Label>
-            <div className="flex gap-2">
-              <Input
-                id="payment-amount"
-                type="number"
-                step="0.01"
-                min="0"
-                placeholder="0.00"
-                value={paymentAmount}
-                onChange={(e) => setPaymentAmount(e.target.value)}
-              />
-              {allBuyingOpportunities.length > 0 && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  onClick={() => setShowSearchDialog(true)}
-                  title="Search when you can afford this payment"
-                >
-                  <Search className="h-4 w-4" />
-                </Button>
-              )}
-            </div>
+            <Input
+              id="payment-amount"
+              type="number"
+              step="0.01"
+              min="0"
+              placeholder="0.00"
+              value={paymentAmount}
+              onChange={(e) => setPaymentAmount(e.target.value)}
+            />
+            
+            {/* Suggested Affordable Date */}
+            {suggestedDate && (
+              <div className="animate-fade-in">
+                {suggestedDate.balance >= parseFloat(paymentAmount || "0") ? (
+                  <div className="flex items-center justify-between gap-2 p-2 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900/30 rounded-md">
+                    <div className="flex items-center gap-2">
+                      <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+                      <span className="text-xs font-medium text-green-800 dark:text-green-300">
+                        Earliest you can afford: {format(new Date(suggestedDate.available_date || suggestedDate.date), "MMM d, yyyy")}
+                      </span>
+                    </div>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      className="h-6 px-2 text-xs hover:bg-green-100 dark:hover:bg-green-900/30"
+                      onClick={() => {
+                        const [year, month, day] = (suggestedDate.available_date || suggestedDate.date).split('-').map(Number);
+                        setPaymentDate(new Date(year, month - 1, day));
+                      }}
+                    >
+                      Use This Date
+                    </Button>
+                  </div>
+                ) : null}
+              </div>
+            )}
             {selectedCreditCard && defaultBankAccount && paymentAmount && (
               <div className="text-sm space-y-1">
                 <p className="text-muted-foreground">
@@ -261,13 +318,6 @@ export function CreditCardPaymentDialog({ open, onOpenChange, allBuyingOpportuni
           </Button>
         </DialogFooter>
       </DialogContent>
-
-      <SearchByAmountDialog
-        open={showSearchDialog}
-        onOpenChange={setShowSearchDialog}
-        allBuyingOpportunities={allBuyingOpportunities}
-        onSelectDate={(date) => setPaymentDate(date)}
-      />
     </Dialog>
   );
 }
