@@ -211,6 +211,13 @@ const Dashboard = () => {
     enabled: !!user?.id,
   });
 
+  // Load theme preference from database when profile loads
+  useEffect(() => {
+    if (profile?.theme_preference && profile.theme_preference !== theme) {
+      setTheme(profile.theme_preference);
+    }
+  }, [profile?.theme_preference]);
+
   // Update profile mutation
   const updateProfileMutation = useMutation({
     mutationFn: async (profileData: {
@@ -218,6 +225,7 @@ const Dashboard = () => {
       last_name?: string;
       company?: string;
       currency?: string;
+      theme_preference?: string;
     }) => {
       if (!user?.id) throw new Error("No user ID");
 
@@ -2655,7 +2663,10 @@ const Dashboard = () => {
                   <Button
                     variant={theme === "light" ? "default" : "outline"}
                     size="sm"
-                    onClick={() => setTheme("light")}
+                    onClick={() => {
+                      setTheme("light");
+                      updateProfileMutation.mutate({ theme_preference: "light" });
+                    }}
                     className="justify-start"
                   >
                     {getThemeIcon("light")}
@@ -2664,7 +2675,10 @@ const Dashboard = () => {
                   <Button
                     variant={theme === "dark" ? "default" : "outline"}
                     size="sm"
-                    onClick={() => setTheme("dark")}
+                    onClick={() => {
+                      setTheme("dark");
+                      updateProfileMutation.mutate({ theme_preference: "dark" });
+                    }}
                     className="justify-start"
                   >
                     {getThemeIcon("dark")}
@@ -2673,7 +2687,10 @@ const Dashboard = () => {
                   <Button
                     variant={theme === "system" ? "default" : "outline"}
                     size="sm"
-                    onClick={() => setTheme("system")}
+                    onClick={() => {
+                      setTheme("system");
+                      updateProfileMutation.mutate({ theme_preference: "system" });
+                    }}
                     className="justify-start"
                   >
                     {getThemeIcon("system")}
