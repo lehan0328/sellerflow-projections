@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Upload, FileText, Download, Trash2, Search, Calendar as CalendarIcon, Plus, Loader2, RefreshCw, Edit, HardDrive, ChevronDown } from "lucide-react";
+import { ArrowLeft, Upload, FileText, Download, Trash2, Search, Calendar as CalendarIcon, Plus, Loader2, RefreshCw, Edit, HardDrive, ChevronDown, ChevronRight } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
@@ -20,7 +20,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { profileQueryKey } from "@/lib/cacheConfig";
 import { toast } from "sonner";
 import { useVendors } from "@/hooks/useVendors";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -61,6 +60,7 @@ export default function DocumentStorage() {
   const queryClient = useQueryClient();
   const [uploading, setUploading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [lineItemSearch, setLineItemSearch] = useState("");
   const [selectedMonth, setSelectedMonth] = useState<string>("all");
   const [selectedVendor, setSelectedVendor] = useState<string>("all");
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
@@ -69,6 +69,7 @@ export default function DocumentStorage() {
   const [newCustomerName, setNewCustomerName] = useState("");
   const [replacingDocument, setReplacingDocument] = useState<string | null>(null);
   const [includeUntracked, setIncludeUntracked] = useState(false);
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
 
   // Storage limit: 2GB
   const STORAGE_LIMIT_BYTES = 2 * 1024 * 1024 * 1024; // 2GB in bytes
@@ -652,20 +653,23 @@ export default function DocumentStorage() {
     // Show ALL documents, even if storage file is missing
     // The UI will indicate when a file is missing
     
-    // Search in file name, display name, notes, description, and line items
+    // General search in file name, display name, notes, description
     const searchLower = searchQuery.toLowerCase();
     const nameMatch = doc.name.toLowerCase().includes(searchLower);
     const displayNameMatch = doc.display_name?.toLowerCase().includes(searchLower);
     const notesMatch = doc.notes?.toLowerCase().includes(searchLower);
     const descriptionMatch = (doc.description || '').toLowerCase().includes(searchLower);
     
-    // Search in line items
-    const lineItemMatch = doc.line_items?.some(item => 
-      item.description?.toLowerCase().includes(searchLower) ||
-      item.product_name?.toLowerCase().includes(searchLower)
-    ) || false;
+    const matchesSearch = nameMatch || displayNameMatch || notesMatch || descriptionMatch;
     
-    const matchesSearch = nameMatch || displayNameMatch || notesMatch || descriptionMatch || lineItemMatch;
+    // Line item search (separate from general search)
+    const lineItemSearchLower = lineItemSearch.toLowerCase();
+    const matchesLineItemSearch = lineItemSearch === "" || 
+      doc.line_items?.some(item => 
+        item.description?.toLowerCase().includes(lineItemSearchLower) ||
+        item.product_name?.toLowerCase().includes(lineItemSearchLower) ||
+        item.quantity?.toString().includes(lineItemSearchLower)
+      ) || false;
     
     // Month filter
     let monthMatch = true;
@@ -681,8 +685,20 @@ export default function DocumentStorage() {
       vendorMatch = doc.vendor_id === selectedVendor;
     }
     
-    return matchesSearch && monthMatch && vendorMatch;
+    return matchesSearch && matchesLineItemSearch && monthMatch && vendorMatch;
   }) || [];
+
+  const toggleRow = (docId: string) => {
+    setExpandedRows(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(docId)) {
+        newSet.delete(docId);
+      } else {
+        newSet.add(docId);
+      }
+      return newSet;
+    });
+  };
 
   // Get unique months from documents for filter dropdown
   const availableMonths = useMemo(() => {
@@ -916,9 +932,20 @@ export default function DocumentStorage() {
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     type="text"
-                    placeholder="Search by name, vendor, description, line items..."
+                    placeholder="Search by name, vendor, description..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-9"
+                  />
+                </div>
+
+                <div className="relative flex-1 min-w-[200px]">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    type="text"
+                    placeholder="Search line items..."
+                    value={lineItemSearch}
+                    onChange={(e) => setLineItemSearch(e.target.value)}
                     className="w-full pl-9"
                   />
                 </div>
@@ -982,19 +1009,17 @@ export default function DocumentStorage() {
             ) : (
               <table className="w-full table-fixed border-collapse">
                 <colgroup>
-                  <col style={{ width: '5%' }} />
-                  <col style={{ width: '23%' }} />
+                  <col style={{ width: '25%' }} />
                   <col style={{ width: '10%' }} />
                   <col style={{ width: '12%' }} />
                   <col style={{ width: '10%' }} />
                   <col style={{ width: '10%' }} />
                   <col style={{ width: '8%' }} />
                   <col style={{ width: '10%' }} />
-                  <col style={{ width: '12%' }} />
+                  <col style={{ width: '15%' }} />
                 </colgroup>
                 <thead>
                   <tr className="bg-muted border-b hover:bg-muted">
-                    <th className="font-semibold px-4 py-3 text-center"></th>
                     <th className="font-semibold px-4 py-3 text-left">Name</th>
                     <th className="font-semibold px-4 py-3 text-left">Type</th>
                     <th className="font-semibold px-4 py-3 text-left">Vendor</th>
@@ -1007,15 +1032,8 @@ export default function DocumentStorage() {
                 </thead>
                 <tbody>
                   {filteredDocuments.map((doc) => (
-                    <Collapsible key={doc.id}>
-                      <tr className="align-top border-b transition-colors hover:bg-muted/50">
-                        <td className="px-4 py-3 text-center">
-                          <CollapsibleTrigger asChild>
-                            <Button variant="ghost" size="sm" className="h-6 w-6 p-0 group" aria-label="Toggle document details">
-                              <ChevronDown className="h-4 w-4 transition-transform group-data-[state=open]:rotate-180" />
-                            </Button>
-                          </CollapsibleTrigger>
-                        </td>
+                    <>
+                      <tr key={doc.id} className="align-top border-b transition-colors hover:bg-muted/50">
                         <td className="font-medium px-4 py-3">
                           <div className="flex items-center space-x-2 overflow-hidden max-w-full">
                             <span 
@@ -1073,6 +1091,20 @@ export default function DocumentStorage() {
                         </td>
                         <td className="text-right px-4 py-3">
                           <div className="flex justify-end space-x-2">
+                            {doc.line_items && doc.line_items.length > 0 && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => toggleRow(doc.id)}
+                                title={expandedRows.has(doc.id) ? "Hide line items" : "Show line items"}
+                              >
+                                {expandedRows.has(doc.id) ? (
+                                  <ChevronDown className="h-4 w-4" />
+                                ) : (
+                                  <ChevronRight className="h-4 w-4" />
+                                )}
+                              </Button>
+                            )}
                             {doc.document_type === 'purchase_order' && (
                               <>
                                 <input
@@ -1132,61 +1164,36 @@ export default function DocumentStorage() {
                           </div>
                         </td>
                       </tr>
-                      <tr>
-                        <td colSpan={9} className="p-0 border-0">
-                          <CollapsibleContent>
-                            <div className="w-full py-4 bg-muted/30 -mx-6 px-6">
-                              {doc.line_items && doc.line_items.length > 0 ? (
-                                <div className="space-y-2">
-                                  <div className="text-sm font-semibold mb-3">Line Items ({doc.line_items.length})</div>
-                                  <div className="space-y-1.5">
-                                    {doc.line_items.map((item, idx) => (
-                                      <div key={idx} className="flex items-start justify-between text-sm py-1">
-                                        <div className="flex-1 pr-4">
-                                          {item.description || item.product_name || '-'}
-                                        </div>
-                                        <div className="text-right whitespace-nowrap">
-                                          <span className="text-muted-foreground">Qty: </span>
-                                          <span>{item.quantity || '-'}</span>
-                                          <span className="mx-1.5 text-muted-foreground">@</span>
-                                          <span>{item.unit_price ? Number(item.unit_price).toFixed(2) : '-'}</span>
-                                          <span className="ml-3 font-medium">
-                                            {item.total_price ? Number(item.total_price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}
-                                          </span>
-                                        </div>
+                      {expandedRows.has(doc.id) && doc.line_items && doc.line_items.length > 0 && (
+                        <tr>
+                          <td colSpan={8} className="p-0 border-0 bg-muted/30">
+                            <div className="px-6 py-4">
+                              <div className="space-y-2">
+                                <div className="text-sm font-semibold mb-3">Line Items ({doc.line_items.length})</div>
+                                <div className="space-y-1.5">
+                                  {doc.line_items.map((item, idx) => (
+                                    <div key={idx} className="flex items-start justify-between text-sm py-1">
+                                      <div className="flex-1 pr-4">
+                                        {item.description || item.product_name || '-'}
                                       </div>
-                                    ))}
-                                  </div>
+                                      <div className="text-right whitespace-nowrap">
+                                        <span className="text-muted-foreground">Qty: </span>
+                                        <span>{item.quantity || '-'}</span>
+                                        <span className="mx-1.5 text-muted-foreground">@</span>
+                                        <span>{item.unit_price ? Number(item.unit_price).toFixed(2) : '-'}</span>
+                                        <span className="ml-3 font-medium">
+                                          {item.total_price ? Number(item.total_price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  ))}
                                 </div>
-                              ) : (
-                                <div className="space-y-3">
-                                  <div className="text-sm font-semibold mb-2">Details</div>
-                                  <div className="text-sm text-muted-foreground">No line items found for this document.</div>
-                                  <div className="grid md:grid-cols-3 gap-4 text-sm">
-                                    <div>
-                                      <div className="font-medium">Description</div>
-                                      <div>{doc.description || '-'}</div>
-                                    </div>
-                                    <div>
-                                      <div className="font-medium">Qty</div>
-                                      <div>-</div>
-                                    </div>
-                                    <div>
-                                      <div className="font-medium">Amount</div>
-                                      <div>{doc.amount ? `$${Number(doc.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-'}</div>
-                                    </div>
-                                    <div className="md:col-span-3">
-                                      <div className="font-medium">Notes</div>
-                                      <div>{doc.notes || '-'}</div>
-                                    </div>
-                                  </div>
-                                </div>
-                              )}
+                              </div>
                             </div>
-                          </CollapsibleContent>
-                        </td>
-                      </tr>
-                    </Collapsible>
+                          </td>
+                        </tr>
+                      )}
+                    </>
                   ))}
                 </tbody>
               </table>
