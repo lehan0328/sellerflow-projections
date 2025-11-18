@@ -190,7 +190,7 @@ export const GuidesContent = () => {
           </Link>
 
           <div className="lg:col-span-3 flex justify-center gap-4 flex-wrap md:flex-nowrap">
-            <Link to="/guides/search-by-date" className="group w-full md:w-auto md:max-w-sm">
+            <Link to="/guides/search-by-date" className="group flex-1">
               <Card className="relative overflow-hidden h-full shadow-card hover:shadow-elevated transition-all duration-300 cursor-pointer border-0 hover-scale">
                 <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/20 via-teal-500/20 to-cyan-500/20" />
                 <div className="absolute inset-0 bg-gradient-to-br from-emerald-600/0 via-teal-600/0 to-cyan-600/0 group-hover:from-emerald-600/10 group-hover:via-teal-600/10 group-hover:to-cyan-600/10 transition-all duration-300" />
@@ -211,7 +211,7 @@ export const GuidesContent = () => {
               </Card>
             </Link>
 
-            <Link to="/guides/scenario-planning" className="group w-full md:w-auto md:max-w-sm">
+            <Link to="/guides/scenario-planning" className="group flex-1">
               <Card className="relative overflow-hidden h-full shadow-card hover:shadow-elevated transition-all duration-300 cursor-pointer border-0 hover-scale">
                 <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/20 via-sky-500/20 to-blue-500/20" />
                 <div className="absolute inset-0 bg-gradient-to-br from-cyan-600/0 via-sky-600/0 to-blue-600/0 group-hover:from-cyan-600/10 group-hover:via-sky-600/10 group-hover:to-blue-600/10 transition-all duration-300" />
@@ -232,7 +232,7 @@ export const GuidesContent = () => {
               </Card>
             </Link>
 
-            <Link to="/guides/ai-po-autofill" className="group w-full md:w-auto md:max-w-sm">
+            <Link to="/guides/ai-po-autofill" className="group flex-1">
               <Card className="relative overflow-hidden h-full shadow-card hover:shadow-elevated transition-all duration-300 cursor-pointer border-0 hover-scale">
                 <div className="absolute inset-0 bg-gradient-to-br from-pink-500/20 via-rose-500/20 to-red-500/20" />
                 <div className="absolute inset-0 bg-gradient-to-br from-pink-600/0 via-rose-600/0 to-red-600/0 group-hover:from-pink-600/10 group-hover:via-rose-600/10 group-hover:to-red-600/10 transition-all duration-300" />
