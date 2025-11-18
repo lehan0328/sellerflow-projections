@@ -39,6 +39,7 @@ export function CreditCardPaymentDialog({
   const [paymentAmount, setPaymentAmount] = useState<string>("");
   const [paymentDate, setPaymentDate] = useState<Date>(new Date());
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
   // Auto-suggest earliest affordable date based on payment amount
   const suggestedDate = React.useMemo(() => {
@@ -260,7 +261,7 @@ export function CreditCardPaymentDialog({
           {/* Payment Date */}
           <div className="space-y-2">
             <Label>Payment Date</Label>
-            <Popover>
+            <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
@@ -277,7 +278,12 @@ export function CreditCardPaymentDialog({
                 <Calendar
                   mode="single"
                   selected={paymentDate}
-                  onSelect={(date) => date && setPaymentDate(date)}
+                  onSelect={(date) => {
+                    if (date) {
+                      setPaymentDate(date);
+                      setIsCalendarOpen(false);
+                    }
+                  }}
                   initialFocus
                   className={cn("p-3 pointer-events-auto")}
                 />
