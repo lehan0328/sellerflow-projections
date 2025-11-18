@@ -724,7 +724,7 @@ export function CreditCards() {
                     onChange={(e) => setFormData({...formData, credit_limit_override: e.target.value ? parseFloat(e.target.value) : null})}
                   />
                   <p className="text-xs text-muted-foreground mt-1">
-                    This will override your Plaid synced credit limit. Use this to extend your purchasing power beyond the standard limit.
+                    This will permanently override your Plaid synced credit limit. When set, this becomes your card's spending limit. Leave empty to use the Plaid limit.
                   </p>
                 </div>
               </div>

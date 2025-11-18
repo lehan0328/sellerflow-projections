@@ -192,6 +192,15 @@ export const useCreditCards = () => {
         statement_close_date: updates.statement_close_date === '' ? null : updates.statement_close_date,
       };
 
+      // If credit_limit_override is being updated, recalculate available_credit
+      if ('credit_limit_override' in updates) {
+        const card = creditCards.find(c => c.id === cardId);
+        if (card) {
+          const effectiveLimit = updates.credit_limit_override ?? card.credit_limit;
+          sanitizedUpdates.available_credit = effectiveLimit - card.balance;
+        }
+      }
+
       const { error } = await supabase
         .from("credit_cards")
         .update(sanitizedUpdates)
