@@ -27,10 +27,6 @@ export const GuidesContent = () => {
           path: "/guides/purchase-orders"
         },
         {
-          title: "AI PO autofill (Growing+ plans only)",
-          path: "/guides/ai-po-autofill"
-        },
-        {
           title: "Adding Additional Income",
           path: "/guides/adding-income"
         },
@@ -236,6 +232,27 @@ export const GuidesContent = () => {
               </Card>
             </Link>
           </div>
+
+          <Link to="/guides/ai-po-autofill" className="group w-full md:w-auto md:max-w-sm">
+            <Card className="relative overflow-hidden h-full shadow-card hover:shadow-elevated transition-all duration-300 cursor-pointer border-0 hover-scale">
+              <div className="absolute inset-0 bg-gradient-to-br from-pink-500/20 via-rose-500/20 to-red-500/20" />
+              <div className="absolute inset-0 bg-gradient-to-br from-pink-600/0 via-rose-600/0 to-red-600/0 group-hover:from-pink-600/10 group-hover:via-rose-600/10 group-hover:to-red-600/10 transition-all duration-300" />
+              <CardHeader className="relative pb-3">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="p-2 rounded-lg bg-gradient-to-br from-pink-500 to-rose-500">
+                    <ShoppingCart className="h-5 w-5 text-white" />
+                  </div>
+                  <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                </div>
+                <CardTitle className="text-lg">AI PO Autofill</CardTitle>
+              </CardHeader>
+              <CardContent className="relative">
+                <p className="text-sm text-muted-foreground line-clamp-2">
+                  Automatically extract purchase order details from invoices using AI (Growing+ plans only)
+                </p>
+              </CardContent>
+            </Card>
+          </Link>
         </div>
       </div>
 
