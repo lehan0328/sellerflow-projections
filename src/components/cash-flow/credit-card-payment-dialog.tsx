@@ -230,10 +230,17 @@ export function CreditCardPaymentDialog({
               </SelectContent>
             </Select>
             {selectedCreditCard && (
-              <p className="text-sm text-muted-foreground">
-                Current Balance: ${selectedCreditCard.balance.toFixed(2)} | 
-                Available Credit: ${getAdjustedAvailableCredit(selectedCreditCard).toFixed(2)}
-              </p>
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">
+                  Current Balance: ${selectedCreditCard.balance.toFixed(2)} | 
+                  Available Credit: ${getAdjustedAvailableCredit(selectedCreditCard).toFixed(2)}
+                </p>
+                {selectedCreditCard.payment_due_date && (
+                  <p className="text-sm text-muted-foreground">
+                    Payment Due Date: {format(new Date(selectedCreditCard.payment_due_date), "MMM dd, yyyy")}
+                  </p>
+                )}
+              </div>
             )}
           </div>
 
