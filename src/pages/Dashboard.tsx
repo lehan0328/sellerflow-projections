@@ -2086,6 +2086,24 @@ const Dashboard = () => {
       date: t.transactionDate,
     }));
 
+  // Convert credit card payment transactions to calendar events
+  const creditCardPaymentEvents: CashFlowEvent[] = bankTransactionsData
+    ?.filter(tx => 
+      (tx.transactionType === 'payment' || 
+       (tx.category && tx.category.includes('Credit Card Payment'))) &&
+      tx.creditCardId && 
+      tx.bankAccountId
+    )
+    .map(tx => ({
+      id: `cc-payment-${tx.id}`,
+      type: "outflow" as const,
+      amount: Math.abs(tx.amount),
+      description: tx.name || `Credit Card Payment`,
+      vendor: "Credit Card Payment",
+      date: new Date(tx.date),
+      creditCardId: null, // null so it's counted as cash outflow
+    })) || [];
+
   // Generate recurring transaction events for calendar (show next 12 months)
   const recurringEvents: CashFlowEvent[] = useMemo(() => {
     const events: CashFlowEvent[] = [];
@@ -2259,6 +2277,7 @@ const Dashboard = () => {
     ...calendarEvents,
     ...vendorPaymentEvents,
     ...expenseEvents,
+    ...creditCardPaymentEvents,
     ...vendorEvents,
     ...incomeEvents,
     ...creditCardEvents,
