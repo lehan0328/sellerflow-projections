@@ -3743,6 +3743,7 @@ const Dashboard = () => {
             <CreditCardPaymentDialog
               open={showPayCreditCardDialog}
               onOpenChange={setShowPayCreditCardDialog}
+              allBuyingOpportunities={mergedBuyingOpportunities}
             />
           )}
 

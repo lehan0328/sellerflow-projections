@@ -11,16 +11,18 @@ import { useBankAccounts } from "@/hooks/useBankAccounts";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import { CreditCard, CalendarIcon } from "lucide-react";
+import { CreditCard, CalendarIcon, Search } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { SearchByAmountDialog } from "./search-by-amount-dialog";
 
 interface CreditCardPaymentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  allBuyingOpportunities?: Array<{ date: string; balance: number; available_date?: string }>;
 }
 
-export function CreditCardPaymentDialog({ open, onOpenChange }: CreditCardPaymentDialogProps) {
+export function CreditCardPaymentDialog({ open, onOpenChange, allBuyingOpportunities = [] }: CreditCardPaymentDialogProps) {
   const { user } = useAuth();
   const { creditCards, creditCardPendingAmounts, refetch: refetchCreditCards } = useCreditCards();
   const { accounts: bankAccounts, refetch: refetchBankAccounts } = useBankAccounts();
@@ -29,6 +31,7 @@ export function CreditCardPaymentDialog({ open, onOpenChange }: CreditCardPaymen
   const [paymentAmount, setPaymentAmount] = useState<string>("");
   const [paymentDate, setPaymentDate] = useState<Date>(new Date());
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showSearchDialog, setShowSearchDialog] = useState(false);
 
   const selectedCreditCard = creditCards.find(card => card.id === selectedCreditCardId);
   const defaultBankAccount = bankAccounts[0];
@@ -183,15 +186,28 @@ export function CreditCardPaymentDialog({ open, onOpenChange }: CreditCardPaymen
           {/* Payment Amount */}
           <div className="space-y-2">
             <Label htmlFor="payment-amount">Payment Amount</Label>
-            <Input
-              id="payment-amount"
-              type="number"
-              step="0.01"
-              min="0"
-              placeholder="0.00"
-              value={paymentAmount}
-              onChange={(e) => setPaymentAmount(e.target.value)}
-            />
+            <div className="flex gap-2">
+              <Input
+                id="payment-amount"
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="0.00"
+                value={paymentAmount}
+                onChange={(e) => setPaymentAmount(e.target.value)}
+              />
+              {allBuyingOpportunities.length > 0 && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setShowSearchDialog(true)}
+                  title="Search when you can afford this payment"
+                >
+                  <Search className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
             {selectedCreditCard && defaultBankAccount && paymentAmount && (
               <div className="text-sm space-y-1">
                 <p className="text-muted-foreground">
@@ -245,6 +261,13 @@ export function CreditCardPaymentDialog({ open, onOpenChange }: CreditCardPaymen
           </Button>
         </DialogFooter>
       </DialogContent>
+
+      <SearchByAmountDialog
+        open={showSearchDialog}
+        onOpenChange={setShowSearchDialog}
+        allBuyingOpportunities={allBuyingOpportunities}
+        onSelectDate={(date) => setPaymentDate(date)}
+      />
     </Dialog>
   );
 }
