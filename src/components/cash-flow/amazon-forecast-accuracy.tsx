@@ -11,6 +11,8 @@ import { useAuth } from "@/hooks/useAuth";
 
 
 export const AmazonForecastAccuracy = () => {
+  return null; // Hidden section
+  
   const { user } = useAuth();
   const [metrics, setMetrics] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
