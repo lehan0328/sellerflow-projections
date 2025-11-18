@@ -4,12 +4,16 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useCreditCards } from "@/hooks/useCreditCards";
 import { useBankAccounts } from "@/hooks/useBankAccounts";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import { CreditCard } from "lucide-react";
+import { CreditCard, CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 interface CreditCardPaymentDialogProps {
   open: boolean;
@@ -24,6 +28,7 @@ export function CreditCardPaymentDialog({ open, onOpenChange }: CreditCardPaymen
   const [selectedCreditCardId, setSelectedCreditCardId] = useState<string>("");
   const [selectedBankAccountId, setSelectedBankAccountId] = useState<string>("");
   const [paymentAmount, setPaymentAmount] = useState<string>("");
+  const [paymentDate, setPaymentDate] = useState<Date>(new Date());
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const selectedCreditCard = creditCards.find(card => card.id === selectedCreditCardId);
@@ -91,6 +96,28 @@ export function CreditCardPaymentDialog({ open, onOpenChange }: CreditCardPaymen
 
       if (bankAccountError) throw bankAccountError;
 
+      // Record the transaction in bank_transactions table
+      const { error: transactionError } = await supabase
+        .from("bank_transactions")
+        .insert({
+          user_id: user.id,
+          bank_account_id: selectedBankAccountId,
+          credit_card_id: selectedCreditCardId,
+          amount: -amount, // Negative because money is leaving the bank account
+          date: format(paymentDate, "yyyy-MM-dd"),
+          name: `Credit Card Payment - ${selectedCreditCard.account_name}`,
+          merchant_name: selectedCreditCard.institution_name,
+          pending: false,
+          plaid_transaction_id: `manual_cc_payment_${Date.now()}`,
+          transaction_type: "payment",
+          category: ["Credit Card Payment"]
+        });
+
+      if (transactionError) {
+        console.error("Error recording transaction:", transactionError);
+        // Don't throw here - the payment was already recorded
+      }
+
       toast.success(`Payment of $${amount.toFixed(2)} recorded successfully`);
       
       // Refresh data
@@ -100,6 +127,7 @@ export function CreditCardPaymentDialog({ open, onOpenChange }: CreditCardPaymen
       setSelectedCreditCardId("");
       setSelectedBankAccountId("");
       setPaymentAmount("");
+      setPaymentDate(new Date());
       onOpenChange(false);
       
     } catch (error) {
@@ -189,6 +217,34 @@ export function CreditCardPaymentDialog({ open, onOpenChange }: CreditCardPaymen
                 </p>
               </div>
             )}
+          </div>
+
+          {/* Payment Date */}
+          <div className="space-y-2">
+            <Label>Payment Date</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-full justify-start text-left font-normal",
+                    !paymentDate && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {paymentDate ? format(paymentDate, "PPP") : <span>Pick a date</span>}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={paymentDate}
+                  onSelect={(date) => date && setPaymentDate(date)}
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
           </div>
         </div>
 
