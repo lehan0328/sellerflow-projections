@@ -771,7 +771,10 @@ export const IncomeForm = ({
                                 No credit cards found. Please add one first.
                               </div>
                             ) : (
-                              creditCards.map(card => {
+                              creditCards
+                                .filter(card => card.is_active)
+                                .sort((a, b) => (a.priority || 3) - (b.priority || 3))
+                                .map(card => {
                                 const effectiveCreditLimit = card.credit_limit_override || card.credit_limit;
                                 const pendingCommitments = creditCardPendingAmounts.get(card.id) || 0;
                                 const availableCredit = (effectiveCreditLimit || 0) - (card.balance || 0) - pendingCommitments;
@@ -782,6 +785,9 @@ export const IncomeForm = ({
                                   <SelectItem key={card.id} value={card.id}>
                                     <div className="flex items-center justify-between w-full">
                                       <div className="flex items-center gap-2">
+                                        <span className="flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 text-primary text-xs font-semibold">
+                                          {card.priority || 3}
+                                        </span>
                                         <CreditCard className="h-4 w-4" />
                                         <span>{card.account_name}</span>
                                       </div>
