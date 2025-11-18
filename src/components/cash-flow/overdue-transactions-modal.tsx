@@ -4,32 +4,50 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useVendorTransactions } from "@/hooks/useVendorTransactions";
 import { useIncome } from "@/hooks/useIncome";
+import { useTransactions } from "@/hooks/useTransactions";
 import { AlertCircle, Trash2, CheckCircle, Calendar } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
 
 interface OverdueTransactionsModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onUpdate?: () => void;
+  initialTab?: 'expenses' | 'income' | 'purchaseOrders';
 }
 
-export function OverdueTransactionsModal({ open, onOpenChange, onUpdate }: OverdueTransactionsModalProps) {
-  const { transactions, markAsPaid, deleteTransaction, updateDueDate } = useVendorTransactions();
+export function OverdueTransactionsModal({ open, onOpenChange, onUpdate, initialTab = 'expenses' }: OverdueTransactionsModalProps) {
+  const { transactions: purchaseOrders, markAsPaid: markPOPaid, deleteTransaction: deletePO, updateDueDate: updatePODate } = useVendorTransactions();
   const { incomeItems, updateIncome, deleteIncome } = useIncome();
+  const { transactions: allTransactions, deleteTransaction: deleteTransactionGeneric, refetch: refetchTransactions } = useTransactions();
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [changingDateId, setChangingDateId] = useState<string | null>(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [itemToDelete, setItemToDelete] = useState<{ id: string; type: 'vendor' | 'income'; name: string } | null>(null);
+  const [itemToDelete, setItemToDelete] = useState<{ id: string; type: 'expense' | 'purchaseOrder' | 'income'; name: string } | null>(null);
+
+  useEffect(() => {
+    if (open) {
+      setActiveTab(initialTab);
+    }
+  }, [open, initialTab]);
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  // Filter overdue vendor transactions
-  const overdueVendorTransactions = transactions.filter(tx => {
+  // Filter overdue expenses
+  const overdueExpenses = allTransactions.filter(tx => {
+    const txDate = new Date(tx.transactionDate);
+    txDate.setHours(0, 0, 0, 0);
+    return tx.type === 'expense' && tx.status === 'pending' && txDate < today;
+  });
+
+  // Filter overdue purchase orders
+  const overduePurchaseOrders = purchaseOrders.filter(tx => {
     const dueDate = new Date(tx.dueDate);
     dueDate.setHours(0, 0, 0, 0);
     return tx.status === 'pending' && dueDate < today;
@@ -42,20 +60,48 @@ export function OverdueTransactionsModal({ open, onOpenChange, onUpdate }: Overd
     return income.status === 'pending' && paymentDate < today;
   });
 
-  const handleMarkVendorPaid = async (id: string) => {
+  const handleMarkExpensePaid = async (id: string) => {
     setProcessingId(id);
     try {
-      await markAsPaid(id);
+      const { error } = await supabase
+        .from('transactions')
+        .update({ status: 'completed' })
+        .eq('id', id);
+      
+      if (error) throw error;
+      await refetchTransactions();
       onUpdate?.();
     } finally {
       setProcessingId(null);
     }
   };
 
-  const handleDeleteVendor = async (id: string) => {
+  const handleDeleteExpense = async (id: string) => {
     setProcessingId(id);
     try {
-      await deleteTransaction(id);
+      await deleteTransactionGeneric(id);
+      onUpdate?.();
+      setDeleteConfirmOpen(false);
+      setItemToDelete(null);
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const handleMarkPOPaid = async (id: string) => {
+    setProcessingId(id);
+    try {
+      await markPOPaid(id);
+      onUpdate?.();
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const handleDeletePO = async (id: string) => {
+    setProcessingId(id);
+    try {
+      await deletePO(id);
       onUpdate?.();
       setDeleteConfirmOpen(false);
       setItemToDelete(null);
@@ -89,22 +135,48 @@ export function OverdueTransactionsModal({ open, onOpenChange, onUpdate }: Overd
   const confirmDelete = () => {
     if (!itemToDelete) return;
     
-    if (itemToDelete.type === 'vendor') {
-      handleDeleteVendor(itemToDelete.id);
+    if (itemToDelete.type === 'expense') {
+      handleDeleteExpense(itemToDelete.id);
+    } else if (itemToDelete.type === 'purchaseOrder') {
+      handleDeletePO(itemToDelete.id);
     } else {
       handleDeleteIncome(itemToDelete.id);
     }
   };
 
-  const openDeleteConfirm = (id: string, type: 'vendor' | 'income', name: string) => {
+  const openDeleteConfirm = (id: string, type: 'expense' | 'purchaseOrder' | 'income', name: string) => {
     setItemToDelete({ id, type, name });
     setDeleteConfirmOpen(true);
   };
 
-  const handleChangeVendorDate = async (id: string, newDate: Date) => {
+  const handleChangeExpenseDate = async (id: string, newDate: Date) => {
     setProcessingId(id);
     try {
-      await updateDueDate(id, newDate);
+      const formatDateForDB = (date: Date) => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      };
+
+      const { error } = await supabase
+        .from('transactions')
+        .update({ transaction_date: formatDateForDB(newDate) })
+        .eq('id', id);
+      
+      if (error) throw error;
+      await refetchTransactions();
+      setChangingDateId(null);
+      onUpdate?.();
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const handleChangePODate = async (id: string, newDate: Date) => {
+    setProcessingId(id);
+    try {
+      await updatePODate(id, newDate);
       setChangingDateId(null);
       onUpdate?.();
     } finally {
@@ -140,31 +212,35 @@ export function OverdueTransactionsModal({ open, onOpenChange, onUpdate }: Overd
           </DialogTitle>
         </DialogHeader>
 
-        <Tabs defaultValue="vendors" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="vendors">
-              Overdue Payments ({overdueVendorTransactions.length})
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="expenses">
+              Expenses ({overdueExpenses.length})
             </TabsTrigger>
             <TabsTrigger value="income">
-              Overdue Income ({overdueIncome.length})
+              Income ({overdueIncome.length})
+            </TabsTrigger>
+            <TabsTrigger value="purchaseOrders">
+              Purchase Orders ({overduePurchaseOrders.length})
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="vendors" className="space-y-4">
-            {overdueVendorTransactions.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">No overdue vendor payments</p>
+          {/* Expenses Tab */}
+          <TabsContent value="expenses" className="space-y-4">
+            {overdueExpenses.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">No overdue expenses</p>
             ) : (
               <div className="space-y-3">
-                {overdueVendorTransactions.map((tx) => (
+                {overdueExpenses.map((tx) => (
                   <div key={tx.id} className="border rounded-lg p-4 bg-destructive/5">
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1">
-                        <div className="font-medium">{tx.vendorName}</div>
-                        <div className="text-sm text-muted-foreground">{tx.description}</div>
+                        <div className="font-medium">{tx.description || 'Expense'}</div>
+                        <div className="text-sm text-muted-foreground">{tx.category}</div>
                         <div className="text-sm text-destructive mt-1">
-                          Due: {formatDate(tx.dueDate)}
+                          Due: {formatDate(tx.transactionDate)}
                         </div>
-                        <div className="text-lg font-bold mt-2">{formatCurrency(tx.amount)}</div>
+                        <div className="text-lg font-bold mt-2">{formatCurrency(Math.abs(tx.amount))}</div>
                       </div>
                       <div className="flex gap-2">
                         <Popover open={changingDateId === tx.id} onOpenChange={(open) => !open && setChangingDateId(null)}>
@@ -182,8 +258,8 @@ export function OverdueTransactionsModal({ open, onOpenChange, onUpdate }: Overd
                           <PopoverContent className="w-auto p-0" align="start">
                             <CalendarComponent
                               mode="single"
-                              selected={new Date(tx.dueDate)}
-                              onSelect={(date) => date && handleChangeVendorDate(tx.id, date)}
+                              selected={new Date(tx.transactionDate)}
+                              onSelect={(date) => date && handleChangeExpenseDate(tx.id, date)}
                               initialFocus
                               className={cn("p-3 pointer-events-auto")}
                             />
@@ -192,19 +268,20 @@ export function OverdueTransactionsModal({ open, onOpenChange, onUpdate }: Overd
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handleMarkVendorPaid(tx.id)}
+                          onClick={() => handleMarkExpensePaid(tx.id)}
                           disabled={processingId === tx.id}
                         >
                           <CheckCircle className="h-4 w-4 mr-1" />
                           Mark Paid
                         </Button>
                         <Button
-                          variant="ghost"
+                          variant="outline"
                           size="sm"
-                          onClick={() => openDeleteConfirm(tx.id, 'vendor', tx.vendorName)}
+                          onClick={() => openDeleteConfirm(tx.id, 'expense', tx.description || 'Expense')}
                           disabled={processingId === tx.id}
+                          className="text-destructive hover:text-destructive"
                         >
-                          <Trash2 className="h-4 w-4 text-destructive" />
+                          <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
                     </div>
@@ -214,6 +291,7 @@ export function OverdueTransactionsModal({ open, onOpenChange, onUpdate }: Overd
             )}
           </TabsContent>
 
+          {/* Income Tab */}
           <TabsContent value="income" className="space-y-4">
             {overdueIncome.length === 0 ? (
               <p className="text-center text-muted-foreground py-8">No overdue income</p>
