@@ -315,7 +315,8 @@ const CashFlowCalendarComponent = ({
       });
       const dailyInflow = dayEvents.filter(e => e.type === 'inflow').reduce((sum, e) => sum + e.amount, 0);
       // Exclude credit card purchases from cash outflow (they affect credit line instead)
-      const dailyOutflow = dayEvents.filter(e => e.type !== 'inflow' && !e.creditCardId).reduce((sum, e) => sum + e.amount, 0);
+      // But INCLUDE credit card payments as cash outflow (money leaving bank to pay card)
+      const dailyOutflow = dayEvents.filter(e => e.type !== 'inflow' && (!e.creditCardId || e.type === 'credit-payment')).reduce((sum, e) => sum + e.amount, 0);
       const dailyChange = dailyInflow - dailyOutflow;
       cumulativeInflow += dailyInflow;
       cumulativeOutflow += dailyOutflow;
