@@ -26,6 +26,7 @@ import { hasPlanAccess } from "@/lib/planUtils";
 import { UpgradeModal } from "@/components/upgrade-modal";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
+import { CreditCardSelect } from "./credit-card-select";
 interface Vendor {
   id: string;
   name: string;
@@ -74,7 +75,8 @@ export const PurchaseOrderForm = ({
   const queryClient = useQueryClient();
   const { categories, addCategory, refetch: refetchCategories } = useCategories('purchase_order', false);
   const {
-    creditCards
+    creditCards,
+    creditCardPendingAmounts
   } = useCreditCards();
   const subscription = useSubscription();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -1305,17 +1307,24 @@ export const PurchaseOrderForm = ({
                             <SelectValue placeholder="Choose a credit card" />
                           </SelectTrigger>
                           <SelectContent className="bg-background z-50">
-                            {creditCards.filter(card => card.is_active).sort((a, b) => (a.priority || 3) - (b.priority || 3)).map(card => <SelectItem key={card.id} value={card.id}>
-                                <div className="flex items-center gap-2 w-full">
-                                  <span className="flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 text-primary text-xs font-semibold">
-                                    {card.priority || 3}
-                                  </span>
-                                  <span className="font-medium">{card.account_name}</span>
-                                  <span className="text-sm text-muted-foreground ml-auto">
-                                    ${card.available_credit.toLocaleString()}
-                                  </span>
-                                </div>
-                              </SelectItem>)}
+                            {creditCards.filter(card => card.is_active).sort((a, b) => (a.priority || 3) - (b.priority || 3)).map(card => {
+                              const effectiveLimit = card.credit_limit_override || card.credit_limit;
+                              const pendingCommitments = creditCardPendingAmounts.get(card.id) || 0;
+                              const availableCredit = effectiveLimit - card.balance - pendingCommitments;
+                              return (
+                                <SelectItem key={card.id} value={card.id}>
+                                  <div className="flex items-center gap-2 w-full">
+                                    <span className="flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 text-primary text-xs font-semibold">
+                                      {card.priority || 3}
+                                    </span>
+                                    <span className="font-medium">{card.account_name}</span>
+                                    <span className="text-sm text-muted-foreground ml-auto">
+                                      ${availableCredit.toLocaleString()}
+                                    </span>
+                                  </div>
+                                </SelectItem>
+                              );
+                            })}
                           </SelectContent>
                         </Select>
                       </div>
@@ -1325,8 +1334,10 @@ export const PurchaseOrderForm = ({
                   const selectedCard = creditCards.find(card => card.id === formData.selectedCreditCard);
                   const orderAmount = parseFloat(formData.amount) || 0;
                   const effectiveLimit = selectedCard ? (selectedCard.credit_limit_override || selectedCard.credit_limit) : 0;
-                  const remainingCredit = selectedCard ? selectedCard.available_credit - orderAmount : 0;
-                  const hasInsufficientCredit = selectedCard ? selectedCard.available_credit < orderAmount : false;
+                  const pendingCommitments = selectedCard ? (creditCardPendingAmounts.get(selectedCard.id) || 0) : 0;
+                  const availableCredit = selectedCard ? effectiveLimit - selectedCard.balance - pendingCommitments : 0;
+                  const remainingCredit = selectedCard ? availableCredit - orderAmount : 0;
+                  const hasInsufficientCredit = selectedCard ? availableCredit < orderAmount : false;
                   return selectedCard ? <div className="space-y-2">
                             <div className="text-sm">
                               <div className="flex justify-between">
@@ -1336,9 +1347,9 @@ export const PurchaseOrderForm = ({
                               <div className="flex justify-between">
                                 <span>Available Credit:</span>
                                 <span className="font-medium">
-                                  {selectedCard.available_credit < 0 
-                                    ? `Over limit by $${Math.abs(selectedCard.available_credit).toFixed(2)}`
-                                    : `$${selectedCard.available_credit.toFixed(2)}`
+                                  {availableCredit < 0 
+                                    ? `Over limit by $${Math.abs(availableCredit).toFixed(2)}`
+                                    : `$${availableCredit.toFixed(2)}`
                                   }
                                 </span>
                               </div>
@@ -1386,17 +1397,24 @@ export const PurchaseOrderForm = ({
                                 <SelectValue placeholder="Choose card" />
                               </SelectTrigger>
                               <SelectContent className="bg-background z-50">
-                                {creditCards.filter(card => card.is_active && !cardSplits.some((s, i) => i !== index && s.cardId === card.id)).sort((a, b) => (a.priority || 3) - (b.priority || 3)).map(card => <SelectItem key={card.id} value={card.id}>
+                                {creditCards.filter(card => card.is_active && !cardSplits.some((s, i) => i !== index && s.cardId === card.id)).sort((a, b) => (a.priority || 3) - (b.priority || 3)).map(card => {
+                                  const effectiveLimit = card.credit_limit_override || card.credit_limit;
+                                  const pendingCommitments = creditCardPendingAmounts.get(card.id) || 0;
+                                  const availableCredit = effectiveLimit - card.balance - pendingCommitments;
+                                  return (
+                                    <SelectItem key={card.id} value={card.id}>
                                       <div className="flex items-center gap-2">
                                         <span className="flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 text-primary text-xs font-semibold">
                                           {card.priority || 3}
                                         </span>
                                         <span className="font-medium">{card.account_name}</span>
                                         <span className="text-sm text-muted-foreground ml-auto">
-                                          ${card.available_credit.toLocaleString()}
+                                          ${availableCredit.toLocaleString()}
                                         </span>
                                       </div>
-                                    </SelectItem>)}
+                                    </SelectItem>
+                                  );
+                                })}
                               </SelectContent>
                             </Select>
                           </div>
