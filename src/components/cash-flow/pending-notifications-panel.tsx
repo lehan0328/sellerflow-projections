@@ -68,6 +68,12 @@ export const PendingNotificationsPanel = ({
   const overdueGroups = useMemo(() => {
     const today = startOfDay(new Date());
 
+    console.log('[Overdue Debug] Raw data counts:', {
+      expenseTransactions: expenseTransactions.length,
+      fetchedIncomeItems: fetchedIncomeItems.length,
+      purchaseOrders: purchaseOrders.length
+    });
+
     // Overdue expenses (not including today's due items - only past due)
     const overdueExpenses = expenseTransactions.filter(tx => 
       tx.type === 'expense' && 
@@ -87,6 +93,13 @@ export const PendingNotificationsPanel = ({
       po.dueDate &&
       startOfDay(new Date(po.dueDate)) < today
     );
+
+    console.log('[Overdue Debug] Filtered overdue counts:', {
+      expenses: overdueExpenses.length,
+      income: overdueIncome.length,
+      purchaseOrders: overduePOs.length,
+      total: overdueExpenses.length + overdueIncome.length + overduePOs.length
+    });
 
     return {
       expenses: overdueExpenses,
