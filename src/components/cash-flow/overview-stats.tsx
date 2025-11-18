@@ -374,11 +374,14 @@ export function OverviewStats({
   });
   const upcomingTotal = upcomingPayments.reduce((sum, payment) => sum + payment.amount, 0);
 
-  // Calculate pending credit card transactions (future purchases)
+  // Calculate pending credit card transactions (future purchases) - only next 30 days
+  const thirtyDaysFromNow = new Date(now);
+  thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+  
   const pendingCreditPurchases = events.filter(event => {
     const eventDate = new Date(event.date);
     eventDate.setHours(0, 0, 0, 0);
-    return (event as any).creditCardId && eventDate >= now;
+    return (event as any).creditCardId && eventDate >= now && eventDate <= thirtyDaysFromNow;
   });
   const pendingCreditTotal = pendingCreditPurchases.reduce((sum, purchase) => sum + purchase.amount, 0);
 
