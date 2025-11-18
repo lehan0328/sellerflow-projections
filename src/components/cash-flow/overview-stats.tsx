@@ -385,8 +385,38 @@ export function OverviewStats({
   });
   const pendingCreditTotal = pendingCreditPurchases.reduce((sum, purchase) => sum + purchase.amount, 0);
 
-  // Calculate net available credit after pending purchases
-  const netAvailableCredit = totalAvailableCredit - pendingCreditTotal;
+  // Calculate net available credit with per-card overflow logic
+  // Build a map of each card's current available credit
+  const cardCreditMap = new Map<string, number>();
+  creditCards.forEach(card => {
+    const effectiveLimit = card.credit_limit_override || card.credit_limit;
+    const availableCredit = effectiveLimit - card.balance;
+    cardCreditMap.set(card.id, availableCredit);
+  });
+
+  // Process pending credit card purchases per card
+  pendingCreditPurchases.forEach(purchase => {
+    const cardId = (purchase as any).creditCardId;
+    if (cardId) {
+      const currentCredit = cardCreditMap.get(cardId) || 0;
+      cardCreditMap.set(cardId, currentCredit - purchase.amount);
+    }
+  });
+
+  // Calculate overflow and net available credit
+  let totalCreditOverflow = 0;
+  let netAvailableCredit = 0;
+
+  cardCreditMap.forEach((availableCredit) => {
+    if (availableCredit < 0) {
+      // Card over limit - overflow goes to cash
+      totalCreditOverflow += Math.abs(availableCredit);
+      // Don't add negative values to available credit
+    } else {
+      // Card has available credit remaining
+      netAvailableCredit += availableCredit;
+    }
+  });
 
   // Calculate credit utilization (totalCreditLimit already uses credit_limit_override from hook)
   const creditUtilization = totalCreditLimit > 0 ? totalCreditBalance / totalCreditLimit * 100 : 0;
@@ -605,6 +635,11 @@ export function OverviewStats({
           <div>
             <p className="text-sm font-medium text-muted-foreground mb-1">Available Credit</p>
             <p className="text-2xl font-bold text-foreground mb-1.5 text-center">{formatCurrency(netAvailableCredit)}</p>
+            {totalCreditOverflow > 0 && (
+              <p className="text-xs text-yellow-600 dark:text-yellow-500 text-center mb-1">
+                ⚠️ {formatCurrency(totalCreditOverflow)} over limit (from cash)
+              </p>
+            )}
             {totalCreditLimit === 0 ? <p className="text-sm text-muted-foreground italic text-center">No credit cards linked</p> : <>
                 <p className="text-sm text-muted-foreground text-center mb-1">Pending: {formatCurrency(pendingCreditTotal)}</p>
                 <p className="text-sm text-muted-foreground mb-2 text-center">{creditUtilization.toFixed(1)}% utilization</p>
