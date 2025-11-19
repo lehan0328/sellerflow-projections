@@ -1027,7 +1027,7 @@ export default function DocumentStorage() {
                     <th className="font-semibold px-4 py-3 text-left">Document Date</th>
                     <th className="font-semibold px-4 py-3 text-left">Size</th>
                     <th className="font-semibold px-4 py-3 text-left">Uploaded</th>
-                    <th className="font-semibold px-4 py-3 text-right">Actions</th>
+                    <th className="font-semibold px-4 py-3 text-center">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1089,8 +1089,8 @@ export default function DocumentStorage() {
                             {formatDate(doc.created_at)}
                           </div>
                         </td>
-                        <td className="text-right px-4 py-3">
-                          <div className="flex justify-end space-x-2">
+                        <td className="text-center px-4 py-3">
+                          <div className="flex justify-center space-x-2">
                             {doc.line_items && doc.line_items.length > 0 && (
                               <Button
                                 variant="ghost"
