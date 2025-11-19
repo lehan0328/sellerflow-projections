@@ -266,30 +266,7 @@ export function CreditCards() {
     return new Date(year, month - 1, day);
   };
 
-  // Check for overdue payment due dates and prompt user to update
-  useEffect(() => {
-    if (!creditCards || creditCards.length === 0) return;
-
-    const today = startOfDay(new Date());
-    
-    // Find cards with due dates that have passed
-    const overdueCard = creditCards.find(card => {
-      if (!card.payment_due_date) return false;
-      const dueDate = startOfDay(parseLocalDate(card.payment_due_date));
-      return isBefore(dueDate, today) || dueDate.getTime() === today.getTime();
-    });
-
-    if (overdueCard && !showStatementUpdateModal && !dismissedCardIds.has(overdueCard.id)) {
-      // Calculate next month's due date
-      const currentDueDate = parseLocalDate(overdueCard.payment_due_date);
-      const nextDueDate = addMonths(currentDueDate, 1);
-      
-      setCardForStatementUpdate(overdueCard);
-      setUpdateStatementBalance('');
-      setUpdateDueDate(format(nextDueDate, 'yyyy-MM-dd'));
-      setShowStatementUpdateModal(true);
-    }
-  }, [creditCards, showStatementUpdateModal]);
+  // Auto-popup disabled - user can manually update statement from card actions
 
   const handleUpdateStatement = async () => {
     if (!cardForStatementUpdate || !updateStatementBalance || !updateDueDate) {
@@ -863,7 +840,7 @@ export function CreditCards() {
 
         {/* Statement Balance Update Modal */}
       <Dialog open={showStatementUpdateModal} onOpenChange={setShowStatementUpdateModal}>
-        <DialogContent className="sm:max-w-[500px]" hideClose>
+        <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
               <DialogTitle>Update Statement Balance</DialogTitle>
               <DialogDescription>
