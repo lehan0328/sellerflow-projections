@@ -317,18 +317,15 @@ const CashFlowCalendarComponent = ({
       // Exclude credit card purchases from cash outflow (they affect credit line instead)
       // But INCLUDE credit card payments as cash outflow (money leaving bank to pay card)
       const dailyOutflow = dayEvents.filter(e => {
-        const shouldInclude = e.type !== 'inflow' && (!e.creditCardId || e.type === 'credit-payment' || e.type === 'credit-overflow');
+        // Check if the credit card actually exists (might have been deleted)
+        const cardExists = e.creditCardId ? creditCards.some(card => card.id === e.creditCardId) : false;
         
-        // Debug: Log any expense with creditCardId that's being included (shouldn't happen)
-        if (e.creditCardId && e.type === 'outflow' && shouldInclude) {
-          console.error("🚨 BUG: Credit card expense included in cash outflow!", {
-            description: e.description,
-            creditCardId: e.creditCardId,
-            type: e.type,
-            amount: e.amount,
-            date: format(e.date, 'yyyy-MM-dd')
-          });
-        }
+        const shouldInclude = e.type !== 'inflow' && (
+          !e.creditCardId || // No card assigned - cash transaction
+          !cardExists || // Card was deleted - treat as cash transaction
+          e.type === 'credit-payment' || // Payment to card - cash outflow
+          e.type === 'credit-overflow' // Overflow - cash outflow
+        );
         
         return shouldInclude;
       }).reduce((sum, e) => sum + e.amount, 0);
