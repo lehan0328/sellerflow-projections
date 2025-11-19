@@ -2410,8 +2410,8 @@ const Dashboard = () => {
 
   // Merge buying opportunities with credit card available credit
   const mergedBuyingOpportunities = useMemo(() => {
-    // Get user settings for credit inclusion preference (default to false for cash-only)
-    const includeCreditInOpps = false;
+    // Get user settings for credit inclusion preference from localStorage
+    const includeCreditInOpps = localStorage.getItem('include-credit-in-opportunities') === 'true';
     
     if (!includeCreditInOpps || creditCards.length === 0) {
       return buyingOpportunities; // Return cash-only
