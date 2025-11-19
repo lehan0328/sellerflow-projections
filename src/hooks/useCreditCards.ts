@@ -1,9 +1,11 @@
-import { useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
 import { toast } from "sonner";
 import { addDays } from "date-fns";
 import { generateRecurringDates } from "@/lib/recurringDates";
+import { useEffect, useMemo } from "react";
+import { creditCardsQueryKey } from "@/lib/cacheConfig";
 
 export interface CreditCard {
   id: string;
@@ -36,48 +38,43 @@ export interface CreditCard {
 
 
 export const useCreditCards = () => {
-  const [creditCards, setCreditCards] = useState<CreditCard[]>([]);
-  const [creditCardPendingAmounts, setCreditCardPendingAmounts] = useState<Map<string, number>>(new Map());
-  const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
+  const queryClient = useQueryClient();
 
-  const fetchCreditCards = async () => {
-    if (!user) {
-      setIsLoading(false);
-      return;
-    }
-
-    try {
+  // Fetch credit cards with React Query
+  const { data: creditCards = [], isLoading } = useQuery({
+    queryKey: creditCardsQueryKey(user?.id),
+    enabled: !!user,
+    staleTime: 15 * 60 * 1000, // 15 minutes - credit cards don't change frequently
+    gcTime: 30 * 60 * 1000,    // 30 minutes - keep in cache longer
+    queryFn: async () => {
       const { data, error } = await supabase
         .from("credit_cards")
         .select("*")
         .eq("is_active", true)
+        .order("priority", { ascending: false })
         .order("created_at", { ascending: false });
 
       if (error) {
         console.error("Error fetching credit cards:", error);
         toast.error("Failed to fetch credit cards");
-        return;
+        throw error;
       }
 
-      setCreditCards((data || []) as CreditCard[]);
-      
-      // Fetch pending commitments for each card
-      if (data && data.length > 0) {
-        await fetchPendingCommitments(data.map(card => card.id));
-      }
-    } catch (error) {
-      console.error("Error:", error);
-      toast.error("Failed to fetch credit cards");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+      return (data || []) as CreditCard[];
+    },
+  });
 
-  const fetchPendingCommitments = async (cardIds: string[]) => {
-    if (!user || cardIds.length === 0) return;
+  // Fetch pending commitments for credit cards
+  const { data: creditCardPendingAmounts = new Map() } = useQuery({
+    queryKey: ['credit_card_pending_amounts', user?.id, creditCards.map(c => c.id).join(',')],
+    enabled: !!user && creditCards.length > 0,
+    staleTime: 15 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    queryFn: async () => {
+      const cardIds = creditCards.map(card => card.id);
+      if (cardIds.length === 0) return new Map();
 
-    try {
       // Calculate date 30 days ago
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
@@ -94,7 +91,6 @@ export const useCreditCards = () => {
 
       if (txError) {
         console.error("Error fetching pending transactions:", txError);
-        return;
       }
 
       // Fetch active recurring expenses on credit cards
@@ -107,7 +103,6 @@ export const useCreditCards = () => {
 
       if (recurringError) {
         console.error("Error fetching recurring expenses:", recurringError);
-        return;
       }
 
       // Calculate total pending for each card
@@ -151,19 +146,15 @@ export const useCreditCards = () => {
         }
       });
 
-      setCreditCardPendingAmounts(pendingMap);
-    } catch (error) {
-      console.error("Error fetching pending commitments:", error);
-    }
-  };
+      return pendingMap;
+    },
+  });
 
-  const addCreditCard = async (cardData: Omit<CreditCard, "id" | "created_at" | "updated_at" | "user_id" | "masked_account_number">) => {
-    if (!user) {
-      toast.error("You must be logged in to add credit cards");
-      return false;
-    }
+  // Add credit card mutation
+  const addCreditCardMutation = useMutation({
+    mutationFn: async (cardData: Omit<CreditCard, "id" | "created_at" | "updated_at" | "user_id" | "masked_account_number">) => {
+      if (!user) throw new Error("You must be logged in to add credit cards");
 
-    try {
       const { error } = await supabase
         .from("credit_cards")
         .insert({
@@ -172,29 +163,23 @@ export const useCreditCards = () => {
           last_sync: new Date().toISOString()
         });
 
-      if (error) {
-        console.error("Error adding credit card:", error);
-        toast.error("Failed to add credit card");
-        return false;
-      }
-
-      await fetchCreditCards();
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: creditCardsQueryKey(user?.id) });
       toast.success("Credit card added successfully!");
-      return true;
-    } catch (error) {
-      console.error("Error:", error);
+    },
+    onError: (error) => {
+      console.error("Error adding credit card:", error);
       toast.error("Failed to add credit card");
-      return false;
     }
-  };
+  });
 
-  const updateCreditCard = async (cardId: string, updates: Partial<CreditCard>) => {
-    if (!user) {
-      toast.error("You must be logged in to update credit cards");
-      return false;
-    }
+  // Update credit card mutation
+  const updateCreditCardMutation = useMutation({
+    mutationFn: async ({ cardId, updates }: { cardId: string; updates: Partial<CreditCard> }) => {
+      if (!user) throw new Error("You must be logged in to update credit cards");
 
-    try {
       // Convert empty strings to null for date fields
       const sanitizedUpdates = {
         ...updates,
@@ -211,76 +196,78 @@ export const useCreditCards = () => {
         }
       }
 
-      const { error } = await supabase
+      const { error} = await supabase
         .from("credit_cards")
         .update(sanitizedUpdates)
         .eq("id", cardId);
 
-      if (error) {
-        console.error("Error updating credit card:", error);
-        toast.error("Failed to update credit card");
-        return false;
-      }
-
-      await fetchCreditCards();
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: creditCardsQueryKey(user?.id) });
       toast.success("Credit card updated successfully");
-      return true;
-    } catch (error) {
-      console.error("Error:", error);
+    },
+    onError: (error) => {
+      console.error("Error updating credit card:", error);
       toast.error("Failed to update credit card");
-      return false;
     }
-  };
+  });
 
-  const removeCreditCard = async (cardId: string) => {
-    if (!user) {
-      toast.error("You must be logged in to remove credit cards");
-      return false;
-    }
+  // Remove credit card mutation
+  const removeCreditCardMutation = useMutation({
+    mutationFn: async (cardId: string) => {
+      if (!user) throw new Error("You must be logged in to remove credit cards");
 
-    try {
       const { error } = await supabase
         .from("credit_cards")
         .delete()
         .eq("id", cardId);
 
-      if (error) {
-        console.error("Error removing credit card:", error);
-        toast.error("Failed to remove credit card");
-        return false;
-      }
-
-      setCreditCards(prev => prev.filter(card => card.id !== cardId));
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: creditCardsQueryKey(user?.id) });
       toast.success("Credit card removed successfully!");
-      return true;
-    } catch (error) {
-      console.error("Error:", error);
+    },
+    onError: (error) => {
+      console.error("Error removing credit card:", error);
       toast.error("Failed to remove credit card");
-      return false;
     }
-  };
+  });
 
-  const syncCreditCard = async (cardId: string) => {
-    return await updateCreditCard(cardId, { 
-      last_sync: new Date().toISOString()
-    });
-  };
+  // Sync credit card mutation
+  const syncCreditCardMutation = useMutation({
+    mutationFn: async (cardId: string) => {
+      return updateCreditCardMutation.mutateAsync({ 
+        cardId, 
+        updates: { last_sync: new Date().toISOString() }
+      });
+    }
+  });
 
-  const totalCreditLimit = creditCards.reduce((sum, card) => {
-    const effectiveLimit = card.credit_limit_override || card.credit_limit;
-    return sum + effectiveLimit;
-  }, 0);
-  const totalBalance = creditCards.reduce((sum, card) => sum + card.balance, 0);
-  const totalAvailableCredit = creditCards.reduce((sum, card) => {
-    const effectiveLimit = card.credit_limit_override || card.credit_limit;
-    return sum + (effectiveLimit - card.balance);
-  }, 0);
+  // Derived calculations (memoized)
+  const totalCreditLimit = useMemo(() => 
+    creditCards.reduce((sum, card) => {
+      const effectiveLimit = card.credit_limit_override || card.credit_limit;
+      return sum + effectiveLimit;
+    }, 0),
+    [creditCards]
+  );
 
-  useEffect(() => {
-    fetchCreditCards();
-  }, [user]);
+  const totalBalance = useMemo(() => 
+    creditCards.reduce((sum, card) => sum + card.balance, 0),
+    [creditCards]
+  );
 
-  // Set up real-time updates
+  const totalAvailableCredit = useMemo(() => 
+    creditCards.reduce((sum, card) => {
+      const effectiveLimit = card.credit_limit_override || card.credit_limit;
+      return sum + (effectiveLimit - card.balance);
+    }, 0),
+    [creditCards]
+  );
+
+  // Real-time subscription
   useEffect(() => {
     if (!user) return;
 
@@ -294,7 +281,7 @@ export const useCreditCards = () => {
           table: 'credit_cards',
         },
         () => {
-          fetchCreditCards();
+          queryClient.invalidateQueries({ queryKey: creditCardsQueryKey(user.id) });
         }
       )
       .subscribe();
@@ -302,7 +289,7 @@ export const useCreditCards = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user]);
+  }, [user, queryClient]);
 
   return {
     creditCards,
@@ -311,10 +298,14 @@ export const useCreditCards = () => {
     totalBalance,
     totalAvailableCredit,
     creditCardPendingAmounts,
-    addCreditCard,
-    updateCreditCard,
-    removeCreditCard,
-    syncCreditCard,
-    refetch: fetchCreditCards,
+    addCreditCard: (cardData: Omit<CreditCard, "id" | "created_at" | "updated_at" | "user_id" | "masked_account_number">) => 
+      addCreditCardMutation.mutateAsync(cardData),
+    updateCreditCard: (cardId: string, updates: Partial<CreditCard>) => 
+      updateCreditCardMutation.mutateAsync({ cardId, updates }),
+    removeCreditCard: (cardId: string) => 
+      removeCreditCardMutation.mutateAsync(cardId),
+    syncCreditCard: (cardId: string) => 
+      syncCreditCardMutation.mutateAsync(cardId),
+    refetch: () => queryClient.invalidateQueries({ queryKey: creditCardsQueryKey(user?.id) }),
   };
 };

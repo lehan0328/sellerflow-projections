@@ -183,10 +183,12 @@ export function CreditCardManagement() {
       updates.credit_limit_override = null;
     }
     
-    const success = await updateCreditCard(selectedCard, updates);
-    if (success) {
+    try {
+      await updateCreditCard(selectedCard, updates);
       setShowEditDialog(false);
       setSelectedCard(null);
+    } catch (error) {
+      // Error already handled by mutation
     }
   };
 

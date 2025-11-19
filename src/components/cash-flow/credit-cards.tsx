@@ -216,12 +216,13 @@ export function CreditCards() {
   const handleUpdateCard = async () => {
     if (!editingCard) return;
 
-    const success = await updateCreditCard(editingCard.id, formData);
-
-    if (success) {
+    try {
+      await updateCreditCard(editingCard.id, formData);
       setShowEditDialog(false);
       setEditingCard(null);
       resetForm();
+    } catch (error) {
+      // Error already handled by mutation
     }
   };
 
@@ -242,17 +243,18 @@ export function CreditCards() {
       return;
     }
 
-    const success = await updateCreditCard(cardForDueDate.id, {
-      payment_due_date: newDueDate,
-      statement_balance: statementBalanceNum
-    });
-
-    if (success) {
+    try {
+      await updateCreditCard(cardForDueDate.id, {
+        payment_due_date: newDueDate,
+        statement_balance: statementBalanceNum
+      });
       toast.success("Payment due date and statement balance set successfully");
       setShowSetDueDateDialog(false);
       setCardForDueDate(null);
       setNewDueDate('');
       setNewStatementBalance('');
+    } catch (error) {
+      // Error already handled by mutation
     }
   };
 
@@ -299,17 +301,18 @@ export function CreditCards() {
       return;
     }
 
-    const success = await updateCreditCard(cardForStatementUpdate.id, {
-      payment_due_date: updateDueDate,
-      statement_balance: statementBalanceNum
-    });
-
-    if (success) {
+    try {
+      await updateCreditCard(cardForStatementUpdate.id, {
+        payment_due_date: updateDueDate,
+        statement_balance: statementBalanceNum
+      });
       toast.success("Statement balance updated successfully");
       setShowStatementUpdateModal(false);
       setCardForStatementUpdate(null);
       setUpdateStatementBalance('');
       setUpdateDueDate('');
+    } catch (error) {
+      // Error already handled by mutation
     }
   };
 

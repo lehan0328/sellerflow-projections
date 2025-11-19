@@ -21,6 +21,9 @@ export const AMAZON_PAYOUTS_CACHE_VERSION = 1;
 // Bank transactions cache version - increment when bank transactions schema/data changes
 export const BANK_TRANSACTIONS_CACHE_VERSION = 1;
 
+// Credit cards cache version - increment when credit cards schema/data changes
+export const CREDIT_CARDS_CACHE_VERSION = 1;
+
 /**
  * Creates a versioned query key for profile data
  * @param userId - The user ID
@@ -87,4 +90,15 @@ export const bankTransactionsQueryKey = (accountId: string | undefined, accountT
   accountId,
   accountType,
   BANK_TRANSACTIONS_CACHE_VERSION
+];
+
+/**
+ * Creates a versioned query key for credit cards data
+ * @param userId - The user ID
+ * @returns Versioned query key array
+ */
+export const creditCardsQueryKey = (userId: string | undefined) => [
+  'credit_cards',
+  userId,
+  CREDIT_CARDS_CACHE_VERSION
 ];
