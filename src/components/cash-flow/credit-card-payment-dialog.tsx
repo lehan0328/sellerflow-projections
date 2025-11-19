@@ -131,7 +131,7 @@ export function CreditCardPaymentDialog({
     if (!card) return 0;
     const effectiveCreditLimit = card.credit_limit_override || card.credit_limit;
     const pendingAmount = creditCardPendingAmounts.get(card.id) || 0;
-    return effectiveCreditLimit - card.balance - pendingAmount;
+    return Math.max(0, effectiveCreditLimit - card.balance - pendingAmount);
   };
 
   const handleSubmit = async () => {
