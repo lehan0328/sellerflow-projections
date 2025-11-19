@@ -317,7 +317,7 @@ const CashFlowCalendarComponent = ({
       // Exclude credit card purchases from cash outflow (they affect credit line instead)
       // But INCLUDE credit card payments as cash outflow (money leaving bank to pay card)
       const dailyOutflow = dayEvents.filter(e => {
-        const shouldInclude = e.type !== 'inflow' && (!e.creditCardId || e.type === 'credit-payment');
+        const shouldInclude = e.type !== 'inflow' && (!e.creditCardId || e.type === 'credit-payment' || e.type === 'credit-overflow');
         
         // Debug: Log any expense with creditCardId that's being included (shouldn't happen)
         if (e.creditCardId && e.type === 'outflow' && shouldInclude) {
