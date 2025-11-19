@@ -780,7 +780,17 @@ export function CreditCards() {
                     required
                   />
                 </div>
-                <p className="text-xs text-muted-foreground">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setNewStatementBalance(cardForDueDate?.balance?.toFixed(2) || '0.00')}
+                  className="w-full mt-2"
+                >
+                  <CreditCard className="mr-2 h-4 w-4" />
+                  Apply Current Balance ({formatCurrency(cardForDueDate?.balance || 0)})
+                </Button>
+                <p className="text-xs text-muted-foreground mt-2">
                   Enter the current statement balance for this credit card
                 </p>
               </div>
