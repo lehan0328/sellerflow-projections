@@ -24,6 +24,27 @@ export const BANK_TRANSACTIONS_CACHE_VERSION = 1;
 // Credit cards cache version - increment when credit cards schema/data changes
 export const CREDIT_CARDS_CACHE_VERSION = 1;
 
+// Vendor transactions cache version - increment when vendor transactions schema/data changes
+export const VENDOR_TRANSACTIONS_CACHE_VERSION = 1;
+
+// Income cache version - increment when income schema/data changes
+export const INCOME_CACHE_VERSION = 1;
+
+// Reserve amount cache version - increment when user_settings schema/data changes
+export const RESERVE_AMOUNT_CACHE_VERSION = 1;
+
+// Vendors cache version - increment when vendors schema/data changes
+export const VENDORS_CACHE_VERSION = 1;
+
+// Customers cache version - increment when customers schema/data changes
+export const CUSTOMERS_CACHE_VERSION = 1;
+
+// Categories cache version - increment when categories schema/data changes
+export const CATEGORIES_CACHE_VERSION = 1;
+
+// Recurring expenses cache version - increment when recurring_expenses schema/data changes
+export const RECURRING_EXPENSES_CACHE_VERSION = 1;
+
 /**
  * Creates a versioned query key for profile data
  * @param userId - The user ID
@@ -101,4 +122,85 @@ export const creditCardsQueryKey = (userId: string | undefined) => [
   'credit_cards',
   userId,
   CREDIT_CARDS_CACHE_VERSION
+];
+
+/**
+ * Creates a versioned query key for vendor transactions data
+ * @param userId - The user ID
+ * @returns Versioned query key array
+ */
+export const vendorTransactionsQueryKey = (userId: string | undefined) => [
+  'vendor_transactions',
+  userId,
+  VENDOR_TRANSACTIONS_CACHE_VERSION
+];
+
+/**
+ * Creates a versioned query key for income data
+ * @param userId - The user ID
+ * @returns Versioned query key array
+ */
+export const incomeQueryKey = (userId: string | undefined) => [
+  'income',
+  userId,
+  INCOME_CACHE_VERSION
+];
+
+/**
+ * Creates a versioned query key for reserve amount data
+ * @param userId - The user ID
+ * @returns Versioned query key array
+ */
+export const reserveAmountQueryKey = (userId: string | undefined) => [
+  'reserve_amount',
+  userId,
+  RESERVE_AMOUNT_CACHE_VERSION
+];
+
+/**
+ * Creates a versioned query key for vendors data
+ * @param userId - The user ID
+ * @returns Versioned query key array
+ */
+export const vendorsQueryKey = (userId: string | undefined) => [
+  'vendors',
+  userId,
+  VENDORS_CACHE_VERSION
+];
+
+/**
+ * Creates a versioned query key for customers data
+ * @param userId - The user ID
+ * @returns Versioned query key array
+ */
+export const customersQueryKey = (userId: string | undefined) => [
+  'customers',
+  userId,
+  CUSTOMERS_CACHE_VERSION
+];
+
+/**
+ * Creates a versioned query key for categories data
+ * @param userId - The user ID
+ * @param type - The category type
+ * @param isRecurring - Whether it's recurring
+ * @returns Versioned query key array
+ */
+export const categoriesQueryKey = (userId: string | undefined, type: string, isRecurring?: boolean) => [
+  'categories',
+  userId,
+  type,
+  isRecurring,
+  CATEGORIES_CACHE_VERSION
+];
+
+/**
+ * Creates a versioned query key for recurring expenses data
+ * @param userId - The user ID
+ * @returns Versioned query key array
+ */
+export const recurringExpensesQueryKey = (userId: string | undefined) => [
+  'recurring_expenses',
+  userId,
+  RECURRING_EXPENSES_CACHE_VERSION
 ];
