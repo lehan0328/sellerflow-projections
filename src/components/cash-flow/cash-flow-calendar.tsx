@@ -748,21 +748,17 @@ const CashFlowCalendarComponent = ({
                 }} wrapperStyle={{
                   pointerEvents: 'none'
                 }} active={activeTooltipIndex !== null} payload={tooltipPayload} label={activeTooltipIndex !== null ? displayData[activeTooltipIndex]?.date : undefined} content={<ChartTooltipContent formatter={(value: number, name: string) => {
+                  // Filter out items we don't want to show individually - return empty array to hide
+                  if (['cashBalance', 'creditCardBalance', 'reserveAmount', 'forecastPayout'].includes(name)) {
+                    return ['', ''];
+                  }
                   const labels: Record<string, string> = {
                     totalResources: "Total Resources:",
-                    cashBalance: "Cash Flow:",
-                    creditCardBalance: "Available Credit:",
-                    reserveAmount: "Reserve Amount:",
-                    forecastPayout: "Forecast Payout:",
                     projectedBalance: "Projected Balance:",
-                    cashFlow: "Cash Flow:",
-                    availableCredit: "Total Resources:",
-                    creditCardCredit: "Available Credit:",
-                    reserve: "Reserve Amount:"
                   };
                   return [labels[name] || name, `$${formatCurrency(value)}`];
                 }} itemSorter={item => {
-                  const order = ["totalResources", "cashBalance", "creditCardBalance", "reserveAmount", "forecastPayout", "projectedBalance", "cashFlow", "availableCredit", "creditCardCredit", "reserve"];
+                  const order = ["projectedBalance", "totalResources"];
                   return order.indexOf(item.dataKey as string);
                 }} />} labelFormatter={useCallback((label, payload) => {
                   if (!payload?.[0]) return label;
@@ -786,6 +782,9 @@ const CashFlowCalendarComponent = ({
                                  </p>
                                  <p className="font-bold text-base">
                                    Available Credit: <span className="text-primary">${data.creditCardBalance?.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                 </p>
+                                 <p className="font-bold text-base">
+                                   Total Resources: <span className="text-primary">${data.totalResources?.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                                  </p>
                                 {data.dailyChange !== 0 && <p className={data.dailyChange > 0 ? 'text-green-600 font-medium' : 'text-red-600 font-medium'}>
                                     Daily Net: {data.dailyChange > 0 ? '+' : ''}${Math.abs(data.dailyChange).toLocaleString()}
