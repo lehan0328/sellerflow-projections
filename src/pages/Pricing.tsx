@@ -186,6 +186,28 @@ export default function Pricing() {
         <meta name="description" content="Simple pricing for powerful Amazon and marketplace cashflow management. Start forecasting your profits today. Plans from $24/month." />
         <meta name="keywords" content="amazon cashflow software pricing, marketplace cash flow management plans, amazon seller subscription" />
         <link rel="canonical" href="https://aurenapp.com/pricing" />
+        
+        {/* Breadcrumb Structured Data */}
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+              {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Home",
+                "item": "https://aurenapp.com/"
+              },
+              {
+                "@type": "ListItem",
+                "position": 2,
+                "name": "Pricing",
+                "item": "https://aurenapp.com/pricing"
+              }
+            ]
+          })}
+        </script>
       </Helmet>
 
       {/* Sticky CTA */}

@@ -385,6 +385,22 @@ const Landing = () => {
         {/* Open Graph */}
         <meta property="og:title" content="Amazon Cashflow Software | Auren - Marketplace Cash Flow Management" />
         <meta property="og:description" content="Automate your Amazon cash flow management with Auren — forecast payouts, track expenses, and scale confidently." />
+        
+        {/* Breadcrumb Structured Data */}
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+              {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Home",
+                "item": "https://aurenapp.com/"
+              }
+            ]
+          })}
+        </script>
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://aurenapp.com/" />
         <meta property="og:image" content="https://aurenapp.com/auren-full-logo.png" />
