@@ -354,20 +354,6 @@ export function CreditCardPaymentDialog({
               value={paymentAmount}
               onChange={(e) => setPaymentAmount(e.target.value)}
             />
-            
-            {/* Suggested Affordable Date */}
-            {suggestedDate && (
-              <div className="animate-fade-in">
-                {suggestedDate.balance >= parseFloat(paymentAmount || "0") ? (
-                  <div className="flex items-center gap-2 p-2 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900/30 rounded-md">
-                    <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-                    <span className="text-xs font-medium text-green-800 dark:text-green-300">
-                      Earliest you can afford: {format(new Date(suggestedDate.available_date || suggestedDate.date), "MMM d, yyyy")}
-                    </span>
-                  </div>
-                ) : null}
-              </div>
-            )}
           </div>
         </div>
 
