@@ -2020,6 +2020,7 @@ const Dashboard = () => {
                 card.account_name
               } Payment${card.pay_minimum ? " (Min Only)" : ""}`,
               creditCard: card.institution_name,
+              creditCardId: card.id,
               date: new Date(card.payment_due_date!),
             };
           })
@@ -2049,6 +2050,7 @@ const Dashboard = () => {
               amount: projectedAmount,
               description: `${card.institution_name} - ${card.account_name} (Forecasted)`,
               creditCard: card.institution_name,
+              creditCardId: card.id,
               date: nextDueDate,
             };
           })
