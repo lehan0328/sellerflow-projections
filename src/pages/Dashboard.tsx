@@ -2001,18 +2001,18 @@ const Dashboard = () => {
     }
   }, [vendors.length, incomeItems.length, transactions.length]);
 
-  // Get credit card due date events - show statement balance as expense on due date
+  // Get credit card due date events - generate dynamically, no insertion
   const creditCardEvents: CashFlowEvent[] =
     creditCards.length > 0
       ? creditCards
           .filter((card) => card.payment_due_date && (card.statement_balance || card.balance) > 0)
-          .flatMap((card) => {
+          .map((card) => {
             // If pay_minimum is enabled, show minimum payment; otherwise show statement balance
             const paymentAmount = card.pay_minimum
               ? card.minimum_payment
               : card.statement_balance || card.balance;
 
-            const events: CashFlowEvent[] = [{
+            return {
               id: `credit-payment-${card.id}`,
               type: "credit-payment" as const,
               amount: paymentAmount,
@@ -2022,80 +2022,27 @@ const Dashboard = () => {
               creditCard: card.institution_name,
               creditCardId: card.id,
               date: new Date(card.payment_due_date!),
-            }];
-
-            // Insert the payment into credit_card_payments table for scheduling
-            const insertPayment = async () => {
-              const { data: profile } = await supabase
-                .from('profiles')
-                .select('account_id, user_id')
-                .eq('user_id', user?.id)
-                .maybeSingle();
-
-              if (!profile) return;
-
-              // Check if payment already exists
-              const { data: existing } = await supabase
-                .from('credit_card_payments')
-                .select('id')
-                .eq('credit_card_id', card.id)
-                .eq('payment_date', format(new Date(card.payment_due_date!), "yyyy-MM-dd"))
-                .eq('payment_type', 'bill_payment')
-                .maybeSingle();
-
-              if (existing) return; // Already exists
-
-              // Get first active bank account
-              const { data: bankAccount } = await supabase
-                .from('bank_accounts')
-                .select('id')
-                .eq('account_id', profile.account_id)
-                .eq('is_active', true)
-                .limit(1)
-                .maybeSingle();
-
-              if (!bankAccount) return;
-
-              await supabase
-                .from('credit_card_payments')
-                .insert({
-                  user_id: profile.user_id,
-                  account_id: profile.account_id,
-                  credit_card_id: card.id,
-                  bank_account_id: bankAccount.id,
-                  amount: paymentAmount,
-                  payment_date: format(new Date(card.payment_due_date!), "yyyy-MM-dd"),
-                  description: `${card.institution_name} - ${card.account_name} Bill Payment`,
-                  payment_type: 'bill_payment',
-                  status: 'scheduled'
-                });
             };
-
-            insertPayment();
-
-            return events;
           })
       : [];
 
-  // Add forecasted next month payments for cards with forecast enabled
+  // Add forecasted next month payments for cards with forecast enabled - generate dynamically, no insertion
   const forecastedCreditCardEvents: CashFlowEvent[] =
     creditCards.length > 0
-      ? (creditCards
+      ? creditCards
           .filter((card) => card.forecast_next_month && card.payment_due_date)
-          .flatMap((card) => {
+          .map((card) => {
             // Calculate projected usage: limit - available - statement balance
             const projectedAmount =
               card.credit_limit -
               card.available_credit -
               (card.statement_balance || card.balance);
 
-            if (projectedAmount <= 0) return [];
-
             // Add one month to the current due date
             const nextDueDate = new Date(card.payment_due_date!);
             nextDueDate.setMonth(nextDueDate.getMonth() + 1);
 
-            const events: CashFlowEvent[] = [{
+            return {
               id: `credit-forecast-${card.id}`,
               type: "credit-payment" as const,
               amount: projectedAmount,
@@ -2103,57 +2050,9 @@ const Dashboard = () => {
               creditCard: card.institution_name,
               creditCardId: card.id,
               date: nextDueDate,
-            }];
-
-            // Insert the forecasted payment
-            const insertForecast = async () => {
-              const { data: profile } = await supabase
-                .from('profiles')
-                .select('account_id, user_id')
-                .eq('user_id', user?.id)
-                .maybeSingle();
-
-              if (!profile) return;
-
-              const { data: existing } = await supabase
-                .from('credit_card_payments')
-                .select('id')
-                .eq('credit_card_id', card.id)
-                .eq('payment_date', format(nextDueDate, "yyyy-MM-dd"))
-                .eq('payment_type', 'bill_payment')
-                .maybeSingle();
-
-              if (existing) return;
-
-              const { data: bankAccount } = await supabase
-                .from('bank_accounts')
-                .select('id')
-                .eq('account_id', profile.account_id)
-                .eq('is_active', true)
-                .limit(1)
-                .maybeSingle();
-
-              if (!bankAccount) return;
-
-              await supabase
-                .from('credit_card_payments')
-                .insert({
-                  user_id: profile.user_id,
-                  account_id: profile.account_id,
-                  credit_card_id: card.id,
-                  bank_account_id: bankAccount.id,
-                  amount: projectedAmount,
-                  payment_date: format(nextDueDate, "yyyy-MM-dd"),
-                  description: `${card.institution_name} - ${card.account_name} (Forecasted)`,
-                  payment_type: 'bill_payment',
-                  status: 'scheduled'
-                });
             };
-
-            insertForecast();
-
-            return events;
-          }))
+          })
+          .filter((event) => event.amount > 0)
       : [];
 
   // Convert vendor payments (actual cash outflows) to calendar events
@@ -2412,11 +2311,10 @@ const Dashboard = () => {
     ...calendarEvents,
     ...vendorPaymentEvents,
     ...expenseEvents,
-    ...creditCardPaymentsForEvents,
+    ...creditCardPaymentsForEvents, // Only source for credit card payments from database
     ...vendorEvents,
     ...incomeEvents,
-    ...creditCardEvents,
-    ...forecastedCreditCardEvents,
+    // creditCardEvents and forecastedCreditCardEvents removed - payments come from database only
     ...recurringEvents,
     ...amazonPayoutEvents,
   ];
