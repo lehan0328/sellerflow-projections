@@ -778,15 +778,20 @@ const CashFlowCalendarComponent = ({
                                      Total Resources: <span className="text-primary">${data.totalResources?.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                                    </p>
                                  </div>
-                                {data.dailyChange !== 0 && <p className={data.dailyChange > 0 ? 'text-green-600 font-medium' : 'text-red-600 font-medium'}>
-                                    Daily Net: {data.dailyChange > 0 ? '+' : ''}${Math.abs(data.dailyChange).toLocaleString()}
-                                  </p>}
                               </div>
 
                               {hasTransactions && <div className="space-y-1.5 border-t pt-2">
                                   <p className="font-semibold text-xs uppercase text-muted-foreground">Daily Activity</p>
                                    {data.inflow > 0 && <p className="text-green-600 font-medium">↑ Inflows: +${formatCurrency(data.inflow)}</p>}
                                    {data.outflow > 0 && <p className="text-red-600 font-medium">↓ Outflows: -${formatCurrency(data.outflow)}</p>}
+                                   {data.dailyChange !== 0 && (
+                                     <>
+                                       <div className="border-t my-1" />
+                                       <p className={data.dailyChange > 0 ? 'text-green-600 font-medium' : 'text-red-600 font-medium'}>
+                                         Daily Net: {data.dailyChange > 0 ? '+' : ''}${Math.abs(data.dailyChange).toLocaleString()}
+                                       </p>
+                                     </>
+                                   )}
                                 </div>}
 
                               {(data.overdueIncome > 0 || data.overdueVendors > 0) && <div className="space-y-1 border-t pt-2">
