@@ -1,9 +1,12 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useEffect, useMemo } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { generateRecurringDates } from "@/lib/recurringDates";
 import { format } from "date-fns";
 import { useAmazonPayouts } from "./useAmazonPayouts";
-import { useUserSettings } from "./useUserSettings"; // Import the hook
+import { useUserSettings } from "./useUserSettings";
+import { safeSpendingQueryKey } from "@/lib/cacheConfig";
+import { useAuth } from "./useAuth";
 
 // ... (Interfaces Transaction, SafeSpendingData, DailyBalance remain unchanged) ...
 interface Transaction {
@@ -66,13 +69,10 @@ export const useSafeSpending = (
   daysToProject: number = 30,
   projectedDailyBalances?: Array<{ date: string; runningBalance: number }>
 ) => {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
   const { amazonPayouts } = useAmazonPayouts();
-  // Consume settings from the cached hook
   const { safeSpendingReserve, forecastsEnabled, loading: settingsLoading } = useUserSettings();
-  
-  const [data, setData] = useState<SafeSpendingData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   const formatDate = (date: Date | string): string => {
     if (typeof date === 'string') return date.split('T')[0];
@@ -86,30 +86,21 @@ export const useSafeSpending = (
     return dt;
   };
 
-  const fetchSafeSpending = useCallback(async () => {
-    // Don't calculate if settings are still loading
-    if (settingsLoading) return;
+  const { data, isLoading: queryLoading, error: queryError, refetch } = useQuery<SafeSpendingData>({
+    queryKey: safeSpendingQueryKey(user?.id, reserveAmountInput, excludeTodayTransactions, useAvailableBalance, daysToProject),
+    queryFn: async () => {
+      // Don't calculate if settings are still loading
+      if (settingsLoading) throw new Error("Settings loading");
     
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        setError("Not authenticated");
-        return;
-      }
+      if (!user?.id) throw new Error("Not authenticated");
 
       const { data: profile } = await supabase
         .from('profiles')
         .select('account_id')
-        .eq('user_id', session.user.id)
+        .eq('user_id', user.id)
         .maybeSingle();
 
-      if (!profile?.account_id) {
-        setError("Account not found");
-        return;
-      }
+      if (!profile?.account_id) throw new Error("Account not found");
 
       // Use cached values instead of fetching
       const reserve = safeSpendingReserve;
@@ -541,7 +532,7 @@ export const useSafeSpending = (
       const willGoNegative = firstNegativeDay !== undefined;
       const willDropBelowLimit = firstBelowLimitDay !== undefined && !willGoNegative;
 
-      setData({
+      return {
         safe_spending_limit: safeSpendingLimit,
         reserve_amount: reserve,
         will_go_negative: willGoNegative || willDropBelowLimit,
@@ -559,41 +550,74 @@ export const useSafeSpending = (
           all_buying_opportunities: finalOpportunities,
           daily_balances: dailyBalances
         }
-      });
-    } catch (err) {
-      console.error("❌ Safe Spending Error:", err);
-      setError(err instanceof Error ? err.message : "Failed to calculate safe spending");
-    } finally {
-      setIsLoading(false);
-    }
-    // Add dependency on settings variables so it recalculates when they change
-  }, [reserveAmountInput, excludeTodayTransactions, useAvailableBalance, amazonPayouts, forecastsEnabled, safeSpendingReserve, settingsLoading, projectedDailyBalances]);
+      };
+    },
+    enabled: !!user?.id && !settingsLoading,
+    staleTime: 60 * 60 * 1000, // 1 hour
+    gcTime: 2 * 60 * 60 * 1000, // 2 hours
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+  });
 
 
+  // Real-time subscriptions for cache invalidation
   useEffect(() => {
-    fetchSafeSpending();
-  }, [fetchSafeSpending]);
+    if (!user?.id) return;
 
-  useEffect(() => {
     const channel = supabase
       .channel('safe-spending-changes')
-      // REMOVED: .on('postgres_changes', { event: '*', schema: 'public', table: 'user_settings' }, ...)
-      // This is now handled by useUserSettings hook which triggers re-render
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, () => { fetchSafeSpending(); })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'income' }, () => { fetchSafeSpending(); })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'recurring_expenses' }, () => { fetchSafeSpending(); })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'bank_accounts' }, () => { fetchSafeSpending(); })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'vendors' }, () => { fetchSafeSpending(); })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'amazon_payouts' }, () => { fetchSafeSpending(); })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'deleted_transactions' }, () => { fetchSafeSpending(); })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'credit_cards' }, () => { fetchSafeSpending(); })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'bank_transactions' }, () => { fetchSafeSpending(); })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, () => {
+        queryClient.invalidateQueries({ 
+          queryKey: safeSpendingQueryKey(user.id, reserveAmountInput, excludeTodayTransactions, useAvailableBalance, daysToProject) 
+        });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'income' }, () => {
+        queryClient.invalidateQueries({ 
+          queryKey: safeSpendingQueryKey(user.id, reserveAmountInput, excludeTodayTransactions, useAvailableBalance, daysToProject) 
+        });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'recurring_expenses' }, () => {
+        queryClient.invalidateQueries({ 
+          queryKey: safeSpendingQueryKey(user.id, reserveAmountInput, excludeTodayTransactions, useAvailableBalance, daysToProject) 
+        });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'bank_accounts' }, () => {
+        queryClient.invalidateQueries({ 
+          queryKey: safeSpendingQueryKey(user.id, reserveAmountInput, excludeTodayTransactions, useAvailableBalance, daysToProject) 
+        });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'vendors' }, () => {
+        queryClient.invalidateQueries({ 
+          queryKey: safeSpendingQueryKey(user.id, reserveAmountInput, excludeTodayTransactions, useAvailableBalance, daysToProject) 
+        });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'amazon_payouts' }, () => {
+        queryClient.invalidateQueries({ 
+          queryKey: safeSpendingQueryKey(user.id, reserveAmountInput, excludeTodayTransactions, useAvailableBalance, daysToProject) 
+        });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'credit_cards' }, () => {
+        queryClient.invalidateQueries({ 
+          queryKey: safeSpendingQueryKey(user.id, reserveAmountInput, excludeTodayTransactions, useAvailableBalance, daysToProject) 
+        });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'bank_transactions' }, () => {
+        queryClient.invalidateQueries({ 
+          queryKey: safeSpendingQueryKey(user.id, reserveAmountInput, excludeTodayTransactions, useAvailableBalance, daysToProject) 
+        });
+      })
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [fetchSafeSpending]); // Re-subscribe only if dependencies change
+  }, [user?.id, queryClient, reserveAmountInput, excludeTodayTransactions, useAvailableBalance, daysToProject]);
 
-  return { data, isLoading: isLoading || settingsLoading, error, refetch: fetchSafeSpending, buyingOpportunities: useMemo(() => data?.calculation?.all_buying_opportunities || [], [data?.calculation?.all_buying_opportunities]) };
+  return { 
+    data, 
+    isLoading: queryLoading || settingsLoading, 
+    error: queryError?.message || null, 
+    refetch, 
+    buyingOpportunities: useMemo(() => data?.calculation?.all_buying_opportunities || [], [data?.calculation?.all_buying_opportunities]) 
+  };
 };
