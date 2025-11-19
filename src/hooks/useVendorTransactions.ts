@@ -17,6 +17,8 @@ export interface VendorTransaction {
   amountPaid?: number;
   remainingBalance?: number;
   creditCardId?: string | null;
+  paymentType?: string;
+  netTermsDays?: string;
 }
 
 export const useVendorTransactions = () => {
@@ -51,7 +53,7 @@ export const useVendorTransactions = () => {
         .from('transactions')
         .select(`
           *,
-          vendors(name, category)
+          vendors(name, category, payment_type, net_terms_days)
         `)
         .eq('type', 'purchase_order')
         .eq('archived', false)
@@ -71,7 +73,9 @@ export const useVendorTransactions = () => {
         category: tx.vendors?.category || '',
         type: tx.type,
         remarks: (tx as any).remarks || 'Ordered',
-        creditCardId: tx.credit_card_id || null
+        creditCardId: tx.credit_card_id || null,
+        paymentType: tx.vendors?.payment_type || '',
+        netTermsDays: tx.vendors?.net_terms_days ? String(tx.vendors.net_terms_days) : ''
       })) || [];
 
       setTransactions(formattedTransactions);
