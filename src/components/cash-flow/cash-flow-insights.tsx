@@ -945,7 +945,7 @@ export const CashFlowInsights = memo(({
                       ) : null;
                     })()}
                     <p className="text-[10px] text-muted-foreground mt-2">
-                      Combined spending power from all your credit cards
+                      Available credit for the next 30 days. Overflow deducted from bank balance.
                     </p>
                   </div>
                   
