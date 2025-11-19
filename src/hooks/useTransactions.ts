@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect } from "react";
+import { transactionsQueryKey } from "@/lib/cacheConfig";
 
 export interface Transaction {
   id: string;
@@ -38,8 +39,9 @@ export const useTransactions = () => {
 
   // 1. Use useQuery for fetching data with caching
   const { data: transactions = [], isLoading: loading, error } = useQuery({
-    queryKey: ['transactions'], // Unique key for this data
-    staleTime: 5 * 60 * 1000,   // Consider data fresh for 5 minutes
+    queryKey: transactionsQueryKey(undefined), // Versioned cache key
+    staleTime: 3 * 60 * 60 * 1000,   // Consider data fresh for 3 hours
+    gcTime: 6 * 60 * 60 * 1000,      // Keep in cache for 6 hours
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return [];
@@ -114,7 +116,7 @@ export const useTransactions = () => {
     },
     onSuccess: () => {
       // Forces a refetch of the 'transactions' query everywhere in the app
-      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({ queryKey: transactionsQueryKey(undefined) });
       toast({ title: "Success", description: "Transaction added successfully" });
     },
     onError: (error) => {
@@ -129,7 +131,7 @@ export const useTransactions = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({ queryKey: transactionsQueryKey(undefined) });
       toast({ title: "Success", description: "Transaction deleted successfully" });
     },
     onError: (error) => {
@@ -144,7 +146,7 @@ export const useTransactions = () => {
        if (error) throw error;
      },
      onSuccess: () => {
-       queryClient.invalidateQueries({ queryKey: ['transactions'] });
+       queryClient.invalidateQueries({ queryKey: transactionsQueryKey(undefined) });
      }
   });
 
@@ -154,7 +156,7 @@ export const useTransactions = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({ queryKey: transactionsQueryKey(undefined) });
       toast({ title: "Success", description: "Vendor transactions deleted successfully" });
     },
     onError: (error) => {
@@ -168,7 +170,7 @@ export const useTransactions = () => {
     const channel = supabase
       .channel('transactions-changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, () => {
-        queryClient.invalidateQueries({ queryKey: ['transactions'] });
+        queryClient.invalidateQueries({ queryKey: transactionsQueryKey(undefined) });
       })
       .subscribe();
 
@@ -184,6 +186,6 @@ export const useTransactions = () => {
     deleteTransaction: deleteTransactionMutation.mutateAsync,
     deleteAllTransactions: deleteAllTransactionsMutation.mutateAsync,
     deleteTransactionsByVendor: deleteTransactionsByVendorMutation.mutateAsync,
-    refetch: () => queryClient.invalidateQueries({ queryKey: ['transactions'] })
+    refetch: () => queryClient.invalidateQueries({ queryKey: transactionsQueryKey(undefined) })
   };
 };

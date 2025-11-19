@@ -1,6 +1,8 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "./use-toast";
+import { useEffect } from "react";
+import { bankTransactionsQueryKey } from "@/lib/cacheConfig";
 
 export interface BankTransaction {
   id: string;
@@ -28,8 +30,9 @@ export const useBankTransactions = (accountId?: string, accountType: 'bank' | 'c
   const queryClient = useQueryClient();
 
   const { data: transactions = [], isLoading, error } = useQuery({
-    queryKey: ['bank_transactions', accountId, accountType],
-    staleTime: 2 * 60 * 1000, // 2 minutes - transactions change frequently
+    queryKey: bankTransactionsQueryKey(accountId, accountType),
+    staleTime: 30 * 60 * 1000, // 30 minutes - Plaid syncs are scheduled, not real-time
+    gcTime: 60 * 60 * 1000,    // 1 hour - keep in cache longer
     queryFn: async () => {
       let query = supabase
         .from('bank_transactions')
@@ -73,8 +76,26 @@ export const useBankTransactions = (accountId?: string, accountType: 'bank' | 'c
     },
   });
 
+  // Real-time subscription for bank transactions changes
+  useEffect(() => {
+    const channel = supabase
+      .channel('bank-transactions-changes')
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'bank_transactions' 
+      }, () => {
+        queryClient.invalidateQueries({ queryKey: bankTransactionsQueryKey(accountId, accountType) });
+      })
+      .subscribe();
+    
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient, accountId, accountType]);
+
   const refetch = () => {
-    queryClient.invalidateQueries({ queryKey: ['bank_transactions', accountId, accountType] });
+    queryClient.invalidateQueries({ queryKey: bankTransactionsQueryKey(accountId, accountType) });
   };
 
   return {
