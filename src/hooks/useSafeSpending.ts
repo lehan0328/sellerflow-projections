@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { generateRecurringDates } from "@/lib/recurringDates";
 import { format } from "date-fns";
@@ -595,5 +595,5 @@ export const useSafeSpending = (
     };
   }, [fetchSafeSpending]); // Re-subscribe only if dependencies change
 
-  return { data, isLoading: isLoading || settingsLoading, error, refetch: fetchSafeSpending };
+  return { data, isLoading: isLoading || settingsLoading, error, refetch: fetchSafeSpending, buyingOpportunities: useMemo(() => data?.calculation?.all_buying_opportunities || [], [data?.calculation?.all_buying_opportunities]) };
 };

@@ -73,9 +73,11 @@ export const useRecurringExpenses = () => {
 
       return data as RecurringExpense[];
     },
-    staleTime: 30 * 60 * 1000, // 30 minutes - rarely changes
-    retry: 3,
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    staleTime: 3 * 60 * 60 * 1000, // 3 hours
+    gcTime: 6 * 60 * 60 * 1000, // 6 hours
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    retry: 1,
   });
 
   // Log query errors
