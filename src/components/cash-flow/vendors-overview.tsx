@@ -759,7 +759,7 @@ export const VendorsOverview = ({
                 <TableHead>Amount</TableHead>
                 <TableHead>Due Date</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Remarks</TableHead>
+                <TableHead>Payment Terms</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -828,19 +828,22 @@ export const VendorsOverview = ({
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Select value={tx.remarks || 'Ordered'} onValueChange={value => updateRemarks(tx.id, value)}>
-                        <SelectTrigger className="h-8 text-xs max-w-[130px] bg-background border border-border">
-                          <SelectValue placeholder="Ordered" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-background border border-border z-[100]">
-                          <SelectItem value="Ordered">Ordered</SelectItem>
-                          <SelectItem value="Shipped">Shipped</SelectItem>
-                          <SelectItem value="Delayed">Delayed</SelectItem>
-                          <SelectItem value="Received">Received</SelectItem>
-                          <SelectItem value="Partially Paid">Partially Paid</SelectItem>
-                          <SelectItem value="Pending Due">Pending Due</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <div className="text-xs">
+                        {tx.paymentType ? (
+                          <div className="space-y-0.5">
+                            <div className="font-medium capitalize">
+                              {tx.paymentType.replace(/-/g, ' ')}
+                            </div>
+                            {tx.paymentType === 'net-terms' && tx.netTermsDays && (
+                              <div className="text-muted-foreground">
+                                Net {tx.netTermsDays}
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground">-</span>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end space-x-2">
