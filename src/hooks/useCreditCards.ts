@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
 import { toast } from "sonner";
+import { addDays } from "date-fns";
+import { generateRecurringDates } from "@/lib/recurringDates";
 
 export interface CreditCard {
   id: string;
@@ -32,19 +34,6 @@ export interface CreditCard {
   updated_at: string;
 }
 
-// Helper to calculate monthly amount from recurring frequency
-const getMonthlyRecurringAmount = (amount: number, frequency: string): number => {
-  switch (frequency) {
-    case 'daily': return amount * 30;
-    case 'weekly': return amount * 4;
-    case 'bi-weekly': return amount * 2;
-    case 'monthly': return amount;
-    case '2-months': return amount * 0.5;
-    case '3-months': return amount * 0.33;
-    case 'weekdays': return amount * 22;
-    default: return amount;
-  }
-};
 
 export const useCreditCards = () => {
   const [creditCards, setCreditCards] = useState<CreditCard[]>([]);
@@ -111,7 +100,7 @@ export const useCreditCards = () => {
       // Fetch active recurring expenses on credit cards
       const { data: recurringExpenses, error: recurringError } = await supabase
         .from("recurring_expenses")
-        .select("credit_card_id, amount, frequency")
+        .select("credit_card_id, amount, frequency, start_date")
         .in("credit_card_id", cardIds)
         .eq("is_active", true)
         .eq("type", "expense");
@@ -132,12 +121,33 @@ export const useCreditCards = () => {
         }
       });
 
-      // Add monthly equivalent of recurring expenses
+      // Calculate actual recurring expense occurrences in next 30 days
+      const today = new Date();
+      const thirtyDaysFromNow = addDays(today, 30);
+
       recurringExpenses?.forEach(expense => {
-        if (expense.credit_card_id) {
+        if (expense.credit_card_id && expense.frequency) {
+          // Create RecurringTransaction object for generateRecurringDates
+          const recurringTx = {
+            id: expense.credit_card_id,
+            transaction_name: 'Recurring Expense',
+            amount: expense.amount,
+            frequency: expense.frequency as any,
+            start_date: expense.start_date || today.toISOString().split('T')[0],
+            end_date: null,
+            is_active: true,
+            type: 'expense' as const
+          };
+          
+          const occurrences = generateRecurringDates(
+            recurringTx,
+            today,
+            thirtyDaysFromNow
+          );
+          
+          const totalAmount = occurrences.length * Math.abs(expense.amount);
           const current = pendingMap.get(expense.credit_card_id) || 0;
-          const monthlyAmount = getMonthlyRecurringAmount(Math.abs(expense.amount), expense.frequency);
-          pendingMap.set(expense.credit_card_id, current + monthlyAmount);
+          pendingMap.set(expense.credit_card_id, current + totalAmount);
         }
       });
 
