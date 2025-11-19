@@ -67,6 +67,7 @@ export function CreditCards() {
   const [updateStatementBalance, setUpdateStatementBalance] = useState('');
   const [updateDueDate, setUpdateDueDate] = useState('');
   const [dismissedCardIds, setDismissedCardIds] = useState<Set<string>>(new Set());
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [formData, setFormData] = useState<CreditCardFormData>({
     nickname: '',
     annual_fee: 0,
@@ -909,7 +910,7 @@ export function CreditCards() {
               
               <div className="space-y-2">
                 <Label htmlFor="update_due_date">Next Payment Due Date <span className="text-destructive">*</span></Label>
-                <Popover>
+                <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                   <PopoverTrigger asChild>
                     <Button
                       variant="outline"
@@ -926,6 +927,7 @@ export function CreditCards() {
                       onSelect={(date) => {
                         if (date) {
                           setUpdateDueDate(format(date, "yyyy-MM-dd"));
+                          setIsCalendarOpen(false);
                         }
                       }}
                       disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
