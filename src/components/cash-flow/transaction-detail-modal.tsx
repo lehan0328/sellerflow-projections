@@ -6,10 +6,10 @@ import { Calendar, DollarSign, Building2, CreditCard, ShoppingCart, Wallet, Cloc
 import { format } from "date-fns";
 
 interface CashFlowEvent {
-  id: string;
-  type: 'inflow' | 'outflow' | 'credit-payment' | 'purchase-order';
+  id?: string;
+  type: 'inflow' | 'outflow' | 'credit-payment' | 'purchase-order' | 'credit-overflow' | 'recurring';
   amount: number;
-  description: string;
+  description?: string;
   vendor?: string;
   creditCard?: string;
   poName?: string;

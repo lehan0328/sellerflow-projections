@@ -2303,15 +2303,19 @@ const Dashboard = () => {
 
   // Calculate projected daily balances using the same logic as the calendar
   // This is the single source of truth for balance projections
-  const projectedDailyBalances = useMemo(() => {
-    const { dailyBalances } = calculateCalendarBalances(
+  const { dailyBalances: projectedDailyBalances, mergedEvents: allEventsWithOverflow } = useMemo(() => {
+    const { dailyBalances, overflowEvents } = calculateCalendarBalances(
       displayBankBalance, 
       allCalendarEvents, 
       90, 
       excludeToday,
       creditCards
     );
-    return dailyBalances;
+    
+    // Merge overflow events into allCalendarEvents for visibility
+    const mergedEvents = [...allCalendarEvents, ...overflowEvents];
+    
+    return { dailyBalances, mergedEvents };
   }, [displayBankBalance, allCalendarEvents, excludeToday, creditCards]);
 
   // Calculate buying opportunities from projected balances
@@ -2960,7 +2964,7 @@ const Dashboard = () => {
                 <div className="lg:col-span-2 h-full">
                   {showSafeSpendingData ? (
                     <CashFlowCalendar
-                      events={allCalendarEvents}
+                      events={allEventsWithOverflow}
                       totalCash={displayCash}
                       onEditTransaction={handleEditTransaction}
                       onUpdateTransactionDate={handleUpdateTransactionDate}

@@ -28,10 +28,10 @@ const formatCurrency = (amount: number): string => {
   });
 };
 interface CashFlowEvent {
-  id: string;
-  type: 'inflow' | 'outflow' | 'credit-payment' | 'purchase-order';
+  id?: string;
+  type: 'inflow' | 'outflow' | 'credit-payment' | 'purchase-order' | 'credit-overflow' | 'recurring';
   amount: number;
-  description: string;
+  description?: string;
   vendor?: string;
   creditCard?: string;
   creditCardId?: string | null;
