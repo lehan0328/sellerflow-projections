@@ -514,16 +514,15 @@ export const CashFlowInsights = memo(({
       return adjustedOpportunities; // Return cash-only
     }
     
-    // Calculate total available credit
-    const totalAvailableCredit = creditCards.reduce((sum, card) => {
+    // Calculate net available credit with per-card capping
+    const netAvailableCredit = creditCards.reduce((sum, card) => {
       const effectiveCreditLimit = card.credit_limit_override || card.credit_limit;
-      const effectiveAvailableCredit = effectiveCreditLimit - card.balance;
-      return sum + effectiveAvailableCredit;
+      const cardAvailable = effectiveCreditLimit - card.balance;
+      const cardPending = pendingOrdersByCard[card.id] || 0;
+      const cardNetAvailable = cardAvailable - cardPending;
+      // Cap each card at 0 - overflow goes to cash, not counted in credit
+      return sum + Math.max(0, cardNetAvailable);
     }, 0);
-    
-    // Deduct pending credit card transactions
-    const totalPending = Object.values(pendingOrdersByCard).reduce((sum, amount) => sum + amount, 0);
-    const netAvailableCredit = totalAvailableCredit - totalPending;
     
     // Add net available credit to each opportunity
     return adjustedOpportunities.map(opp => ({
@@ -626,11 +625,14 @@ export const CashFlowInsights = memo(({
     const dailyBalance = dailyBalances.find(db => db.date === dateStr);
     const projectedCash = dailyBalance?.balance || currentBalance;
     
-    // Calculate available credit
+    // Calculate available credit with per-card capping
     const totalAvailableCredit = creditCards.reduce((sum, card) => {
       const effectiveCreditLimit = card.credit_limit_override || card.credit_limit;
-      const effectiveAvailableCredit = effectiveCreditLimit - card.balance;
-      return sum + effectiveAvailableCredit;
+      const cardAvailable = effectiveCreditLimit - card.balance;
+      const cardPending = pendingOrdersByCard[card.id] || 0;
+      const cardNetAvailable = cardAvailable - cardPending;
+      // Cap each card at 0
+      return sum + Math.max(0, cardNetAvailable);
     }, 0);
     
     setDateSearchResults({
@@ -708,13 +710,14 @@ export const CashFlowInsights = memo(({
                         // Calculate effective safe spending with credit if toggled on
                         let effectiveAmount = safeSpendingLimit;
                         if (includeCreditInOpportunities && creditCards.length > 0) {
-                          const totalAvailableCredit = creditCards.reduce((sum, card) => {
+                          const netAvailableCredit = creditCards.reduce((sum, card) => {
                             const effectiveCreditLimit = card.credit_limit_override || card.credit_limit;
-                            const effectiveAvailableCredit = effectiveCreditLimit - card.balance;
-                            return sum + effectiveAvailableCredit;
+                            const cardAvailable = effectiveCreditLimit - card.balance;
+                            const cardPending = pendingOrdersByCard[card.id] || 0;
+                            const cardNetAvailable = cardAvailable - cardPending;
+                            // Cap each card at 0
+                            return sum + Math.max(0, cardNetAvailable);
                           }, 0);
-                          const totalPending = Object.values(pendingOrdersByCard).reduce((sum, amount) => sum + amount, 0);
-                          const netAvailableCredit = totalAvailableCredit - totalPending;
                           effectiveAmount = safeSpendingLimit + netAvailableCredit;
                         }
                         return effectiveAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -771,13 +774,14 @@ export const CashFlowInsights = memo(({
                   // Calculate effective safe spending with credit if toggled on
                   let effectiveSafeSpending = safeSpendingLimit;
                   if (includeCreditInOpportunities && creditCards.length > 0) {
-                    const totalAvailableCredit = creditCards.reduce((sum, card) => {
+                    const netAvailableCredit = creditCards.reduce((sum, card) => {
                       const effectiveCreditLimit = card.credit_limit_override || card.credit_limit;
-                      const effectiveAvailableCredit = effectiveCreditLimit - card.balance;
-                      return sum + effectiveAvailableCredit;
+                      const cardAvailable = effectiveCreditLimit - card.balance;
+                      const cardPending = pendingOrdersByCard[card.id] || 0;
+                      const cardNetAvailable = cardAvailable - cardPending;
+                      // Cap each card at 0
+                      return sum + Math.max(0, cardNetAvailable);
                     }, 0);
-                    const totalPending = Object.values(pendingOrdersByCard).reduce((sum, amount) => sum + amount, 0);
-                    const netAvailableCredit = totalAvailableCredit - totalPending;
                     effectiveSafeSpending = safeSpendingLimit + netAvailableCredit;
                   }
                   return effectiveSafeSpending > 0;
@@ -903,27 +907,30 @@ export const CashFlowInsights = memo(({
                     <div className="flex items-baseline gap-2">
                       <span className="text-3xl font-bold text-blue-600">
                         ${(() => {
-                          const totalAvailable = creditCards.reduce((sum, card) => {
+                          const netAvailableCredit = creditCards.reduce((sum, card) => {
                             const effectiveCreditLimit = card.credit_limit_override || card.credit_limit;
-                            const effectiveAvailableCredit = effectiveCreditLimit - card.balance;
-                            return sum + effectiveAvailableCredit;
+                            const cardAvailable = effectiveCreditLimit - card.balance;
+                            const cardPending = pendingOrdersByCard[card.id] || 0;
+                            
+                            // Calculate today's credit card outflow for this specific card
+                            const today = new Date();
+                            today.setHours(0, 0, 0, 0);
+                            const todayCardOutflow = excludeToday ? 0 : events
+                              .filter(e => {
+                                const eventDate = new Date(e.date);
+                                eventDate.setHours(0, 0, 0, 0);
+                                return e.creditCardId === card.id &&
+                                       e.type === 'outflow' && 
+                                       eventDate.getTime() === today.getTime();
+                              })
+                              .reduce((sum, e) => sum + e.amount, 0);
+                            
+                            const cardNetAvailable = cardAvailable - cardPending - todayCardOutflow;
+                            // Cap each card at 0
+                            return sum + Math.max(0, cardNetAvailable);
                           }, 0);
-                          const totalPending = Object.values(pendingOrdersByCard).reduce((sum, amount) => sum + amount, 0);
                           
-                          // Calculate today's credit card outflow (pending expenses with credit card)
-                          const today = new Date();
-                          today.setHours(0, 0, 0, 0);
-                          const todayCreditCardOutflow = excludeToday ? 0 : events
-                            .filter(e => {
-                              const eventDate = new Date(e.date);
-                              eventDate.setHours(0, 0, 0, 0);
-                              return e.creditCardId && 
-                                     e.type === 'outflow' && 
-                                     eventDate.getTime() === today.getTime();
-                            })
-                            .reduce((sum, e) => sum + e.amount, 0);
-                          
-                          return (totalAvailable - totalPending - todayCreditCardOutflow).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                          return netAvailableCredit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                         })()}
                       </span>
                       <span className="text-xs text-muted-foreground">
