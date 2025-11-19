@@ -61,6 +61,31 @@ serve(async (req) => {
       .gte('payout_date', today.toISOString())
       .lte('payout_date', next90Days.toISOString());
 
+    // Fetch credit cards
+    const { data: creditCards } = await supabaseClient
+      .from('credit_cards')
+      .select('id, credit_limit, credit_limit_override, balance')
+      .eq('user_id', user.id)
+      .eq('is_active', true);
+
+    // Fetch credit card payments
+    const { data: creditCardPayments } = await supabaseClient
+      .from('bank_transactions')
+      .select('credit_card_id, amount, date')
+      .eq('user_id', user.id)
+      .not('credit_card_id', 'is', null)
+      .gte('date', today.toISOString())
+      .lte('date', next90Days.toISOString());
+
+    // Fetch credit card purchases
+    const { data: creditCardPurchases } = await supabaseClient
+      .from('transactions')
+      .select('credit_card_id, amount, due_date')
+      .eq('user_id', user.id)
+      .not('credit_card_id', 'is', null)
+      .gte('due_date', today.toISOString())
+      .lte('due_date', next90Days.toISOString());
+
     // Get current bank balance
     const { data: settings } = await supabaseClient
       .from('user_settings')
@@ -80,10 +105,18 @@ serve(async (req) => {
     const projectedBalance = currentBalance + projectedIncome - projectedExpenses;
 
     // Calculate day-by-day projected balance to find the lowest point
-    const dailyBalances: Array<{ date: string; balance: number }> = [];
+    const dailyBalances: Array<{ date: string; balance: number; cardCredit: Record<string, number> }> = [];
     let runningBalance = currentBalance;
     let lowestBalance = currentBalance;
     let lowestBalanceDate = today.toISOString().split('T')[0];
+
+    // Initialize per-card credit tracking
+    const cardCreditMap = new Map<string, number>();
+    (creditCards || []).forEach(card => {
+      const effectiveLimit = card.credit_limit_override || card.credit_limit;
+      const currentAvailable = effectiveLimit - card.balance;
+      cardCreditMap.set(card.id, currentAvailable);
+    });
 
     // Create a map of transactions by date
     const transactionsByDate = new Map<string, { income: number; expenses: number }>();
@@ -129,7 +162,53 @@ serve(async (req) => {
       const dayTransactions = transactionsByDate.get(dateStr) || { income: 0, expenses: 0 };
       runningBalance += dayTransactions.income - dayTransactions.expenses;
       
-      dailyBalances.push({ date: dateStr, balance: runningBalance });
+      // Process credit card purchases for this day (decrease available credit)
+      const dayPurchases = (creditCardPurchases || []).filter(p => {
+        const purchaseDate = new Date(p.due_date).toISOString().split('T')[0];
+        return purchaseDate === dateStr;
+      });
+      dayPurchases.forEach(purchase => {
+        if (purchase.credit_card_id) {
+          const currentCredit = cardCreditMap.get(purchase.credit_card_id) || 0;
+          cardCreditMap.set(purchase.credit_card_id, currentCredit - Number(purchase.amount));
+        }
+      });
+
+      // Process credit card payments for this day (increase available credit)
+      const dayPayments = (creditCardPayments || []).filter(p => {
+        const paymentDate = new Date(p.date).toISOString().split('T')[0];
+        return paymentDate === dateStr;
+      });
+      dayPayments.forEach(payment => {
+        if (payment.credit_card_id) {
+          const currentCredit = cardCreditMap.get(payment.credit_card_id) || 0;
+          cardCreditMap.set(payment.credit_card_id, currentCredit + Number(payment.amount));
+        }
+      });
+
+      // Calculate overflow (cards that went over their limit)
+      let totalOverflow = 0;
+      cardCreditMap.forEach((availableCredit, cardId) => {
+        if (availableCredit < 0) {
+          totalOverflow += Math.abs(availableCredit);
+          cardCreditMap.set(cardId, 0);
+        }
+      });
+
+      // Deduct overflow from cash balance
+      runningBalance -= totalOverflow;
+      
+      // Convert Map to plain object for JSON serialization
+      const cardCreditObj: Record<string, number> = {};
+      cardCreditMap.forEach((value, key) => {
+        cardCreditObj[key] = value;
+      });
+      
+      dailyBalances.push({ 
+        date: dateStr, 
+        balance: runningBalance,
+        cardCredit: cardCreditObj
+      });
       
       if (runningBalance < lowestBalance) {
         lowestBalance = runningBalance;
