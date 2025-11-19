@@ -356,9 +356,6 @@ export function CreditCards() {
       setCardForStatementUpdate(null);
       setUpdateStatementBalance('');
       setUpdateDueDate('');
-      
-      // Force a page refresh to show the notification immediately
-      setTimeout(() => window.location.reload(), 500);
     } catch (error: any) {
       console.error('Error creating notification:', error);
       toast.error(error.message || "Failed to create reminder");
