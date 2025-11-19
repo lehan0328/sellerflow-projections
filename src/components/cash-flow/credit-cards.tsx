@@ -66,6 +66,7 @@ export function CreditCards() {
   const [cardForStatementUpdate, setCardForStatementUpdate] = useState<any>(null);
   const [updateStatementBalance, setUpdateStatementBalance] = useState('');
   const [updateDueDate, setUpdateDueDate] = useState('');
+  const [dismissedCardIds, setDismissedCardIds] = useState<Set<string>>(new Set());
   const [formData, setFormData] = useState<CreditCardFormData>({
     nickname: '',
     annual_fee: 0,
@@ -277,7 +278,7 @@ export function CreditCards() {
       return isBefore(dueDate, today) || dueDate.getTime() === today.getTime();
     });
 
-    if (overdueCard && !showStatementUpdateModal) {
+    if (overdueCard && !showStatementUpdateModal && !dismissedCardIds.has(overdueCard.id)) {
       // Calculate next month's due date
       const currentDueDate = parseLocalDate(overdueCard.payment_due_date);
       const nextDueDate = addMonths(currentDueDate, 1);
@@ -307,6 +308,7 @@ export function CreditCards() {
         statement_balance: statementBalanceNum
       });
       toast.success("Statement balance updated successfully");
+      setDismissedCardIds(prev => new Set(prev).add(cardForStatementUpdate.id));
       setShowStatementUpdateModal(false);
       setCardForStatementUpdate(null);
       setUpdateStatementBalance('');
@@ -352,6 +354,7 @@ export function CreditCards() {
       if (error) throw error;
 
       toast.success("Reminder added to notifications");
+      setDismissedCardIds(prev => new Set(prev).add(cardForStatementUpdate.id));
       setShowStatementUpdateModal(false);
       setCardForStatementUpdate(null);
       setUpdateStatementBalance('');
