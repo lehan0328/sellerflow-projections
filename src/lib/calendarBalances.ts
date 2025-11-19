@@ -115,8 +115,8 @@ export const calculateCalendarBalances = (
       }
     });
 
-    // Overflow events are now handled as regular outflow transactions in the chart component
-    // No manual deduction needed here to avoid double-counting
+    // Deduct overflow from running balance for buying opportunities
+    runningBalance -= totalOverflow;
     
     dailyBalances.push({
       date: dateStr,
