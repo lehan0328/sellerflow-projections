@@ -103,7 +103,15 @@ export const CashFlowInsights = memo(({
     income: number;
     forecastedPayouts: number;
   } | null>(null);
-  const [includeCreditInOpportunities, setIncludeCreditInOpportunities] = useState(false);
+  const [includeCreditInOpportunities, setIncludeCreditInOpportunities] = useState(() => {
+    const saved = localStorage.getItem('include-credit-in-opportunities');
+    return saved === 'true';
+  });
+
+  // Persist to localStorage when toggle changes
+  useEffect(() => {
+    localStorage.setItem('include-credit-in-opportunities', String(includeCreditInOpportunities));
+  }, [includeCreditInOpportunities]);
   const netDaily = dailyInflow - dailyOutflow;
   const healthStatus = netDaily >= 0 ? "positive" : "negative";
 
