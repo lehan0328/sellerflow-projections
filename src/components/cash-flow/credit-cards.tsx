@@ -360,6 +360,7 @@ export function CreditCards() {
       setCardForStatementUpdate(null);
       setUpdateStatementBalance('');
       setUpdateDueDate('');
+      window.location.reload();
     } catch (error: any) {
       console.error('Error creating notification:', error);
       toast.error(error.message || "Failed to create reminder");
@@ -861,8 +862,8 @@ export function CreditCards() {
         />
 
         {/* Statement Balance Update Modal */}
-        <Dialog open={showStatementUpdateModal} onOpenChange={setShowStatementUpdateModal}>
-          <DialogContent className="sm:max-w-[500px]">
+      <Dialog open={showStatementUpdateModal} onOpenChange={setShowStatementUpdateModal}>
+        <DialogContent className="sm:max-w-[500px]" hideClose>
             <DialogHeader>
               <DialogTitle>Update Statement Balance</DialogTitle>
               <DialogDescription>
