@@ -151,12 +151,6 @@ export function CreditCardPaymentDialog({
       return;
     }
 
-    // Validate payment doesn't exceed credit card balance
-    if (amount > selectedCreditCard.balance) {
-      toast.error("Payment amount exceeds credit card balance");
-      return;
-    }
-
     setIsSubmitting(true);
 
     try {
