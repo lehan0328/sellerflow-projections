@@ -12,7 +12,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Sparkles, TrendingUp, AlertCircle, Loader2, Pencil, Check, X, CreditCard, ShoppingCart, Info, RefreshCw, Settings, DollarSign, Calendar, ArrowLeft, Search } from "lucide-react";
 import { useState, useEffect, useMemo, useCallback, memo } from "react";
-import { format } from "date-fns";
+import { format, addDays } from "date-fns";
+import { generateRecurringDates } from "@/lib/recurringDates";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useCreditCards } from "@/hooks/useCreditCards";
@@ -322,15 +323,55 @@ export const CashFlowInsights = memo(({
       .eq('archived', false)
       .not('credit_card_id', 'is', null);
 
+    // Fetch active recurring expenses paid by credit card
+    const { data: recurringExpenses } = await supabase
+      .from('recurring_expenses')
+      .select('credit_card_id, amount, frequency, start_date, end_date')
+      .eq('account_id', profile.account_id)
+      .eq('is_active', true)
+      .eq('type', 'expense')
+      .not('credit_card_id', 'is', null);
+
+    const ordersByCard: Record<string, number> = {};
+    
+    // Add pending transactions
     if (transactions) {
-      const ordersByCard: Record<string, number> = {};
       transactions.forEach(tx => {
         if (tx.credit_card_id) {
           ordersByCard[tx.credit_card_id] = (ordersByCard[tx.credit_card_id] || 0) + Number(tx.amount);
         }
       });
-      setPendingOrdersByCard(ordersByCard);
     }
+
+    // Add recurring expenses (calculate occurrences in next 30 days)
+    if (recurringExpenses) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const endDate = addDays(today, 30);
+
+      recurringExpenses.forEach(recurring => {
+        if (!recurring.credit_card_id) return;
+
+        const recurringTransaction = {
+          id: '',
+          name: '',
+          transaction_name: '',
+          amount: recurring.amount,
+          frequency: recurring.frequency as 'daily' | 'weekly' | 'bi-weekly' | 'monthly' | '2-months' | '3-months' | 'weekdays',
+          start_date: recurring.start_date,
+          end_date: recurring.end_date,
+          is_active: true,
+          type: 'expense' as const
+        };
+
+        const occurrences = generateRecurringDates(recurringTransaction, today, endDate);
+        const totalAmount = occurrences.length * recurring.amount;
+
+        ordersByCard[recurring.credit_card_id] = (ordersByCard[recurring.credit_card_id] || 0) + totalAmount;
+      });
+    }
+
+    setPendingOrdersByCard(ordersByCard);
   }, [creditCards?.length, user?.id]);
 
   useEffect(() => {
