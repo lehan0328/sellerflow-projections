@@ -35,9 +35,18 @@ export const CreditCardPaymentsOverview = () => {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [paymentToDelete, setPaymentToDelete] = useState<any | null>(null);
 
-  // Transform payments to include credit card and bank account names
+  // Transform payments to include credit card and bank account names with deduplication
   const enrichedPayments = useMemo(() => {
-    return payments.map(payment => {
+    // Deduplicate: keep only the first payment for each card+date+type combo
+    const uniquePayments = payments.reduce((acc, payment) => {
+      const key = `${payment.credit_card_id}-${payment.payment_date}-${payment.payment_type}`;
+      if (!acc.has(key)) {
+        acc.set(key, payment);
+      }
+      return acc;
+    }, new Map<string, typeof payments[0]>());
+
+    return Array.from(uniquePayments.values()).map(payment => {
       const creditCard = creditCards.find(cc => cc.id === payment.credit_card_id);
       const bankAccount = bankAccounts.find(ba => ba.id === payment.bank_account_id);
       
