@@ -1399,18 +1399,14 @@ export const CashFlowInsights = memo(({
                 const opportunities = cardOpportunities[card.id] || [];
                 const isOverLimit = currentAvailableSpend < 0;
                 
-                // Priority mapping: 1 = High, 2 = Medium, 3 = Low
-                const priorityLabel = card.priority === 1 ? 'High' : card.priority === 2 ? 'Medium' : 'Low';
-                const priorityColor = card.priority === 1 ? 'text-green-600' : card.priority === 2 ? 'text-blue-600' : 'text-gray-600';
-                
                 return (
                   <div key={card.id} className={`p-3 rounded-lg space-y-2 ${isOverLimit ? 'bg-red-50 dark:bg-red-950/20 border-2 border-red-500' : 'bg-muted/50 border border-border'}`}>
                     <div className="flex justify-between items-start gap-3">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <p className="font-semibold text-sm truncate text-gray-900 dark:text-gray-100">{card.account_name}</p>
-                          <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${priorityColor} ${card.priority === 1 ? 'bg-green-100 dark:bg-green-900/20' : card.priority === 2 ? 'bg-blue-100 dark:bg-blue-900/20' : 'bg-gray-100 dark:bg-gray-800'}`}>
-                            {priorityLabel}
+                          <span className="text-xs font-medium px-1.5 py-0.5 rounded bg-muted text-foreground border border-border">
+                            Priority {card.priority}
                           </span>
                           {isOverLimit && <AlertCircle className="h-3.5 w-3.5 text-red-600 flex-shrink-0" />}
                         </div>
