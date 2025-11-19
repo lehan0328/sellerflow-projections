@@ -11,6 +11,28 @@ const Platforms = () => {
       <Helmet>
         <title>Multi-Platform Support: Walmart, Shopify, TikTok Shop & More | Auren</title>
         <meta name="description" content="Expand your cash flow forecasting, inventory, analytics, and accounting to Walmart, Shopify, TikTok Shop, Whatnot, and more ecommerce platforms." />
+        <link rel="canonical" href="https://aurenapp.com/platforms" />
+        
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+              {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Home",
+                "item": "https://aurenapp.com/"
+              },
+              {
+                "@type": "ListItem",
+                "position": 2,
+                "name": "Platforms",
+                "item": "https://aurenapp.com/platforms"
+              }
+            ]
+          })}
+        </script>
       </Helmet>
 
       {/* Hero Section */}

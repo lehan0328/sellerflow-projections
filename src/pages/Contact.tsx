@@ -205,6 +205,27 @@ const Contact = () => {
         <meta name="description" content="Get help with Auren amazon cashflow management software. Contact our support team for questions about marketplace cash flow management features and pricing." />
         <meta name="keywords" content="amazon cashflow software support, marketplace cash flow management help, cashflow management customer service" />
         <link rel="canonical" href="https://aurenapp.com/contact" />
+        
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+              {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Home",
+                "item": "https://aurenapp.com/"
+              },
+              {
+                "@type": "ListItem",
+                "position": 2,
+                "name": "Contact",
+                "item": "https://aurenapp.com/contact"
+              }
+            ]
+          })}
+        </script>
       </Helmet>
       <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-background/90 animate-fade-in">
         <div className="container mx-auto p-6 space-y-6">

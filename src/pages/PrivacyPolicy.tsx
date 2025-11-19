@@ -10,6 +10,27 @@ export default function PrivacyPolicy() {
         <meta name="description" content="Privacy Policy for Auren cash flow management platform. Learn how we protect your financial data and Amazon seller information." />
         <meta name="robots" content="index, follow" />
         <link rel="canonical" href="https://aurenapp.com/privacy" />
+        
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+              {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Home",
+                "item": "https://aurenapp.com/"
+              },
+              {
+                "@type": "ListItem",
+                "position": 2,
+                "name": "Privacy Policy",
+                "item": "https://aurenapp.com/privacy"
+              }
+            ]
+          })}
+        </script>
       </Helmet>
       <div className="container mx-auto px-4 py-12 max-w-4xl">
         {/* Header */}

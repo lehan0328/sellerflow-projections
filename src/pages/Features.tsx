@@ -151,6 +151,27 @@ const Features = () => {
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://aurenapp.com/features" />
         <meta name="twitter:card" content="summary_large_image" />
+        
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+              {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Home",
+                "item": "https://aurenapp.com/"
+              },
+              {
+                "@type": "ListItem",
+                "position": 2,
+                "name": "Features",
+                "item": "https://aurenapp.com/features"
+              }
+            ]
+          })}
+        </script>
         <meta name="twitter:title" content="Amazon Cashflow Management Software Features | Auren" />
         <meta name="twitter:description" content="Discover all the powerful Amazon cashflow management features to forecast payouts and optimize marketplace finances." />
       </Helmet>

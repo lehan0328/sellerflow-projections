@@ -92,6 +92,27 @@ ${formData.message ? `Message:\n${formData.message}` : 'No additional message pr
         <meta name="description" content="Join the Auren partner program and earn commissions referring amazon cashflow management software. Help marketplace sellers with cash flow management tools." />
         <meta name="keywords" content="amazon cashflow software affiliate, marketplace cash flow management partner, cashflow software referral program" />
         <link rel="canonical" href="https://aurenapp.com/partners" />
+        
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+              {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Home",
+                "item": "https://aurenapp.com/"
+              },
+              {
+                "@type": "ListItem",
+                "position": 2,
+                "name": "Partners",
+                "item": "https://aurenapp.com/partners"
+              }
+            ]
+          })}
+        </script>
       </Helmet>
 
       {/* Sticky CTA */}
