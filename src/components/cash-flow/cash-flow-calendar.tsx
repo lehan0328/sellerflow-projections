@@ -748,18 +748,8 @@ const CashFlowCalendarComponent = ({
                 }} wrapperStyle={{
                   pointerEvents: 'none'
                 }} active={activeTooltipIndex !== null} payload={tooltipPayload} label={activeTooltipIndex !== null ? displayData[activeTooltipIndex]?.date : undefined} content={<ChartTooltipContent formatter={(value: number, name: string) => {
-                  // Filter out items we don't want to show individually - return empty array to hide
-                  if (['cashBalance', 'creditCardBalance', 'reserveAmount', 'forecastPayout'].includes(name)) {
-                    return ['', ''];
-                  }
-                  const labels: Record<string, string> = {
-                    totalResources: "Total Resources:",
-                    projectedBalance: "Projected Balance:",
-                  };
-                  return [labels[name] || name, `$${formatCurrency(value)}`];
-                }} itemSorter={item => {
-                  const order = ["projectedBalance", "totalResources"];
-                  return order.indexOf(item.dataKey as string);
+                  // Filter out all items - we show everything in custom layout
+                  return ['', ''];
                 }} />} labelFormatter={useCallback((label, payload) => {
                   if (!payload?.[0]) return label;
                   const data = payload[0].payload;
