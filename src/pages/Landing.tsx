@@ -634,7 +634,7 @@ const Landing = () => {
                         Cash Flow Forecasting
                       </span>
                       <Badge variant="secondary" className="text-base px-4 py-2 whitespace-nowrap font-semibold tracking-wide">
-                        Starting at only $24/mo
+                        Starting at only $29/mo
                       </Badge>
                     </div>
                     <span className="block text-foreground pb-2">for Amazon Sellers</span>
