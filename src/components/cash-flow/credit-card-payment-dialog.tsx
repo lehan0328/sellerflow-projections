@@ -213,34 +213,29 @@ export function CreditCardPaymentDialog({
         .eq('user_id', user.id)
         .single();
 
-      // Create a pending transaction record only - no immediate balance changes
-      const isPastDate = new Date(format(paymentDate, "yyyy-MM-dd")) < new Date(format(new Date(), "yyyy-MM-dd"));
-
-      const { error: transactionError } = await supabase
-        .from("bank_transactions")
+      // Insert into credit_card_payments table
+      const { error } = await supabase
+        .from("credit_card_payments")
         .insert({
           user_id: user.id,
           account_id: profile?.account_id,
           bank_account_id: defaultBankAccount.id,
           credit_card_id: selectedCreditCardId,
-          amount: -amount, // Negative because money is leaving the bank account
-          date: format(paymentDate, "yyyy-MM-dd"),
-          name: `Credit Card Payment - ${selectedCreditCard.account_name}`,
-          merchant_name: selectedCreditCard.institution_name,
-          pending: !isPastDate, // Pending if future date, completed if past
-          plaid_transaction_id: `manual_cc_payment_${Date.now()}`,
-          transaction_type: "payment",
-          category: ["Credit Card Payment"]
+          amount: amount,
+          payment_date: format(paymentDate, "yyyy-MM-dd"),
+          description: `Credit Card Payment - ${selectedCreditCard.account_name}`,
+          payment_type: 'manual',
+          status: 'scheduled'
         });
 
-      if (transactionError) throw transactionError;
+      if (error) throw error;
 
       toast.success(`Payment of $${amount.toFixed(2)} scheduled for ${format(paymentDate, "PPP")}`);
       
       // Refresh data
       await Promise.all([refetchCreditCards(), refetchBankAccounts()]);
       
-      // Trigger parent refetch for bank transactions
+      // Trigger parent refetch
       if (onPaymentSuccess) {
         onPaymentSuccess();
       }
