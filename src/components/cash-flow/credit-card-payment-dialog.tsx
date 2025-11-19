@@ -359,25 +359,11 @@ export function CreditCardPaymentDialog({
             {suggestedDate && (
               <div className="animate-fade-in">
                 {suggestedDate.balance >= parseFloat(paymentAmount || "0") ? (
-                  <div className="flex items-center justify-between gap-2 p-2 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900/30 rounded-md">
-                    <div className="flex items-center gap-2">
-                      <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-                      <span className="text-xs font-medium text-green-800 dark:text-green-300">
-                        Earliest you can afford: {format(new Date(suggestedDate.available_date || suggestedDate.date), "MMM d, yyyy")}
-                      </span>
-                    </div>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="ghost"
-                      className="h-6 px-2 text-xs hover:bg-green-100 dark:hover:bg-green-900/30"
-                      onClick={() => {
-                        const [year, month, day] = (suggestedDate.available_date || suggestedDate.date).split('-').map(Number);
-                        setPaymentDate(new Date(year, month - 1, day));
-                      }}
-                    >
-                      Use This Date
-                    </Button>
+                  <div className="flex items-center gap-2 p-2 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900/30 rounded-md">
+                    <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+                    <span className="text-xs font-medium text-green-800 dark:text-green-300">
+                      Earliest you can afford: {format(new Date(suggestedDate.available_date || suggestedDate.date), "MMM d, yyyy")}
+                    </span>
                   </div>
                 ) : null}
               </div>
