@@ -1,6 +1,5 @@
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ExcludeTodayProvider } from "@/contexts/ExcludeTodayContext";
 import Landing from "./pages/Landing";
@@ -82,21 +81,8 @@ import Accounting from "./pages/Accounting";
 import Platforms from "./pages/Platforms";
 import DebugProjections from "./pages/DebugProjections";
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 5 * 60 * 1000, // 5 minutes - data stays fresh
-      gcTime: 10 * 60 * 1000,   // 10 minutes - cached data lifetime (formerly cacheTime)
-      refetchOnWindowFocus: false, // Don't refetch on tab switch
-      refetchOnMount: false, // Use cache if available
-      retry: 1, // Only retry once on failure
-    },
-  },
-});
-
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <BrowserRouter>
+  <BrowserRouter>
       <ExcludeTodayProvider>
         <TooltipProvider>
           <Sonner />
@@ -328,7 +314,6 @@ const App = () => (
       </TooltipProvider>
       </ExcludeTodayProvider>
     </BrowserRouter>
-  </QueryClientProvider>
 );
 
 export default App;
