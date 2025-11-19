@@ -57,8 +57,10 @@ export function CreditCardPaymentDialog({
     // Start with current available credit
     const currentAvailableCredit = (selectedCreditCard.credit_limit_override || selectedCreditCard.credit_limit) - selectedCreditCard.balance;
     
-    // Track credit over time
-    const creditByDate: { [date: string]: number } = {};
+    // Track credit over time - START WITH TODAY
+    const creditByDate: { [date: string]: number } = {
+      [format(today, "yyyy-MM-dd")]: Math.max(0, currentAvailableCredit)
+    };
     let runningCredit = currentAvailableCredit;
     
     // Get all future events for this card and sort by date
@@ -81,8 +83,8 @@ export function CreditCardPaymentDialog({
       creditByDate[dateStr] = Math.max(0, runningCredit);
     });
 
-    // Find the date with minimum credit
-    let minCredit = currentAvailableCredit;
+    // Find the date with minimum credit - initialize to Infinity to detect any actual value including $0
+    let minCredit = Infinity;
     let minDate = format(today, "yyyy-MM-dd");
     
     Object.entries(creditByDate).forEach(([date, credit]) => {
