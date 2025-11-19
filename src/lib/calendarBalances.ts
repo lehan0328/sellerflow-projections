@@ -115,8 +115,8 @@ export const calculateCalendarBalances = (
       }
     });
 
-    // Deduct overflow from cash balance
-    runningBalance -= totalOverflow;
+    // Overflow events are now handled as regular outflow transactions in the chart component
+    // No manual deduction needed here to avoid double-counting
     
     dailyBalances.push({
       date: dateStr,
