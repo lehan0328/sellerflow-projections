@@ -2302,9 +2302,15 @@ const Dashboard = () => {
   // Calculate projected daily balances using the same logic as the calendar
   // This is the single source of truth for balance projections
   const projectedDailyBalances = useMemo(() => {
-    const { dailyBalances } = calculateCalendarBalances(displayBankBalance, allCalendarEvents, 90, excludeToday);
+    const { dailyBalances } = calculateCalendarBalances(
+      displayBankBalance, 
+      allCalendarEvents, 
+      90, 
+      excludeToday,
+      creditCards
+    );
     return dailyBalances;
-  }, [displayBankBalance, allCalendarEvents, excludeToday]);
+  }, [displayBankBalance, allCalendarEvents, excludeToday, creditCards]);
 
   // Calculate buying opportunities from projected balances
   const buyingOpportunities = useMemo(() => {
