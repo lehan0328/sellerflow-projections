@@ -18,6 +18,7 @@ export interface DailyBalance {
   dailyInflow: number;
   dailyOutflow: number;
   events: number;
+  cardCredit?: Map<string, number>;
 }
 
 export const calculateCalendarBalances = (
@@ -106,7 +107,8 @@ export const calculateCalendarBalances = (
       dailyChange,
       dailyInflow,
       dailyOutflow,
-      events: dayEvents.length
+      events: dayEvents.length,
+      cardCredit: new Map(cardCreditMap)
     });
     
     // Track minimum

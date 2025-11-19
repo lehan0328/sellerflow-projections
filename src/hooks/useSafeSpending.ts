@@ -48,6 +48,7 @@ interface DailyBalance {
   balance: number;
   starting_balance?: number;
   net_change?: number;
+  cardCredit?: Map<string, number>;
   transactions?: Array<{
     type: string;
     description?: string;
@@ -436,7 +437,11 @@ export const useSafeSpending = (
             for (let j = 0; j <= i; j++) {
               let canSpendOnDayJ = true;
               for (let k = j; k < dailyBalances.length; k++) {
-                const balanceAfterSpending = dailyBalances[k].balance - opportunityAmount;
+                const totalAvailableCredit = dailyBalances[k].cardCredit 
+                  ? Array.from(dailyBalances[k].cardCredit!.values()).reduce((sum, c) => sum + Math.max(0, c), 0)
+                  : 0;
+                const totalSpendingPower = dailyBalances[k].balance + totalAvailableCredit;
+                const balanceAfterSpending = totalSpendingPower - opportunityAmount;
                 if (balanceAfterSpending < reserve) {
                   canSpendOnDayJ = false;
                   break;
@@ -472,7 +477,11 @@ export const useSafeSpending = (
             if (!alreadyCaptured && opportunityAmount > 0) {
               let earliestAvailableDate = lastDay.date;
               for (let j = 0; j < dailyBalances.length - 1; j++) {
-                if (dailyBalances[j].balance >= (opportunityAmount + reserve)) {
+                const totalAvailableCredit = dailyBalances[j].cardCredit 
+                  ? Array.from(dailyBalances[j].cardCredit!.values()).reduce((sum, c) => sum + Math.max(0, c), 0)
+                  : 0;
+                const totalSpendingPower = dailyBalances[j].balance + totalAvailableCredit;
+                if (totalSpendingPower >= (opportunityAmount + reserve)) {
                   earliestAvailableDate = dailyBalances[j].date;
                   break;
                 }
