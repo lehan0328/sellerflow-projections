@@ -192,6 +192,9 @@ const Dashboard = () => {
     }
   }, [location.search]);
 
+  // State to capture merged buying opportunities from CashFlowInsights (single source of truth)
+  const [mergedBuyingOpportunities, setMergedBuyingOpportunities] = useState<Array<{ date: string; balance: number; available_date?: string; includesCredit?: boolean }>>([]);
+
   // Fetch user profile
   const { data: profile, isLoading: profileLoading } = useQuery({
     queryKey: profileQueryKey(user?.id),
@@ -2408,37 +2411,6 @@ const Dashboard = () => {
     return deduplicatedOpportunities;
   }, [projectedDailyBalances, reserveAmount, excludeToday]);
 
-  // Merge buying opportunities with credit card available credit
-  const mergedBuyingOpportunities = useMemo(() => {
-    // Get user settings for credit inclusion preference from localStorage
-    const includeCreditInOpps = localStorage.getItem('include-credit-in-opportunities') === 'true';
-    
-    if (!includeCreditInOpps || creditCards.length === 0) {
-      return buyingOpportunities; // Return cash-only
-    }
-    
-    // Calculate total available credit
-    const totalAvailableCredit = creditCards.reduce((sum, card) => {
-      const effectiveCreditLimit = card.credit_limit_override || card.credit_limit;
-      const effectiveAvailableCredit = effectiveCreditLimit - card.balance;
-      return sum + effectiveAvailableCredit;
-    }, 0);
-    
-    // Calculate pending credit card transactions
-    const totalPending = transactions
-      .filter(tx => tx.creditCardId && tx.status === 'pending')
-      .reduce((sum, tx) => sum + tx.amount, 0);
-    
-    const netAvailableCredit = totalAvailableCredit - totalPending;
-    
-    // Add net available credit to each opportunity
-    return buyingOpportunities.map(opp => ({
-      ...opp,
-      balance: opp.balance + netAvailableCredit,
-      includesCredit: true
-    }));
-  }, [buyingOpportunities, creditCards, transactions]);
-
   // Calculate safe spending from projected balances
   const safeSpendingFromProjection = useMemo(() => {
     if (!projectedDailyBalances || projectedDailyBalances.length === 0) {
@@ -3013,6 +2985,7 @@ const Dashboard = () => {
                       allBuyingOpportunities={buyingOpportunities}
                       dailyBalances={projectedDailyBalances.map(d => ({ date: d.date, balance: d.runningBalance }))}
                       onUpdateReserveAmount={updateReserveAmount}
+                      onOpportunitiesCalculated={setMergedBuyingOpportunities}
                       excludeToday={excludeToday}
                       transactionMatchButton={
                         <TransactionMatchButton

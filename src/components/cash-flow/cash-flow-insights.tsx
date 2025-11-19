@@ -42,6 +42,7 @@ interface CashFlowInsightsProps {
   allBuyingOpportunities?: Array<{ date: string; balance: number; available_date?: string }>;
   dailyBalances?: Array<{ date: string; balance: number }>;
   onUpdateReserveAmount?: (amount: number) => Promise<void>;
+  onOpportunitiesCalculated?: (opportunities: Array<{ date: string; balance: number; available_date?: string; includesCredit?: boolean }>) => void;
   transactionMatchButton?: React.ReactNode;
   excludeToday?: boolean;
 }
@@ -64,6 +65,7 @@ export const CashFlowInsights = memo(({
   allBuyingOpportunities = [],
   dailyBalances = [],
   onUpdateReserveAmount,
+  onOpportunitiesCalculated,
   transactionMatchButton,
   excludeToday = false
 }: CashFlowInsightsProps) => {
@@ -539,6 +541,13 @@ export const CashFlowInsights = memo(({
       includesCredit: true
     }));
   }, [adjustedOpportunities, includeCreditInOpportunities, creditCards, pendingOrdersByCard]);
+
+  // Notify parent component whenever merged opportunities change
+  useEffect(() => {
+    if (onOpportunitiesCalculated) {
+      onOpportunitiesCalculated(mergedOpportunities);
+    }
+  }, [mergedOpportunities, onOpportunitiesCalculated]);
 
   const handleDateSearch = useCallback(async (date: Date) => {
     setSearchedDate(date);
