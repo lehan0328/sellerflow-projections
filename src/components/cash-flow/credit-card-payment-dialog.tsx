@@ -53,15 +53,13 @@ export function CreditCardPaymentDialog({
     if (!selectedCreditCardId || !selectedCreditCard) return null;
 
     const today = startOfDay(new Date());
-    const effectiveLimit = selectedCreditCard.credit_limit_override || selectedCreditCard.credit_limit;
     
     // Start with current available credit
-    let runningAvailableCredit = effectiveLimit - selectedCreditCard.balance;
+    const currentAvailableCredit = (selectedCreditCard.credit_limit_override || selectedCreditCard.credit_limit) - selectedCreditCard.balance;
     
-    // Track credit over time - include today's credit
-    const creditByDate: { [date: string]: number } = {
-      [format(today, "yyyy-MM-dd")]: Math.max(0, runningAvailableCredit)
-    };
+    // Track credit over time
+    const creditByDate: { [date: string]: number } = {};
+    let runningCredit = currentAvailableCredit;
     
     // Get all future events for this card and sort by date
     const futureEvents = allCalendarEvents
@@ -71,25 +69,20 @@ export function CreditCardPaymentDialog({
       })
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-    // Process events chronologically with overflow handling
+    // Process events chronologically
     futureEvents.forEach(event => {
       const dateStr = format(new Date(event.date), "yyyy-MM-dd");
-      
       if (event.type === 'credit-payment') {
-        // Payment increases available credit (but never above limit)
-        runningAvailableCredit = Math.min(effectiveLimit, runningAvailableCredit + event.amount);
+        runningCredit += event.amount;
       } else {
-        // Purchase decreases available credit
-        runningAvailableCredit -= event.amount;
-        // Cap at 0 - overflow is handled by deducting from cash in actual calendar
-        runningAvailableCredit = Math.max(0, runningAvailableCredit);
+        runningCredit -= event.amount;
       }
-      
-      creditByDate[dateStr] = runningAvailableCredit;
+      // Apply floor of 0 to match calendar overflow logic (cap available credit at zero)
+      creditByDate[dateStr] = Math.max(0, runningCredit);
     });
 
     // Find the date with minimum credit
-    let minCredit = Infinity;
+    let minCredit = currentAvailableCredit;
     let minDate = format(today, "yyyy-MM-dd");
     
     Object.entries(creditByDate).forEach(([date, credit]) => {
@@ -101,7 +94,7 @@ export function CreditCardPaymentDialog({
 
     return {
       date: minDate,
-      credit: minCredit === Infinity ? 0 : minCredit
+      credit: minCredit
     };
   }, [selectedCreditCardId, selectedCreditCard, allCalendarEvents]);
 

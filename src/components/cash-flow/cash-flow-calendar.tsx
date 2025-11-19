@@ -752,14 +752,14 @@ const CashFlowCalendarComponent = ({
                   y: 12
                 }} wrapperStyle={{
                   pointerEvents: 'none'
-                }} active={activeTooltipIndex !== null} payload={tooltipPayload} label={activeTooltipIndex !== null ? displayData[activeTooltipIndex]?.date : undefined} content={<ChartTooltipContent className="pt-1.5 pb-0" formatter={(value: number, name: string) => {
+                }} active={activeTooltipIndex !== null} payload={tooltipPayload} label={activeTooltipIndex !== null ? displayData[activeTooltipIndex]?.date : undefined} content={<ChartTooltipContent formatter={(value: number, name: string) => {
                   // Filter out all items - we show everything in custom layout
                   return ['', ''];
                 }} />} labelFormatter={useCallback((label, payload) => {
                   if (!payload?.[0]) return label;
                   const data = payload[0].payload;
                   const hasTransactions = data.transactions?.length > 0;
-                  return <div className="space-y-1.5 min-w-[300px]">
+                  return <div className="space-y-2 min-w-[300px]">
                               <p className="font-semibold text-base border-b pb-2">{label}</p>
 
                               {data.hasAmazonPayout && <p className="text-orange-600 font-medium flex items-center gap-1">
@@ -785,7 +785,7 @@ const CashFlowCalendarComponent = ({
                                  </div>
                               </div>
 
-                              {hasTransactions && <div className="space-y-1 border-t pt-2">
+                              {hasTransactions && <div className="space-y-1.5 border-t pt-2">
                                   <p className="font-semibold text-xs uppercase text-muted-foreground">Daily Activity</p>
                                    {data.inflow > 0 && <p className="text-green-600 font-medium">↑ Inflows: +${formatCurrency(data.inflow)}</p>}
                                    {data.outflow > 0 && <p className="text-red-600 font-medium">↓ Outflows: -${formatCurrency(data.outflow)}</p>}
@@ -799,7 +799,7 @@ const CashFlowCalendarComponent = ({
                                    )}
                                  </div>}
                                  
-                                 {(data.creditCardInflow > 0 || data.creditCardOutflow > 0) && <div className="space-y-1 border-t pt-2">
+                                 {(data.creditCardInflow > 0 || data.creditCardOutflow > 0) && <div className="space-y-1.5 border-t pt-2">
                                    <p className="font-semibold text-xs uppercase text-muted-foreground">Credit Card Activity</p>
                                    {data.creditCardInflow > 0 && <p className="text-blue-600 font-medium">↑ Payments: +${formatCurrency(data.creditCardInflow)}</p>}
                                    {data.creditCardOutflow > 0 && <p className="text-orange-600 font-medium">↓ Purchases: -${formatCurrency(data.creditCardOutflow)}</p>}
