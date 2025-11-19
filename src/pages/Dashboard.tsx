@@ -2306,15 +2306,16 @@ const Dashboard = () => {
     });
 
 
-  // Combine all events for calendar - only include real user data
+  // Combine all events for calendar
   const allCalendarEvents = [
     ...calendarEvents,
     ...vendorPaymentEvents,
     ...expenseEvents,
-    ...creditCardPaymentsForEvents, // Only source for credit card payments from database
+    ...creditCardPaymentsForEvents, // Manual payments from database
+    ...creditCardEvents, // Bill payments from credit card data
+    ...forecastedCreditCardEvents, // Forecasted next month payments
     ...vendorEvents,
     ...incomeEvents,
-    // creditCardEvents and forecastedCreditCardEvents removed - payments come from database only
     ...recurringEvents,
     ...amazonPayoutEvents,
   ];
