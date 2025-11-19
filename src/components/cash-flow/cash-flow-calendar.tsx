@@ -752,7 +752,7 @@ const CashFlowCalendarComponent = ({
                   y: 12
                 }} wrapperStyle={{
                   pointerEvents: 'none'
-                }} active={activeTooltipIndex !== null} payload={tooltipPayload} label={activeTooltipIndex !== null ? displayData[activeTooltipIndex]?.date : undefined} content={<ChartTooltipContent className="pt-1.5 pb-1" formatter={(value: number, name: string) => {
+                }} active={activeTooltipIndex !== null} payload={tooltipPayload} label={activeTooltipIndex !== null ? displayData[activeTooltipIndex]?.date : undefined} content={<ChartTooltipContent className="pt-1.5 pb-0" formatter={(value: number, name: string) => {
                   // Filter out all items - we show everything in custom layout
                   return ['', ''];
                 }} />} labelFormatter={useCallback((label, payload) => {
