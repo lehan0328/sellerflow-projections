@@ -2,14 +2,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Calendar, DollarSign, Building2, CreditCard, ShoppingCart, Wallet, FileText } from "lucide-react";
+import { Calendar, DollarSign, Building2, CreditCard, ShoppingCart, Wallet, FileText, AlertTriangle } from "lucide-react";
 import { format } from "date-fns";
 
 interface CashFlowEvent {
-  id: string;
-  type: 'inflow' | 'outflow' | 'credit-payment' | 'purchase-order';
+  id?: string;
+  type: 'inflow' | 'outflow' | 'credit-payment' | 'purchase-order' | 'credit-overflow' | 'recurring';
   amount: number;
-  description: string;
+  description?: string;
   vendor?: string;
   creditCard?: string;
   poName?: string;
@@ -35,6 +35,8 @@ export const DayTransactionsModal = ({ transactions, date, open, onOpenChange }:
         return <CreditCard className="h-4 w-4" />;
       case 'purchase-order':
         return <ShoppingCart className="h-4 w-4" />;
+      case 'credit-overflow':
+        return <AlertTriangle className="h-4 w-4" />;
       default:
         return <Building2 className="h-4 w-4" />;
     }
@@ -48,6 +50,8 @@ export const DayTransactionsModal = ({ transactions, date, open, onOpenChange }:
         return 'bg-warning/20 text-warning-foreground border-warning/30';
       case 'purchase-order':
         return 'bg-primary/20 text-primary border-primary/30';
+      case 'credit-overflow':
+        return 'bg-destructive/20 text-destructive border-destructive/40';
       default:
         return 'bg-finance-negative/20 text-finance-negative border-finance-negative/30';
     }
@@ -61,6 +65,8 @@ export const DayTransactionsModal = ({ transactions, date, open, onOpenChange }:
         return 'Credit Card Payment';
       case 'purchase-order':
         return 'Purchase Order';
+      case 'credit-overflow':
+        return 'Credit Card Overflow';
       case 'outflow':
         return 'Cash Outflow';
       default:

@@ -77,7 +77,8 @@ export function CreditCardPaymentDialog({
       } else {
         runningCredit -= event.amount;
       }
-      creditByDate[dateStr] = runningCredit;
+      // Apply floor of 0 to match calendar overflow logic (cap available credit at zero)
+      creditByDate[dateStr] = Math.max(0, runningCredit);
     });
 
     // Find the date with minimum credit

@@ -1,9 +1,10 @@
 import { format, addDays } from 'date-fns';
 
 export interface CalendarEvent {
+  id?: string;
   date: Date;
   balanceImpactDate?: Date;
-  type: string;
+  type: 'inflow' | 'outflow' | 'credit-payment' | 'purchase-order' | 'credit-overflow' | 'recurring';
   amount: number;
   vendor?: string;
   source?: string;
@@ -26,13 +27,14 @@ export const calculateCalendarBalances = (
   calendarEvents: CalendarEvent[],
   daysToProject: number = 90,
   excludeToday: boolean = false,
-  creditCards: Array<{ id: string; credit_limit: number; credit_limit_override?: number | null; balance: number }> = []
-): { dailyBalances: DailyBalance[]; minimumBalance: number; minimumDate: string } => {
+  creditCards: Array<{ id: string; credit_limit: number; credit_limit_override?: number | null; balance: number; account_name: string }> = []
+): { dailyBalances: DailyBalance[]; minimumBalance: number; minimumDate: string; overflowEvents: CalendarEvent[] } => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const endDate = addDays(today, daysToProject);
   
   const dailyBalances: DailyBalance[] = [];
+  const overflowEvents: CalendarEvent[] = [];
   let runningBalance = startingBalance;
   let minBalance = Infinity;
   let minDate = format(today, 'yyyy-MM-dd');
@@ -92,7 +94,22 @@ export const calculateCalendarBalances = (
     cardCreditMap.forEach((availableCredit, cardId) => {
       if (availableCredit < 0) {
         // This card is over its limit - overflow deducts from cash
-        totalOverflow += Math.abs(availableCredit);
+        const overflowAmount = Math.abs(availableCredit);
+        totalOverflow += overflowAmount;
+        
+        // Create overflow event for visibility
+        const card = creditCards.find(c => c.id === cardId);
+        overflowEvents.push({
+          id: `overflow-${cardId}-${dateStr}`,
+          date: new Date(currentDate),
+          balanceImpactDate: new Date(currentDate),
+          type: 'credit-overflow',
+          amount: overflowAmount,
+          description: `Credit card over limit`,
+          vendor: card?.account_name || 'Unknown Card',
+          creditCardId: cardId,
+        });
+        
         // Reset this card to 0 available credit (can't go negative)
         cardCreditMap.set(cardId, 0);
       }
@@ -123,6 +140,7 @@ export const calculateCalendarBalances = (
   return {
     dailyBalances,
     minimumBalance: minBalance,
-    minimumDate: minDate
+    minimumDate: minDate,
+    overflowEvents
   };
 };

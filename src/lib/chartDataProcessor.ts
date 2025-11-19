@@ -2,7 +2,7 @@ import { format, addDays, startOfDay } from "date-fns";
 
 interface CashFlowEvent {
   id: string;
-  type: 'inflow' | 'outflow' | 'credit-payment' | 'purchase-order';
+  type: 'inflow' | 'outflow' | 'credit-payment' | 'purchase-order' | 'credit-overflow';
   amount: number;
   description: string;
   date: Date;
@@ -46,8 +46,9 @@ export const calculateChartBalances = (
       .reduce((sum, e) => sum + e.amount, 0);
     
     // Exclude credit card purchases from cash outflow (they affect credit line instead)
+    // But include credit-overflow as it deducts from cash
     const dailyOutflow = dayEvents
-      .filter(e => e.type !== 'inflow' && !e.creditCardId)
+      .filter(e => e.type !== 'inflow' && (!e.creditCardId || e.type === 'credit-overflow'))
       .reduce((sum, e) => sum + e.amount, 0);
     
     const netChange = dailyInflow - dailyOutflow;
