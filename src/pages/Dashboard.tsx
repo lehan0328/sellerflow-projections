@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { addDays, isToday, isBefore, startOfDay, format } from "date-fns";
+import { addDays, isToday, isBefore, startOfDay, format, parseISO } from "date-fns";
 import { calculateCalendarBalances } from "@/lib/calendarBalances";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
@@ -2408,21 +2408,11 @@ const Dashboard = () => {
     return deduplicatedOpportunities;
   }, [projectedDailyBalances, reserveAmount, excludeToday]);
 
-  // Toggle state for including credit in buying opportunities
-  const [includeCreditInOpportunities, setIncludeCreditInOpportunities] = useState(() => {
-    const saved = localStorage.getItem('include-credit-in-opportunities');
-    return saved === 'true';
-  });
 
-  // Persist toggle state to localStorage
-  useEffect(() => {
-    localStorage.setItem('include-credit-in-opportunities', String(includeCreditInOpportunities));
-  }, [includeCreditInOpportunities]);
-
-  // Merge buying opportunities with credit card available credit
+  // Always merge buying opportunities with credit card available credit
   const mergedBuyingOpportunities = useMemo(() => {
-    if (!includeCreditInOpportunities || creditCards.length === 0) {
-      return buyingOpportunities; // Return cash-only
+    if (creditCards.length === 0) {
+      return buyingOpportunities; // Return cash-only if no cards
     }
     
     // Calculate total available credit
@@ -2432,9 +2422,15 @@ const Dashboard = () => {
       return sum + effectiveAvailableCredit;
     }, 0);
     
-    // Calculate pending credit card transactions
+    // Calculate pending credit card transactions (within 30 days)
+    const thirtyDaysFromNow = addDays(startOfDay(new Date()), 30);
     const totalPending = transactions
-      .filter(tx => tx.creditCardId && tx.status === 'pending')
+      .filter(tx => {
+        if (!tx.creditCardId || tx.status !== 'pending') return false;
+        const txDateStr = tx.dueDate || tx.transactionDate;
+        const txDate = typeof txDateStr === 'string' ? parseISO(txDateStr) : txDateStr;
+        return isBefore(txDate, thirtyDaysFromNow);
+      })
       .reduce((sum, tx) => sum + tx.amount, 0);
     
     const netAvailableCredit = totalAvailableCredit - totalPending;
@@ -2445,7 +2441,7 @@ const Dashboard = () => {
       balance: opp.balance + netAvailableCredit,
       includesCredit: true
     }));
-  }, [buyingOpportunities, creditCards, transactions, includeCreditInOpportunities]);
+  }, [buyingOpportunities, creditCards, transactions]);
 
   // Calculate safe spending from projected balances
   const safeSpendingFromProjection = useMemo(() => {
@@ -3022,8 +3018,6 @@ const Dashboard = () => {
                       dailyBalances={projectedDailyBalances.map(d => ({ date: d.date, balance: d.runningBalance }))}
                       onUpdateReserveAmount={updateReserveAmount}
                       excludeToday={excludeToday}
-                      includeCreditInOpportunities={includeCreditInOpportunities}
-                      setIncludeCreditInOpportunities={setIncludeCreditInOpportunities}
                       transactionMatchButton={
                         <TransactionMatchButton
                           matches={matches}
