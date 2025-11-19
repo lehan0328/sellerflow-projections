@@ -27,6 +27,8 @@ interface TransactionsViewProps {
   
   // Credit Card Payment props
   creditCardPayments?: any[];
+  onEditPayment?: (payment: any) => void;
+  onDeletePayment?: (payment: any) => void;
 }
 
 export function TransactionsView({
@@ -43,6 +45,8 @@ export function TransactionsView({
   onDeleteExpense,
   onCreditCardChange,
   creditCardPayments = [],
+  onEditPayment,
+  onDeletePayment,
 }: TransactionsViewProps) {
   return (
     <Tabs defaultValue="vendors" className="w-full">
@@ -94,7 +98,11 @@ export function TransactionsView({
       </TabsContent>
       
       <TabsContent value="cc-payments" className="mt-6">
-        <CreditCardPaymentsOverview payments={creditCardPayments} />
+        <CreditCardPaymentsOverview 
+          payments={creditCardPayments}
+          onEditPayment={onEditPayment}
+          onDeletePayment={onDeletePayment}
+        />
       </TabsContent>
     </Tabs>
   );

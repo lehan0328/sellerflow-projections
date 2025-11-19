@@ -119,6 +119,7 @@ import { usePlanLimits } from "@/hooks/usePlanLimits";
 import { LimitEnforcementModal } from "@/components/LimitEnforcementModal";
 import { LimitCheckProvider } from "@/contexts/LimitCheckContext";
 import { CreditCardPaymentDialog } from "@/components/cash-flow/credit-card-payment-dialog";
+import { CreditCardPaymentEditDialog } from "@/components/cash-flow/credit-card-payment-edit-dialog";
 
 import { useVendors, type Vendor } from "@/hooks/useVendors";
 import { usePayees } from "@/hooks/usePayees";
@@ -401,6 +402,7 @@ const Dashboard = () => {
   const [editingIncome, setEditingIncome] = useState<any>(null);
   const [showEditIncomeForm, setShowEditIncomeForm] = useState(false);
   const [editingExpense, setEditingExpense] = useState<any>(null);
+  const [editingCreditCardPayment, setEditingCreditCardPayment] = useState<any>(null);
   const [creditCardNotificationData, setCreditCardNotificationData] = useState<{
     open: boolean;
     cardName: string | null;
@@ -3151,6 +3153,37 @@ const Dashboard = () => {
                 };
               }) || []
             }
+            onEditPayment={(payment) => {
+              // Find the full bank transaction data
+              const bankTransaction = bankTransactionsData?.find(tx => tx.id === payment.id);
+              if (bankTransaction) {
+                setEditingCreditCardPayment(bankTransaction);
+              }
+            }}
+            onDeletePayment={async (payment) => {
+              try {
+                const { error } = await supabase
+                  .from('bank_transactions')
+                  .delete()
+                  .eq('id', payment.id);
+
+                if (error) throw error;
+                
+                toast({
+                  title: "Payment deleted",
+                  description: "Credit card payment has been deleted",
+                });
+                refetchBankTransactions();
+                refetchCreditCards();
+              } catch (error) {
+                console.error('Error deleting payment:', error);
+                toast({
+                  title: "Error",
+                  description: "Failed to delete payment",
+                  variant: "destructive",
+                });
+              }
+            }}
           />
         );
 
@@ -3970,6 +4003,20 @@ const Dashboard = () => {
             onSuccess={() => {
               refetchTransactions();
               setEditingExpense(null);
+            }}
+          />
+
+          {/* Credit Card Payment Edit Dialog */}
+          <CreditCardPaymentEditDialog
+            open={!!editingCreditCardPayment}
+            onOpenChange={(open) => {
+              if (!open) setEditingCreditCardPayment(null);
+            }}
+            payment={editingCreditCardPayment}
+            onSuccess={() => {
+              refetchBankTransactions();
+              refetchCreditCards();
+              setEditingCreditCardPayment(null);
             }}
           />
 
