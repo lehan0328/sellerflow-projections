@@ -45,6 +45,9 @@ export const CATEGORIES_CACHE_VERSION = 1;
 // Recurring expenses cache version - increment when recurring_expenses schema/data changes
 export const RECURRING_EXPENSES_CACHE_VERSION = 1;
 
+// Safe spending cache version - increment when safe spending calculation changes
+export const SAFE_SPENDING_CACHE_VERSION = 1;
+
 /**
  * Creates a versioned query key for profile data
  * @param userId - The user ID
@@ -203,4 +206,29 @@ export const recurringExpensesQueryKey = (userId: string | undefined) => [
   'recurring_expenses',
   userId,
   RECURRING_EXPENSES_CACHE_VERSION
+];
+
+/**
+ * Creates a versioned query key for safe spending data
+ * @param userId - The user ID
+ * @param reserveAmount - The reserve amount
+ * @param excludeToday - Whether to exclude today's transactions
+ * @param useAvailableBalance - Whether to use available balance
+ * @param daysToProject - Number of days to project
+ * @returns Versioned query key array
+ */
+export const safeSpendingQueryKey = (
+  userId: string | undefined,
+  reserveAmount: number,
+  excludeToday: boolean,
+  useAvailableBalance: boolean,
+  daysToProject: number
+) => [
+  'safe-spending',
+  userId,
+  reserveAmount,
+  excludeToday,
+  useAvailableBalance,
+  daysToProject,
+  SAFE_SPENDING_CACHE_VERSION
 ];
