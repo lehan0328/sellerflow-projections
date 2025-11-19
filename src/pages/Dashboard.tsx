@@ -2005,7 +2005,7 @@ const Dashboard = () => {
   const creditCardEvents: CashFlowEvent[] =
     creditCards.length > 0
       ? creditCards
-          .filter((card) => card.payment_due_date && card.balance > 0)
+          .filter((card) => card.payment_due_date && (card.statement_balance || card.balance) > 0)
           .map((card) => {
             // If pay_minimum is enabled, show minimum payment; otherwise show statement balance
             const paymentAmount = card.pay_minimum
