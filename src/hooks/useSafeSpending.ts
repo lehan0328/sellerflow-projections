@@ -139,12 +139,13 @@ export const useSafeSpending = (
       const futureDate = new Date(today);
       futureDate.setDate(futureDate.getDate() + daysToProject);
       
-      const [transactionsResult, incomeResult, recurringResult, vendorsResult, creditCardsResult] = await Promise.all([
+      const [transactionsResult, incomeResult, recurringResult, vendorsResult, creditCardsResult, creditCardPaymentsResult] = await Promise.all([
         supabase.from('transactions').select('*').eq('account_id', profile.account_id).eq('archived', false),
         supabase.from('income').select('*').eq('account_id', profile.account_id).eq('archived', false),
         supabase.from('recurring_expenses').select('*').eq('account_id', profile.account_id).eq('is_active', true),
         supabase.from('vendors').select('*').eq('account_id', profile.account_id),
-        supabase.from('credit_cards').select('*').eq('account_id', profile.account_id).eq('is_active', true)
+        supabase.from('credit_cards').select('*').eq('account_id', profile.account_id).eq('is_active', true),
+        supabase.from('credit_card_payments').select('*').eq('account_id', profile.account_id).eq('status', 'scheduled')
       ]);
 
       const filteredAmazonPayouts = amazonPayouts.filter(payout => {
@@ -366,16 +367,20 @@ export const useSafeSpending = (
             }
           });
 
-          creditCardsResult.data?.forEach((card) => {
-            if (card.payment_due_date && card.balance > 0) {
-              const dueDate = parseLocalDate(card.payment_due_date);
-              if (dueDate.getTime() < today.getTime()) return;
-              if (excludeTodayTransactions && dueDate.getTime() === today.getTime()) return;
-              if (dueDate.getTime() === targetDate.getTime()) {
-                const amt = Number(card.balance);
-                dayChange -= amt;
-                transactionLog.push({ type: 'Credit Card Payment', amount: -amt, runningChange: dayChange, card: card.account_name });
-              }
+          // Process credit card payments from the dedicated credit_card_payments table
+          creditCardPaymentsResult.data?.forEach((payment) => {
+            const paymentDate = parseLocalDate(payment.payment_date);
+            if (paymentDate.getTime() < today.getTime()) return;
+            if (excludeTodayTransactions && paymentDate.getTime() === today.getTime()) return;
+            if (paymentDate.getTime() === targetDate.getTime()) {
+              const amt = Number(payment.amount);
+              dayChange -= amt;
+              transactionLog.push({ 
+                type: 'Credit Card Payment', 
+                amount: -amt, 
+                runningChange: dayChange, 
+                desc: payment.description || 'Credit Card Payment'
+              });
             }
           });
 
@@ -597,6 +602,11 @@ export const useSafeSpending = (
         });
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'credit_cards' }, () => {
+        queryClient.invalidateQueries({ 
+          queryKey: safeSpendingQueryKey(user.id, reserveAmountInput, excludeTodayTransactions, useAvailableBalance, daysToProject) 
+        });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'credit_card_payments' }, () => {
         queryClient.invalidateQueries({ 
           queryKey: safeSpendingQueryKey(user.id, reserveAmountInput, excludeTodayTransactions, useAvailableBalance, daysToProject) 
         });
