@@ -329,6 +329,15 @@ const CashFlowCalendarComponent = ({
         
         return shouldInclude;
       }).reduce((sum, e) => sum + e.amount, 0);
+      
+      // Calculate credit card specific activity
+      const creditCardInflow = dayEvents.filter(e => e.type === 'credit-payment').reduce((sum, e) => sum + e.amount, 0);
+      const creditCardOutflow = dayEvents.filter(e => {
+        const cardExists = e.creditCardId ? creditCards.some(card => card.id === e.creditCardId) : false;
+        // Include purchases on existing credit cards (not payments, not overflow)
+        return e.creditCardId && cardExists && e.type !== 'credit-payment' && e.type !== 'credit-overflow' && e.type !== 'inflow';
+      }).reduce((sum, e) => sum + e.amount, 0);
+      
       const dailyChange = dailyInflow - dailyOutflow;
       cumulativeInflow += dailyInflow;
       cumulativeOutflow += dailyOutflow;
@@ -426,6 +435,8 @@ const CashFlowCalendarComponent = ({
         dailyChange,
         inflow: dailyInflow,
         outflow: dailyOutflow,
+        creditCardInflow,
+        creditCardOutflow,
         cumulativeInflow,
         cumulativeOutflow,
         transactions: dayEvents,
@@ -786,7 +797,13 @@ const CashFlowCalendarComponent = ({
                                        </p>
                                      </>
                                    )}
-                                </div>}
+                                 </div>}
+                                 
+                                 {(data.creditCardInflow > 0 || data.creditCardOutflow > 0) && <div className="space-y-1.5 border-t pt-2">
+                                   <p className="font-semibold text-xs uppercase text-muted-foreground">Credit Card Activity</p>
+                                   {data.creditCardInflow > 0 && <p className="text-blue-600 font-medium">↑ Payments: +${formatCurrency(data.creditCardInflow)}</p>}
+                                   {data.creditCardOutflow > 0 && <p className="text-orange-600 font-medium">↓ Purchases: -${formatCurrency(data.creditCardOutflow)}</p>}
+                                 </div>}
 
                               {(data.overdueIncome > 0 || data.overdueVendors > 0) && <div className="space-y-1 border-t pt-2">
                                   <p className="font-semibold text-xs uppercase text-muted-foreground">Outstanding</p>
