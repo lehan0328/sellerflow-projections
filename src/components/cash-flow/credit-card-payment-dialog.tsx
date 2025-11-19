@@ -48,6 +48,55 @@ export function CreditCardPaymentDialog({
 
   const selectedCreditCard = creditCards.find(card => card.id === selectedCreditCardId);
 
+  // Calculate the date when selected credit card will have lowest available credit
+  const lowestCreditDate = useMemo(() => {
+    if (!selectedCreditCardId || !selectedCreditCard) return null;
+
+    const today = startOfDay(new Date());
+    
+    // Start with current available credit
+    const currentAvailableCredit = (selectedCreditCard.credit_limit_override || selectedCreditCard.credit_limit) - selectedCreditCard.balance;
+    
+    // Track credit over time
+    const creditByDate: { [date: string]: number } = {};
+    let runningCredit = currentAvailableCredit;
+    
+    // Get all future events for this card and sort by date
+    const futureEvents = allCalendarEvents
+      .filter(event => {
+        const eventDate = startOfDay(new Date(event.date));
+        return eventDate > today && event.creditCardId === selectedCreditCardId;
+      })
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+    // Process events chronologically
+    futureEvents.forEach(event => {
+      const dateStr = format(new Date(event.date), "yyyy-MM-dd");
+      if (event.type === 'credit-payment') {
+        runningCredit += event.amount;
+      } else {
+        runningCredit -= event.amount;
+      }
+      creditByDate[dateStr] = runningCredit;
+    });
+
+    // Find the date with minimum credit
+    let minCredit = currentAvailableCredit;
+    let minDate = format(today, "yyyy-MM-dd");
+    
+    Object.entries(creditByDate).forEach(([date, credit]) => {
+      if (credit < minCredit) {
+        minCredit = credit;
+        minDate = date;
+      }
+    });
+
+    return {
+      date: minDate,
+      credit: minCredit
+    };
+  }, [selectedCreditCardId, selectedCreditCard, allCalendarEvents]);
+
   // Calculate projected available credit on selected date for selected card
   const projectedAvailableCredit = useMemo(() => {
     if (!selectedCreditCardId || !paymentDate || !selectedCreditCard) return null;
@@ -258,6 +307,11 @@ export function CreditCardPaymentDialog({
                 {selectedCreditCard.payment_due_date && (
                   <p className="text-sm text-muted-foreground">
                     Payment Due Date: {format(new Date(selectedCreditCard.payment_due_date), "MMM dd, yyyy")}
+                  </p>
+                )}
+                {lowestCreditDate && (
+                  <p className="text-sm font-medium text-amber-600 dark:text-amber-400">
+                    Lowest Credit: ${lowestCreditDate.credit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} on {format(new Date(lowestCreditDate.date), "MMM dd, yyyy")}
                   </p>
                 )}
               </div>
