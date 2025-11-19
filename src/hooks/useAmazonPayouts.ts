@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
 import { toast } from "sonner";
 import { useEffect, useMemo } from "react";
+import { amazonPayoutsQueryKey } from "@/lib/cacheConfig";
 
 export interface AmazonPayout {
   id: string;
@@ -79,9 +80,10 @@ export const useAmazonPayouts = () => {
 
   // 2. Fetch and Filter Amazon Payouts
   const { data: amazonPayouts = [], isLoading, error } = useQuery({
-    queryKey: ['amazon_payouts', user?.id],
+    queryKey: amazonPayoutsQueryKey(user?.id),
     enabled: !!user,
-    staleTime: 2 * 60 * 1000, // 2 minutes
+    staleTime: 24 * 60 * 60 * 1000, // 24 hours - updates once daily via cron
+    gcTime: 48 * 60 * 60 * 1000,    // 48 hours - keep in cache even longer
     queryFn: async () => {
       const { data, error } = await supabase
         .from("amazon_payouts")
@@ -215,7 +217,7 @@ export const useAmazonPayouts = () => {
         { event: "*", schema: "public", table: "amazon_payouts" },
         () => {
           // Only invalidate the query, don't manually fetch
-          queryClient.invalidateQueries({ queryKey: ['amazon_payouts'] });
+          queryClient.invalidateQueries({ queryKey: amazonPayoutsQueryKey(user.id) });
         }
       )
       .subscribe();
