@@ -396,24 +396,21 @@ const CashFlowCalendarComponent = ({
         }
       });
 
-      // Calculate overflow for this day (cards over their limit)
-      let totalOverflow = 0;
+      // Calculate total available credit (overflow is handled via events from parent)
       let totalAvailableCredit = 0;
 
       cardCreditMap.forEach((availableCredit, cardId) => {
         if (availableCredit < 0) {
-          // This card is over its limit - overflow goes to cash
-          totalOverflow += Math.abs(availableCredit);
-          // Reset this card to 0 available (can't go negative)
+          // This card is over its limit - cap at zero
           cardCreditMap.set(cardId, 0);
         } else {
-          // This card still has available credit
+          // This card has available credit
           totalAvailableCredit += availableCredit;
         }
       });
 
-      // Deduct overflow from cash balance
-      runningTotal -= totalOverflow;
+      // Overflow events from calendarBalances.ts are processed through normal transaction flow
+      // No manual deduction needed to avoid double-counting
       return {
         date: format(day, 'MMM dd'),
         fullDate: day,
