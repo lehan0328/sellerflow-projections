@@ -526,8 +526,7 @@ export const CashFlowInsights = memo(({
     // Add net available credit to each opportunity
     return adjustedOpportunities.map(opp => ({
       ...opp,
-      balance: opp.balance + netAvailableCredit,
-      includesCredit: true
+      balance: opp.balance + netAvailableCredit
     }));
   }, [adjustedOpportunities, creditCards, pendingOrdersByCard]);
 
@@ -1092,14 +1091,8 @@ export const CashFlowInsights = memo(({
                   <div key={index} className="p-4 rounded-lg border bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border-blue-200 dark:border-blue-800">
                     <div className="flex items-center justify-between mb-3">
                       <div>
-                        <div className="text-2xl font-bold text-blue-600 flex items-center gap-2">
+                        <div className="text-2xl font-bold text-blue-600">
                           ${opp.balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                          {(opp as any).includesCredit && (
-                            <Badge variant="outline" className="bg-blue-500/10 text-blue-600 border-blue-500/30 text-[10px] py-0">
-                              <CreditCard className="h-3 w-3 mr-1" />
-                              + Credit
-                            </Badge>
-                          )}
                         </div>
                         <div className="text-xs text-muted-foreground">Safe to spend</div>
                       </div>
