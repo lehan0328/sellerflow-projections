@@ -15,7 +15,7 @@ import { CalendarIcon, Plus, Trash2, Search, Upload, Loader2, FileText, CreditCa
 import { format, addDays, parse } from "date-fns";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 import { useCreditCards } from "@/hooks/useCreditCards";
 import { useSubscription } from "@/hooks/useSubscription";
 import { VendorForm } from "./vendor-form";
@@ -953,7 +953,7 @@ export const PurchaseOrderForm = ({
                         <div className="flex items-center gap-2">
                           <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
                           <span className="text-xs font-medium text-green-800 dark:text-green-300">
-                            Earliest you can afford: {format(addDays(new Date(suggestedDate.available_date || suggestedDate.date), 1), "MMM d, yyyy")}
+                            Earliest you can afford: {format(addDays(new Date(suggestedDate.available_date || suggestedDate.date), 1), "MMM d, yyyy")} (Projected Available: {formatCurrency(suggestedDate.balance)})
                           </span>
                         </div>
                         {formData.paymentType === "due-upon-order" && (
