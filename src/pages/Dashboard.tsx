@@ -2408,12 +2408,20 @@ const Dashboard = () => {
     return deduplicatedOpportunities;
   }, [projectedDailyBalances, reserveAmount, excludeToday]);
 
+  // Toggle state for including credit in buying opportunities
+  const [includeCreditInOpportunities, setIncludeCreditInOpportunities] = useState(() => {
+    const saved = localStorage.getItem('include-credit-in-opportunities');
+    return saved === 'true';
+  });
+
+  // Persist toggle state to localStorage
+  useEffect(() => {
+    localStorage.setItem('include-credit-in-opportunities', String(includeCreditInOpportunities));
+  }, [includeCreditInOpportunities]);
+
   // Merge buying opportunities with credit card available credit
   const mergedBuyingOpportunities = useMemo(() => {
-    // Get user settings for credit inclusion preference from localStorage
-    const includeCreditInOpps = localStorage.getItem('include-credit-in-opportunities') === 'true';
-    
-    if (!includeCreditInOpps || creditCards.length === 0) {
+    if (!includeCreditInOpportunities || creditCards.length === 0) {
       return buyingOpportunities; // Return cash-only
     }
     
@@ -2437,7 +2445,7 @@ const Dashboard = () => {
       balance: opp.balance + netAvailableCredit,
       includesCredit: true
     }));
-  }, [buyingOpportunities, creditCards, transactions]);
+  }, [buyingOpportunities, creditCards, transactions, includeCreditInOpportunities]);
 
   // Calculate safe spending from projected balances
   const safeSpendingFromProjection = useMemo(() => {
@@ -3010,10 +3018,12 @@ const Dashboard = () => {
                       nextBuyingOpportunityBalance={safeSpendingFromProjection.nextOpportunity?.balance}
                       nextBuyingOpportunityDate={safeSpendingFromProjection.nextOpportunity?.date}
                       nextBuyingOpportunityAvailableDate={safeSpendingFromProjection.nextOpportunity?.available_date}
-                      allBuyingOpportunities={buyingOpportunities}
+                      allBuyingOpportunities={mergedBuyingOpportunities}
                       dailyBalances={projectedDailyBalances.map(d => ({ date: d.date, balance: d.runningBalance }))}
                       onUpdateReserveAmount={updateReserveAmount}
                       excludeToday={excludeToday}
+                      includeCreditInOpportunities={includeCreditInOpportunities}
+                      setIncludeCreditInOpportunities={setIncludeCreditInOpportunities}
                       transactionMatchButton={
                         <TransactionMatchButton
                           matches={matches}
