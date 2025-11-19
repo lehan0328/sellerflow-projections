@@ -773,9 +773,11 @@ const CashFlowCalendarComponent = ({
                                  <p className="font-bold text-base">
                                    Available Credit: <span className="text-primary">${data.creditCardBalance?.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                                  </p>
-                                 <p className="font-bold text-base">
-                                   Total Resources: <span className="text-primary">${data.totalResources?.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                                 </p>
+                                 <div className="border-t pt-1 mt-1">
+                                   <p className="font-bold text-base">
+                                     Total Resources: <span className="text-primary">${data.totalResources?.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                   </p>
+                                 </div>
                                 {data.dailyChange !== 0 && <p className={data.dailyChange > 0 ? 'text-green-600 font-medium' : 'text-red-600 font-medium'}>
                                     Daily Net: {data.dailyChange > 0 ? '+' : ''}${Math.abs(data.dailyChange).toLocaleString()}
                                   </p>}
