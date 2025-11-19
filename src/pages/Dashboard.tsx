@@ -3826,6 +3826,7 @@ const Dashboard = () => {
               projectedDailyBalances={projectedDailyBalances}
               reserveAmount={reserveAmount}
               allCalendarEvents={allCalendarEvents}
+              onPaymentSuccess={() => refetchBankTransactions()}
             />
           )}
 

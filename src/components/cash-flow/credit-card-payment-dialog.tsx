@@ -24,6 +24,7 @@ interface CreditCardPaymentDialogProps {
   projectedDailyBalances?: Array<{ date: string; runningBalance: number }>;
   reserveAmount?: number;
   allCalendarEvents?: CalendarEvent[];
+  onPaymentSuccess?: () => void;
 }
 
 export function CreditCardPaymentDialog({ 
@@ -32,7 +33,8 @@ export function CreditCardPaymentDialog({
   allBuyingOpportunities = [],
   projectedDailyBalances = [],
   reserveAmount = 0,
-  allCalendarEvents = []
+  allCalendarEvents = [],
+  onPaymentSuccess
 }: CreditCardPaymentDialogProps) {
   const { user } = useAuth();
   const { creditCards, creditCardPendingAmounts, refetch: refetchCreditCards } = useCreditCards();
@@ -187,6 +189,11 @@ export function CreditCardPaymentDialog({
       
       // Refresh data
       await Promise.all([refetchCreditCards(), refetchBankAccounts()]);
+      
+      // Trigger parent refetch for bank transactions
+      if (onPaymentSuccess) {
+        onPaymentSuccess();
+      }
       
       // Reset form and close
       setSelectedCreditCardId("");
