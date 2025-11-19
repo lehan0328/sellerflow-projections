@@ -134,6 +134,28 @@ const Guides = () => {
           <Helmet>
             <title>Guides - Auren</title>
             <meta name="description" content="Step-by-step guides for using Auren's features" />
+            <link rel="canonical" href="https://aurenapp.com/guides" />
+            
+            <script type="application/ld+json">
+              {JSON.stringify({
+                "@context": "https://schema.org",
+                "@type": "BreadcrumbList",
+                "itemListElement": [
+                  {
+                    "@type": "ListItem",
+                    "position": 1,
+                    "name": "Home",
+                    "item": "https://aurenapp.com/"
+                  },
+                  {
+                    "@type": "ListItem",
+                    "position": 2,
+                    "name": "Guides",
+                    "item": "https://aurenapp.com/guides"
+                  }
+                ]
+              })}
+            </script>
           </Helmet>
 
           <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background px-6">

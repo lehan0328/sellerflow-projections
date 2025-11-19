@@ -11,6 +11,28 @@ const AdvancedAnalytics = () => {
       <Helmet>
         <title>Advanced Analytics & KPIs - Beyond Sellerboard | Auren</title>
         <meta name="description" content="Get deeper insights than Sellerboard with NOI, breakeven per unit, true PNL, and advanced KPIs that actually matter for your ecommerce business." />
+        <link rel="canonical" href="https://aurenapp.com/advanced-analytics" />
+        
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+              {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Home",
+                "item": "https://aurenapp.com/"
+              },
+              {
+                "@type": "ListItem",
+                "position": 2,
+                "name": "Advanced Analytics",
+                "item": "https://aurenapp.com/advanced-analytics"
+              }
+            ]
+          })}
+        </script>
       </Helmet>
 
       {/* Hero Section */}

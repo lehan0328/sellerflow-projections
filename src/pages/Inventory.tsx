@@ -11,6 +11,28 @@ const Inventory = () => {
       <Helmet>
         <title>Inventory Management - Multi-Platform Stock Control | Auren</title>
         <meta name="description" content="Keep your products in stock across all ecommerce platforms with AI-powered inventory management. Similar to RestockPro but better." />
+        <link rel="canonical" href="https://aurenapp.com/inventory" />
+        
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+              {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Home",
+                "item": "https://aurenapp.com/"
+              },
+              {
+                "@type": "ListItem",
+                "position": 2,
+                "name": "Inventory",
+                "item": "https://aurenapp.com/inventory"
+              }
+            ]
+          })}
+        </script>
       </Helmet>
 
       {/* Hero Section */}

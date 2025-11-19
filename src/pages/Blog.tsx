@@ -102,6 +102,27 @@ const Blog = () => {
         <title>Amazon Cashflow Management Tips | Auren Blog</title>
         <meta name="description" content="Expert tips for Amazon cash flow management and e-commerce cashflow forecasting. Learn strategies to optimize marketplace finances." />
         <link rel="canonical" href="https://aurenapp.com/blog" />
+        
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+              {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Home",
+                "item": "https://aurenapp.com/"
+              },
+              {
+                "@type": "ListItem",
+                "position": 2,
+                "name": "Blog",
+                "item": "https://aurenapp.com/blog"
+              }
+            ]
+          })}
+        </script>
       </Helmet>
 
       {/* Sticky CTA */}

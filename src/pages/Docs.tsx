@@ -173,6 +173,27 @@ const Docs = () => {
         <meta name="description" content="Learn how to use Auren's amazon cashflow management software. Complete guides for forecasting, bank integration, and marketplace cash flow management." />
         <meta name="keywords" content="amazon cashflow documentation, marketplace cash flow guides, cashflow management help" />
         <link rel="canonical" href="https://aurenapp.com/docs" />
+        
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+              {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Home",
+                "item": "https://aurenapp.com/"
+              },
+              {
+                "@type": "ListItem",
+                "position": 2,
+                "name": "Documentation",
+                "item": "https://aurenapp.com/docs"
+              }
+            ]
+          })}
+        </script>
       </Helmet>
 
       {/* Sticky CTA */}

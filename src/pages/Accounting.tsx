@@ -11,6 +11,28 @@ const Accounting = () => {
       <Helmet>
         <title>Ecommerce Accounting Integration - Like A2X & LinkMyBooks | Auren</title>
         <meta name="description" content="Properly separate ecommerce disbursement line items for accurate accounting. Similar to A2X and LinkMyBooks but for all platforms." />
+        <link rel="canonical" href="https://aurenapp.com/accounting" />
+        
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+              {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Home",
+                "item": "https://aurenapp.com/"
+              },
+              {
+                "@type": "ListItem",
+                "position": 2,
+                "name": "Accounting",
+                "item": "https://aurenapp.com/accounting"
+              }
+            ]
+          })}
+        </script>
       </Helmet>
 
       {/* Hero Section */}

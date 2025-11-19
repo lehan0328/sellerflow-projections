@@ -11,6 +11,28 @@ const Reimbursements = () => {
       <Helmet>
         <title>Automated Reimbursements for Amazon & Walmart | Auren</title>
         <meta name="description" content="Fully automated FBA and WFS reimbursement tracking. Just upload invoices and let us handle the rest. Recover money from lost and damaged inventory." />
+        <link rel="canonical" href="https://aurenapp.com/reimbursements" />
+        
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+              {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Home",
+                "item": "https://aurenapp.com/"
+              },
+              {
+                "@type": "ListItem",
+                "position": 2,
+                "name": "Reimbursements",
+                "item": "https://aurenapp.com/reimbursements"
+              }
+            ]
+          })}
+        </script>
       </Helmet>
 
       {/* Hero Section */}

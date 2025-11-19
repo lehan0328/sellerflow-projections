@@ -20,6 +20,27 @@ const TermsOfService = () => {
         <meta name="description" content="Terms of Service for Auren cash flow management platform for Amazon sellers." />
         <meta name="robots" content="index, follow" />
         <link rel="canonical" href="https://aurenapp.com/terms" />
+        
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+              {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Home",
+                "item": "https://aurenapp.com/"
+              },
+              {
+                "@type": "ListItem",
+                "position": 2,
+                "name": "Terms of Service",
+                "item": "https://aurenapp.com/terms"
+              }
+            ]
+          })}
+        </script>
       </Helmet>
 
       <div className="min-h-screen py-20 px-4">
