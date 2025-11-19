@@ -1041,17 +1041,26 @@ export const PurchaseOrderForm = ({
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0 z-[100]" align="start" sideOffset={4}>
-                  <Calendar mode="single" selected={formData.poDate} onSelect={date => {
-                  setFormData(prev => ({
-                    ...prev,
-                    poDate: date || new Date()
-                  }));
-                  setIsPODatePickerOpen(false);
-                }} disabled={(date) => {
-                  const today = new Date();
-                  today.setHours(0, 0, 0, 0);
-                  return date < today;
-                }} initialFocus className={cn("p-3 pointer-events-auto")} />
+                  <Calendar 
+                    mode="single" 
+                    selected={formData.poDate} 
+                    onSelect={(date) => {
+                      if (date) {
+                        setFormData(prev => ({
+                          ...prev,
+                          poDate: date
+                        }));
+                      }
+                      setIsPODatePickerOpen(false);
+                    }} 
+                    disabled={(date) => {
+                      const today = new Date();
+                      today.setHours(0, 0, 0, 0);
+                      return date < today;
+                    }} 
+                    initialFocus 
+                    className={cn("p-3 pointer-events-auto")} 
+                  />
                 </PopoverContent>
               </Popover>
             </div>
@@ -1166,13 +1175,19 @@ export const PurchaseOrderForm = ({
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0 z-[100]" align="start" sideOffset={4}>
-                      <Calendar mode="single" selected={formData.deliveryDate} onSelect={date => {
-                    setFormData(prev => ({
-                      ...prev,
-                      deliveryDate: date
-                    }));
-                    setIsDeliveryDatePickerOpen(false);
-                  }} initialFocus className={cn("p-3 pointer-events-auto")} />
+                      <Calendar 
+                        mode="single" 
+                        selected={formData.deliveryDate} 
+                        onSelect={(date) => {
+                          setFormData(prev => ({
+                            ...prev,
+                            deliveryDate: date
+                          }));
+                          setIsDeliveryDatePickerOpen(false);
+                        }} 
+                        initialFocus 
+                        className={cn("p-3 pointer-events-auto")} 
+                      />
                     </PopoverContent>
                   </Popover>
                 </div>}
@@ -1224,13 +1239,19 @@ export const PurchaseOrderForm = ({
                             </Button>
                           </PopoverTrigger>
                           <PopoverContent className="w-auto p-0 z-[100]" align="start" sideOffset={4}>
-                            <Calendar mode="single" selected={payment.dueDate} onSelect={date => {
-                        updatePayment(payment.id, "dueDate", date);
-                        setOpenPaymentDatePickers(prev => ({
-                          ...prev,
-                          [payment.id]: false
-                        }));
-                      }} initialFocus className={cn("p-3 pointer-events-auto")} />
+                            <Calendar 
+                              mode="single" 
+                              selected={payment.dueDate} 
+                              onSelect={(date) => {
+                                updatePayment(payment.id, "dueDate", date);
+                                setOpenPaymentDatePickers(prev => ({
+                                  ...prev,
+                                  [payment.id]: false
+                                }));
+                              }} 
+                              initialFocus 
+                              className={cn("p-3 pointer-events-auto")} 
+                            />
                           </PopoverContent>
                         </Popover>
                       </CardContent>
