@@ -3,7 +3,17 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { CreditCard, Search, Calendar, ArrowUpDown } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { CreditCard, Search, Calendar, ArrowUpDown, Pencil, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { formatCurrency } from "@/lib/utils";
 import { useState, useMemo } from "react";
@@ -19,12 +29,19 @@ interface CreditCardPayment {
 
 interface CreditCardPaymentsOverviewProps {
   payments: CreditCardPayment[];
+  onEditPayment?: (payment: CreditCardPayment) => void;
+  onDeletePayment?: (payment: CreditCardPayment) => void;
 }
 
-export const CreditCardPaymentsOverview = ({ payments }: CreditCardPaymentsOverviewProps) => {
+export const CreditCardPaymentsOverview = ({ 
+  payments, 
+  onEditPayment,
+  onDeletePayment 
+}: CreditCardPaymentsOverviewProps) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<'date' | 'amount'>('date');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [paymentToDelete, setPaymentToDelete] = useState<CreditCardPayment | null>(null);
 
   const filteredAndSortedPayments = useMemo(() => {
     let filtered = payments.filter(payment => {
@@ -126,7 +143,7 @@ export const CreditCardPaymentsOverview = ({ payments }: CreditCardPaymentsOverv
                     </TableHead>
                     <TableHead>Description</TableHead>
                     <TableHead>Credit Card</TableHead>
-                    <TableHead>From Account</TableHead>
+                    <TableHead>Bank Account</TableHead>
                     <TableHead className="text-right">
                       <Button
                         variant="ghost"
@@ -138,6 +155,7 @@ export const CreditCardPaymentsOverview = ({ payments }: CreditCardPaymentsOverv
                         <ArrowUpDown className="ml-2 h-4 w-4" />
                       </Button>
                     </TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -157,11 +175,35 @@ export const CreditCardPaymentsOverview = ({ payments }: CreditCardPaymentsOverv
                       </TableCell>
                       <TableCell>
                         <span className="text-sm text-muted-foreground">
-                          {payment.bankAccountName || 'Unknown Account'}
+                          Bank Account
                         </span>
                       </TableCell>
                       <TableCell className="text-right font-semibold text-destructive">
                         -{formatCurrency(payment.amount)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          {onEditPayment && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => onEditPayment(payment)}
+                              className="h-8 w-8 p-0"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                          )}
+                          {onDeletePayment && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setPaymentToDelete(payment)}
+                              className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -181,6 +223,33 @@ export const CreditCardPaymentsOverview = ({ payments }: CreditCardPaymentsOverv
           )}
         </div>
       </CardContent>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!paymentToDelete} onOpenChange={(open) => !open && setPaymentToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Credit Card Payment?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the credit card payment of {paymentToDelete && formatCurrency(paymentToDelete.amount)} 
+              {paymentToDelete && ` from ${format(paymentToDelete.date, "MMM dd, yyyy")}`}. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (paymentToDelete && onDeletePayment) {
+                  onDeletePayment(paymentToDelete);
+                  setPaymentToDelete(null);
+                }
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete Payment
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 };
