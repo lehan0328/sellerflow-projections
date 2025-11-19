@@ -94,7 +94,7 @@ export function TransactionsView({
       </TabsContent>
       
         <TabsContent value="cc-payments" className="mt-6">
-          <CreditCardPaymentsOverview onEdit={onEditPayment} />
+          <CreditCardPaymentsOverview />
         </TabsContent>
     </Tabs>
   );
