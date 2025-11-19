@@ -14,6 +14,7 @@ import { Separator } from "@/components/ui/separator";
 import { CalendarIcon, ShoppingBag, AlertTriangle, DollarSign, Check, AlertCircle } from "lucide-react";
 import { useCreditCards } from "@/hooks/useCreditCards";
 import { useUserSettings } from "@/hooks/useUserSettings";
+import { useTransactions } from "@/hooks/useTransactions";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, addMonths, startOfWeek, endOfWeek, startOfDay } from "date-fns";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, ReferenceLine, ReferenceArea } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
@@ -114,10 +115,41 @@ const CashFlowCalendarComponent = ({
     creditCards,
     totalAvailableCredit
   } = useCreditCards();
+  const { transactions } = useTransactions();
   const {
     chartPreferences,
     updateChartPreferences
   } = useUserSettings();
+
+  // Merge credit into buying opportunities for search dialog only
+  const searchBuyingOpportunities = useMemo(() => {
+    const includeCredit = localStorage.getItem('include-credit-in-opportunities') === 'true';
+    
+    if (!includeCredit || creditCards.length === 0) {
+      return allBuyingOpportunities; // Cash-only
+    }
+    
+    // Calculate total available credit from all cards
+    const totalAvailableCredit = creditCards.reduce((sum, card) => {
+      const effectiveCreditLimit = card.credit_limit_override || card.credit_limit;
+      const effectiveAvailableCredit = effectiveCreditLimit - card.balance;
+      return sum + Math.max(0, effectiveAvailableCredit);
+    }, 0);
+    
+    // Calculate pending amounts on credit cards
+    const totalPending = transactions
+      .filter(tx => tx.creditCardId && tx.status === 'pending')
+      .reduce((sum, tx) => sum + tx.amount, 0);
+    
+    const netAvailableCredit = Math.max(0, totalAvailableCredit - totalPending);
+    
+    // Add credit to each opportunity
+    return allBuyingOpportunities.map(opp => ({
+      ...opp,
+      balance: opp.balance + netAvailableCredit,
+      includesCredit: true
+    }));
+  }, [allBuyingOpportunities, creditCards, transactions]);
 
   // ALL STATE HOOKS MUST BE AT THE TOP - DO NOT ADD ANY BETWEEN DATA PROCESSING
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -1082,7 +1114,7 @@ const CashFlowCalendarComponent = ({
                     {(() => {
                       const amount = parseFloat(searchAmount);
                       // Find the earliest opportunity where balance >= amount
-                      const matchingOpp = allBuyingOpportunities.find(opp => opp.balance >= amount);
+                      const matchingOpp = searchBuyingOpportunities.find(opp => opp.balance >= amount);
                       
                       if (!matchingOpp) {
                         return (
@@ -1191,7 +1223,7 @@ const CashFlowCalendarComponent = ({
                       
                       // Find the opportunity where the selected date falls within the range [earliest_purchase_date, low_point_date]
                       let relevantOpp = null;
-                      for (const opp of allBuyingOpportunities) {
+                      for (const opp of searchBuyingOpportunities) {
                         const [year, month, day] = opp.date.split('-').map(Number);
                         const lowPointDate = new Date(year, month - 1, day);
                         
