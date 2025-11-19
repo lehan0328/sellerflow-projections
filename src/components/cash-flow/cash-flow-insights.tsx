@@ -44,8 +44,6 @@ interface CashFlowInsightsProps {
   onUpdateReserveAmount?: (amount: number) => Promise<void>;
   transactionMatchButton?: React.ReactNode;
   excludeToday?: boolean;
-  includeCreditInOpportunities?: boolean;
-  setIncludeCreditInOpportunities?: (value: boolean) => void;
 }
 export const CashFlowInsights = memo(({
   currentBalance,
@@ -67,9 +65,7 @@ export const CashFlowInsights = memo(({
   dailyBalances = [],
   onUpdateReserveAmount,
   transactionMatchButton,
-  excludeToday = false,
-  includeCreditInOpportunities = false,
-  setIncludeCreditInOpportunities
+  excludeToday = false
 }: CashFlowInsightsProps) => {
   const {
     toast
@@ -511,29 +507,8 @@ export const CashFlowInsights = memo(({
 
   const adjustedOpportunities = useMemo(() => getAdjustedOpportunities(), [getAdjustedOpportunities]);
 
-  // Merge cash opportunities with credit card available credit
-  const mergedOpportunities = useMemo(() => {
-    if (!includeCreditInOpportunities || creditCards.length === 0) {
-      return adjustedOpportunities; // Return cash-only
-    }
-    
-    // Calculate net available credit with per-card capping
-    const netAvailableCredit = creditCards.reduce((sum, card) => {
-      const effectiveCreditLimit = card.credit_limit_override || card.credit_limit;
-      const cardAvailable = effectiveCreditLimit - card.balance;
-      const cardPending = pendingOrdersByCard[card.id] || 0;
-      const cardNetAvailable = cardAvailable - cardPending;
-      // Cap each card at 0 - overflow goes to cash, not counted in credit
-      return sum + Math.max(0, cardNetAvailable);
-    }, 0);
-    
-    // Add net available credit to each opportunity
-    return adjustedOpportunities.map(opp => ({
-      ...opp,
-      balance: opp.balance + netAvailableCredit,
-      includesCredit: true
-    }));
-  }, [adjustedOpportunities, includeCreditInOpportunities, creditCards, pendingOrdersByCard]);
+  // Use adjusted opportunities directly (no credit merging)
+  const mergedOpportunities = adjustedOpportunities;
 
   const handleDateSearch = useCallback(async (date: Date) => {
     setSearchedDate(date);
@@ -710,20 +685,8 @@ export const CashFlowInsights = memo(({
                     </div>
                     <span className={`text-2xl font-bold ${safeSpendingLimit < 0 ? 'text-red-600' : 'text-blue-700'}`}>
                       ${(() => {
-                        // Calculate effective safe spending with credit if toggled on
-                        let effectiveAmount = safeSpendingLimit;
-                        if (includeCreditInOpportunities && creditCards.length > 0) {
-                          const netAvailableCredit = creditCards.reduce((sum, card) => {
-                            const effectiveCreditLimit = card.credit_limit_override || card.credit_limit;
-                            const cardAvailable = effectiveCreditLimit - card.balance;
-                            const cardPending = pendingOrdersByCard[card.id] || 0;
-                            const cardNetAvailable = cardAvailable - cardPending;
-                            // Cap each card at 0
-                            return sum + Math.max(0, cardNetAvailable);
-                          }, 0);
-                          effectiveAmount = safeSpendingLimit + netAvailableCredit;
-                        }
-                        return effectiveAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                        // Show cash-only safe spending
+                        return safeSpendingLimit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                       })()}
                     </span>
                   </div>
@@ -773,22 +736,7 @@ export const CashFlowInsights = memo(({
                 </div>
 
                 {/* Opportunity #2 Preview - only show if current safe spending is positive */}
-                {(() => {
-                  // Calculate effective safe spending with credit if toggled on
-                  let effectiveSafeSpending = safeSpendingLimit;
-                  if (includeCreditInOpportunities && creditCards.length > 0) {
-                    const netAvailableCredit = creditCards.reduce((sum, card) => {
-                      const effectiveCreditLimit = card.credit_limit_override || card.credit_limit;
-                      const cardAvailable = effectiveCreditLimit - card.balance;
-                      const cardPending = pendingOrdersByCard[card.id] || 0;
-                      const cardNetAvailable = cardAvailable - cardPending;
-                      // Cap each card at 0
-                      return sum + Math.max(0, cardNetAvailable);
-                    }, 0);
-                    effectiveSafeSpending = safeSpendingLimit + netAvailableCredit;
-                  }
-                  return effectiveSafeSpending > 0;
-                })() && mergedOpportunities.length > 1 && mergedOpportunities[1].balance > 0 && (
+                {safeSpendingLimit > 0 && mergedOpportunities.length > 1 && mergedOpportunities[1].balance > 0 && (
                   <div className="p-3 rounded-lg bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border-2 border-blue-200 dark:border-blue-800">
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
@@ -951,35 +899,9 @@ export const CashFlowInsights = memo(({
                     <p className="text-[10px] text-muted-foreground mt-2">
                       Combined spending power from all your credit cards
                     </p>
-                    
-                    {/* Toggle to Include Credit in Buying Opportunities */}
-                    <div className="flex items-center justify-between mt-3 p-2 bg-white/50 dark:bg-gray-900/50 rounded">
-                      <div className="flex items-center gap-2">
-                        <Label htmlFor="include-credit" className="text-xs font-medium cursor-pointer">
-                          Include in Buying Opportunities
-                        </Label>
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <button className="inline-flex">
-                                <Info className="h-3 w-3 text-muted-foreground" />
-                              </button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Combine cash and credit for total buying power</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      </div>
-                      <Switch
-                        id="include-credit"
-                        checked={includeCreditInOpportunities}
-                        onCheckedChange={setIncludeCreditInOpportunities}
-                      />
-                    </div>
                   </div>
                   
-                  <Button 
+                  <Button
                     variant="outline" 
                     size="sm" 
                     onClick={() => setShowAllCreditCards(true)}
@@ -1002,7 +924,7 @@ export const CashFlowInsights = memo(({
               All Buying Opportunities
             </DialogTitle>
             <DialogDescription>
-              View all your upcoming buying opportunities based on projected cash flow{includeCreditInOpportunities && " plus available credit"}. All opportunities reflect transactions within the next 3 months only.
+              View all your upcoming buying opportunities based on projected cash flow. All opportunities reflect transactions within the next 3 months only.
             </DialogDescription>
           </DialogHeader>
           
@@ -1737,7 +1659,7 @@ export const CashFlowInsights = memo(({
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium text-muted-foreground">Total Available Funds</span>
                   <span className="text-xl font-bold text-blue-600">
-                    ${(dateSearchResults.projectedCash + (includeCreditInOpportunities ? dateSearchResults.availableCredit : 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    ${dateSearchResults.projectedCash.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </span>
                 </div>
               </div>

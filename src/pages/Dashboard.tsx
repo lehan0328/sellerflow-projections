@@ -2408,45 +2408,6 @@ const Dashboard = () => {
     return deduplicatedOpportunities;
   }, [projectedDailyBalances, reserveAmount, excludeToday]);
 
-  // Toggle state for including credit in buying opportunities
-  const [includeCreditInOpportunities, setIncludeCreditInOpportunities] = useState(() => {
-    const saved = localStorage.getItem('include-credit-in-opportunities');
-    return saved === 'true';
-  });
-
-  // Persist toggle state to localStorage
-  useEffect(() => {
-    localStorage.setItem('include-credit-in-opportunities', String(includeCreditInOpportunities));
-  }, [includeCreditInOpportunities]);
-
-  // Merge buying opportunities with credit card available credit
-  const mergedBuyingOpportunities = useMemo(() => {
-    if (!includeCreditInOpportunities || creditCards.length === 0) {
-      return buyingOpportunities; // Return cash-only
-    }
-    
-    // Calculate total available credit
-    const totalAvailableCredit = creditCards.reduce((sum, card) => {
-      const effectiveCreditLimit = card.credit_limit_override || card.credit_limit;
-      const effectiveAvailableCredit = effectiveCreditLimit - card.balance;
-      return sum + effectiveAvailableCredit;
-    }, 0);
-    
-    // Calculate pending credit card transactions
-    const totalPending = transactions
-      .filter(tx => tx.creditCardId && tx.status === 'pending')
-      .reduce((sum, tx) => sum + tx.amount, 0);
-    
-    const netAvailableCredit = totalAvailableCredit - totalPending;
-    
-    // Add net available credit to each opportunity
-    return buyingOpportunities.map(opp => ({
-      ...opp,
-      balance: opp.balance + netAvailableCredit,
-      includesCredit: true
-    }));
-  }, [buyingOpportunities, creditCards, transactions, includeCreditInOpportunities]);
-
   // Calculate safe spending from projected balances
   const safeSpendingFromProjection = useMemo(() => {
     if (!projectedDailyBalances || projectedDailyBalances.length === 0) {
@@ -2993,7 +2954,7 @@ const Dashboard = () => {
                       safeSpendingLimit={
                         safeSpendingData?.safe_spending_limit || 0
                       }
-                      allBuyingOpportunities={mergedBuyingOpportunities}
+                      allBuyingOpportunities={buyingOpportunities}
                       dailyBalances={projectedDailyBalances.map(d => ({ date: d.date, balance: d.runningBalance }))}
                     />
                   ) : (
@@ -3018,12 +2979,10 @@ const Dashboard = () => {
                       nextBuyingOpportunityBalance={safeSpendingFromProjection.nextOpportunity?.balance}
                       nextBuyingOpportunityDate={safeSpendingFromProjection.nextOpportunity?.date}
                       nextBuyingOpportunityAvailableDate={safeSpendingFromProjection.nextOpportunity?.available_date}
-                      allBuyingOpportunities={mergedBuyingOpportunities}
+                      allBuyingOpportunities={buyingOpportunities}
                       dailyBalances={projectedDailyBalances.map(d => ({ date: d.date, balance: d.runningBalance }))}
                       onUpdateReserveAmount={updateReserveAmount}
                       excludeToday={excludeToday}
-                      includeCreditInOpportunities={includeCreditInOpportunities}
-                      setIncludeCreditInOpportunities={setIncludeCreditInOpportunities}
                       transactionMatchButton={
                         <TransactionMatchButton
                           matches={matches}
@@ -3836,7 +3795,7 @@ const Dashboard = () => {
               onSubmitOrder={handlePurchaseOrderSubmit}
               onDeleteAllVendors={deleteAllVendors}
               onAddVendor={addVendor}
-              allBuyingOpportunities={mergedBuyingOpportunities}
+              allBuyingOpportunities={buyingOpportunities}
               projectedDailyBalances={projectedDailyBalances}
               reserveAmount={reserveAmount}
             />
@@ -3869,7 +3828,7 @@ const Dashboard = () => {
             <CreditCardPaymentDialog
               open={showPayCreditCardDialog}
               onOpenChange={setShowPayCreditCardDialog}
-              allBuyingOpportunities={mergedBuyingOpportunities}
+              allBuyingOpportunities={buyingOpportunities}
               projectedDailyBalances={projectedDailyBalances}
               reserveAmount={reserveAmount}
               allCalendarEvents={allCalendarEvents}
