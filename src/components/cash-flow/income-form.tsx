@@ -83,6 +83,7 @@ export const IncomeForm = ({
   });
 
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+  const [isEndDatePickerOpen, setIsEndDatePickerOpen] = useState(false);
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
   const [customerSearchTerm, setCustomerSearchTerm] = useState("");
   const [showCustomerForm, setShowCustomerForm] = useState(false);
@@ -664,7 +665,7 @@ export const IncomeForm = ({
 
                   <div className="space-y-2">
                     <Label>End Date (Optional)</Label>
-                    <Popover>
+                    <Popover open={isEndDatePickerOpen} onOpenChange={setIsEndDatePickerOpen}>
                       <PopoverTrigger asChild>
                         <Button
                           variant="outline"
@@ -681,7 +682,10 @@ export const IncomeForm = ({
                         <Calendar
                           mode="single"
                           selected={formData.endDate}
-                          onSelect={(date) => handleInputChange("endDate", date || undefined)}
+                          onSelect={(date) => {
+                            handleInputChange("endDate", date || undefined);
+                            setIsEndDatePickerOpen(false);
+                          }}
                           initialFocus
                           className={cn("p-3 pointer-events-auto")}
                         />
