@@ -2006,13 +2006,13 @@ const Dashboard = () => {
     creditCards.length > 0
       ? creditCards
           .filter((card) => card.payment_due_date && (card.statement_balance || card.balance) > 0)
-          .map((card) => {
+          .flatMap((card) => {
             // If pay_minimum is enabled, show minimum payment; otherwise show statement balance
             const paymentAmount = card.pay_minimum
               ? card.minimum_payment
               : card.statement_balance || card.balance;
 
-            return {
+            const events: CashFlowEvent[] = [{
               id: `credit-payment-${card.id}`,
               type: "credit-payment" as const,
               amount: paymentAmount,
@@ -2022,7 +2022,58 @@ const Dashboard = () => {
               creditCard: card.institution_name,
               creditCardId: card.id,
               date: new Date(card.payment_due_date!),
+            }];
+
+            // Insert the payment into credit_card_payments table for scheduling
+            const insertPayment = async () => {
+              const { data: profile } = await supabase
+                .from('profiles')
+                .select('account_id, user_id')
+                .eq('user_id', user?.id)
+                .maybeSingle();
+
+              if (!profile) return;
+
+              // Check if payment already exists
+              const { data: existing } = await supabase
+                .from('credit_card_payments')
+                .select('id')
+                .eq('credit_card_id', card.id)
+                .eq('payment_date', format(new Date(card.payment_due_date!), "yyyy-MM-dd"))
+                .eq('payment_type', 'bill_payment')
+                .maybeSingle();
+
+              if (existing) return; // Already exists
+
+              // Get first active bank account
+              const { data: bankAccount } = await supabase
+                .from('bank_accounts')
+                .select('id')
+                .eq('account_id', profile.account_id)
+                .eq('is_active', true)
+                .limit(1)
+                .maybeSingle();
+
+              if (!bankAccount) return;
+
+              await supabase
+                .from('credit_card_payments')
+                .insert({
+                  user_id: profile.user_id,
+                  account_id: profile.account_id,
+                  credit_card_id: card.id,
+                  bank_account_id: bankAccount.id,
+                  amount: paymentAmount,
+                  payment_date: format(new Date(card.payment_due_date!), "yyyy-MM-dd"),
+                  description: `${card.institution_name} - ${card.account_name} Bill Payment`,
+                  payment_type: 'bill_payment',
+                  status: 'scheduled'
+                });
             };
+
+            insertPayment();
+
+            return events;
           })
       : [];
 
@@ -2031,20 +2082,20 @@ const Dashboard = () => {
     creditCards.length > 0
       ? (creditCards
           .filter((card) => card.forecast_next_month && card.payment_due_date)
-          .map((card) => {
+          .flatMap((card) => {
             // Calculate projected usage: limit - available - statement balance
             const projectedAmount =
               card.credit_limit -
               card.available_credit -
               (card.statement_balance || card.balance);
 
-            if (projectedAmount <= 0) return null;
+            if (projectedAmount <= 0) return [];
 
             // Add one month to the current due date
             const nextDueDate = new Date(card.payment_due_date!);
             nextDueDate.setMonth(nextDueDate.getMonth() + 1);
 
-            return {
+            const events: CashFlowEvent[] = [{
               id: `credit-forecast-${card.id}`,
               type: "credit-payment" as const,
               amount: projectedAmount,
@@ -2052,9 +2103,57 @@ const Dashboard = () => {
               creditCard: card.institution_name,
               creditCardId: card.id,
               date: nextDueDate,
+            }];
+
+            // Insert the forecasted payment
+            const insertForecast = async () => {
+              const { data: profile } = await supabase
+                .from('profiles')
+                .select('account_id, user_id')
+                .eq('user_id', user?.id)
+                .maybeSingle();
+
+              if (!profile) return;
+
+              const { data: existing } = await supabase
+                .from('credit_card_payments')
+                .select('id')
+                .eq('credit_card_id', card.id)
+                .eq('payment_date', format(nextDueDate, "yyyy-MM-dd"))
+                .eq('payment_type', 'bill_payment')
+                .maybeSingle();
+
+              if (existing) return;
+
+              const { data: bankAccount } = await supabase
+                .from('bank_accounts')
+                .select('id')
+                .eq('account_id', profile.account_id)
+                .eq('is_active', true)
+                .limit(1)
+                .maybeSingle();
+
+              if (!bankAccount) return;
+
+              await supabase
+                .from('credit_card_payments')
+                .insert({
+                  user_id: profile.user_id,
+                  account_id: profile.account_id,
+                  credit_card_id: card.id,
+                  bank_account_id: bankAccount.id,
+                  amount: projectedAmount,
+                  payment_date: format(nextDueDate, "yyyy-MM-dd"),
+                  description: `${card.institution_name} - ${card.account_name} (Forecasted)`,
+                  payment_type: 'bill_payment',
+                  status: 'scheduled'
+                });
             };
-          })
-          .filter(Boolean) as CashFlowEvent[])
+
+            insertForecast();
+
+            return events;
+          }))
       : [];
 
   // Convert vendor payments (actual cash outflows) to calendar events
@@ -2091,22 +2190,41 @@ const Dashboard = () => {
     }));
 
   // Convert credit card payment transactions to calendar events
-  const creditCardPaymentEvents: CashFlowEvent[] = bankTransactionsData
-    ?.filter(tx => 
-      (tx.transactionType === 'payment' || 
-       (tx.category && tx.category.includes('Credit Card Payment'))) &&
-      tx.creditCardId && 
-      tx.bankAccountId
-    )
-    .map(tx => ({
-      id: `cc-payment-${tx.id}`,
-      type: "credit-payment" as const, // Special type for credit card payments
-      amount: Math.abs(tx.amount),
-      description: tx.name || `Credit Card Payment`,
-      vendor: "Credit Card Payment",
-      date: new Date(tx.date),
-      creditCardId: tx.creditCardId, // Keep creditCardId to increase card's available credit
-    })) || [];
+  const creditCardPaymentEvents = useMemo(() => {
+    return (async () => {
+      if (!user?.id) return [];
+      
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('account_id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (!profile?.account_id) return [];
+
+      const { data: payments } = await supabase
+        .from('credit_card_payments')
+        .select('*')
+        .eq('account_id', profile.account_id);
+
+      if (!payments) return [];
+
+      return payments.map(payment => ({
+        id: `cc-payment-${payment.id}`,
+        type: 'credit-payment' as const,
+        amount: payment.amount,
+        description: payment.description || 'Credit Card Payment',
+        creditCardId: payment.credit_card_id,
+        date: new Date(payment.payment_date),
+      }));
+    })();
+  }, [user?.id, creditCards]);
+
+  const [creditCardPaymentsForEvents, setCreditCardPaymentsForEvents] = useState<CashFlowEvent[]>([]);
+  
+  useEffect(() => {
+    creditCardPaymentEvents.then(events => setCreditCardPaymentsForEvents(events));
+  }, [creditCardPaymentEvents]);
 
   // Generate recurring transaction events for calendar (show next 12 months)
   const recurringEvents: CashFlowEvent[] = useMemo(() => {
@@ -2294,7 +2412,7 @@ const Dashboard = () => {
     ...calendarEvents,
     ...vendorPaymentEvents,
     ...expenseEvents,
-    ...creditCardPaymentEvents,
+    ...creditCardPaymentsForEvents,
     ...vendorEvents,
     ...incomeEvents,
     ...creditCardEvents,
@@ -3104,60 +3222,6 @@ const Dashboard = () => {
             onCreditCardChange={() => {
               refetchTransactions();
               refetchCreditCards();
-            }}
-            creditCardPayments={bankTransactionsData
-              ?.filter(tx => 
-                // Credit card payments have transaction_type "payment" 
-                // OR category "Credit Card Payment"
-                // OR have both bank_account_id and credit_card_id set
-                tx.transactionType === 'payment' ||
-                (tx.category && tx.category.includes('Credit Card Payment')) ||
-                (tx.bankAccountId && tx.creditCardId)
-              )
-              .map(tx => {
-                const creditCard = creditCards.find(cc => cc.id === tx.creditCardId);
-                const bankAccount = accounts?.find(ba => ba.id === tx.bankAccountId);
-                
-                return {
-                  id: tx.id,
-                  date: new Date(tx.date),
-                  amount: Math.abs(tx.amount),
-                  name: tx.name,
-                  creditCardName: creditCard?.account_name || creditCard?.nickname,
-                  bankAccountName: bankAccount?.account_name,
-                };
-              }) || []
-            }
-            onEditPayment={(payment) => {
-              // Find the full bank transaction data
-              const bankTransaction = bankTransactionsData?.find(tx => tx.id === payment.id);
-              if (bankTransaction) {
-                setEditingCreditCardPayment(bankTransaction);
-              }
-            }}
-            onDeletePayment={async (payment) => {
-              try {
-                const { error } = await supabase
-                  .from('bank_transactions')
-                  .delete()
-                  .eq('id', payment.id);
-
-                if (error) throw error;
-                
-                toast({
-                  title: "Payment deleted",
-                  description: "Credit card payment has been deleted",
-                });
-                refetchBankTransactions();
-                refetchCreditCards();
-              } catch (error) {
-                console.error('Error deleting payment:', error);
-                toast({
-                  title: "Error",
-                  description: "Failed to delete payment",
-                  variant: "destructive",
-                });
-              }
             }}
           />
         );

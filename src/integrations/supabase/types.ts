@@ -1101,6 +1101,66 @@ export type Database = {
         }
         Relationships: []
       }
+      credit_card_payments: {
+        Row: {
+          account_id: string
+          amount: number
+          bank_account_id: string
+          created_at: string
+          credit_card_id: string
+          description: string | null
+          id: string
+          payment_date: string
+          payment_type: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_id: string
+          amount: number
+          bank_account_id: string
+          created_at?: string
+          credit_card_id: string
+          description?: string | null
+          id?: string
+          payment_date: string
+          payment_type: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string
+          amount?: number
+          bank_account_id?: string
+          created_at?: string
+          credit_card_id?: string
+          description?: string | null
+          id?: string
+          payment_date?: string
+          payment_type?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credit_card_payments_bank_account_id_fkey"
+            columns: ["bank_account_id"]
+            isOneToOne: false
+            referencedRelation: "bank_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "credit_card_payments_credit_card_id_fkey"
+            columns: ["credit_card_id"]
+            isOneToOne: false
+            referencedRelation: "credit_cards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       credit_cards: {
         Row: {
           account_id: string | null

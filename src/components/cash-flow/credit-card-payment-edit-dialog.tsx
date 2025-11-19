@@ -51,10 +51,10 @@ export function CreditCardPaymentEditDialog({
 
     try {
       const { error } = await supabase
-        .from('bank_transactions')
+        .from('credit_card_payments')
         .update({
-          amount: -Math.abs(amount), // Store as negative for debit
-          date: format(paymentDate, "yyyy-MM-dd"),
+          amount: amount,
+          payment_date: format(paymentDate, "yyyy-MM-dd"),
           updated_at: new Date().toISOString(),
         })
         .eq('id', payment.id);
