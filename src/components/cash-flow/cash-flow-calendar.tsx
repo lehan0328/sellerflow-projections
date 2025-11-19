@@ -121,7 +121,10 @@ const CashFlowCalendarComponent = ({
 
   // ALL STATE HOOKS MUST BE AT THE TOP - DO NOT ADD ANY BETWEEN DATA PROCESSING
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [chartTimeRange, setChartTimeRange] = useState<'1' | '3' | '6' | '12'>('3');
+  const [chartTimeRange, setChartTimeRange] = useState<'1' | '3' | '6'>(() => {
+    const saved = localStorage.getItem('chart-timeframe');
+    return (saved === '1' || saved === '3' || saved === '6') ? saved : '1';
+  });
   const [selectedTransaction, setSelectedTransaction] = useState<CashFlowEvent | null>(null);
   const [showTransactionModal, setShowTransactionModal] = useState(false);
   const [showLowestBalanceLine, setShowLowestBalanceLine] = useState(true);
@@ -699,7 +702,10 @@ const CashFlowCalendarComponent = ({
                   <DollarSign className="h-4 w-4 mr-2" />
                   Search by Amount or Date
                 </Button>
-                <Select value={chartTimeRange} onValueChange={(value: '1' | '3' | '6' | '12') => setChartTimeRange(value)}>
+                <Select value={chartTimeRange} onValueChange={(value: '1' | '3' | '6') => {
+                  setChartTimeRange(value);
+                  localStorage.setItem('chart-timeframe', value);
+                }}>
                   <SelectTrigger className="w-[140px]">
                     <SelectValue />
                   </SelectTrigger>
@@ -707,7 +713,6 @@ const CashFlowCalendarComponent = ({
                     <SelectItem value="1">1 Month</SelectItem>
                     <SelectItem value="3">3 Months</SelectItem>
                     <SelectItem value="6">6 Months</SelectItem>
-                    <SelectItem value="12">1 Year</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
