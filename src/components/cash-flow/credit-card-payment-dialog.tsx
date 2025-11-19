@@ -79,6 +79,16 @@ export function CreditCardPaymentDialog({
     return projectedCredit;
   }, [selectedCreditCardId, paymentDate, selectedCreditCard, allCalendarEvents]);
 
+  // Calculate projected cash balance on selected date
+  const projectedCashBalance = useMemo(() => {
+    if (!paymentDate || projectedDailyBalances.length === 0) return null;
+
+    const dateStr = format(paymentDate, "yyyy-MM-dd");
+    const dailyBalance = projectedDailyBalances.find(db => db.date === dateStr);
+    
+    return dailyBalance ? dailyBalance.runningBalance : null;
+  }, [paymentDate, projectedDailyBalances]);
+
   // Auto-suggest earliest affordable date based on payment amount
   const suggestedDate = React.useMemo(() => {
     if (!allBuyingOpportunities || allBuyingOpportunities.length === 0) return null;
@@ -285,31 +295,48 @@ export function CreditCardPaymentDialog({
               </PopoverContent>
             </Popover>
 
-            {/* Display projected available credit */}
-            {selectedCreditCardId && paymentDate && projectedAvailableCredit !== null && (
+            {/* Display projected balances */}
+            {selectedCreditCardId && paymentDate && (projectedAvailableCredit !== null || projectedCashBalance !== null) && (
               <div className={cn(
                 "mt-2 p-3 rounded-md flex items-start gap-2",
-                projectedAvailableCredit >= 0 
+                projectedAvailableCredit !== null && projectedAvailableCredit >= 0 
                   ? "bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800" 
                   : "bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800"
               )}>
                 <Info className={cn(
                   "h-4 w-4 mt-0.5 flex-shrink-0",
-                  projectedAvailableCredit >= 0 ? "text-blue-600 dark:text-blue-400" : "text-red-600 dark:text-red-400"
+                  projectedAvailableCredit !== null && projectedAvailableCredit >= 0 ? "text-blue-600 dark:text-blue-400" : "text-red-600 dark:text-red-400"
                 )} />
-                <div className="flex-1 text-sm">
-                  <p className={cn(
-                    "font-medium",
-                    projectedAvailableCredit >= 0 ? "text-blue-900 dark:text-blue-100" : "text-red-900 dark:text-red-100"
-                  )}>
-                    Available credit on {format(paymentDate, "MMM d, yyyy")}:
-                  </p>
-                  <p className={cn(
-                    "font-semibold",
-                    projectedAvailableCredit >= 0 ? "text-blue-700 dark:text-blue-300" : "text-red-700 dark:text-red-300"
-                  )}>
-                    ${projectedAvailableCredit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </p>
+                <div className="flex-1 text-sm space-y-2">
+                  <div>
+                    <p className={cn(
+                      "font-medium",
+                      projectedAvailableCredit !== null && projectedAvailableCredit >= 0 ? "text-blue-900 dark:text-blue-100" : "text-red-900 dark:text-red-100"
+                    )}>
+                      On {format(paymentDate, "MMM d, yyyy")}:
+                    </p>
+                  </div>
+                  
+                  {projectedCashBalance !== null && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground">Projected Cash:</span>
+                      <span className="font-semibold text-foreground">
+                        ${projectedCashBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                  )}
+                  
+                  {projectedAvailableCredit !== null && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground">Available Credit:</span>
+                      <span className={cn(
+                        "font-semibold",
+                        projectedAvailableCredit >= 0 ? "text-blue-700 dark:text-blue-300" : "text-red-700 dark:text-red-300"
+                      )}>
+                        ${projectedAvailableCredit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
