@@ -13,8 +13,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { CreditCard, Search, Calendar, ArrowUpDown, Pencil, Trash2 } from "lucide-react";
-import { format, parseISO } from "date-fns";
+import { CreditCard, Search, Calendar, ArrowUpDown, Pencil, Trash2, Receipt } from "lucide-react";
+import { format, parseISO, startOfDay } from "date-fns";
 import { formatCurrency } from "@/lib/utils";
 import { useState, useMemo } from "react";
 import { useCreditCardPayments } from "@/hooks/useCreditCardPayments";
@@ -22,6 +22,17 @@ import { useCreditCards } from "@/hooks/useCreditCards";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { CreditCardPaymentEditDialog } from "./credit-card-payment-edit-dialog";
+
+type EnrichedPayment = {
+  id: string;
+  credit_card_id: string;
+  payment_date: string;
+  amount: number;
+  description: string | null;
+  payment_type: 'manual' | 'bill_payment';
+  creditCardName: string;
+  isDynamic?: boolean;
+};
 
 export const CreditCardPaymentsOverview = () => {
   const { payments, isLoading } = useCreditCardPayments();
@@ -33,10 +44,50 @@ export const CreditCardPaymentsOverview = () => {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [paymentToDelete, setPaymentToDelete] = useState<any | null>(null);
 
-  // Transform payments to include credit card names with deduplication
+  // Generate dynamic bill payments and combine with manual payments
   const enrichedPayments = useMemo(() => {
-    // Deduplicate: keep only the first payment for each card+date+type combo
-    const uniquePayments = payments.reduce((acc, payment) => {
+    const today = startOfDay(new Date());
+    
+    // Generate bill payments from credit cards
+    const billPayments: EnrichedPayment[] = creditCards
+      .filter(card => card.payment_due_date && (card.statement_balance || card.balance) > 0)
+      .map(card => {
+        // Calculate early payments for this card
+        const earlyPayments = payments.filter(
+          p => p.credit_card_id === card.id && 
+          p.payment_type === 'manual' &&
+          parseISO(p.payment_date) < parseISO(card.payment_due_date!) &&
+          p.was_paid !== false
+        );
+        const totalEarlyPayments = earlyPayments.reduce((sum, p) => sum + p.amount, 0);
+        
+        // Determine payment amount based on pay_minimum setting
+        let paymentAmount: number;
+        if (card.pay_minimum && card.minimum_payment) {
+          paymentAmount = card.minimum_payment;
+        } else {
+          const effectiveStatementBalance = Math.max(0, (card.statement_balance || card.balance) - totalEarlyPayments);
+          paymentAmount = effectiveStatementBalance;
+        }
+        
+        // Skip if payment amount is zero or negative
+        if (paymentAmount <= 0) return null;
+        
+        return {
+          id: `bill-${card.id}`,
+          credit_card_id: card.id,
+          payment_date: card.payment_due_date!,
+          amount: paymentAmount,
+          description: card.pay_minimum ? 'Minimum Payment Due' : 'Statement Balance Due',
+          payment_type: 'bill_payment' as const,
+          creditCardName: card.account_name,
+          isDynamic: true,
+        };
+      })
+      .filter(p => p !== null) as EnrichedPayment[];
+    
+    // Deduplicate manual payments: keep only the first payment for each card+date+type combo
+    const uniqueManualPayments = payments.reduce((acc, payment) => {
       const key = `${payment.credit_card_id}-${payment.payment_date}-${payment.payment_type}`;
       if (!acc.has(key)) {
         acc.set(key, payment);
@@ -44,14 +95,18 @@ export const CreditCardPaymentsOverview = () => {
       return acc;
     }, new Map<string, typeof payments[0]>());
 
-    return Array.from(uniquePayments.values()).map(payment => {
+    const manualPayments: EnrichedPayment[] = Array.from(uniqueManualPayments.values()).map(payment => {
       const creditCard = creditCards.find(cc => cc.id === payment.credit_card_id);
       
       return {
         ...payment,
         creditCardName: creditCard?.account_name || 'Unknown Card',
+        isDynamic: false,
       };
     });
+    
+    // Combine and return
+    return [...billPayments, ...manualPayments];
   }, [payments, creditCards]);
 
   const filteredAndSortedPayments = useMemo(() => {
@@ -212,7 +267,15 @@ export const CreditCardPaymentsOverview = () => {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <span className="font-medium">{payment.description || 'Credit Card Payment'}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">{payment.description || 'Credit Card Payment'}</span>
+                            {payment.isDynamic && (
+                              <Badge variant="secondary" className="text-xs">
+                                <Receipt className="h-3 w-3 mr-1" />
+                                Bill
+                              </Badge>
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell>
                           <Badge variant="outline" className="font-normal">
@@ -225,22 +288,28 @@ export const CreditCardPaymentsOverview = () => {
                           </span>
                         </TableCell>
                         <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => setEditingPayment(payment)}
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => setPaymentToDelete(payment)}
-                            >
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
-                          </div>
+                          {payment.isDynamic ? (
+                            <Badge variant="outline" className="text-xs text-muted-foreground">
+                              Auto-generated
+                            </Badge>
+                          ) : (
+                            <div className="flex items-center justify-end gap-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setEditingPayment(payment)}
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setPaymentToDelete(payment)}
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </div>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))}
