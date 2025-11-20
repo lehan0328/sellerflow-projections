@@ -54,8 +54,11 @@ export function CreditCardPaymentDialog({
 
     const today = startOfDay(new Date());
     
-    // Start with current available credit
-    const currentAvailableCredit = (selectedCreditCard.credit_limit_override || selectedCreditCard.credit_limit) - (selectedCreditCard.statement_balance || selectedCreditCard.balance);
+    // Start with current available credit (same calculation as "Available to Spend" in buying opportunities)
+    const effectiveCreditLimit = selectedCreditCard.credit_limit_override || selectedCreditCard.credit_limit;
+    const effectiveAvailableCredit = effectiveCreditLimit - selectedCreditCard.balance;
+    const pendingOrders = creditCardPendingAmounts.get(selectedCreditCardId) || 0;
+    const currentAvailableCredit = effectiveAvailableCredit - pendingOrders;
     
     // Track credit over time
     const creditByDate: { [date: string]: number } = {};
