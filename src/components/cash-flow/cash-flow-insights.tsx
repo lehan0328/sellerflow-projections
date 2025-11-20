@@ -412,7 +412,7 @@ export const CashFlowInsights = memo(({
           // Calculate expenses between today and due date
           const pendingExpenses = events
             .filter(event => 
-              event.credit_card_id === card.id &&
+              event.creditCardId === card.id &&
               event.status === 'pending' &&
               (event.type === 'purchase_order' || event.type === 'expense') &&
               event.date && new Date(event.date) > today && new Date(event.date) <= paymentDueDate
@@ -422,7 +422,7 @@ export const CashFlowInsights = memo(({
           // Calculate payments between today and due date
           const paymentsAdded = events
             .filter(event =>
-              event.credit_card_id === card.id &&
+              event.creditCardId === card.id &&
               event.type === 'credit_card_payment' &&
               event.date && new Date(event.date) > today && new Date(event.date) <= paymentDueDate
             )
