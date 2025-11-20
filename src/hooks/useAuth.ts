@@ -1,4 +1,4 @@
-import { useContext } from 'react';
+import { useContext, useMemo } from 'react';
 import { AuthContext } from '@/contexts/AuthContext';
 
 export const useAuth = () => {
@@ -9,4 +9,9 @@ export const useAuth = () => {
   }
   
   return context;
+};
+
+export const useUserId = () => {
+  const { user } = useAuth();
+  return useMemo(() => user?.id ?? null, [user?.id]);
 };
