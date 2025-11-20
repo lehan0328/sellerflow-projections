@@ -275,12 +275,12 @@ export function CreditCardPaymentDialog({
                 </p>
                 {selectedCreditCard.payment_due_date && (
                   <p className="text-sm text-muted-foreground">
-                    Payment Due Date: {format(parseISO(selectedCreditCard.payment_due_date), "MMM dd, yyyy")}
+                    Payment Due Date: {format(addDays(parseISO(selectedCreditCard.payment_due_date), 1), "MMM dd, yyyy")}
                   </p>
                 )}
                 {lowestCreditDate && (
                   <p className="text-sm font-medium text-amber-600 dark:text-amber-400">
-                    Lowest Credit (30 days): ${lowestCreditDate.credit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} on {format(parseISO(lowestCreditDate.date), 'MMM d, yyyy')}
+                    Lowest Credit (30 days): ${lowestCreditDate.credit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} on {format(addDays(parseISO(lowestCreditDate.date), 1), 'MMM d, yyyy')}
                   </p>
                 )}
                 {selectedCardOpportunities.length > 0 && (
@@ -288,7 +288,7 @@ export function CreditCardPaymentDialog({
                     <p className="text-xs font-semibold text-muted-foreground">Buying Opportunities ({selectedCardOpportunities.length} available)</p>
                     {selectedCardOpportunities.slice(0, 2).map((opp, idx) => (
                       <div key={idx} className="flex justify-between items-center text-xs">
-                        <span className="text-muted-foreground">{format(parseISO(opp.date), 'MMM d')}</span>
+                        <span className="text-muted-foreground">{format(addDays(parseISO(opp.date), 1), 'MMM d')}</span>
                         <span className="font-semibold text-blue-600 dark:text-blue-400">
                           ${opp.availableCredit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </span>
@@ -355,7 +355,7 @@ export function CreditCardPaymentDialog({
                       "font-medium",
                       projectedAvailableCredit !== null && projectedAvailableCredit >= 0 ? "text-blue-900 dark:text-blue-100" : "text-red-900 dark:text-red-100"
                     )}>
-                      On {format(paymentDate, "MMM d, yyyy")}:
+                      On {format(addDays(paymentDate, 1), "MMM d, yyyy")}:
                     </p>
                   </div>
                   
