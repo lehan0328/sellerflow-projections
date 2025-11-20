@@ -69,10 +69,12 @@ export function CreditCardPaymentDialog({
     while (currentDate <= endDate) {
       const dateStr = format(currentDate, "yyyy-MM-dd");
       
-      // Get events for THIS CARD on this specific date
+      // Get events for THIS CARD on this specific date (exclude overdue transactions)
       const dayEvents = allCalendarEvents.filter(event => {
         const eventDateStr = format(new Date(event.date), "yyyy-MM-dd");
-        return eventDateStr === dateStr && event.creditCardId === selectedCreditCardId;
+        const eventDate = startOfDay(new Date(event.date));
+        const isOverdue = eventDate < today;
+        return eventDateStr === dateStr && event.creditCardId === selectedCreditCardId && !isOverdue;
       });
       
       // Process purchases (decrease available credit)
