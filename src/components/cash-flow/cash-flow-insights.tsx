@@ -534,6 +534,9 @@ export const CashFlowInsights = memo(({
         cardAvailableCredit[card.id] = currentAvailableSpend;
       });
 
+      console.log('🔵 CashFlowInsights cardOpportunities:', JSON.stringify(calculatedCardOpportunities, null, 2));
+      console.log('🔵 CashFlowInsights cardAvailableCredit:', cardAvailableCredit);
+
       onCreditDataCalculated({
         lowestCreditByCard: calculatedLowestCreditByCard,
         cardOpportunities: calculatedCardOpportunities,
