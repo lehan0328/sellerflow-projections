@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { CreditCard, Search, Calendar, ArrowUpDown, Pencil, Trash2, Receipt } from "lucide-react";
 import { format, parseISO, startOfDay } from "date-fns";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, parseISODate } from "@/lib/utils";
 import { useState, useMemo } from "react";
 import { useCreditCardPayments } from "@/hooks/useCreditCardPayments";
 import { useCreditCards } from "@/hooks/useCreditCards";
@@ -64,14 +64,14 @@ export const CreditCardPaymentsOverview = () => {
         return true;
       })
       .map(card => {
-        // Parse payment due date consistently using parseISO to avoid timezone bugs
-        const dueDate = parseISO(card.payment_due_date!);
+        // Parse payment due date consistently using parseISODate to avoid timezone bugs
+        const dueDate = parseISODate(card.payment_due_date!);
         
         // Calculate early payments for this card
         const earlyPayments = payments.filter(
           p => p.credit_card_id === card.id && 
           p.payment_type === 'manual' &&
-          parseISO(p.payment_date) < dueDate &&
+          parseISODate(p.payment_date) < dueDate &&
           p.was_paid !== false
         );
         const totalEarlyPayments = earlyPayments.reduce((sum, p) => sum + p.amount, 0);
@@ -137,7 +137,7 @@ export const CreditCardPaymentsOverview = () => {
       let comparison = 0;
       
       if (sortBy === 'date') {
-        comparison = parseISO(a.payment_date).getTime() - parseISO(b.payment_date).getTime();
+        comparison = parseISODate(a.payment_date).getTime() - parseISODate(b.payment_date).getTime();
       } else if (sortBy === 'amount') {
         comparison = a.amount - b.amount;
       }
@@ -300,7 +300,7 @@ export const CreditCardPaymentsOverview = () => {
                           <div className="flex items-center gap-2">
                             <Calendar className="h-4 w-4 text-muted-foreground" />
                             <span className="font-medium">
-                              {format(parseISO(payment.payment_date), 'MMM d, yyyy')}
+                              {format(parseISODate(payment.payment_date), 'MMM d, yyyy')}
                             </span>
                           </div>
                         </TableCell>
