@@ -1432,14 +1432,14 @@ export const CashFlowInsights = memo(({
                           )}
                           {card.statement_balance > 0 && (
                             <span className="text-gray-600 dark:text-gray-400">
-                              Statement: ${card.statement_balance.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                              Statement: ${card.statement_balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </span>
                           )}
                         </div>
                       </div>
                       <div className="text-right">
                         <span className={`text-lg font-bold flex-shrink-0 ${isOverLimit ? 'text-red-600 dark:text-red-500' : 'text-green-700 dark:text-green-400'}`}>
-                          ${effectiveAvailableCredit.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                          ${effectiveAvailableCredit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </span>
                         <p className="text-xs text-gray-500 dark:text-gray-400">Available</p>
                       </div>
@@ -1449,7 +1449,7 @@ export const CashFlowInsights = memo(({
                       <div className="flex items-start gap-1.5 p-2 bg-red-100 dark:bg-red-900/30 rounded text-xs">
                         <AlertCircle className="h-3.5 w-3.5 text-red-600 flex-shrink-0 mt-0.5" />
                         <p className="text-red-700 dark:text-red-400">
-                          Over limit by ${Math.abs(currentAvailableSpend).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                          Over limit by ${Math.abs(currentAvailableSpend).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </p>
                       </div>
                     )}
@@ -1461,12 +1461,12 @@ export const CashFlowInsights = memo(({
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-medium text-gray-600 dark:text-gray-300">Available to Spend</span>
                         <span className={`text-lg font-bold ${currentAvailableSpend < 0 ? 'text-red-700 dark:text-red-400' : 'text-green-700 dark:text-green-400'}`}>
-                          ${Math.max(0, currentAvailableSpend).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                          ${Math.max(0, currentAvailableSpend).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </span>
                       </div>
                       {pendingOrders > 0 && (
                         <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                          Pending Orders: ${pendingOrders.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                          Pending Orders: ${pendingOrders.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </p>
                       )}
                     </div>
@@ -1490,7 +1490,7 @@ export const CashFlowInsights = memo(({
                                 {new Date(opp.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                               </span>
                               <span className="font-semibold text-blue-600">
-                                ${opp.availableCredit.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                                ${opp.availableCredit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                               </span>
                             </div>
                           ))}
@@ -1520,7 +1520,7 @@ export const CashFlowInsights = memo(({
                           </Button>
                         </div>
                         <span className="font-semibold text-gray-900 dark:text-gray-100">
-                          ${(card.credit_limit_override || card.credit_limit).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                          ${(card.credit_limit_override || card.credit_limit).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           {card.credit_limit_override && (
                             <span className="ml-1 text-xs text-blue-600 dark:text-blue-400">*</span>
                           )}
@@ -1528,7 +1528,7 @@ export const CashFlowInsights = memo(({
                       </div>
                       <div className="flex flex-col p-2 bg-background/50 rounded">
                         <span className="text-gray-600 dark:text-gray-400 mb-0.5">Current Balance</span>
-                        <span className="font-semibold text-gray-900 dark:text-gray-100">${card.balance.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
+                        <span className="font-semibold text-gray-900 dark:text-gray-100">${card.balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                       </div>
                     </div>
                   </div>
