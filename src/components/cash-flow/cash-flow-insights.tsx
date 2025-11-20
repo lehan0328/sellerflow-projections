@@ -24,6 +24,7 @@ import { useAmazonPayouts } from "@/hooks/useAmazonPayouts";
 import { useAuth } from "@/hooks/useAuth";
 import { useTransactions } from "@/hooks/useTransactions";
 import { useRecurringExpenses } from "@/hooks/useRecurringExpenses";
+import { useCreditCardPayments } from "@/hooks/useCreditCardPayments";
 import { DailyBalance } from "@/lib/calendarBalances";
 import aurenLogo from "@/assets/auren-icon-blue.png";
 interface CashFlowInsightsProps {
@@ -89,6 +90,7 @@ export const CashFlowInsights = memo(({
   const { amazonPayouts, refetch: refetchPayouts } = useAmazonPayouts();
   const { transactions } = useTransactions();
   const { recurringExpenses } = useRecurringExpenses();
+  const { payments: creditCardPayments } = useCreditCardPayments();
   const [cardOpportunities, setCardOpportunities] = useState<Record<string, Array<{ date: string; availableCredit: number }>>>({});
   const [lowestCreditByCard, setLowestCreditByCard] = useState<Record<string, { date: string; credit: number }>>({});
   const [tempProjections, setTempProjections] = useState<Array<{ amount: number; date: string }>>([]);
@@ -98,6 +100,7 @@ export const CashFlowInsights = memo(({
   const [editingCreditLimit, setEditingCreditLimit] = useState<string | null>(null);
   const [creditLimitOverride, setCreditLimitOverride] = useState('');
   const [selectedCardTransactions, setSelectedCardTransactions] = useState<{ cardId: string; cardName: string } | null>(null);
+  const [selectedCardPayments, setSelectedCardPayments] = useState<{ cardId: string; cardName: string } | null>(null);
   const [showAllOpportunities, setShowAllOpportunities] = useState(false);
   const [showSearchOpportunities, setShowSearchOpportunities] = useState(false);
   const [showAllCreditCards, setShowAllCreditCards] = useState(false);
@@ -1596,9 +1599,18 @@ export const CashFlowInsights = memo(({
                             variant="outline"
                             size="sm"
                             onClick={() => setSelectedCardTransactions({ cardId: card.id, cardName: card.account_name })}
-                            className="text-xs h-6 px-2 ml-auto"
+                            className="text-xs h-6 px-2"
                           >
                             View Transactions
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setSelectedCardPayments({ cardId: card.id, cardName: card.account_name })}
+                            className="text-xs h-6 px-2"
+                          >
+                            <Calendar className="h-3 w-3 mr-1" />
+                            Payments
                           </Button>
                         </div>
                         <p className="text-xs text-gray-600 dark:text-gray-400 truncate mb-1">{card.institution_name}</p>
@@ -1961,6 +1973,102 @@ export const CashFlowInsights = memo(({
           </ScrollArea>
           <DialogFooter>
             <Button onClick={() => setSelectedCardTransactions(null)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Credit Card Payment Schedule Modal */}
+      <Dialog open={!!selectedCardPayments} onOpenChange={() => setSelectedCardPayments(null)}>
+        <DialogContent className="max-w-2xl max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle>Payment Schedule for {selectedCardPayments?.cardName}</DialogTitle>
+            <DialogDescription>
+              All scheduled and completed payments for this credit card
+            </DialogDescription>
+          </DialogHeader>
+          <ScrollArea className="max-h-[500px] pr-4">
+            <div className="space-y-2">
+              {selectedCardPayments && (() => {
+                // Filter payments for this specific card
+                const cardPayments = creditCardPayments.filter(payment => 
+                  payment.credit_card_id === selectedCardPayments.cardId
+                );
+                
+                if (cardPayments.length === 0) {
+                  return (
+                    <div className="text-center py-8 text-muted-foreground">
+                      No payments found for this card
+                    </div>
+                  );
+                }
+                
+                return cardPayments
+                  .sort((a, b) => new Date(a.payment_date).getTime() - new Date(b.payment_date).getTime())
+                  .map((payment) => {
+                    const paymentDate = parseISO(payment.payment_date);
+                    const today = startOfDay(new Date());
+                    const isCompleted = payment.status === 'completed';
+                    const isOverdue = startOfDay(paymentDate) < today && payment.status === 'scheduled';
+                    
+                    return (
+                      <div 
+                        key={payment.id} 
+                        className={`p-3 rounded-lg border ${
+                          isCompleted 
+                            ? 'bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800' 
+                            : isOverdue 
+                              ? 'bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800' 
+                              : 'bg-muted/50 border-border'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <p className="font-medium text-sm">
+                                {payment.description || 'Credit Card Payment'}
+                              </p>
+                              {isCompleted && (
+                                <Badge variant="outline" className="text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border-green-300 dark:border-green-700">
+                                  Completed
+                                </Badge>
+                              )}
+                              {payment.payment_type === 'bill_payment' && (
+                                <Badge variant="secondary" className="text-xs">Bill Payment</Badge>
+                              )}
+                              {payment.payment_type === 'manual' && (
+                                <Badge variant="outline" className="text-xs">Manual</Badge>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                              <span className={isOverdue ? 'text-red-600 dark:text-red-400 font-medium' : isCompleted ? 'text-green-600 dark:text-green-400' : ''}>
+                                {format(paymentDate, 'MMM d, yyyy')}
+                                {isOverdue && ' (Overdue)'}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <span className={`text-lg font-bold ${
+                              isCompleted 
+                                ? 'text-green-600 dark:text-green-400' 
+                                : isOverdue 
+                                  ? 'text-red-600 dark:text-red-400'
+                                  : 'text-blue-600 dark:text-blue-400'
+                            }`}>
+                              ${payment.amount.toLocaleString('en-US', { 
+                                minimumFractionDigits: 2, 
+                                maximumFractionDigits: 2 
+                              })}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  });
+              })()}
+            </div>
+          </ScrollArea>
+          <DialogFooter>
+            <Button onClick={() => setSelectedCardPayments(null)}>Close</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
