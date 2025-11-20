@@ -12,7 +12,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Sparkles, TrendingUp, AlertCircle, Loader2, Pencil, Check, X, CreditCard, ShoppingCart, Info, RefreshCw, Settings, DollarSign, Calendar, ArrowLeft, Search } from "lucide-react";
 import { useState, useEffect, useMemo, useCallback, memo } from "react";
-import { format, addDays, parseISO } from "date-fns";
+import { format, addDays, parseISO, startOfDay } from "date-fns";
 import { generateRecurringDates } from "@/lib/recurringDates";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -347,8 +347,7 @@ export const CashFlowInsights = memo(({
 
     // Add recurring expenses (calculate occurrences in next 30 days)
     if (recurringExpenses) {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+      const today = startOfDay(new Date());
       const endDate = addDays(today, 30);
 
       recurringExpenses.forEach(recurring => {
@@ -384,8 +383,7 @@ export const CashFlowInsights = memo(({
   const calculatedCardOpportunities = useMemo(() => {
     if (!creditCards || creditCards.length === 0 || !events || events.length === 0) return {};
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const today = startOfDay(new Date());
     const todayStr = format(today, 'yyyy-MM-dd');
     
     const opportunitiesMap: Record<string, Array<{ date: string; availableCredit: number }>> = {};
@@ -452,8 +450,7 @@ export const CashFlowInsights = memo(({
   const calculatedLowestCreditByCard = useMemo(() => {
     if (!creditCards || creditCards.length === 0 || !events || events.length === 0) return {};
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const today = startOfDay(new Date());
     const endDate = addDays(today, 30);
     
     const lowestCreditMap: Record<string, { date: string; credit: number }> = {};
