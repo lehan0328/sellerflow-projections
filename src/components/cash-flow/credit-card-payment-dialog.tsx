@@ -11,6 +11,7 @@ import { useCreditCards } from "@/hooks/useCreditCards";
 import { useBankAccounts } from "@/hooks/useBankAccounts";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { CreditCard, CalendarIcon, Info } from "lucide-react";
 import { format, startOfDay, addDays, parseISO } from "date-fns";
@@ -41,6 +42,7 @@ export function CreditCardPaymentDialog({
   cardOpportunities = {}
 }: CreditCardPaymentDialogProps) {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const { creditCards, creditCardPendingAmounts, refetch: refetchCreditCards } = useCreditCards();
   const { accounts: bankAccounts, refetch: refetchBankAccounts } = useBankAccounts();
   
@@ -191,6 +193,11 @@ export function CreditCardPaymentDialog({
       if (error) throw error;
 
       toast.success(`Payment of $${amount.toFixed(2)} scheduled for ${format(paymentDate, "PPP")}`);
+      
+      // Explicitly invalidate credit card payments cache for immediate UI update
+      await queryClient.invalidateQueries({ 
+        queryKey: ['credit-card-payments', user.id] 
+      });
       
       // Refresh data
       await Promise.all([refetchCreditCards(), refetchBankAccounts()]);
