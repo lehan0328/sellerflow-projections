@@ -44,12 +44,24 @@ export const useCreditCardPayments = () => {
 
       if (error) throw error;
       
-      // Auto-archive payments with payment_date < today (timezone-safe comparison)
+      return data as CreditCardPayment[];
+    },
+    enabled: !!user?.id,
+    staleTime: 15 * 60 * 1000, // 15 minutes
+    gcTime: 30 * 60 * 1000, // 30 minutes
+    refetchOnMount: false,
+  });
+
+  // Auto-archive overdue payments
+  useEffect(() => {
+    const archiveOverduePayments = async () => {
+      if (!payments.length) return;
+      
       const today = startOfDay(new Date());
-      const paymentsToArchive = data?.filter(p => {
+      const paymentsToArchive = payments.filter(p => {
         const paymentDate = startOfDay(new Date(p.payment_date));
         return paymentDate < today && p.status === 'scheduled';
-      }) || [];
+      });
       
       if (paymentsToArchive.length > 0) {
         await Promise.all(
@@ -60,15 +72,12 @@ export const useCreditCardPayments = () => {
               .eq('id', p.id)
           )
         );
+        queryClient.invalidateQueries({ queryKey: ['credit-card-payments', user?.id] });
       }
-      
-      return data as CreditCardPayment[];
-    },
-    enabled: !!user?.id,
-    staleTime: 15 * 60 * 1000, // 15 minutes
-    gcTime: 30 * 60 * 1000, // 30 minutes
-    refetchOnMount: false,
-  });
+    };
+    
+    archiveOverduePayments();
+  }, [payments, user?.id, queryClient]);
 
   // Real-time subscription for credit card payments
   useEffect(() => {
