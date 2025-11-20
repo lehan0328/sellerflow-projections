@@ -1687,7 +1687,7 @@ export const CashFlowInsights = memo(({
                           </span>
                         </div>
                         <div className="space-y-1.5">
-                          {opportunities.slice(0, 2).map((opp, idx) => (
+                          {opportunities.map((opp, idx) => (
                             <div key={idx} className="flex justify-between items-center p-2 bg-blue-50 dark:bg-blue-950/20 rounded text-xs border border-blue-200 dark:border-blue-800">
                               <span className="text-muted-foreground">
                                 {format(parseISO(opp.date), 'MMM d')}
@@ -1697,11 +1697,6 @@ export const CashFlowInsights = memo(({
                               </span>
                             </div>
                           ))}
-                          {opportunities.length > 2 && (
-                            <p className="text-xs text-center text-muted-foreground">
-                              +{opportunities.length - 2} more opportunities
-                            </p>
-                          )}
                         </div>
                       </div>
                     )}
