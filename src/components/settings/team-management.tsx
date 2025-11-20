@@ -44,6 +44,7 @@ import { DialogFooter } from "@/components/ui/dialog";
 import { UserPlus, Trash2, Shield, Users, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
+import { useAdmin } from "@/hooks/useAdmin";
 import { usePlanLimits } from "@/hooks/usePlanLimits";
 import { AddonLimitDialog } from "@/components/cash-flow/addon-limit-dialog";
 import { useLimitCheck } from "@/contexts/LimitCheckContext";
@@ -70,6 +71,7 @@ interface PendingInvite {
 
 export function TeamManagement() {
   const { user } = useAuth();
+  const { isAdmin: isWebsiteAdmin, isAccountAdmin } = useAdmin();
   const queryClient = useQueryClient();
   const { canAddTeamMember, currentUsage, planLimits } = usePlanLimits();
   const { triggerLimitCheck } = useLimitCheck();
@@ -122,7 +124,7 @@ export function TeamManagement() {
     enabled: !!user && !!profile?.account_id,
   });
 
-  const isAdmin = userRole?.role === 'owner' || userRole?.role === 'admin';
+  const canManageTeam = isWebsiteAdmin || isAccountAdmin || userRole?.role === 'owner' || userRole?.role === 'admin';
 
   // Fetch team members
   const { data: teamMembers = [] } = useQuery({
@@ -201,7 +203,7 @@ export function TeamManagement() {
       if (error) throw error;
       return data as PendingInvite[];
     },
-    enabled: !!profile?.account_id && isAdmin,
+    enabled: !!profile?.account_id && canManageTeam,
   });
 
   // Send invitation mutation
@@ -401,7 +403,7 @@ export function TeamManagement() {
             {!canAddTeamMember && <span className="ml-2 text-amber-600">• Purchase add-ons for more seats</span>}
           </p>
         </div>
-        {isAdmin && (
+        {canManageTeam && (
           <div className="flex gap-2">
             <Dialog open={showInviteDialog} onOpenChange={setShowInviteDialog}>
               <DialogTrigger asChild>
@@ -560,7 +562,7 @@ export function TeamManagement() {
               <TableHead>Member</TableHead>
               <TableHead>Email</TableHead>
               <TableHead>Role</TableHead>
-              {isAdmin && <TableHead className="text-right">Actions</TableHead>}
+              {canManageTeam && <TableHead className="text-right">Actions</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -574,7 +576,7 @@ export function TeamManagement() {
                 </TableCell>
                 <TableCell>{member.email}</TableCell>
                 <TableCell>
-                  {isAdmin && member.role !== 'owner' ? (
+                  {canManageTeam && member.role !== 'owner' ? (
                     <Select
                       value={member.role}
                       onValueChange={(value) =>
@@ -596,7 +598,7 @@ export function TeamManagement() {
                     </Badge>
                   )}
                 </TableCell>
-                {isAdmin && (
+                {canManageTeam && (
                   <TableCell className="text-right">
                     {member.role !== 'owner' && (
                       <AlertDialog>
@@ -633,7 +635,7 @@ export function TeamManagement() {
       </div>
 
       {/* Pending Invitations */}
-      {isAdmin && pendingInvites.length > 0 && (
+      {canManageTeam && pendingInvites.length > 0 && (
         <div className="space-y-2">
           <h4 className="text-sm font-medium">Pending Invitations</h4>
           <div className="border rounded-lg">
