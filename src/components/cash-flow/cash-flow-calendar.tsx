@@ -789,7 +789,7 @@ const CashFlowCalendarComponent = ({
                               </div>
 
                               {hasTransactions && <div className="space-y-1.5 border-t pt-2">
-                                  <p className="font-semibold text-xs uppercase text-muted-foreground">Daily Activity</p>
+                                  <p className="font-semibold text-xs uppercase text-muted-foreground">Bank</p>
                                    {data.inflow > 0 && <p className="text-green-600 font-medium">↑ Inflows: +${formatCurrency(data.inflow)}</p>}
                                    {data.outflow > 0 && <p className="text-red-600 font-medium">↓ Outflows: -${formatCurrency(data.outflow)}</p>}
                                    {data.dailyChange !== 0 && (
@@ -803,7 +803,7 @@ const CashFlowCalendarComponent = ({
                                  </div>}
                                  
                                   {(data.creditCardInflow > 0 || data.creditCardOutflow > 0) && <div className="space-y-1.5 border-t pt-2">
-                                    <p className="font-semibold text-xs uppercase text-muted-foreground">Credit Card Activity</p>
+                                    <p className="font-semibold text-xs uppercase text-muted-foreground">Credit Card</p>
                                     {data.creditCardOutflow > 0 && <p className="text-orange-600 font-medium">↓ Purchases: -${formatCurrency(data.creditCardOutflow)}</p>}
                                     {data.creditCardInflow > 0 && <p className="text-blue-600 font-medium">↑ Payments: +${formatCurrency(data.creditCardInflow)}</p>}
                                   </div>}
