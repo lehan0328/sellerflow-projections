@@ -395,11 +395,21 @@ export const CashFlowInsights = memo(({
       // Calculate base available credit
       const effectiveCreditLimit = card.credit_limit_override || card.credit_limit || 0;
       const baseAvailableCredit = effectiveCreditLimit - (card.statement_balance || card.balance || 0);
-      
-      // TODAY'S OPPORTUNITY - current available credit
+
+      // Calculate pending orders for THIS card
+      const pendingOrders = events
+        .filter(event => 
+          event.creditCardId === card.id &&
+          event.status === 'pending' &&
+          (event.type === 'purchase_order' || event.type === 'expense' || event.type === 'recurring_expense')
+        )
+        .reduce((sum, event) => sum + (event.amount || 0), 0);
+
+      // TODAY'S OPPORTUNITY - current available to spend (accounting for pending orders)
+      const currentAvailableToSpend = baseAvailableCredit - pendingOrders;
       opportunities.push({
         date: todayStr,
-        availableCredit: Math.max(0, baseAvailableCredit)
+        availableCredit: Math.max(0, currentAvailableToSpend)
       });
 
       // PAYMENT DUE DATE OPPORTUNITY
@@ -430,7 +440,7 @@ export const CashFlowInsights = memo(({
             .reduce((sum, event) => sum + (event.amount || 0), 0);
           
           // Calculate available credit on payment due date
-          const dueDateCredit = baseAvailableCredit - pendingExpenses + paymentsAdded;
+          const dueDateCredit = currentAvailableToSpend - pendingExpenses + paymentsAdded;
           
           opportunities.push({
             date: dueDateStr,
