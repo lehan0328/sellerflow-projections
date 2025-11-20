@@ -243,6 +243,18 @@ export const useCreditCards = () => {
     [creditCards]
   );
 
+  // Check if any credit cards have overdue payment dates requiring statement update
+  const hasOverdueDueDates = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    return creditCards.some(card => {
+      if (!card.payment_due_date) return false;
+      const dueDate = new Date(card.payment_due_date);
+      return dueDate < today;
+    });
+  }, [creditCards]);
+
   // Real-time subscription
   useEffect(() => {
     if (!user) return;
@@ -273,6 +285,7 @@ export const useCreditCards = () => {
     totalCreditLimit,
     totalBalance,
     totalAvailableCredit,
+    hasOverdueDueDates,
     creditCardPendingAmounts,
     addCreditCard: (cardData: Omit<CreditCard, "id" | "created_at" | "updated_at" | "user_id" | "masked_account_number">) => 
       addCreditCardMutation.mutateAsync(cardData),

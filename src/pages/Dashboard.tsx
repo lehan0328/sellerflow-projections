@@ -483,7 +483,7 @@ const Dashboard = () => {
     isLoading: isBankTransactionsLoading,
     refetch: refetchBankTransactions,
   } = useBankTransactions();
-  const { creditCards, refetch: refetchCreditCards } = useCreditCards();
+  const { creditCards, hasOverdueDueDates, refetch: refetchCreditCards } = useCreditCards();
   const { recurringExpenses, createRecurringExpense } = useRecurringExpenses();
   const { reserveAmount, updateReserveAmount } = useReserveAmount();
   const { excludeToday } = useExcludeToday();
@@ -3617,13 +3617,16 @@ const Dashboard = () => {
                 </button>
                 <button
                   onClick={() => setFinancialsView("credit-cards")}
-                  className={`px-4 py-2 rounded-md transition-all ${
+                  className={`px-4 py-2 rounded-md transition-all flex items-center gap-2 ${
                     financialsView === "credit-cards"
                       ? "bg-background shadow-sm font-semibold text-primary"
                       : "hover:bg-background/50 text-muted-foreground"
                   }`}
                 >
-                  Credit Cards
+                  <span>Credit Cards</span>
+                  {hasOverdueDueDates && (
+                    <AlertTriangle className="h-4 w-4 text-destructive" />
+                  )}
                 </button>
               </div>
             </div>

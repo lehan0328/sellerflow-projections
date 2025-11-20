@@ -1,10 +1,11 @@
 import React, { useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import { Home, TrendingUp, CreditCard, Repeat, Wallet, Users, Calculator, BarChart3, FolderOpen, MessageSquare, Calendar, FileBarChart, Building2, Brain, Bell, Clock, Link2, Lock, Sparkles, Settings, ShoppingCart, BookOpen } from "lucide-react";
+import { Home, TrendingUp, CreditCard, Repeat, Wallet, Users, Calculator, BarChart3, FolderOpen, MessageSquare, Calendar, FileBarChart, Building2, Brain, Bell, Clock, Link2, Lock, Sparkles, Settings, ShoppingCart, BookOpen, AlertTriangle } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useSupportMessageCount } from "@/hooks/useSupportMessageCount";
 import { useUserSettings } from "@/hooks/useUserSettings";
+import { useCreditCards } from "@/hooks/useCreditCards";
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar, SidebarHeader } from "@/components/ui/sidebar";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -113,6 +114,7 @@ export function AppSidebar({
     userRole
   } = useAdmin();
   const { forecastsEnabled } = useUserSettings();
+  const { hasOverdueDueDates } = useCreditCards();
   const subscription = useSubscription();
   const navigate = useNavigate();
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
@@ -266,6 +268,8 @@ export function AppSidebar({
               {transactionSections.map(section => {
               const Icon = section.icon;
               const isActive = activeSection === section.id;
+              const showCreditCardAlert = section.id === 'financials' && hasOverdueDueDates;
+              
               return <SidebarMenuItem key={section.id}>
                     <SidebarMenuButton onClick={() => onSectionChange(section.id)} className={`
                         relative rounded-lg transition-all duration-200
@@ -273,7 +277,17 @@ export function AppSidebar({
                         ${isActive ? "bg-gradient-to-r from-primary/90 to-accent/90 text-primary-foreground shadow-md hover:shadow-lg font-semibold" : "hover:bg-accent/50 hover:translate-x-1"}
                       `}>
                       <Icon className={`${isCollapsed ? "h-5 w-5" : "h-4 w-4"} ${isActive ? "animate-pulse" : ""} ${isCollapsed ? "mx-auto" : ""}`} />
-                      {!isCollapsed && <span>{section.title}</span>}
+                      {!isCollapsed && <span className="flex items-center justify-between w-full pr-1">
+                          <span>{section.title}</span>
+                          {showCreditCardAlert && (
+                            <AlertTriangle className="h-4 w-4 text-destructive" />
+                          )}
+                        </span>}
+                      {isCollapsed && showCreditCardAlert && (
+                        <div className="absolute -top-1 -right-1">
+                          <AlertTriangle className="h-3 w-3 text-destructive" />
+                        </div>
+                      )}
                     </SidebarMenuButton>
                   </SidebarMenuItem>;
             })}
