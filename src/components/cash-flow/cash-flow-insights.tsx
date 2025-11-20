@@ -454,7 +454,7 @@ export const CashFlowInsights = memo(({
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const endDate = addDays(today, 90);
+    const endDate = addDays(today, 30);
     
     const lowestCreditMap: Record<string, { date: string; credit: number }> = {};
 
