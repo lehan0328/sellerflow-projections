@@ -31,8 +31,8 @@ export const useBankTransactions = (accountId?: string, accountType: 'bank' | 'c
 
   const { data: transactions = [], isLoading, error } = useQuery({
     queryKey: bankTransactionsQueryKey(accountId, accountType),
-    staleTime: 30 * 60 * 1000, // 30 minutes - Plaid syncs are scheduled, not real-time
-    gcTime: 60 * 60 * 1000,    // 1 hour - keep in cache longer
+    staleTime: 60 * 60 * 1000,  // 1 hour - Plaid syncs are scheduled, not real-time
+    gcTime: 120 * 60 * 1000,    // 2 hours - keep in cache longer
     queryFn: async () => {
       let query = supabase
         .from('bank_transactions')
