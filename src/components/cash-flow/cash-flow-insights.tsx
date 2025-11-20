@@ -117,6 +117,7 @@ export const CashFlowInsights = memo(({
     income: number;
     forecastedPayouts: number;
   } | null>(null);
+  const [lastBroadcastData, setLastBroadcastData] = useState<string>('');
   const netDaily = dailyInflow - dailyOutflow;
   const healthStatus = netDaily >= 0 ? "positive" : "negative";
 
@@ -504,7 +505,7 @@ export const CashFlowInsights = memo(({
     setLowestCreditByCard(calculatedLowestCreditByCard);
   }, [calculatedLowestCreditByCard]);
 
-  // Notify parent component when credit data is calculated
+  // Notify parent component when credit data is calculated (with debounce to prevent excessive broadcasts)
   useEffect(() => {
     if (onCreditDataCalculated && Object.keys(calculatedLowestCreditByCard).length > 0) {
       // Calculate total available credit - EXACT same formula as displayed at lines 948-960
@@ -521,9 +522,6 @@ export const CashFlowInsights = memo(({
       // Calculate total pending orders
       const totalPendingOrders = Object.values(pendingOrdersByCard).reduce((sum, amount) => sum + amount, 0);
 
-      console.log('🔵 CashFlowInsights passing totalAvailableCredit:', totalAvailableCredit);
-      console.log('🔵 CashFlowInsights passing totalPendingOrders:', totalPendingOrders);
-
       // Calculate per-card available credit for purchase order form
       const cardAvailableCredit: Record<string, number> = {};
       creditCards.forEach(card => {
@@ -534,15 +532,30 @@ export const CashFlowInsights = memo(({
         cardAvailableCredit[card.id] = currentAvailableSpend;
       });
 
-      onCreditDataCalculated({
-        lowestCreditByCard: calculatedLowestCreditByCard,
-        cardOpportunities: calculatedCardOpportunities,
-        totalAvailableCredit,
-        totalPendingOrders,
-        cardAvailableCredit
+      // Create a hash of the data to check if it actually changed
+      const dataHash = JSON.stringify({
+        lowestCredit: calculatedLowestCreditByCard,
+        opportunities: calculatedCardOpportunities,
+        totalCredit: Math.round(totalAvailableCredit * 100), // Round to cents
+        totalPending: Math.round(totalPendingOrders * 100),
+        cardCredit: Object.entries(cardAvailableCredit).map(([k, v]) => [k, Math.round(v * 100)])
       });
+
+      // Only broadcast if data actually changed
+      if (dataHash !== lastBroadcastData) {
+        console.log('🔵 CashFlowInsights broadcasting credit data (data changed)');
+        setLastBroadcastData(dataHash);
+        
+        onCreditDataCalculated({
+          lowestCreditByCard: calculatedLowestCreditByCard,
+          cardOpportunities: calculatedCardOpportunities,
+          totalAvailableCredit,
+          totalPendingOrders,
+          cardAvailableCredit
+        });
+      }
     }
-  }, [calculatedLowestCreditByCard, calculatedCardOpportunities, onCreditDataCalculated, creditCards, pendingOrdersByCard]);
+  }, [calculatedLowestCreditByCard, calculatedCardOpportunities, onCreditDataCalculated, creditCards, pendingOrdersByCard, lastBroadcastData]);
 
   // Handle adding a temporary PO projection
   const handleAddProjection = () => {
