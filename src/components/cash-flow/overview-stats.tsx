@@ -406,6 +406,22 @@ export function OverviewStats({
     }
   });
 
+  // Process credit card payments to increase available credit
+  const pendingCreditPayments = events.filter(event => {
+    const eventDate = new Date(event.date);
+    eventDate.setHours(0, 0, 0, 0);
+    return event.type === 'credit-payment' && (event as any).creditCardId && eventDate >= now && eventDate <= thirtyDaysFromNow;
+  });
+
+  pendingCreditPayments.forEach(payment => {
+    const cardId = (payment as any).creditCardId;
+    if (cardId) {
+      const currentCredit = cardCreditMap.get(cardId) || 0;
+      // Add payment amount back to available credit
+      cardCreditMap.set(cardId, currentCredit + payment.amount);
+    }
+  });
+
   // Calculate overflow and net available credit
   let totalCreditOverflow = 0;
   let netAvailableCredit = 0;
