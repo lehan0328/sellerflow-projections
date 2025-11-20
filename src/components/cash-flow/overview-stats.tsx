@@ -390,7 +390,7 @@ export function OverviewStats({
   const cardCreditMap = new Map<string, number>();
   creditCards.forEach(card => {
     const effectiveLimit = card.credit_limit_override || card.credit_limit;
-    const availableCredit = effectiveLimit - card.balance;
+    const availableCredit = effectiveLimit - (card.statement_balance || card.balance);
     cardCreditMap.set(card.id, availableCredit);
   });
 
