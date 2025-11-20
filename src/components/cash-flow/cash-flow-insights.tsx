@@ -48,6 +48,7 @@ interface CashFlowInsightsProps {
   onCreditDataCalculated?: (data: {
     lowestCreditByCard: Record<string, { date: string; credit: number }>;
     cardOpportunities: Record<string, Array<{ date: string; availableCredit: number }>>;
+    availableToSpendByCard: Record<string, number>;
   }) => void;
 }
 export const CashFlowInsights = memo(({
@@ -517,6 +518,19 @@ export const CashFlowInsights = memo(({
     return lowestCreditMap;
   }, [creditCards, events, pendingOrdersByCard]);
 
+  // Calculate available to spend for each card
+  const availableToSpendByCard = useMemo(() => {
+    const result: Record<string, number> = {};
+    for (const card of creditCards) {
+      const effectiveCreditLimit = card.credit_limit_override || card.credit_limit;
+      const effectiveAvailableCredit = effectiveCreditLimit - card.balance;
+      const pendingOrders = pendingOrdersByCard[card.id] || 0;
+      const currentAvailableSpend = effectiveAvailableCredit - pendingOrders;
+      result[card.id] = Math.max(0, currentAvailableSpend);
+    }
+    return result;
+  }, [creditCards, pendingOrdersByCard]);
+
   useEffect(() => {
     setCardOpportunities(calculatedCardOpportunities);
   }, [calculatedCardOpportunities]);
@@ -530,10 +544,11 @@ export const CashFlowInsights = memo(({
     if (onCreditDataCalculated && Object.keys(calculatedLowestCreditByCard).length > 0) {
       onCreditDataCalculated({
         lowestCreditByCard: calculatedLowestCreditByCard,
-        cardOpportunities: calculatedCardOpportunities
+        cardOpportunities: calculatedCardOpportunities,
+        availableToSpendByCard: availableToSpendByCard
       });
     }
-  }, [calculatedLowestCreditByCard, calculatedCardOpportunities, onCreditDataCalculated]);
+  }, [calculatedLowestCreditByCard, calculatedCardOpportunities, availableToSpendByCard, onCreditDataCalculated]);
 
   // Handle adding a temporary PO projection
   const handleAddProjection = () => {

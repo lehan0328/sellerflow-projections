@@ -410,7 +410,8 @@ const Dashboard = () => {
   const [creditCardData, setCreditCardData] = useState<{
     lowestCreditByCard: Record<string, { date: string; credit: number }>;
     cardOpportunities: Record<string, Array<{ date: string; availableCredit: number }>>;
-  }>({ lowestCreditByCard: {}, cardOpportunities: {} });
+    availableToSpendByCard: Record<string, number>;
+  }>({ lowestCreditByCard: {}, cardOpportunities: {}, availableToSpendByCard: {} });
   const { toast } = useToast();
   const [vendorTxRefresh, setVendorTxRefresh] = useState(0);
   const [matchReviewDialog, setMatchReviewDialog] = useState<{
@@ -3819,6 +3820,7 @@ const Dashboard = () => {
               onPaymentSuccess={() => refetchBankTransactions()}
               lowestCreditByCard={creditCardData.lowestCreditByCard}
               cardOpportunities={creditCardData.cardOpportunities}
+              availableToSpendByCard={creditCardData.availableToSpendByCard}
             />
           )}
 
