@@ -47,6 +47,7 @@ interface OverviewStatsProps {
     creditCardId?: string;
   }>;
   dailyBalances?: DailyBalance[];
+  totalAvailableCreditFromInsights?: number;
 }
 const timeRangeOptions = [{
   value: "today",
@@ -95,7 +96,8 @@ export function OverviewStats({
   pendingIncomeToday,
   useAvailableBalance,
   transactions = [],
-  dailyBalances: projectedBalances = []
+  dailyBalances: projectedBalances = [],
+  totalAvailableCreditFromInsights
 }: OverviewStatsProps & {
   useAvailableBalance?: boolean;
 }) {
@@ -144,9 +146,13 @@ export function OverviewStats({
     creditCards,
     totalCreditLimit,
     totalBalance: totalCreditBalance,
-    totalAvailableCredit,
+    totalAvailableCredit: totalAvailableCreditLocal,
     creditCardPendingAmounts
   } = useCreditCards();
+  
+  // Use the value from CashFlowInsights if available, otherwise use local calculation
+  const totalAvailableCredit = totalAvailableCreditFromInsights ?? totalAvailableCreditLocal;
+  
   const {
     reserveAmount,
     updateReserveAmount: updateReserve,
@@ -625,7 +631,7 @@ export function OverviewStats({
           {/* Available Credit */}
           <div>
             <p className="text-sm font-medium text-muted-foreground mb-1">Available Credit</p>
-            <p className="text-2xl font-bold text-foreground mb-1.5 text-center">{formatCurrency(netAvailableCredit)}</p>
+            <p className="text-2xl font-bold text-foreground mb-1.5 text-center">{formatCurrency(totalAvailableCredit)}</p>
             {totalCreditOverflow > 0 && (
               <p className="text-xs text-yellow-600 dark:text-yellow-500 text-center mb-1">
                 ⚠️ {formatCurrency(totalCreditOverflow)} over limit (from cash)

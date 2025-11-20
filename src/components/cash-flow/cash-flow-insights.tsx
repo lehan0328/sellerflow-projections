@@ -50,6 +50,7 @@ interface CashFlowInsightsProps {
   onCreditDataCalculated?: (data: {
     lowestCreditByCard: Record<string, { date: string; credit: number }>;
     cardOpportunities: Record<string, Array<{ date: string; availableCredit: number }>>;
+    totalAvailableCredit: number;
   }) => void;
 }
 export const CashFlowInsights = memo(({
@@ -80,7 +81,7 @@ export const CashFlowInsights = memo(({
   } = useToast();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { creditCards, isLoading: cardsLoading, updateCreditCard } = useCreditCards();
+  const { creditCards, isLoading: cardsLoading, updateCreditCard, creditCardPendingAmounts } = useCreditCards();
   const { amazonPayouts, refetch: refetchPayouts } = useAmazonPayouts();
   const { transactions } = useTransactions();
   const { recurringExpenses } = useRecurringExpenses();
@@ -504,12 +505,21 @@ export const CashFlowInsights = memo(({
   // Notify parent component when credit data is calculated
   useEffect(() => {
     if (onCreditDataCalculated && Object.keys(calculatedLowestCreditByCard).length > 0) {
+      // Calculate total available credit
+      const totalAvailableCredit = creditCards.reduce((sum, card) => {
+        const effectiveCreditLimit = card.credit_limit_override || card.credit_limit;
+        const pendingOrders = creditCardPendingAmounts.get(card.id) || 0;
+        const currentAvailableSpend = Math.max(0, effectiveCreditLimit - card.balance - pendingOrders);
+        return sum + currentAvailableSpend;
+      }, 0);
+
       onCreditDataCalculated({
         lowestCreditByCard: calculatedLowestCreditByCard,
-        cardOpportunities: calculatedCardOpportunities
+        cardOpportunities: calculatedCardOpportunities,
+        totalAvailableCredit
       });
     }
-  }, [calculatedLowestCreditByCard, calculatedCardOpportunities, onCreditDataCalculated]);
+  }, [calculatedLowestCreditByCard, calculatedCardOpportunities, onCreditDataCalculated, creditCards, creditCardPendingAmounts]);
 
   // Handle adding a temporary PO projection
   const handleAddProjection = () => {

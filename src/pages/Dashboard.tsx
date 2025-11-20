@@ -410,6 +410,7 @@ const Dashboard = () => {
   const [creditCardData, setCreditCardData] = useState<{
     lowestCreditByCard: Record<string, { date: string; credit: number }>;
     cardOpportunities: Record<string, Array<{ date: string; availableCredit: number }>>;
+    totalAvailableCredit?: number;
   }>({ lowestCreditByCard: {}, cardOpportunities: {} });
   const { toast } = useToast();
   const [vendorTxRefresh, setVendorTxRefresh] = useState(0);
@@ -2959,6 +2960,7 @@ const Dashboard = () => {
                     useAvailableBalance={useAvailableBalance}
                     transactions={transactions}
                     dailyBalances={projectedDailyBalances}
+                    totalAvailableCreditFromInsights={creditCardData.totalAvailableCredit}
                   />
                 ) : (
                   <OverviewStatsSkeleton />
