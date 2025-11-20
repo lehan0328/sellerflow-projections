@@ -378,63 +378,69 @@ export function OverviewStats({
   });
   const upcomingTotal = upcomingPayments.reduce((sum, payment) => sum + payment.amount, 0);
 
-  // Calculate pending credit card transactions (future purchases) - only next 30 days
-  const thirtyDaysFromNow = new Date(now);
-  thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+  // Calculate pending credit card transactions - removed (now calculated via pendingOrdersByCard)
+
+  // Calculate pending orders by card (matching cash-flow-insights.tsx)
+  const pendingOrdersByCard: Record<string, number> = {};
   
-  const pendingCreditPurchases = events.filter(event => {
-    const eventDate = new Date(event.date);
-    eventDate.setHours(0, 0, 0, 0);
-    return (event as any).creditCardId && event.type !== 'credit-payment' && eventDate >= now && eventDate <= thirtyDaysFromNow;
-  });
-  const pendingCreditTotal = pendingCreditPurchases.reduce((sum, purchase) => sum + purchase.amount, 0);
-
-  // Calculate net available credit with per-card overflow logic
-  // Build a map of each card's current available credit
-  const cardCreditMap = new Map<string, number>();
   creditCards.forEach(card => {
-    const effectiveLimit = card.credit_limit_override || card.credit_limit;
-    const availableCredit = effectiveLimit - (card.statement_balance || card.balance);
-    cardCreditMap.set(card.id, availableCredit);
+    // Get pending purchases (tx with creditCardId)
+    const pendingPurchases = vendorTransactions
+      .filter(tx => tx.creditCardId === card.id && tx.status === 'pending')
+      .reduce((sum, tx) => sum + tx.amount, 0);
+    
+    // Get pending expenses (tx with credit_card_id)
+    const pendingExpenses = transactions
+      .filter(tx => tx.creditCardId === card.id && tx.status === 'pending' && tx.type === 'expense')
+      .reduce((sum, tx) => sum + tx.amount, 0);
+    
+    // Get recurring expenses for next 30 days
+    const thirtyDaysOut = new Date();
+    thirtyDaysOut.setDate(thirtyDaysOut.getDate() + 30);
+    
+    const recurringTotal = recurringExpenses
+      .filter(exp => exp.type === 'expense' && exp.is_active && exp.credit_card_id === card.id)
+      .reduce((sum, exp) => {
+        const dates = generateRecurringDates({
+          id: exp.id,
+          transaction_name: exp.transaction_name || exp.name,
+          amount: exp.amount,
+          frequency: exp.frequency,
+          start_date: exp.start_date,
+          end_date: exp.end_date,
+          is_active: exp.is_active,
+          type: exp.type
+        }, new Date(), thirtyDaysOut);
+        return sum + (dates.length * exp.amount);
+      }, 0);
+    
+    pendingOrdersByCard[card.id] = pendingPurchases + pendingExpenses + recurringTotal;
   });
 
-  // Process pending credit card purchases per card
-  pendingCreditPurchases.forEach(purchase => {
-    const cardId = (purchase as any).creditCardId;
-    if (cardId) {
-      const currentCredit = cardCreditMap.get(cardId) || 0;
-      cardCreditMap.set(cardId, currentCredit - purchase.amount);
-    }
-  });
+  // Calculate net available credit (matching cash-flow-insights.tsx exactly)
+  const netAvailableCredit = creditCards.reduce((sum, card) => {
+    const effectiveCreditLimit = card.credit_limit_override || card.credit_limit;
+    const effectiveAvailableCredit = effectiveCreditLimit - card.balance;
+    const pendingOrders = pendingOrdersByCard[card.id] || 0;
+    const currentAvailableSpend = effectiveAvailableCredit - pendingOrders;
+    
+    // Cap each card at 0 (matches green "Available to Spend" boxes)
+    return sum + Math.max(0, currentAvailableSpend);
+  }, 0);
 
-  // Process credit card payments to increase available credit
-  const pendingCreditPayments = events.filter(event => {
-    const eventDate = new Date(event.date);
-    eventDate.setHours(0, 0, 0, 0);
-    return event.type === 'credit-payment' && (event as any).creditCardId && eventDate >= now && eventDate <= thirtyDaysFromNow;
-  });
+  // Calculate total pending credit (sum of all cards' pending orders)
+  const pendingCreditTotal = Object.values(pendingOrdersByCard).reduce((sum, amount) => sum + amount, 0);
 
-  pendingCreditPayments.forEach(payment => {
-    const cardId = (payment as any).creditCardId;
-    if (cardId) {
-      const currentCredit = cardCreditMap.get(cardId) || 0;
-      // Add payment amount back to available credit
-      cardCreditMap.set(cardId, currentCredit + payment.amount);
-    }
-  });
-
-  // Calculate overflow and net available credit
+  // Calculate overflow (for display purposes)
   let totalCreditOverflow = 0;
-  let netAvailableCredit = 0;
-
-  cardCreditMap.forEach((availableCredit) => {
-    if (availableCredit < 0) {
-      // Card over limit - overflow goes to cash
-      totalCreditOverflow += Math.abs(availableCredit);
-      // Don't add negative values to available credit
-    } else {
-      // Card has available credit remaining
-      netAvailableCredit += availableCredit;
+  creditCards.forEach(card => {
+    const effectiveCreditLimit = card.credit_limit_override || card.credit_limit;
+    const effectiveAvailableCredit = effectiveCreditLimit - card.balance;
+    const pendingOrders = pendingOrdersByCard[card.id] || 0;
+    const currentAvailableSpend = effectiveAvailableCredit - pendingOrders;
+    
+    if (currentAvailableSpend < 0) {
+      totalCreditOverflow += Math.abs(currentAvailableSpend);
     }
   });
 
