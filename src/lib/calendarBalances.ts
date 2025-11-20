@@ -27,7 +27,7 @@ export const calculateCalendarBalances = (
   calendarEvents: CalendarEvent[],
   daysToProject: number = 90,
   excludeToday: boolean = false,
-  creditCards: Array<{ id: string; credit_limit: number; credit_limit_override?: number | null; balance: number; account_name: string }> = []
+  creditCards: Array<{ id: string; credit_limit: number; credit_limit_override?: number | null; balance: number; statement_balance?: number | null; account_name: string }> = []
 ): { dailyBalances: DailyBalance[]; minimumBalance: number; minimumDate: string; overflowEvents: CalendarEvent[] } => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -43,7 +43,7 @@ export const calculateCalendarBalances = (
   const cardCreditMap = new Map<string, number>();
   creditCards.forEach(card => {
     const effectiveLimit = card.credit_limit_override || card.credit_limit;
-    const currentAvailable = effectiveLimit - card.balance;
+    const currentAvailable = effectiveLimit - (card.statement_balance || card.balance);
     cardCreditMap.set(card.id, currentAvailable);
   });
   
