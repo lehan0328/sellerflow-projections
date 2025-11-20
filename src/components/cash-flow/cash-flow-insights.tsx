@@ -393,7 +393,7 @@ export const CashFlowInsights = memo(({
       
       // Calculate base available credit
       const effectiveCreditLimit = card.credit_limit_override || card.credit_limit || 0;
-      const baseAvailableCredit = effectiveCreditLimit - (card.balance || 0);
+      const baseAvailableCredit = effectiveCreditLimit - (card.statement_balance || card.balance || 0);
       
       // TODAY'S OPPORTUNITY - current available credit
       opportunities.push({
