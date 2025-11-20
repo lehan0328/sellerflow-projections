@@ -2525,7 +2525,7 @@ const Dashboard = () => {
   const calculateCalendarMinimum = () => {
 
     const { dailyBalances, minimumBalance, minimumDate } =
-      calculateCalendarBalances(displayBankBalance, allCalendarEvents, 90);
+      calculateCalendarBalances(displayBankBalance, allCalendarEvents, 90, excludeToday, creditCards);
 
     return {
       balance: minimumBalance,
