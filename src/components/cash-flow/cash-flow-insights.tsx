@@ -1428,7 +1428,7 @@ export const CashFlowInsights = memo(({
                             variant="outline"
                             size="sm"
                             onClick={() => setSelectedCardTransactions({ cardId: card.id, cardName: card.account_name })}
-                            className="text-sm h-8 px-3 ml-auto"
+                            className="text-xs h-6 px-2 ml-auto"
                           >
                             View Transactions
                           </Button>
