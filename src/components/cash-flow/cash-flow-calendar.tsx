@@ -802,11 +802,11 @@ const CashFlowCalendarComponent = ({
                                    )}
                                  </div>}
                                  
-                                 {(data.creditCardInflow > 0 || data.creditCardOutflow > 0) && <div className="space-y-1.5 border-t pt-2">
-                                   <p className="font-semibold text-xs uppercase text-muted-foreground">Credit Card Activity</p>
-                                   {data.creditCardInflow > 0 && <p className="text-blue-600 font-medium">↑ Payments: +${formatCurrency(data.creditCardInflow)}</p>}
-                                   {data.creditCardOutflow > 0 && <p className="text-orange-600 font-medium">↓ Purchases: -${formatCurrency(data.creditCardOutflow)}</p>}
-                                 </div>}
+                                  {(data.creditCardInflow > 0 || data.creditCardOutflow > 0) && <div className="space-y-1.5 border-t pt-2">
+                                    <p className="font-semibold text-xs uppercase text-muted-foreground">Credit Card Activity</p>
+                                    {data.creditCardOutflow > 0 && <p className="text-orange-600 font-medium">↓ Purchases: -${formatCurrency(data.creditCardOutflow)}</p>}
+                                    {data.creditCardInflow > 0 && <p className="text-blue-600 font-medium">↑ Payments: +${formatCurrency(data.creditCardInflow)}</p>}
+                                  </div>}
 
                               {(data.overdueIncome > 0 || data.overdueVendors > 0) && <div className="space-y-1 border-t pt-2">
                                   <p className="font-semibold text-xs uppercase text-muted-foreground">Outstanding</p>
