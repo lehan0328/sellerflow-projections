@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { format, addMonths, isBefore, startOfDay } from "date-fns";
+import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -638,12 +639,37 @@ export function CreditCards() {
               </div>
               <div>
                 <Label htmlFor="edit_payment_due_date">Payment Due Date</Label>
-                <Input
-                  id="edit_payment_due_date"
-                  type="date"
-                  value={formData.payment_due_date}
-                  onChange={(e) => setFormData({...formData, payment_due_date: e.target.value})}
-                />
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !formData.payment_due_date && "text-muted-foreground"
+                      )}
+                    >
+                      <Calendar className="mr-2 h-4 w-4" />
+                      {formData.payment_due_date ? (
+                        format(new Date(formData.payment_due_date), "PPP")
+                      ) : (
+                        <span>Pick a date</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <CalendarComponent
+                      mode="single"
+                      selected={formData.payment_due_date ? new Date(formData.payment_due_date) : undefined}
+                      onSelect={(date) => {
+                        if (date) {
+                          setFormData({...formData, payment_due_date: format(date, 'yyyy-MM-dd')});
+                        }
+                      }}
+                      initialFocus
+                      className={cn("p-3 pointer-events-auto")}
+                    />
+                  </PopoverContent>
+                </Popover>
                 <p className="text-xs text-muted-foreground mt-1">
                   When is your payment due?
                 </p>
