@@ -14,7 +14,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { CreditCard, Search, Calendar, ArrowUpDown, Pencil, Trash2 } from "lucide-react";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { formatCurrency } from "@/lib/utils";
 import { useState, useMemo } from "react";
 import { useCreditCardPayments } from "@/hooks/useCreditCardPayments";
@@ -72,7 +72,7 @@ export const CreditCardPaymentsOverview = () => {
       let comparison = 0;
       
       if (sortBy === 'date') {
-        comparison = new Date(a.payment_date).getTime() - new Date(b.payment_date).getTime();
+        comparison = parseISO(a.payment_date).getTime() - parseISO(b.payment_date).getTime();
       } else if (sortBy === 'amount') {
         comparison = a.amount - b.amount;
       }
@@ -213,7 +213,7 @@ export const CreditCardPaymentsOverview = () => {
                           <div className="flex items-center gap-2">
                             <Calendar className="h-4 w-4 text-muted-foreground" />
                             <span className="font-medium">
-                              {format(new Date(payment.payment_date), 'MMM d, yyyy')}
+                              {format(parseISO(payment.payment_date), 'MMM d, yyyy')}
                             </span>
                           </div>
                         </TableCell>

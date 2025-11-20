@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CalendarIcon } from "lucide-react";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -32,7 +32,7 @@ export function CreditCardPaymentEditDialog({
   useEffect(() => {
     if (payment && open) {
       setPaymentAmount(Math.abs(payment.amount).toString());
-      setPaymentDate(new Date(payment.date));
+      setPaymentDate(parseISO(payment.payment_date));
     }
   }, [payment, open]);
 
