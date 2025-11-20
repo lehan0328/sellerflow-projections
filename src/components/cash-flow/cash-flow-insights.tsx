@@ -1811,7 +1811,7 @@ export const CashFlowInsights = memo(({
                   .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
                   .map((transaction, idx) => {
                     const date = new Date(transaction.date);
-                    const isOverdue = date < new Date();
+                    const isOverdue = startOfDay(date) < startOfDay(new Date());
                     
                     return (
                       <div 
