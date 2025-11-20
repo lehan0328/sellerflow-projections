@@ -47,6 +47,7 @@ interface CashFlowInsightsProps {
   onUpdateReserveAmount?: (amount: number) => Promise<void>;
   transactionMatchButton?: React.ReactNode;
   excludeToday?: boolean;
+  effectiveStatementBalances?: Map<string, number>;
   onCreditDataCalculated?: (data: {
     lowestCreditByCard: Record<string, { date: string; credit: number }>;
     cardOpportunities: Record<string, Array<{ date: string; availableCredit: number }>>;
@@ -76,6 +77,7 @@ export const CashFlowInsights = memo(({
   onUpdateReserveAmount,
   transactionMatchButton,
   excludeToday = false,
+  effectiveStatementBalances = new Map(),
   onCreditDataCalculated
 }: CashFlowInsightsProps) => {
   const {
@@ -1609,7 +1611,7 @@ export const CashFlowInsights = memo(({
                           )}
                           {card.statement_balance > 0 && (
                             <span className="text-gray-600 dark:text-gray-400">
-                              Statement: ${card.statement_balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              Statement: ${(effectiveStatementBalances.get(card.id) ?? card.statement_balance).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </span>
                           )}
                         </div>
