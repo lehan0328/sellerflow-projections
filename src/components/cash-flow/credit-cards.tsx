@@ -476,7 +476,14 @@ export function CreditCards() {
                                   onClick={() => {
                                     setCardForStatementUpdate(card);
                                     setUpdateStatementBalance('');
-                                    setUpdateDueDate('');
+                                    // Auto-calculate next due date as one month from previous
+                                    if (card.payment_due_date) {
+                                      const previousDueDate = new Date(card.payment_due_date);
+                                      const nextDueDate = addMonths(previousDueDate, 1);
+                                      setUpdateDueDate(format(nextDueDate, "yyyy-MM-dd"));
+                                    } else {
+                                      setUpdateDueDate('');
+                                    }
                                     setShowStatementUpdateModal(true);
                                   }}
                                   className="flex items-center text-destructive hover:underline font-medium"
@@ -882,7 +889,9 @@ export function CreditCards() {
               <div className="rounded-lg border-2 border-destructive bg-destructive/10 p-4 mb-4">
                 <div className="flex items-center gap-2 mb-2">
                   <AlertTriangle className="h-5 w-5 text-destructive" />
-                  <p className="font-semibold text-destructive text-lg">Payment Due TODAY</p>
+                  <p className="font-semibold text-destructive text-lg">
+                    Payment Due: {cardForStatementUpdate?.payment_due_date ? format(new Date(cardForStatementUpdate.payment_due_date), "MMM dd, yyyy") : ""}
+                  </p>
                 </div>
                 <p className="text-2xl font-bold text-destructive">
                   {formatCurrency(cardForStatementUpdate?.statement_balance || 0)}
