@@ -10,6 +10,8 @@ import { format, parseISO, addDays } from "date-fns";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '@/hooks/useAuth';
 
 interface CreditCardPaymentEditDialogProps {
   open: boolean;
@@ -28,6 +30,8 @@ export function CreditCardPaymentEditDialog({
   const [paymentDate, setPaymentDate] = useState<Date>(new Date());
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   useEffect(() => {
     if (payment && open) {
@@ -70,6 +74,10 @@ export function CreditCardPaymentEditDialog({
       if (error) throw error;
 
       toast.success("Payment updated successfully");
+      
+      // Immediately invalidate cache for instant UI update
+      queryClient.invalidateQueries({ queryKey: ['credit-card-payments', user?.id] });
+      
       onSuccess?.();
       onOpenChange(false);
     } catch (error) {

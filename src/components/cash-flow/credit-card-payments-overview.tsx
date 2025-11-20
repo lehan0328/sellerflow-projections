@@ -22,6 +22,8 @@ import { useCreditCards } from "@/hooks/useCreditCards";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { CreditCardPaymentEditDialog } from "./credit-card-payment-edit-dialog";
+import { useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '@/hooks/useAuth';
 
 type EnrichedPayment = {
   id: string;
@@ -37,6 +39,8 @@ type EnrichedPayment = {
 export const CreditCardPaymentsOverview = () => {
   const { payments, isLoading } = useCreditCardPayments();
   const { creditCards } = useCreditCards();
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
   
   const [editingPayment, setEditingPayment] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -180,6 +184,10 @@ export const CreditCardPaymentsOverview = () => {
       if (error) throw error;
 
       toast.success('Payment deleted successfully');
+      
+      // Immediately invalidate cache for instant UI update
+      queryClient.invalidateQueries({ queryKey: ['credit-card-payments', user?.id] });
+      
       setPaymentToDelete(null);
     } catch (error) {
       console.error('Error deleting payment:', error);
