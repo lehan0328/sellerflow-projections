@@ -1021,8 +1021,8 @@ export const PurchaseOrderForm = ({
                   className="h-10" 
                 />
                 
-                {/* Suggested Affordable Date */}
-                {suggestedDate && (
+                {/* Suggested Affordable Date - Hidden for credit card payments */}
+                {suggestedDate && !formData.selectedCreditCard && (
                   <div className="animate-fade-in">
                     {suggestedDate.balance >= parseFloat(formData.amount || "0") ? (
                       <div className="flex items-center justify-between gap-2 p-2 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900/30 rounded-md">
