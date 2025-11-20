@@ -19,6 +19,7 @@ import { useVendorTransactions } from "@/hooks/useVendorTransactions";
 import { useIncome } from "@/hooks/useIncome";
 import { useExcludeToday } from "@/contexts/ExcludeTodayContext";
 import { useRecurringExpenses } from "@/hooks/useRecurringExpenses";
+import { useCreditCardPayments } from "@/hooks/useCreditCardPayments";
 import { generateRecurringDates } from "@/lib/recurringDates";
 import { supabase } from "@/integrations/supabase/client";
 import { OverdueTransactionsModal } from "./overdue-transactions-modal";
@@ -184,6 +185,7 @@ export function OverviewStats({
   const {
     recurringExpenses
   } = useRecurringExpenses();
+  const { payments: creditCardPayments = [] } = useCreditCardPayments();
   const [reserveInput, setReserveInput] = useState<string>("");
 
   // Calculate today's income and expenses (including recurring)
@@ -195,6 +197,7 @@ export function OverviewStats({
   let todaysIncome = 0;
   let todaysBankExpenses = 0;
   let todaysCreditCardExpenses = 0;
+  let todaysCreditCardInflow = 0;
   let todaysExpenses = 0;
 
   if (!excludeToday) {
@@ -309,6 +312,13 @@ export function OverviewStats({
     todaysBankExpenses = regularBankExpenses + oneTimeExpenses + recurringBankExpensesToday;
     todaysCreditCardExpenses = regularCreditCardExpenses + oneTimeCreditCardExpenses + recurringCreditCardExpensesToday;
     todaysExpenses = todaysBankExpenses + todaysCreditCardExpenses;
+
+    // Calculate today's credit card inflow (credit card payments made today)
+    todaysCreditCardInflow = creditCardPayments.filter(payment => {
+      const paymentDate = new Date(payment.payment_date);
+      paymentDate.setHours(0, 0, 0, 0);
+      return paymentDate.toDateString() === todayStr && payment.status === 'scheduled';
+    }).reduce((sum, payment) => sum + payment.amount, 0);
   }
 
   // Calculate hours until next update is allowed
@@ -583,7 +593,7 @@ export function OverviewStats({
             </div>
           </div>
           <div className="space-y-3">
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-4 gap-2">
               <div className="text-center">
                 <p className="text-xs text-muted-foreground mb-1">Inflow</p>
                 <p className="text-lg font-bold text-green-600">{formatCurrency(todaysIncome)}</p>
@@ -595,6 +605,10 @@ export function OverviewStats({
               <div className="text-center">
                 <p className="text-xs text-muted-foreground mb-1">CC Outflow</p>
                 <p className="text-lg font-bold text-orange-600">{formatCurrency(todaysCreditCardExpenses)}</p>
+              </div>
+              <div className="text-center">
+                <p className="text-xs text-muted-foreground mb-1">CC Inflow</p>
+                <p className="text-lg font-bold text-blue-600">{formatCurrency(todaysCreditCardInflow)}</p>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3 pt-2 border-t">
