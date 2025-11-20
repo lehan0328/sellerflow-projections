@@ -2009,60 +2009,98 @@ const Dashboard = () => {
     }
   }, [vendors.length, incomeItems.length, transactions.length]);
 
-  // Get credit card due date events - generate dynamically, no insertion
-  const creditCardEvents: CashFlowEvent[] =
-    creditCards.length > 0
-      ? creditCards
-          .filter((card) => {
-            if (!card.payment_due_date) return false;
-            if (!card.statement_balance && !card.balance) return false;
-            
-            // Only include if payment due date is today or in the future
-            const dueDate = new Date(card.payment_due_date);
-            dueDate.setHours(0, 0, 0, 0);
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            
-            return dueDate >= today;
-          })
-          .map((card) => {
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            const dueDate = new Date(card.payment_due_date!);
-            dueDate.setHours(0, 0, 0, 0);
-            
-            // Calculate early manual payments (after today, before due date)
-            const earlyPayments = creditCardPaymentsForEvents
-              .filter(payment => 
-                payment.creditCardId === card.id &&
-                payment.date >= today &&
-                payment.date < dueDate
-              )
-              .reduce((sum, payment) => sum + payment.amount, 0);
-            
-            // Calculate effective statement balance after early payments
-            const baseStatementAmount = card.statement_balance || card.balance;
-            const effectiveStatementBalance = Math.max(0, baseStatementAmount - earlyPayments);
-            
-            // If pay_minimum is enabled, show minimum payment; otherwise show effective statement balance
-            const paymentAmount = card.pay_minimum
-              ? card.minimum_payment
-              : effectiveStatementBalance;
+  // Convert credit card payment transactions to calendar events
+  const creditCardPaymentEvents = useMemo(() => {
+    return (async () => {
+      if (!user?.id) return [];
+      
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('account_id')
+        .eq('user_id', user.id)
+        .maybeSingle();
 
-            return {
-              id: `credit-payment-${card.id}`,
-              type: "credit-payment" as const,
-              amount: paymentAmount,
-              description: `${card.institution_name} - ${
-                card.account_name
-              } Payment${card.pay_minimum ? " (Min Only)" : ""}`,
-              creditCard: card.institution_name,
-              creditCardId: card.id,
-              date: dueDate,
-            };
-          })
-          .filter((event) => event.amount > 0) // Remove fully paid bills
-      : [];
+      if (!profile?.account_id) return [];
+
+      const { data: payments } = await supabase
+        .from('credit_card_payments')
+        .select('*')
+        .eq('account_id', profile.account_id);
+
+      if (!payments) return [];
+
+      return payments.map(payment => ({
+        id: `cc-payment-${payment.id}`,
+        type: 'credit-payment' as const,
+        amount: payment.amount,
+        description: payment.description || 'Credit Card Payment',
+        creditCardId: payment.credit_card_id,
+        date: new Date(payment.payment_date),
+      }));
+    })();
+  }, [user?.id, creditCards]);
+
+  const [creditCardPaymentsForEvents, setCreditCardPaymentsForEvents] = useState<CashFlowEvent[]>([]);
+  
+  useEffect(() => {
+    creditCardPaymentEvents.then(events => setCreditCardPaymentsForEvents(events));
+  }, [creditCardPaymentEvents]);
+
+  // Get credit card due date events - generate dynamically, no insertion
+  const creditCardEvents: CashFlowEvent[] = useMemo(() => {
+    if (creditCards.length === 0) return [];
+    
+    return creditCards
+      .filter((card) => {
+        if (!card.payment_due_date) return false;
+        if (!card.statement_balance && !card.balance) return false;
+        
+        // Only include if payment due date is today or in the future
+        const dueDate = new Date(card.payment_due_date);
+        dueDate.setHours(0, 0, 0, 0);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        return dueDate >= today;
+      })
+      .map((card) => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const dueDate = new Date(card.payment_due_date!);
+        dueDate.setHours(0, 0, 0, 0);
+        
+        // Calculate early manual payments (after today, before due date)
+        const earlyPayments = creditCardPaymentsForEvents
+          .filter(payment => 
+            payment.creditCardId === card.id &&
+            payment.date >= today &&
+            payment.date < dueDate
+          )
+          .reduce((sum, payment) => sum + payment.amount, 0);
+        
+        // Calculate effective statement balance after early payments
+        const baseStatementAmount = card.statement_balance || card.balance;
+        const effectiveStatementBalance = Math.max(0, baseStatementAmount - earlyPayments);
+        
+        // If pay_minimum is enabled, show minimum payment; otherwise show effective statement balance
+        const paymentAmount = card.pay_minimum
+          ? card.minimum_payment
+          : effectiveStatementBalance;
+
+        return {
+          id: `credit-payment-${card.id}`,
+          type: "credit-payment" as const,
+          amount: paymentAmount,
+          description: `${card.institution_name} - ${
+            card.account_name
+          } Payment${card.pay_minimum ? " (Min Only)" : ""}`,
+          creditCard: card.institution_name,
+          creditCardId: card.id,
+          date: dueDate,
+        };
+      })
+      .filter((event) => event.amount > 0); // Remove fully paid bills
+  }, [creditCards, creditCardPaymentsForEvents]);
 
   // Add forecasted next month payments for cards with forecast enabled - generate dynamically, no insertion
   const forecastedCreditCardEvents: CashFlowEvent[] =
@@ -2126,43 +2164,6 @@ const Dashboard = () => {
       status: t.status,
       date: t.transactionDate,
     }));
-
-  // Convert credit card payment transactions to calendar events
-  const creditCardPaymentEvents = useMemo(() => {
-    return (async () => {
-      if (!user?.id) return [];
-      
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('account_id')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (!profile?.account_id) return [];
-
-      const { data: payments } = await supabase
-        .from('credit_card_payments')
-        .select('*')
-        .eq('account_id', profile.account_id);
-
-      if (!payments) return [];
-
-      return payments.map(payment => ({
-        id: `cc-payment-${payment.id}`,
-        type: 'credit-payment' as const,
-        amount: payment.amount,
-        description: payment.description || 'Credit Card Payment',
-        creditCardId: payment.credit_card_id,
-        date: new Date(payment.payment_date),
-      }));
-    })();
-  }, [user?.id, creditCards]);
-
-  const [creditCardPaymentsForEvents, setCreditCardPaymentsForEvents] = useState<CashFlowEvent[]>([]);
-  
-  useEffect(() => {
-    creditCardPaymentEvents.then(events => setCreditCardPaymentsForEvents(events));
-  }, [creditCardPaymentEvents]);
 
   // Generate recurring transaction events for calendar (show next 12 months)
   const recurringEvents: CashFlowEvent[] = useMemo(() => {
