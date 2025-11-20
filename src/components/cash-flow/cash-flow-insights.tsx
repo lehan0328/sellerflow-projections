@@ -877,25 +877,12 @@ export const CashFlowInsights = memo(({
                         ${(() => {
                           const netAvailableCredit = creditCards.reduce((sum, card) => {
                             const effectiveCreditLimit = card.credit_limit_override || card.credit_limit;
-                            const cardAvailable = effectiveCreditLimit - card.balance;
-                            const cardPending = pendingOrdersByCard[card.id] || 0;
+                            const effectiveAvailableCredit = effectiveCreditLimit - card.balance;
+                            const pendingOrders = pendingOrdersByCard[card.id] || 0;
+                            const currentAvailableSpend = effectiveAvailableCredit - pendingOrders;
                             
-                            // Calculate today's credit card outflow for this specific card
-                            const today = new Date();
-                            today.setHours(0, 0, 0, 0);
-                            const todayCardOutflow = excludeToday ? 0 : events
-                              .filter(e => {
-                                const eventDate = new Date(e.date);
-                                eventDate.setHours(0, 0, 0, 0);
-                                return e.creditCardId === card.id &&
-                                       e.type === 'outflow' && 
-                                       eventDate.getTime() === today.getTime();
-                              })
-                              .reduce((sum, e) => sum + e.amount, 0);
-                            
-                            const cardNetAvailable = cardAvailable - cardPending - todayCardOutflow;
-                            // Cap each card at 0
-                            return sum + Math.max(0, cardNetAvailable);
+                            // Cap each card at 0 (matches green "Available to Spend" boxes)
+                            return sum + Math.max(0, currentAvailableSpend);
                           }, 0);
                           
                           return netAvailableCredit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
