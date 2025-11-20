@@ -505,11 +505,15 @@ export const CashFlowInsights = memo(({
   // Notify parent component when credit data is calculated
   useEffect(() => {
     if (onCreditDataCalculated && Object.keys(calculatedLowestCreditByCard).length > 0) {
-      // Calculate total available credit
+      // Calculate total available credit - EXACT same formula as displayed at lines 948-960
       const totalAvailableCredit = creditCards.reduce((sum, card) => {
         const effectiveCreditLimit = card.credit_limit_override || card.credit_limit;
         const effectiveAvailableCredit = effectiveCreditLimit - card.balance;
-        return sum + effectiveAvailableCredit;
+        const pendingOrders = pendingOrdersByCard[card.id] || 0;
+        const currentAvailableSpend = effectiveAvailableCredit - pendingOrders;
+        
+        // Cap each card at 0 (matches green "Available to Spend" boxes)
+        return sum + Math.max(0, currentAvailableSpend);
       }, 0);
 
       console.log('🔵 CashFlowInsights passing totalAvailableCredit:', totalAvailableCredit);
@@ -520,7 +524,7 @@ export const CashFlowInsights = memo(({
         totalAvailableCredit
       });
     }
-  }, [calculatedLowestCreditByCard, calculatedCardOpportunities, onCreditDataCalculated, creditCards, creditCardPendingAmounts]);
+  }, [calculatedLowestCreditByCard, calculatedCardOpportunities, onCreditDataCalculated, creditCards, pendingOrdersByCard]);
 
   // Handle adding a temporary PO projection
   const handleAddProjection = () => {
