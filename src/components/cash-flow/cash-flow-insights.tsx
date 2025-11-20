@@ -83,6 +83,7 @@ export const CashFlowInsights = memo(({
   const [refreshing, setRefreshing] = useState(false);
   const [editingCreditLimit, setEditingCreditLimit] = useState<string | null>(null);
   const [creditLimitOverride, setCreditLimitOverride] = useState('');
+  const [selectedCardTransactions, setSelectedCardTransactions] = useState<{ cardId: string; cardName: string } | null>(null);
   const [showAllOpportunities, setShowAllOpportunities] = useState(false);
   const [showSearchOpportunities, setShowSearchOpportunities] = useState(false);
   const [showAllCreditCards, setShowAllCreditCards] = useState(false);
@@ -1505,6 +1506,17 @@ export const CashFlowInsights = memo(({
                       </div>
                     )}
                     
+                    <div className="flex justify-end mb-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setSelectedCardTransactions({ cardId: card.id, cardName: card.account_name })}
+                        className="text-xs h-7"
+                      >
+                        View Transactions
+                      </Button>
+                    </div>
+                    
                     <div className="grid grid-cols-2 gap-2 text-xs">
                       <div className="flex flex-col p-2 bg-background/50 rounded">
                         <div className="flex items-center justify-between mb-0.5">
@@ -1677,6 +1689,101 @@ export const CashFlowInsights = memo(({
           )}
           <DialogFooter>
             <Button onClick={() => setShowDateSearch(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Credit Card Transactions Modal */}
+      <Dialog open={!!selectedCardTransactions} onOpenChange={() => setSelectedCardTransactions(null)}>
+        <DialogContent className="max-w-2xl max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle>Transactions for {selectedCardTransactions?.cardName}</DialogTitle>
+            <DialogDescription>
+              Showing all pending transactions for this credit card
+            </DialogDescription>
+          </DialogHeader>
+          <ScrollArea className="max-h-[500px] pr-4">
+            <div className="space-y-2">
+              {selectedCardTransactions && (() => {
+                // Filter events for this specific card
+                const cardTransactions = events.filter(event => 
+                  (event as any).creditCardId === selectedCardTransactions.cardId && 
+                  event.type !== 'credit-payment'
+                );
+                
+                if (cardTransactions.length === 0) {
+                  return (
+                    <div className="text-center py-8 text-muted-foreground">
+                      No pending transactions found for this card
+                    </div>
+                  );
+                }
+                
+                return cardTransactions
+                  .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+                  .map((transaction, idx) => {
+                    const date = new Date(transaction.date);
+                    const isOverdue = date < new Date();
+                    
+                    return (
+                      <div 
+                        key={idx} 
+                        className={`p-3 rounded-lg border ${
+                          isOverdue 
+                            ? 'bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800' 
+                            : 'bg-muted/50 border-border'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <p className="font-medium text-sm truncate">
+                                {transaction.description || transaction.name || 'Transaction'}
+                              </p>
+                              {transaction.type === 'purchase_order' && (
+                                <Badge variant="secondary" className="text-xs">PO</Badge>
+                              )}
+                              {transaction.type === 'expense' && (
+                                <Badge variant="outline" className="text-xs">Expense</Badge>
+                              )}
+                              {transaction.type === 'recurring-expense' && (
+                                <Badge variant="outline" className="text-xs">Recurring</Badge>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                              <span className={isOverdue ? 'text-red-600 dark:text-red-400 font-medium' : ''}>
+                                {date.toLocaleDateString('en-US', { 
+                                  month: 'short', 
+                                  day: 'numeric',
+                                  year: date.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined
+                                })}
+                                {isOverdue && ' (Overdue)'}
+                              </span>
+                              {(transaction as any).vendor_name && (
+                                <>
+                                  <span>•</span>
+                                  <span>{(transaction as any).vendor_name}</span>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-lg font-bold text-red-600 dark:text-red-400">
+                              ${transaction.amount.toLocaleString('en-US', { 
+                                minimumFractionDigits: 0, 
+                                maximumFractionDigits: 0 
+                              })}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  });
+              })()}
+            </div>
+          </ScrollArea>
+          <DialogFooter>
+            <Button onClick={() => setSelectedCardTransactions(null)}>Close</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
