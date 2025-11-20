@@ -262,7 +262,7 @@ export function CreditCardPaymentDialog({
                 </p>
                 {selectedCreditCard.payment_due_date && (
                   <p className="text-sm text-muted-foreground">
-                    Payment Due Date: {format(new Date(selectedCreditCard.payment_due_date), "MMM dd, yyyy")}
+                    Payment Due Date: {format(parseISO(selectedCreditCard.payment_due_date), "MMM dd, yyyy")}
                   </p>
                 )}
                 {lowestCreditDate && (
