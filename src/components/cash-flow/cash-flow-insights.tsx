@@ -22,6 +22,8 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { useAmazonPayouts } from "@/hooks/useAmazonPayouts";
 import { useAuth } from "@/hooks/useAuth";
+import { useTransactions } from "@/hooks/useTransactions";
+import { useRecurringExpenses } from "@/hooks/useRecurringExpenses";
 import { DailyBalance } from "@/lib/calendarBalances";
 import aurenLogo from "@/assets/auren-icon-blue.png";
 interface CashFlowInsightsProps {
@@ -80,7 +82,8 @@ export const CashFlowInsights = memo(({
   const { user } = useAuth();
   const { creditCards, isLoading: cardsLoading, updateCreditCard } = useCreditCards();
   const { amazonPayouts, refetch: refetchPayouts } = useAmazonPayouts();
-  const [pendingOrdersByCard, setPendingOrdersByCard] = useState<Record<string, number>>({});
+  const { transactions } = useTransactions();
+  const { recurringExpenses } = useRecurringExpenses();
   const [cardOpportunities, setCardOpportunities] = useState<Record<string, Array<{ date: string; availableCredit: number }>>>({});
   const [lowestCreditByCard, setLowestCreditByCard] = useState<Record<string, { date: string; credit: number }>>({});
   const [tempProjections, setTempProjections] = useState<Array<{ amount: number; date: string }>>([]);
@@ -309,61 +312,40 @@ export const CashFlowInsights = memo(({
     setIsEditingReserve(false);
   };
 
-  // Fetch pending purchase orders for each credit card - memoized
-  const fetchPendingOrders = useCallback(async () => {
-    if (!creditCards || creditCards.length === 0 || !user?.id) return;
-
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('account_id')
-      .eq('user_id', user.id)
-      .single();
-
-    if (!profile?.account_id) return;
-
-    const { data: transactions } = await supabase
-      .from('transactions')
-      .select('credit_card_id, amount')
-      .eq('account_id', profile.account_id)
-      .in('type', ['purchase_order', 'expense'])
-      .eq('status', 'pending')
-      .eq('archived', false)
-      .not('credit_card_id', 'is', null);
-
-    // Fetch active recurring expenses paid by credit card
-    const { data: recurringExpenses } = await supabase
-      .from('recurring_expenses')
-      .select('credit_card_id, amount, frequency, start_date, end_date')
-      .eq('account_id', profile.account_id)
-      .eq('is_active', true)
-      .eq('type', 'expense')
-      .not('credit_card_id', 'is', null);
+  // Calculate pending orders from cached hooks
+  const pendingOrdersByCard = useMemo(() => {
+    if (!creditCards || creditCards.length === 0 || !transactions || !recurringExpenses) return {};
 
     const ordersByCard: Record<string, number> = {};
     
-    // Add pending transactions
-    if (transactions) {
-      transactions.forEach(tx => {
-        if (tx.credit_card_id) {
-          ordersByCard[tx.credit_card_id] = (ordersByCard[tx.credit_card_id] || 0) + Number(tx.amount);
-        }
+    // Add pending transactions with credit cards
+    transactions
+      .filter(tx => 
+        tx.creditCardId && 
+        tx.status === 'pending' && 
+        (tx.type === 'purchase_order' || tx.type === 'expense')
+      )
+      .forEach(tx => {
+        ordersByCard[tx.creditCardId!] = (ordersByCard[tx.creditCardId!] || 0) + tx.amount;
       });
-    }
 
     // Add recurring expenses (calculate occurrences in next 30 days)
-    if (recurringExpenses) {
-      const today = startOfDay(new Date());
-      const endDate = addDays(today, 30);
+    const today = startOfDay(new Date());
+    const endDate = addDays(today, 30);
 
-      recurringExpenses.forEach(recurring => {
-        if (!recurring.credit_card_id) return;
-
+    recurringExpenses
+      .filter(recurring => 
+        recurring.credit_card_id && 
+        recurring.is_active && 
+        recurring.type === 'expense'
+      )
+      .forEach(recurring => {
         const recurringTransaction = {
           id: '',
           name: '',
           transaction_name: '',
           amount: recurring.amount,
-          frequency: recurring.frequency as 'daily' | 'weekly' | 'bi-weekly' | 'monthly' | '2-months' | '3-months' | 'weekdays',
+          frequency: recurring.frequency,
           start_date: recurring.start_date,
           end_date: recurring.end_date,
           is_active: true,
@@ -373,16 +355,11 @@ export const CashFlowInsights = memo(({
         const occurrences = generateRecurringDates(recurringTransaction, today, endDate);
         const totalAmount = occurrences.length * recurring.amount;
 
-        ordersByCard[recurring.credit_card_id] = (ordersByCard[recurring.credit_card_id] || 0) + totalAmount;
+        ordersByCard[recurring.credit_card_id!] = (ordersByCard[recurring.credit_card_id!] || 0) + totalAmount;
       });
-    }
 
-    setPendingOrdersByCard(ordersByCard);
-  }, [creditCards?.length, user?.id]);
-
-  useEffect(() => {
-    fetchPendingOrders();
-  }, [fetchPendingOrders]);
+    return ordersByCard;
+  }, [creditCards, transactions, recurringExpenses]);
   
   // Calculate buying opportunities for each credit card - memoized
   const calculatedCardOpportunities = useMemo(() => {
