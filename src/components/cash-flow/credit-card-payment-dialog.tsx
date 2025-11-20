@@ -27,7 +27,6 @@ interface CreditCardPaymentDialogProps {
   onPaymentSuccess?: () => void;
   lowestCreditByCard?: Record<string, { date: string; credit: number }>;
   cardOpportunities?: Record<string, Array<{ date: string; availableCredit: number }>>;
-  availableToSpendByCard?: Record<string, number>;
 }
 
 export function CreditCardPaymentDialog({ 
@@ -39,8 +38,7 @@ export function CreditCardPaymentDialog({
   allCalendarEvents = [],
   onPaymentSuccess,
   lowestCreditByCard = {},
-  cardOpportunities = {},
-  availableToSpendByCard = {}
+  cardOpportunities = {}
 }: CreditCardPaymentDialogProps) {
   const { user } = useAuth();
   const { creditCards, creditCardPendingAmounts, refetch: refetchCreditCards } = useCreditCards();
@@ -140,9 +138,12 @@ export function CreditCardPaymentDialog({
 
   const defaultBankAccount = bankAccounts[0];
   
-  // Get accurate available credit from cash-flow-insights (matches green box)
-  const getAvailableToSpend = (cardId: string) => {
-    return availableToSpendByCard[cardId] || 0;
+  // Calculate adjusted available credit (respecting extended credit limit override)
+  const getAdjustedAvailableCredit = (card: typeof selectedCreditCard) => {
+    if (!card) return 0;
+    const effectiveCreditLimit = card.credit_limit_override || card.credit_limit;
+    const pendingAmount = creditCardPendingAmounts.get(card.id) || 0;
+    return Math.max(0, effectiveCreditLimit - card.balance - pendingAmount);
   };
 
   const handleSubmit = async () => {
@@ -257,7 +258,7 @@ export function CreditCardPaymentDialog({
               <div className="space-y-1">
                 <p className="text-sm text-muted-foreground">
                   Credit Limit: ${(selectedCreditCard.credit_limit_override || selectedCreditCard.credit_limit).toFixed(2)} | 
-                  Available to Spend: ${getAvailableToSpend(selectedCreditCard.id).toFixed(2)}
+                  Available Credit: ${getAdjustedAvailableCredit(selectedCreditCard).toFixed(2)}
                 </p>
                 {selectedCreditCard.payment_due_date && (
                   <p className="text-sm text-muted-foreground">
