@@ -66,7 +66,11 @@ export const calculateCalendarBalances = (
     // Calculate net change for the day
     const dailyInflow = dayEvents.filter(e => e.type === 'inflow').reduce((sum, e) => sum + e.amount, 0);
     // Exclude credit card purchases from cash outflow (they affect credit line instead)
-    const dailyOutflow = dayEvents.filter(e => e.type !== 'inflow' && !e.creditCardId).reduce((sum, e) => sum + e.amount, 0);
+    // BUT include credit-payment events as they decrease cash while increasing card credit
+    const dailyOutflow = dayEvents.filter(e => 
+      e.type !== 'inflow' && 
+      (e.type === 'credit-payment' || !e.creditCardId)
+    ).reduce((sum, e) => sum + e.amount, 0);
     const dailyChange = dailyInflow - dailyOutflow;
     
     runningBalance += dailyChange;
