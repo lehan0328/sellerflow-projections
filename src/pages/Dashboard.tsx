@@ -1933,6 +1933,7 @@ const Dashboard = () => {
           tx.description || `${vendor?.name || "Vendor"} - Payment Due`,
         vendor: vendor?.name,
         creditCardId: tx.creditCardId,
+        status: tx.status,
         date: eventDate,
       };
     });
@@ -2085,6 +2086,7 @@ const Dashboard = () => {
       description: t.description,
       vendor: "Expense",
       creditCardId: t.creditCardId,
+      status: t.status,
       date: t.transactionDate,
     }));
 
