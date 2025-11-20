@@ -44,11 +44,12 @@ export const useCreditCardPayments = () => {
 
       if (error) throw error;
       
-      // Auto-archive payments with payment_date < today
+      // Auto-archive payments with payment_date < today (timezone-safe comparison)
       const today = startOfDay(new Date());
-      const paymentsToArchive = data?.filter(p => 
-        new Date(p.payment_date) < today && p.status === 'scheduled'
-      ) || [];
+      const paymentsToArchive = data?.filter(p => {
+        const paymentDate = startOfDay(new Date(p.payment_date));
+        return paymentDate < today && p.status === 'scheduled';
+      }) || [];
       
       if (paymentsToArchive.length > 0) {
         await Promise.all(
