@@ -7,7 +7,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { format, addDays, parseISO } from "date-fns";
 import { toast } from "sonner";
 import { useBankAccounts } from "@/hooks/useBankAccounts";
 import { useCreditCards } from "@/hooks/useCreditCards";
@@ -19,6 +20,7 @@ import { useIncome } from "@/hooks/useIncome";
 import { useExcludeToday } from "@/contexts/ExcludeTodayContext";
 import { useRecurringExpenses } from "@/hooks/useRecurringExpenses";
 import { generateRecurringDates } from "@/lib/recurringDates";
+import { supabase } from "@/integrations/supabase/client";
 import { OverdueTransactionsModal } from "./overdue-transactions-modal";
 import { TransactionsListModal } from "./transactions-list-modal";
 import { formatCurrency } from "@/lib/utils";
@@ -106,6 +108,7 @@ export function OverviewStats({
   const [amazonTimeRange, setAmazonTimeRange] = useState(() => {
     return localStorage.getItem('amazonTimeRange') || "next30";
   });
+  const [pendingOrdersByCard, setPendingOrdersByCard] = useState<Record<string, number>>({});
   const [showSyncDialog, setShowSyncDialog] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [showOverdueModal, setShowOverdueModal] = useState(false);
@@ -378,44 +381,83 @@ export function OverviewStats({
   });
   const upcomingTotal = upcomingPayments.reduce((sum, payment) => sum + payment.amount, 0);
 
-  // Calculate pending credit card transactions - removed (now calculated via pendingOrdersByCard)
+  const fetchPendingOrders = useCallback(async () => {
+    if (!creditCards || creditCards.length === 0) return;
 
-  // Calculate pending orders by card (matching cash-flow-insights.tsx)
-  const pendingOrdersByCard: Record<string, number> = {};
-  
-  creditCards.forEach(card => {
-    // Get pending purchases (tx with creditCardId)
-    const pendingPurchases = vendorTransactions
-      .filter(tx => tx.creditCardId === card.id && tx.status === 'pending')
-      .reduce((sum, tx) => sum + tx.amount, 0);
+    const user = await supabase.auth.getUser();
+    if (!user.data.user) return;
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('account_id')
+      .eq('user_id', user.data.user.id)
+      .single();
+
+    if (!profile?.account_id) return;
+
+    const { data: transactions } = await supabase
+      .from('transactions')
+      .select('credit_card_id, amount')
+      .eq('account_id', profile.account_id)
+      .in('type', ['purchase_order', 'expense'])
+      .eq('status', 'pending')
+      .eq('archived', false)
+      .not('credit_card_id', 'is', null);
+
+    // Fetch active recurring expenses paid by credit card
+    const { data: recurringExpenses } = await supabase
+      .from('recurring_expenses')
+      .select('credit_card_id, amount, frequency, start_date, end_date')
+      .eq('account_id', profile.account_id)
+      .eq('is_active', true)
+      .eq('type', 'expense')
+      .not('credit_card_id', 'is', null);
+
+    const ordersByCard: Record<string, number> = {};
     
-    // Get pending expenses (tx with credit_card_id)
-    const pendingExpenses = transactions
-      .filter(tx => tx.creditCardId === card.id && tx.status === 'pending' && tx.type === 'expense')
-      .reduce((sum, tx) => sum + tx.amount, 0);
-    
-    // Get recurring expenses for next 30 days
-    const thirtyDaysOut = new Date();
-    thirtyDaysOut.setDate(thirtyDaysOut.getDate() + 30);
-    
-    const recurringTotal = recurringExpenses
-      .filter(exp => exp.type === 'expense' && exp.is_active && exp.credit_card_id === card.id)
-      .reduce((sum, exp) => {
-        const dates = generateRecurringDates({
-          id: exp.id,
-          transaction_name: exp.transaction_name || exp.name,
-          amount: exp.amount,
-          frequency: exp.frequency,
-          start_date: exp.start_date,
-          end_date: exp.end_date,
-          is_active: exp.is_active,
-          type: exp.type
-        }, new Date(), thirtyDaysOut);
-        return sum + (dates.length * exp.amount);
-      }, 0);
-    
-    pendingOrdersByCard[card.id] = pendingPurchases + pendingExpenses + recurringTotal;
-  });
+    // Add pending transactions
+    if (transactions) {
+      transactions.forEach(tx => {
+        if (tx.credit_card_id) {
+          ordersByCard[tx.credit_card_id] = (ordersByCard[tx.credit_card_id] || 0) + Number(tx.amount);
+        }
+      });
+    }
+
+    // Add recurring expenses (calculate occurrences in next 30 days)
+    if (recurringExpenses) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const endDate = addDays(today, 30);
+
+      recurringExpenses.forEach(recurring => {
+        if (!recurring.credit_card_id) return;
+
+        const recurringTransaction = {
+          id: '',
+          name: '',
+          transaction_name: '',
+          amount: recurring.amount,
+          frequency: recurring.frequency as 'daily' | 'weekly' | 'bi-weekly' | 'monthly' | '2-months' | '3-months' | 'weekdays',
+          start_date: recurring.start_date,
+          end_date: recurring.end_date,
+          is_active: true,
+          type: 'expense' as const
+        };
+
+        const occurrences = generateRecurringDates(recurringTransaction, today, endDate);
+        const totalAmount = occurrences.length * recurring.amount;
+
+        ordersByCard[recurring.credit_card_id] = (ordersByCard[recurring.credit_card_id] || 0) + totalAmount;
+      });
+    }
+
+    setPendingOrdersByCard(ordersByCard);
+  }, [creditCards?.length]);
+
+  useEffect(() => {
+    fetchPendingOrders();
+  }, [fetchPendingOrders]);
 
   // Calculate net available credit (matching cash-flow-insights.tsx exactly)
   const netAvailableCredit = creditCards.reduce((sum, card) => {
