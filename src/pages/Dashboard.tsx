@@ -407,6 +407,10 @@ const Dashboard = () => {
     open: boolean;
     cardName: string | null;
   }>({ open: false, cardName: null });
+  const [creditCardData, setCreditCardData] = useState<{
+    lowestCreditByCard: Record<string, { date: string; credit: number }>;
+    cardOpportunities: Record<string, Array<{ date: string; availableCredit: number }>>;
+  }>({ lowestCreditByCard: {}, cardOpportunities: {} });
   const { toast } = useToast();
   const [vendorTxRefresh, setVendorTxRefresh] = useState(0);
   const [matchReviewDialog, setMatchReviewDialog] = useState<{
@@ -3016,6 +3020,7 @@ const Dashboard = () => {
                       dailyBalances={projectedDailyBalances}
                       onUpdateReserveAmount={updateReserveAmount}
                       excludeToday={excludeToday}
+                      onCreditDataCalculated={setCreditCardData}
                       transactionMatchButton={
                         <TransactionMatchButton
                           matches={matches}
@@ -3812,6 +3817,8 @@ const Dashboard = () => {
               reserveAmount={reserveAmount}
               allCalendarEvents={allCalendarEvents}
               onPaymentSuccess={() => refetchBankTransactions()}
+              lowestCreditByCard={creditCardData.lowestCreditByCard}
+              cardOpportunities={creditCardData.cardOpportunities}
             />
           )}
 

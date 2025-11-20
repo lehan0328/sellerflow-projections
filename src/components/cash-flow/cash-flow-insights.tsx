@@ -45,6 +45,10 @@ interface CashFlowInsightsProps {
   onUpdateReserveAmount?: (amount: number) => Promise<void>;
   transactionMatchButton?: React.ReactNode;
   excludeToday?: boolean;
+  onCreditDataCalculated?: (data: {
+    lowestCreditByCard: Record<string, { date: string; credit: number }>;
+    cardOpportunities: Record<string, Array<{ date: string; availableCredit: number }>>;
+  }) => void;
 }
 export const CashFlowInsights = memo(({
   currentBalance,
@@ -66,7 +70,8 @@ export const CashFlowInsights = memo(({
   dailyBalances = [],
   onUpdateReserveAmount,
   transactionMatchButton,
-  excludeToday = false
+  excludeToday = false,
+  onCreditDataCalculated
 }: CashFlowInsightsProps) => {
   const {
     toast
@@ -519,6 +524,16 @@ export const CashFlowInsights = memo(({
   useEffect(() => {
     setLowestCreditByCard(calculatedLowestCreditByCard);
   }, [calculatedLowestCreditByCard]);
+
+  // Notify parent component when credit data is calculated
+  useEffect(() => {
+    if (onCreditDataCalculated && Object.keys(calculatedLowestCreditByCard).length > 0) {
+      onCreditDataCalculated({
+        lowestCreditByCard: calculatedLowestCreditByCard,
+        cardOpportunities: calculatedCardOpportunities
+      });
+    }
+  }, [calculatedLowestCreditByCard, calculatedCardOpportunities, onCreditDataCalculated]);
 
   // Handle adding a temporary PO projection
   const handleAddProjection = () => {

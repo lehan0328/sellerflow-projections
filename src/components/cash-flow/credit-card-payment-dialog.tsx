@@ -13,7 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { CreditCard, CalendarIcon, Info } from "lucide-react";
-import { format, startOfDay, addDays } from "date-fns";
+import { format, startOfDay, addDays, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
 import type { CalendarEvent } from "@/lib/calendarBalances";
 
@@ -25,6 +25,8 @@ interface CreditCardPaymentDialogProps {
   reserveAmount?: number;
   allCalendarEvents?: CalendarEvent[];
   onPaymentSuccess?: () => void;
+  lowestCreditByCard?: Record<string, { date: string; credit: number }>;
+  cardOpportunities?: Record<string, Array<{ date: string; availableCredit: number }>>;
 }
 
 export function CreditCardPaymentDialog({ 
@@ -34,7 +36,9 @@ export function CreditCardPaymentDialog({
   projectedDailyBalances = [],
   reserveAmount = 0,
   allCalendarEvents = [],
-  onPaymentSuccess
+  onPaymentSuccess,
+  lowestCreditByCard = {},
+  cardOpportunities = {}
 }: CreditCardPaymentDialogProps) {
   const { user } = useAuth();
   const { creditCards, creditCardPendingAmounts, refetch: refetchCreditCards } = useCreditCards();
@@ -48,65 +52,11 @@ export function CreditCardPaymentDialog({
 
   const selectedCreditCard = creditCards.find(card => card.id === selectedCreditCardId);
 
-  // Calculate the date when selected credit card will have lowest available credit
-  const lowestCreditDate = useMemo(() => {
-    if (!selectedCreditCardId || !selectedCreditCard) return null;
+  // Use pre-calculated lowest credit from cash-flow-insights modal
+  const lowestCreditDate = selectedCreditCardId ? lowestCreditByCard[selectedCreditCardId] : null;
 
-    const today = startOfDay(new Date());
-    const endDate = addDays(today, 90); // Project 90 days forward
-    
-    // Initialize with current available credit (matching buying opportunities)
-    const effectiveCreditLimit = selectedCreditCard.credit_limit_override || selectedCreditCard.credit_limit;
-    const effectiveAvailableCredit = effectiveCreditLimit - selectedCreditCard.balance;
-    const pendingOrders = creditCardPendingAmounts.get(selectedCreditCardId) || 0;
-    let runningCredit = effectiveAvailableCredit - pendingOrders;
-    
-    let minCredit = Math.max(0, runningCredit); // Floor at zero
-    let minDate = format(today, "yyyy-MM-dd");
-    
-    // Process each day chronologically
-    let currentDate = new Date(today);
-    while (currentDate <= endDate) {
-      const dateStr = format(currentDate, "yyyy-MM-dd");
-      
-      // Get events for THIS CARD on this specific date (exclude overdue transactions)
-      const dayEvents = allCalendarEvents.filter(event => {
-        const eventDateStr = format(new Date(event.date), "yyyy-MM-dd");
-        const eventDate = startOfDay(new Date(event.date));
-        const isOverdue = eventDate < today;
-        return eventDateStr === dateStr && event.creditCardId === selectedCreditCardId && !isOverdue;
-      });
-      
-      // Process purchases (decrease available credit)
-      const purchases = dayEvents.filter(e => e.type !== 'credit-payment');
-      purchases.forEach(purchase => {
-        runningCredit -= purchase.amount;
-      });
-      
-      // Process payments (increase available credit)
-      const payments = dayEvents.filter(e => e.type === 'credit-payment');
-      payments.forEach(payment => {
-        runningCredit += payment.amount;
-      });
-      
-      // Apply floor of zero (overflow logic - card can't go below zero available credit)
-      const creditForDay = Math.max(0, runningCredit);
-      
-      // Track minimum
-      if (creditForDay < minCredit) {
-        minCredit = creditForDay;
-        minDate = dateStr;
-      }
-      
-      // Move to next day
-      currentDate = addDays(currentDate, 1);
-    }
-    
-    return {
-      date: minDate,
-      credit: minCredit
-    };
-  }, [selectedCreditCardId, selectedCreditCard, allCalendarEvents, creditCardPendingAmounts]);
+  // Get buying opportunities for the selected card
+  const selectedCardOpportunities = selectedCreditCardId ? cardOpportunities[selectedCreditCardId] || [] : [];
 
   // Calculate projected available credit on selected date for selected card
   const projectedAvailableCredit = useMemo(() => {
@@ -317,8 +267,26 @@ export function CreditCardPaymentDialog({
                 )}
                 {lowestCreditDate && (
                   <p className="text-sm font-medium text-amber-600 dark:text-amber-400">
-                    Lowest Credit: ${lowestCreditDate.credit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} on {format(new Date(lowestCreditDate.date), "MMM dd, yyyy")}
+                    Lowest Credit (30 days): ${lowestCreditDate.credit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} on {format(parseISO(lowestCreditDate.date), 'MMM d, yyyy')}
                   </p>
+                )}
+                {selectedCardOpportunities.length > 0 && (
+                  <div className="mt-2 space-y-1">
+                    <p className="text-xs font-semibold text-muted-foreground">Buying Opportunities ({selectedCardOpportunities.length} available)</p>
+                    {selectedCardOpportunities.slice(0, 2).map((opp, idx) => (
+                      <div key={idx} className="flex justify-between items-center text-xs">
+                        <span className="text-muted-foreground">{format(parseISO(opp.date), 'MMM d')}</span>
+                        <span className="font-semibold text-blue-600 dark:text-blue-400">
+                          ${opp.availableCredit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </span>
+                      </div>
+                    ))}
+                    {selectedCardOpportunities.length > 2 && (
+                      <p className="text-xs text-muted-foreground">
+                        +{selectedCardOpportunities.length - 2} more opportunities
+                      </p>
+                    )}
+                  </div>
                 )}
               </div>
             )}
