@@ -32,7 +32,8 @@ export function parseISODate(dateStr: string): Date {
  */
 export function formatCurrency(amount: number, showCents: boolean = true): string {
   const isWholeNumber = amount % 1 === 0;
-  const decimals = showCents && !isWholeNumber ? 2 : 0;
+  const isLargeAmount = Math.abs(amount) >= 100000;
+  const decimals = (showCents && !isWholeNumber && !isLargeAmount) ? 2 : 0;
   
   return new Intl.NumberFormat("en-US", {
     style: "currency",
