@@ -1521,7 +1521,7 @@ export const CashFlowInsights = memo(({
                       </div>
                       <div className="text-right">
                         <span className={`text-lg font-bold flex-shrink-0 ${isOverLimit ? 'text-red-600 dark:text-red-500' : 'text-green-700 dark:text-green-400'}`}>
-                          ${effectiveAvailableCredit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          ${Math.max(0, currentAvailableSpend).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </span>
                         <p className="text-xs text-gray-500 dark:text-gray-400">Available</p>
                       </div>
