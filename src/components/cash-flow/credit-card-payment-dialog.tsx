@@ -55,7 +55,7 @@ export function CreditCardPaymentDialog({
     const today = startOfDay(new Date());
     
     // Start with current available credit
-    const currentAvailableCredit = (selectedCreditCard.credit_limit_override || selectedCreditCard.credit_limit) - selectedCreditCard.balance;
+    const currentAvailableCredit = (selectedCreditCard.credit_limit_override || selectedCreditCard.credit_limit) - (selectedCreditCard.statement_balance || selectedCreditCard.balance);
     
     // Track credit over time
     const creditByDate: { [date: string]: number } = {};
@@ -106,7 +106,7 @@ export function CreditCardPaymentDialog({
     const targetDate = startOfDay(paymentDate);
 
     // Start with current available credit
-    const currentAvailableCredit = (selectedCreditCard.credit_limit_override || selectedCreditCard.credit_limit) - selectedCreditCard.balance;
+    const currentAvailableCredit = (selectedCreditCard.credit_limit_override || selectedCreditCard.credit_limit) - (selectedCreditCard.statement_balance || selectedCreditCard.balance);
     let projectedCredit = currentAvailableCredit;
 
     // Only process future events (after today) to avoid double-counting
