@@ -1084,7 +1084,7 @@ export const CashFlowInsights = memo(({
                     {tempProjections.map((proj, idx) => (
                       <div key={idx} className="flex justify-between">
                         <span>${proj.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                        <span>{new Date(proj.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                        <span>{format(parseISO(proj.date), 'MMM d')}</span>
                       </div>
                     ))}
                   </div>
@@ -1385,7 +1385,7 @@ export const CashFlowInsights = memo(({
                         <div className="p-6 rounded-lg border bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border-blue-200 dark:border-blue-800">
                           <div className="text-center mb-4">
                             <div className="text-xs text-muted-foreground mb-2">
-                              On {new Date(searchDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                              On {format(parseISO(searchDate), 'MMMM d, yyyy')}
                             </div>
                             <div className="text-4xl font-bold text-blue-600">
                               ${relevantOpp.balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -1497,7 +1497,7 @@ export const CashFlowInsights = memo(({
                         <div className="flex gap-3 text-xs">
                           {card.payment_due_date && (
                             <span className="text-blue-600 dark:text-blue-400 font-medium">
-                              Due: {new Date(card.payment_due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                              Due: {format(parseISO(card.payment_due_date), 'MMM d')}
                             </span>
                           )}
                           {card.statement_balance > 0 && (
@@ -1551,7 +1551,7 @@ export const CashFlowInsights = memo(({
                               ${lowestCredit.credit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </span>
                             <p className="text-xs text-amber-600 dark:text-amber-500">
-                              on {new Date(lowestCredit.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                              on {format(parseISO(lowestCredit.date), 'MMM d')}
                             </p>
                           </div>
                         </div>
@@ -1574,7 +1574,7 @@ export const CashFlowInsights = memo(({
                           {opportunities.slice(0, 2).map((opp, idx) => (
                             <div key={idx} className="flex justify-between items-center p-2 bg-blue-50 dark:bg-blue-950/20 rounded text-xs border border-blue-200 dark:border-blue-800">
                               <span className="text-muted-foreground">
-                                {new Date(opp.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                {format(parseISO(opp.date), 'MMM d')}
                               </span>
                               <span className="font-semibold text-blue-600">
                                 ${opp.availableCredit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
