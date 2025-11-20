@@ -47,6 +47,7 @@ interface OverviewStatsProps {
     creditCardId?: string;
   }>;
   dailyBalances?: DailyBalance[];
+  totalAvailableCreditFromInsights?: number;
 }
 const timeRangeOptions = [{
   value: "today",
@@ -95,7 +96,8 @@ export function OverviewStats({
   pendingIncomeToday,
   useAvailableBalance,
   transactions = [],
-  dailyBalances: projectedBalances = []
+  dailyBalances: projectedBalances = [],
+  totalAvailableCreditFromInsights
 }: OverviewStatsProps & {
   useAvailableBalance?: boolean;
 }) {
@@ -147,12 +149,8 @@ export function OverviewStats({
     creditCardPendingAmounts
   } = useCreditCards();
   
-  // Use the EXACT same calculation as CashFlowInsights line 1459
-  const totalAvailableCredit = creditCards.reduce((sum, card) => {
-    const effectiveCreditLimit = card.credit_limit_override || card.credit_limit;
-    const effectiveAvailableCredit = effectiveCreditLimit - card.balance;
-    return sum + effectiveAvailableCredit;
-  }, 0);
+  // Use the value passed from CashFlowInsights - this is the EXACT number displayed there
+  const totalAvailableCredit = totalAvailableCreditFromInsights ?? 0;
   
   const {
     reserveAmount,
