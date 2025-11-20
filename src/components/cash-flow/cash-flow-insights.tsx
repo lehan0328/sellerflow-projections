@@ -1418,7 +1418,7 @@ export const CashFlowInsights = memo(({
               
               {[...creditCards].sort((a, b) => (a.priority || 3) - (b.priority || 3)).map((card) => {
                 const effectiveCreditLimit = card.credit_limit_override || card.credit_limit;
-                const effectiveAvailableCredit = effectiveCreditLimit - card.balance;
+                const effectiveAvailableCredit = effectiveCreditLimit - (card.statement_balance || card.balance);
                 const pendingOrders = pendingOrdersByCard[card.id] || 0;
                 const currentAvailableSpend = effectiveAvailableCredit - pendingOrders;
                 const opportunities = cardOpportunities[card.id] || [];
