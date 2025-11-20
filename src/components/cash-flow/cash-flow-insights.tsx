@@ -1424,6 +1424,14 @@ export const CashFlowInsights = memo(({
                             Priority {card.priority}
                           </span>
                           {isOverLimit && <AlertCircle className="h-3.5 w-3.5 text-red-600 flex-shrink-0" />}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setSelectedCardTransactions({ cardId: card.id, cardName: card.account_name })}
+                            className="text-xs h-6 px-2 ml-auto"
+                          >
+                            View Transactions
+                          </Button>
                         </div>
                         <p className="text-xs text-gray-600 dark:text-gray-400 truncate mb-1">{card.institution_name}</p>
                         {/* Due Date & Statement Balance */}
@@ -1505,17 +1513,6 @@ export const CashFlowInsights = memo(({
                         </div>
                       </div>
                     )}
-                    
-                    <div className="flex justify-end mb-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setSelectedCardTransactions({ cardId: card.id, cardName: card.account_name })}
-                        className="text-xs h-7"
-                      >
-                        View Transactions
-                      </Button>
-                    </div>
                     
                     <div className="grid grid-cols-2 gap-2 text-xs">
                       <div className="flex flex-col p-2 bg-background/50 rounded">
