@@ -355,17 +355,7 @@ export function CreditCardPaymentDialog({
                     </div>
                   )}
                   
-                  {projectedAvailableCredit !== null && (
-                    <div className="flex justify-between items-center">
-                      <span className="text-muted-foreground">Available Credit:</span>
-                      <span className={cn(
-                        "font-semibold",
-                        projectedAvailableCredit >= 0 ? "text-blue-700 dark:text-blue-300" : "text-red-700 dark:text-red-300"
-                      )}>
-                        ${projectedAvailableCredit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </span>
-                    </div>
-                  )}
+                  
                 </div>
               </div>
             )}
