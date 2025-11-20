@@ -48,15 +48,30 @@ export const CreditCardPaymentsOverview = () => {
   const enrichedPayments = useMemo(() => {
     const today = startOfDay(new Date());
     
+    // Track which cards we've already generated bill payments for (deduplication)
+    const processedCardIds = new Set<string>();
+    
     // Generate bill payments from credit cards
     const billPayments: EnrichedPayment[] = creditCards
-      .filter(card => card.payment_due_date && (card.statement_balance || card.balance) > 0)
+      .filter(card => {
+        // Skip if already processed (deduplication)
+        if (processedCardIds.has(card.id)) return false;
+        
+        // Only include cards with due dates and balances
+        if (!card.payment_due_date || (card.statement_balance || card.balance) <= 0) return false;
+        
+        processedCardIds.add(card.id);
+        return true;
+      })
       .map(card => {
+        // Parse payment due date consistently using parseISO to avoid timezone bugs
+        const dueDate = parseISO(card.payment_due_date!);
+        
         // Calculate early payments for this card
         const earlyPayments = payments.filter(
           p => p.credit_card_id === card.id && 
           p.payment_type === 'manual' &&
-          parseISO(p.payment_date) < parseISO(card.payment_due_date!) &&
+          parseISO(p.payment_date) < dueDate &&
           p.was_paid !== false
         );
         const totalEarlyPayments = earlyPayments.reduce((sum, p) => sum + p.amount, 0);
@@ -149,6 +164,13 @@ export const CreditCardPaymentsOverview = () => {
   const handleDelete = async () => {
     if (!paymentToDelete) return;
 
+    // Check if this is a dynamic payment (fake ID starting with "bill-")
+    if (paymentToDelete.isDynamic || paymentToDelete.id.startsWith('bill-')) {
+      toast.error("Cannot delete auto-generated bill payments. Update your credit card settings to change bill payments.");
+      setPaymentToDelete(null);
+      return;
+    }
+
     try {
       const { error } = await supabase
         .from('credit_card_payments')
@@ -194,6 +216,22 @@ export const CreditCardPaymentsOverview = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
+            {/* Info Message */}
+            <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <Receipt className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-1">
+                    About Credit Card Payments
+                  </p>
+                  <p className="text-sm text-blue-700 dark:text-blue-300">
+                    Bill payments are automatically calculated from your credit card statement balances and due dates. 
+                    These cannot be edited or deleted directly. To change these, update your credit card settings in Financial Connections.
+                  </p>
+                </div>
+              </div>
+            </div>
+            
             {/* Search Bar */}
             <div className="flex items-center gap-2">
               <div className="relative flex-1">
@@ -270,9 +308,9 @@ export const CreditCardPaymentsOverview = () => {
                           <div className="flex items-center gap-2">
                             <span className="font-medium">{payment.description || 'Credit Card Payment'}</span>
                             {payment.isDynamic && (
-                              <Badge variant="secondary" className="text-xs">
+                              <Badge variant="secondary" className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-700">
                                 <Receipt className="h-3 w-3 mr-1" />
-                                Bill
+                                Auto-generated Bill
                               </Badge>
                             )}
                           </div>
