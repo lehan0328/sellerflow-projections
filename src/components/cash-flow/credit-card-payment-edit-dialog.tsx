@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CalendarIcon } from "lucide-react";
-import { format, parseISO } from "date-fns";
+import { format, parseISO, addDays } from "date-fns";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -32,7 +32,7 @@ export function CreditCardPaymentEditDialog({
   useEffect(() => {
     if (payment && open) {
       setPaymentAmount(Math.abs(payment.amount).toString());
-      setPaymentDate(parseISO(payment.payment_date));
+      setPaymentDate(addDays(parseISO(payment.payment_date), 1));
     }
   }, [payment, open]);
 
@@ -51,9 +51,11 @@ export function CreditCardPaymentEditDialog({
 
     try {
       // Use timezone-safe date extraction to prevent off-by-one errors
-      const year = paymentDate.getFullYear();
-      const month = String(paymentDate.getMonth() + 1).padStart(2, '0');
-      const day = String(paymentDate.getDate()).padStart(2, '0');
+      // Subtract 1 day to compensate for the +1 day we add for display
+      const adjustedDate = addDays(paymentDate, -1);
+      const year = adjustedDate.getFullYear();
+      const month = String(adjustedDate.getMonth() + 1).padStart(2, '0');
+      const day = String(adjustedDate.getDate()).padStart(2, '0');
       const dateString = `${year}-${month}-${day}`;
       
       const { error } = await supabase
