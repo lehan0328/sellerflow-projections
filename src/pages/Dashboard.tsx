@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { addDays, isToday, isBefore, startOfDay, format } from "date-fns";
+import { addDays, isToday, isBefore, startOfDay, format, parseISO } from "date-fns";
 import { calculateCalendarBalances } from "@/lib/calendarBalances";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
@@ -2059,18 +2059,15 @@ const Dashboard = () => {
         if (!card.statement_balance && !card.balance) return false;
         
         // Only include if payment due date is today or in the future
-        const dueDate = new Date(card.payment_due_date);
-        dueDate.setHours(0, 0, 0, 0);
+        const dueDate = startOfDay(parseISO(card.payment_due_date));
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         
         return dueDate >= today;
       })
       .map((card) => {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const dueDate = new Date(card.payment_due_date!);
-        dueDate.setHours(0, 0, 0, 0);
+        const today = startOfDay(new Date());
+        const dueDate = startOfDay(parseISO(card.payment_due_date!));
         
         // Calculate early manual payments (before due date, including overdue if was_paid)
         const earlyPayments = creditCardPaymentsForEvents
