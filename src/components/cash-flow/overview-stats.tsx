@@ -109,6 +109,7 @@ export function OverviewStats({
   const [showSyncDialog, setShowSyncDialog] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [showOverdueModal, setShowOverdueModal] = useState(false);
+  const [overdueModalInitialTab, setOverdueModalInitialTab] = useState<'expenses' | 'income' | 'purchaseOrders' | 'creditCard'>('expenses');
   const [showIncomingModal, setShowIncomingModal] = useState(false);
   const [showUpcomingModal, setShowUpcomingModal] = useState(false);
   const [showBankAccountsModal, setShowBankAccountsModal] = useState(false);
@@ -663,7 +664,10 @@ export function OverviewStats({
                 <p className="text-sm text-muted-foreground text-center mb-1">Pending: {formatCurrency(pendingCreditTotal)}</p>
                 <p className="text-sm text-muted-foreground mb-2 text-center">{creditUtilization.toFixed(1)}% utilization</p>
               </>}
-            {overdueCreditCardCount > 0 && <Button variant="outline" size="sm" onClick={() => setShowOverdueModal(true)} className="mb-1.5 h-7 px-2 text-xs border-destructive text-destructive">
+            {overdueCreditCardCount > 0 && <Button variant="outline" size="sm" onClick={() => {
+                setOverdueModalInitialTab('creditCard');
+                setShowOverdueModal(true);
+              }} className="mb-1.5 h-7 px-2 text-xs border-destructive text-destructive">
                 <AlertCircle className="h-3 w-3 mr-1" />
                 Overdue ({overdueCreditCardCount})
               </Button>}
@@ -798,7 +802,7 @@ export function OverviewStats({
       </Dialog>
 
       {/* Overdue Transactions Modal */}
-      <OverdueTransactionsModal open={showOverdueModal} onOpenChange={setShowOverdueModal} onUpdate={onTransactionUpdate} />
+      <OverdueTransactionsModal open={showOverdueModal} onOpenChange={setShowOverdueModal} onUpdate={onTransactionUpdate} initialTab={overdueModalInitialTab} />
 
       {/* Incoming Transactions Modal */}
       <TransactionsListModal open={showIncomingModal} onOpenChange={setShowIncomingModal} transactions={incomingPayments as any} title={`Incoming Transactions (${timeRangeOptions.find(opt => opt.value === incomingTimeRange)?.label})`} type="incoming" />
