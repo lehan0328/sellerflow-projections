@@ -3786,6 +3786,7 @@ const Dashboard = () => {
               allBuyingOpportunities={buyingOpportunities}
               projectedDailyBalances={projectedDailyBalances}
               reserveAmount={reserveAmount}
+              cardOpportunities={creditCardData.cardOpportunities}
             />
           )}
 

@@ -27,6 +27,45 @@ import { UpgradeModal } from "@/components/upgrade-modal";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { CreditCardSelect } from "./credit-card-select";
+
+/**
+ * Calculate available credit for a specific card on a given date,
+ * accounting for buying opportunities (payment due dates that increase credit)
+ */
+const getAvailableCreditForDate = (
+  cardId: string,
+  selectedDate: Date | undefined,
+  currentAvailableCredit: number,
+  cardOpportunities: Record<string, Array<{ date: string; availableCredit: number }>>
+): number => {
+  // If no date selected, return current available credit
+  if (!selectedDate) return currentAvailableCredit;
+  
+  // Get opportunities for this specific card
+  const opportunities = cardOpportunities[cardId] || [];
+  
+  // If no opportunities, return current available credit
+  if (opportunities.length === 0) return currentAvailableCredit;
+  
+  // Format selected date for comparison (YYYY-MM-DD)
+  const selectedDateStr = format(selectedDate, 'yyyy-MM-dd');
+  
+  // Find the appropriate opportunity based on date range
+  // Opportunities are sorted chronologically, so iterate through them
+  let applicableCredit = currentAvailableCredit;
+  
+  for (const opportunity of opportunities) {
+    // If selected date is on or after this opportunity date, use this opportunity's credit
+    if (selectedDateStr >= opportunity.date) {
+      applicableCredit = opportunity.availableCredit;
+    } else {
+      // Once we hit an opportunity in the future, stop checking
+      break;
+    }
+  }
+  
+  return applicableCredit;
+};
 interface Vendor {
   id: string;
   name: string;
@@ -45,6 +84,7 @@ interface PurchaseOrderFormProps {
   allBuyingOpportunities?: Array<{ date: string; balance: number; available_date?: string }>;
   projectedDailyBalances?: Array<{ date: string; runningBalance: number }>;
   reserveAmount?: number;
+  cardOpportunities?: Record<string, Array<{ date: string; availableCredit: number }>>;
 }
 interface PaymentSchedule {
   id: string;
@@ -69,7 +109,8 @@ export const PurchaseOrderForm = ({
   onAddVendor,
   allBuyingOpportunities,
   projectedDailyBalances,
-  reserveAmount = 0
+  reserveAmount = 0,
+  cardOpportunities = {}
 }: PurchaseOrderFormProps) => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -1319,7 +1360,13 @@ export const PurchaseOrderForm = ({
                             {creditCards.filter(card => card.is_active).sort((a, b) => (a.priority || 3) - (b.priority || 3)).map(card => {
                               const effectiveLimit = card.credit_limit_override || card.credit_limit;
                               const pendingCommitments = creditCardPendingAmounts.get(card.id) || 0;
-                              const availableCredit = effectiveLimit - card.balance - pendingCommitments;
+                              const staticAvailableCredit = effectiveLimit - card.balance - pendingCommitments;
+                              const availableCredit = getAvailableCreditForDate(
+                                card.id,
+                                formData.dueDate,
+                                staticAvailableCredit,
+                                cardOpportunities
+                              );
                               return (
                                 <SelectItem key={card.id} value={card.id}>
                                   <div className="flex items-center gap-2 w-full">
@@ -1344,7 +1391,15 @@ export const PurchaseOrderForm = ({
                   const orderAmount = parseFloat(formData.amount) || 0;
                   const effectiveLimit = selectedCard ? (selectedCard.credit_limit_override || selectedCard.credit_limit) : 0;
                   const pendingCommitments = selectedCard ? (creditCardPendingAmounts.get(selectedCard.id) || 0) : 0;
-                  const availableCredit = selectedCard ? effectiveLimit - selectedCard.balance - pendingCommitments : 0;
+                  const staticAvailableCredit = selectedCard ? effectiveLimit - selectedCard.balance - pendingCommitments : 0;
+                  const availableCredit = selectedCard 
+                    ? getAvailableCreditForDate(
+                        selectedCard.id, 
+                        formData.dueDate, 
+                        staticAvailableCredit,
+                        cardOpportunities
+                      )
+                    : 0;
                   const remainingCredit = selectedCard ? availableCredit - orderAmount : 0;
                   const hasInsufficientCredit = selectedCard ? availableCredit < orderAmount : false;
                   return selectedCard ? <div className="space-y-2">
