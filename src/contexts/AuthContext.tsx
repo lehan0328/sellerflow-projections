@@ -1,4 +1,4 @@
-import { createContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useState, useEffect, ReactNode, useMemo, useCallback } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
@@ -57,7 +57,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
   }, []);
 
-  const validateSession = async () => {
+  const validateSession = useCallback(async () => {
     if (!authState.user?.id) return false;
 
     try {
@@ -97,9 +97,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       console.error('[AuthContext] Session validation error:', error);
       return false;
     }
-  };
+  }, [authState.user?.id]);
 
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
     console.log('[AuthContext] Signing out...');
     
     // Clear all cached queries to prevent stale data on next login
@@ -114,14 +114,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       console.error('Error signing out:', error);
     }
     return error;
-  };
+  }, [queryClient]);
+
+  const contextValue = useMemo(() => ({
+    ...authState,
+    signOut,
+    validateSession,
+  }), [authState, signOut, validateSession]);
 
   return (
-    <AuthContext.Provider value={{
-      ...authState,
-      signOut,
-      validateSession,
-    }}>
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );
