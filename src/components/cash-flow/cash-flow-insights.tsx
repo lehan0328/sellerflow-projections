@@ -435,17 +435,8 @@ export const CashFlowInsights = memo(({
               )
               .reduce((sum, event) => sum + (event.amount || 0), 0);
             
-            // Calculate payments between today and due date
-            const paymentsAdded = events
-              .filter(event =>
-                event.creditCardId === card.id &&
-                event.type === 'credit-payment' &&
-                event.date && new Date(event.date) > today && new Date(event.date) <= paymentDueDate
-              )
-              .reduce((sum, event) => sum + (event.amount || 0), 0);
-            
             // Calculate available credit on payment due date using effective statement balance
-            const dueDateCredit = currentAvailableSpend - pendingExpenses + paymentsAdded + effectiveStatementBalance;
+            const dueDateCredit = currentAvailableSpend - pendingExpenses + effectiveStatementBalance;
             
             opportunities.push({
               date: dueDateStr,
