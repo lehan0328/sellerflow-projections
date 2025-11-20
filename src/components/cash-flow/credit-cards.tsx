@@ -541,7 +541,7 @@ export function CreditCards() {
                     />
                   </div>
 
-                  <div className="grid grid-cols-5 gap-3 text-sm">
+                  <div className="grid grid-cols-4 gap-3 text-sm">
                     <div>
                       <p className="text-muted-foreground">Statement Balance</p>
                       <p className="font-semibold text-finance-negative">
@@ -552,12 +552,6 @@ export function CreditCards() {
                       <p className="text-muted-foreground">Total Balance</p>
                       <p className="font-semibold text-finance-negative">
                         {formatCurrency(card.balance)}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Min Payment</p>
-                      <p className="font-semibold text-finance-negative">
-                        {formatCurrency(card.minimum_payment || 0)}
                       </p>
                     </div>
                     <div>
