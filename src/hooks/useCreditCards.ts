@@ -6,6 +6,8 @@ import { addDays } from "date-fns";
 import { generateRecurringDates } from "@/lib/recurringDates";
 import { useEffect, useMemo } from "react";
 import { creditCardsQueryKey } from "@/lib/cacheConfig";
+import { useTransactions } from "./useTransactions";
+import { useRecurringExpenses } from "./useRecurringExpenses";
 
 export interface CreditCard {
   id: string;
@@ -65,90 +67,64 @@ export const useCreditCards = () => {
     },
   });
 
-  // Fetch pending commitments for credit cards
-  const { data: creditCardPendingAmounts = new Map() } = useQuery({
-    queryKey: ['credit_card_pending_amounts', user?.id, creditCards.map(c => c.id).join(',')],
-    enabled: !!user && creditCards.length > 0,
-    staleTime: 15 * 60 * 1000,
-    gcTime: 30 * 60 * 1000,
-    queryFn: async () => {
-      const cardIds = creditCards.map(card => card.id);
-      if (cardIds.length === 0) return new Map();
+  // Get cached transactions and recurring expenses
+  const { transactions } = useTransactions();
+  const { recurringExpenses } = useRecurringExpenses();
 
-      // Calculate date 30 days ago
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      const thirtyDaysAgoStr = thirtyDaysAgo.toISOString().split('T')[0];
+  // Calculate pending amounts from cached hooks
+  const creditCardPendingAmounts = useMemo(() => {
+    if (!creditCards || creditCards.length === 0 || !transactions || !recurringExpenses) {
+      return new Map<string, number>();
+    }
 
-      // Fetch pending transactions (purchase orders and expenses) from last 30 days only
-      const { data: pendingTransactions, error: txError } = await supabase
-        .from("transactions")
-        .select("credit_card_id, amount")
-        .in("credit_card_id", cardIds)
-        .eq("status", "pending")
-        .in("type", ["purchase_order", "expense"])
-        .gte("due_date", thirtyDaysAgoStr);
+    const pendingMap = new Map<string, number>();
+    const cardIds = creditCards.map(c => c.id);
 
-      if (txError) {
-        console.error("Error fetching pending transactions:", txError);
-      }
-
-      // Fetch active recurring expenses on credit cards
-      const { data: recurringExpenses, error: recurringError } = await supabase
-        .from("recurring_expenses")
-        .select("credit_card_id, amount, frequency, start_date")
-        .in("credit_card_id", cardIds)
-        .eq("is_active", true)
-        .eq("type", "expense");
-
-      if (recurringError) {
-        console.error("Error fetching recurring expenses:", recurringError);
-      }
-
-      // Calculate total pending for each card
-      const pendingMap = new Map<string, number>();
-      
-      // Add pending transactions
-      pendingTransactions?.forEach(tx => {
-        if (tx.credit_card_id) {
-          const current = pendingMap.get(tx.credit_card_id) || 0;
-          pendingMap.set(tx.credit_card_id, current + Math.abs(tx.amount));
-        }
+    // Add pending transactions
+    transactions
+      .filter(tx => 
+        tx.creditCardId && 
+        cardIds.includes(tx.creditCardId) &&
+        tx.status === 'pending' && 
+        (tx.type === 'purchase_order' || tx.type === 'expense')
+      )
+      .forEach(tx => {
+        const current = pendingMap.get(tx.creditCardId!) || 0;
+        pendingMap.set(tx.creditCardId!, current + Math.abs(tx.amount));
       });
 
-      // Calculate actual recurring expense occurrences in next 30 days
-      const today = new Date();
-      const thirtyDaysFromNow = addDays(today, 30);
+    // Calculate recurring expense occurrences in next 30 days
+    const today = new Date();
+    const thirtyDaysFromNow = addDays(today, 30);
 
-      recurringExpenses?.forEach(expense => {
-        if (expense.credit_card_id && expense.frequency) {
-          // Create RecurringTransaction object for generateRecurringDates
-          const recurringTx = {
-            id: expense.credit_card_id,
-            transaction_name: 'Recurring Expense',
-            amount: expense.amount,
-            frequency: expense.frequency as any,
-            start_date: expense.start_date || today.toISOString().split('T')[0],
-            end_date: null,
-            is_active: true,
-            type: 'expense' as const
-          };
-          
-          const occurrences = generateRecurringDates(
-            recurringTx,
-            today,
-            thirtyDaysFromNow
-          );
-          
-          const totalAmount = occurrences.length * Math.abs(expense.amount);
-          const current = pendingMap.get(expense.credit_card_id) || 0;
-          pendingMap.set(expense.credit_card_id, current + totalAmount);
-        }
+    recurringExpenses
+      .filter(expense => 
+        expense.credit_card_id && 
+        cardIds.includes(expense.credit_card_id) &&
+        expense.is_active && 
+        expense.type === 'expense'
+      )
+      .forEach(expense => {
+        const recurringTx = {
+          id: expense.id,
+          transaction_name: expense.transaction_name || expense.name,
+          amount: expense.amount,
+          frequency: expense.frequency as any,
+          start_date: expense.start_date || today.toISOString().split('T')[0],
+          end_date: expense.end_date,
+          is_active: true,
+          type: 'expense' as const
+        };
+        
+        const occurrences = generateRecurringDates(recurringTx, today, thirtyDaysFromNow);
+        const totalAmount = occurrences.length * Math.abs(expense.amount);
+        
+        const current = pendingMap.get(expense.credit_card_id!) || 0;
+        pendingMap.set(expense.credit_card_id!, current + totalAmount);
       });
 
-      return pendingMap;
-    },
-  });
+    return pendingMap;
+  }, [creditCards, transactions, recurringExpenses]);
 
   // Add credit card mutation
   const addCreditCardMutation = useMutation({

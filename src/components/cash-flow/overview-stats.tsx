@@ -108,7 +108,6 @@ export function OverviewStats({
   const [amazonTimeRange, setAmazonTimeRange] = useState(() => {
     return localStorage.getItem('amazonTimeRange') || "next30";
   });
-  const [pendingOrdersByCard, setPendingOrdersByCard] = useState<Record<string, number>>({});
   const [showSyncDialog, setShowSyncDialog] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [showOverdueModal, setShowOverdueModal] = useState(false);
@@ -145,7 +144,8 @@ export function OverviewStats({
     creditCards,
     totalCreditLimit,
     totalBalance: totalCreditBalance,
-    totalAvailableCredit
+    totalAvailableCredit,
+    creditCardPendingAmounts
   } = useCreditCards();
   const {
     reserveAmount,
@@ -381,89 +381,12 @@ export function OverviewStats({
   });
   const upcomingTotal = upcomingPayments.reduce((sum, payment) => sum + payment.amount, 0);
 
-  const fetchPendingOrders = useCallback(async () => {
-    if (!creditCards || creditCards.length === 0) return;
-
-    const user = await supabase.auth.getUser();
-    if (!user.data.user) return;
-
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('account_id')
-      .eq('user_id', user.data.user.id)
-      .single();
-
-    if (!profile?.account_id) return;
-
-    const { data: transactions } = await supabase
-      .from('transactions')
-      .select('credit_card_id, amount')
-      .eq('account_id', profile.account_id)
-      .in('type', ['purchase_order', 'expense'])
-      .eq('status', 'pending')
-      .eq('archived', false)
-      .not('credit_card_id', 'is', null);
-
-    // Fetch active recurring expenses paid by credit card
-    const { data: recurringExpenses } = await supabase
-      .from('recurring_expenses')
-      .select('credit_card_id, amount, frequency, start_date, end_date')
-      .eq('account_id', profile.account_id)
-      .eq('is_active', true)
-      .eq('type', 'expense')
-      .not('credit_card_id', 'is', null);
-
-    const ordersByCard: Record<string, number> = {};
-    
-    // Add pending transactions
-    if (transactions) {
-      transactions.forEach(tx => {
-        if (tx.credit_card_id) {
-          ordersByCard[tx.credit_card_id] = (ordersByCard[tx.credit_card_id] || 0) + Number(tx.amount);
-        }
-      });
-    }
-
-    // Add recurring expenses (calculate occurrences in next 30 days)
-    if (recurringExpenses) {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const endDate = addDays(today, 30);
-
-      recurringExpenses.forEach(recurring => {
-        if (!recurring.credit_card_id) return;
-
-        const recurringTransaction = {
-          id: '',
-          name: '',
-          transaction_name: '',
-          amount: recurring.amount,
-          frequency: recurring.frequency as 'daily' | 'weekly' | 'bi-weekly' | 'monthly' | '2-months' | '3-months' | 'weekdays',
-          start_date: recurring.start_date,
-          end_date: recurring.end_date,
-          is_active: true,
-          type: 'expense' as const
-        };
-
-        const occurrences = generateRecurringDates(recurringTransaction, today, endDate);
-        const totalAmount = occurrences.length * recurring.amount;
-
-        ordersByCard[recurring.credit_card_id] = (ordersByCard[recurring.credit_card_id] || 0) + totalAmount;
-      });
-    }
-
-    setPendingOrdersByCard(ordersByCard);
-  }, [creditCards?.length]);
-
-  useEffect(() => {
-    fetchPendingOrders();
-  }, [fetchPendingOrders]);
 
   // Calculate net available credit (matching cash-flow-insights.tsx exactly)
   const netAvailableCredit = creditCards.reduce((sum, card) => {
     const effectiveCreditLimit = card.credit_limit_override || card.credit_limit;
     const effectiveAvailableCredit = effectiveCreditLimit - card.balance;
-    const pendingOrders = pendingOrdersByCard[card.id] || 0;
+    const pendingOrders = creditCardPendingAmounts.get(card.id) || 0;
     const currentAvailableSpend = effectiveAvailableCredit - pendingOrders;
     
     // Cap each card at 0 (matches green "Available to Spend" boxes)
@@ -471,14 +394,14 @@ export function OverviewStats({
   }, 0);
 
   // Calculate total pending credit (sum of all cards' pending orders)
-  const pendingCreditTotal = Object.values(pendingOrdersByCard).reduce((sum, amount) => sum + amount, 0);
+  const pendingCreditTotal = Array.from(creditCardPendingAmounts.values()).reduce((sum, amount) => sum + amount, 0);
 
   // Calculate overflow (for display purposes)
   let totalCreditOverflow = 0;
   creditCards.forEach(card => {
     const effectiveCreditLimit = card.credit_limit_override || card.credit_limit;
     const effectiveAvailableCredit = effectiveCreditLimit - card.balance;
-    const pendingOrders = pendingOrdersByCard[card.id] || 0;
+    const pendingOrders = creditCardPendingAmounts.get(card.id) || 0;
     const currentAvailableSpend = effectiveAvailableCredit - pendingOrders;
     
     if (currentAvailableSpend < 0) {
