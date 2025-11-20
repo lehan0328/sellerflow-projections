@@ -13,7 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { CreditCard, CalendarIcon, Info } from "lucide-react";
-import { format, startOfDay } from "date-fns";
+import { format, startOfDay, addDays } from "date-fns";
 import { cn } from "@/lib/utils";
 import type { CalendarEvent } from "@/lib/calendarBalances";
 
@@ -53,53 +53,58 @@ export function CreditCardPaymentDialog({
     if (!selectedCreditCardId || !selectedCreditCard) return null;
 
     const today = startOfDay(new Date());
+    const endDate = addDays(today, 90); // Project 90 days forward
     
-    // Start with current available credit (same calculation as "Available to Spend" in buying opportunities)
+    // Initialize with current available credit (matching buying opportunities)
     const effectiveCreditLimit = selectedCreditCard.credit_limit_override || selectedCreditCard.credit_limit;
     const effectiveAvailableCredit = effectiveCreditLimit - selectedCreditCard.balance;
     const pendingOrders = creditCardPendingAmounts.get(selectedCreditCardId) || 0;
-    const currentAvailableCredit = effectiveAvailableCredit - pendingOrders;
+    let runningCredit = effectiveAvailableCredit - pendingOrders;
     
-    // Track credit over time
-    const creditByDate: { [date: string]: number } = {};
-    let runningCredit = currentAvailableCredit;
-    
-    // Get all future events for this card and sort by date
-    const futureEvents = allCalendarEvents
-      .filter(event => {
-        const eventDate = startOfDay(new Date(event.date));
-        return eventDate > today && event.creditCardId === selectedCreditCardId;
-      })
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-
-    // Process events chronologically
-    futureEvents.forEach(event => {
-      const dateStr = format(new Date(event.date), "yyyy-MM-dd");
-      if (event.type === 'credit-payment') {
-        runningCredit += event.amount;
-      } else {
-        runningCredit -= event.amount;
-      }
-      // Apply floor of 0 to match calendar overflow logic (cap available credit at zero)
-      creditByDate[dateStr] = Math.max(0, runningCredit);
-    });
-
-    // Find the date with minimum credit
-    let minCredit = currentAvailableCredit;
+    let minCredit = Math.max(0, runningCredit); // Floor at zero
     let minDate = format(today, "yyyy-MM-dd");
     
-    Object.entries(creditByDate).forEach(([date, credit]) => {
-      if (credit < minCredit) {
-        minCredit = credit;
-        minDate = date;
+    // Process each day chronologically
+    let currentDate = new Date(today);
+    while (currentDate <= endDate) {
+      const dateStr = format(currentDate, "yyyy-MM-dd");
+      
+      // Get events for THIS CARD on this specific date
+      const dayEvents = allCalendarEvents.filter(event => {
+        const eventDateStr = format(new Date(event.date), "yyyy-MM-dd");
+        return eventDateStr === dateStr && event.creditCardId === selectedCreditCardId;
+      });
+      
+      // Process purchases (decrease available credit)
+      const purchases = dayEvents.filter(e => e.type !== 'credit-payment');
+      purchases.forEach(purchase => {
+        runningCredit -= purchase.amount;
+      });
+      
+      // Process payments (increase available credit)
+      const payments = dayEvents.filter(e => e.type === 'credit-payment');
+      payments.forEach(payment => {
+        runningCredit += payment.amount;
+      });
+      
+      // Apply floor of zero (overflow logic - card can't go below zero available credit)
+      const creditForDay = Math.max(0, runningCredit);
+      
+      // Track minimum
+      if (creditForDay < minCredit) {
+        minCredit = creditForDay;
+        minDate = dateStr;
       }
-    });
-
+      
+      // Move to next day
+      currentDate = addDays(currentDate, 1);
+    }
+    
     return {
       date: minDate,
       credit: minCredit
     };
-  }, [selectedCreditCardId, selectedCreditCard, allCalendarEvents]);
+  }, [selectedCreditCardId, selectedCreditCard, allCalendarEvents, creditCardPendingAmounts]);
 
   // Calculate projected available credit on selected date for selected card
   const projectedAvailableCredit = useMemo(() => {
