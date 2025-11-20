@@ -12,7 +12,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Sparkles, TrendingUp, AlertCircle, Loader2, Pencil, Check, X, CreditCard, ShoppingCart, Info, RefreshCw, Settings, DollarSign, Calendar, ArrowLeft, Search } from "lucide-react";
 import { useState, useEffect, useMemo, useCallback, memo } from "react";
-import { format, addDays } from "date-fns";
+import { format, addDays, parseISO } from "date-fns";
 import { generateRecurringDates } from "@/lib/recurringDates";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -394,22 +394,12 @@ export const CashFlowInsights = memo(({
       
       // Calculate base available credit
       const effectiveCreditLimit = card.credit_limit_override || card.credit_limit || 0;
-      const baseAvailableCredit = effectiveCreditLimit - (card.statement_balance || card.balance || 0);
+      const baseAvailableCredit = effectiveCreditLimit - (card.balance || 0);
 
-      // Calculate pending orders for THIS card
-      const pendingOrders = events
-        .filter(event => 
-          event.creditCardId === card.id &&
-          event.status === 'pending' &&
-          (event.type === 'purchase_order' || event.type === 'expense' || event.type === 'recurring_expense')
-        )
-        .reduce((sum, event) => sum + (event.amount || 0), 0);
-
-      // TODAY'S OPPORTUNITY - current available to spend (accounting for pending orders)
-      const currentAvailableToSpend = baseAvailableCredit - pendingOrders;
+      // TODAY'S OPPORTUNITY
       opportunities.push({
         date: todayStr,
-        availableCredit: Math.max(0, currentAvailableToSpend)
+        availableCredit: Math.max(0, baseAvailableCredit)
       });
 
       // PAYMENT DUE DATE OPPORTUNITY
@@ -440,7 +430,7 @@ export const CashFlowInsights = memo(({
             .reduce((sum, event) => sum + (event.amount || 0), 0);
           
           // Calculate available credit on payment due date
-          const dueDateCredit = currentAvailableToSpend - pendingExpenses + paymentsAdded;
+          const dueDateCredit = baseAvailableCredit - pendingExpenses + paymentsAdded;
           
           opportunities.push({
             date: dueDateStr,
@@ -1508,7 +1498,7 @@ export const CashFlowInsights = memo(({
                           {opportunities.slice(0, 2).map((opp, idx) => (
                             <div key={idx} className="flex justify-between items-center p-2 bg-blue-50 dark:bg-blue-950/20 rounded text-xs border border-blue-200 dark:border-blue-800">
                               <span className="text-muted-foreground">
-                                {new Date(opp.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                {format(parseISO(opp.date), 'MMM d')}
                               </span>
                               <span className="font-semibold text-blue-600">
                                 ${opp.availableCredit.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
