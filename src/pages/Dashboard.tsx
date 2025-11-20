@@ -157,6 +157,8 @@ interface CashFlowEvent {
   balanceImpactDate?: Date;
   // Whether this event should affect cash balance calculations
   affectsBalance?: boolean;
+  // Track whether CC payment was actually made (for overdue payment handling)
+  wasPaid?: boolean;
 }
 
 const Dashboard = () => {
@@ -2036,6 +2038,7 @@ const Dashboard = () => {
         description: payment.description || 'Credit Card Payment',
         creditCardId: payment.credit_card_id,
         date: new Date(payment.payment_date),
+        wasPaid: payment.was_paid,
       }));
     })();
   }, [user?.id, creditCards]);
@@ -2069,12 +2072,12 @@ const Dashboard = () => {
         const dueDate = new Date(card.payment_due_date!);
         dueDate.setHours(0, 0, 0, 0);
         
-        // Calculate early manual payments (after today, before due date)
+        // Calculate early manual payments (before due date, including overdue if was_paid)
         const earlyPayments = creditCardPaymentsForEvents
           .filter(payment => 
             payment.creditCardId === card.id &&
-            payment.date >= today &&
-            payment.date < dueDate
+            payment.date < dueDate &&
+            payment.wasPaid !== false
           )
           .reduce((sum, payment) => sum + payment.amount, 0);
         

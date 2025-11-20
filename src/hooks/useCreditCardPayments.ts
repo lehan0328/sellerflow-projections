@@ -15,6 +15,7 @@ export interface CreditCardPayment {
   description: string | null;
   payment_type: 'manual' | 'bill_payment';
   status: 'scheduled' | 'completed';
+  was_paid: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -68,7 +69,7 @@ export const useCreditCardPayments = () => {
           paymentsToArchive.map(p =>
             supabase
               .from('credit_card_payments')
-              .update({ status: 'completed' })
+              .update({ status: 'completed', was_paid: true })
               .eq('id', p.id)
           )
         );
