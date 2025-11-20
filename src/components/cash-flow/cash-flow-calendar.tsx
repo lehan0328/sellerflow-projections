@@ -19,6 +19,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Refe
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { TransactionDetailModal } from "./transaction-detail-modal";
 import { DayTransactionsModal } from "./day-transactions-modal";
+import { DailyBalance } from "@/lib/calendarBalances";
 
 // Utility function for consistent currency formatting
 const formatCurrency = (amount: number): string => {
@@ -82,10 +83,7 @@ interface CashFlowCalendarProps {
     balance: number;
     available_date?: string;
   }>; // NEW: Buying opportunities from safe spending
-  dailyBalances?: Array<{
-    date: string;
-    balance: number;
-  }>; // NEW: Daily balance projections
+  dailyBalances?: DailyBalance[]; // NEW: Daily balance projections
 }
 const CashFlowCalendarComponent = ({
   events: propEvents = [],

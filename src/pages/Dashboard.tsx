@@ -2974,7 +2974,7 @@ const Dashboard = () => {
                         safeSpendingData?.safe_spending_limit || 0
                       }
                       allBuyingOpportunities={buyingOpportunities}
-                      dailyBalances={projectedDailyBalances.map(d => ({ date: d.date, balance: d.runningBalance }))}
+                      dailyBalances={projectedDailyBalances}
                     />
                   ) : (
                     <CashFlowCalendarSkeleton />
@@ -2999,7 +2999,7 @@ const Dashboard = () => {
                       nextBuyingOpportunityDate={safeSpendingFromProjection.nextOpportunity?.date}
                       nextBuyingOpportunityAvailableDate={safeSpendingFromProjection.nextOpportunity?.available_date}
                       allBuyingOpportunities={buyingOpportunities}
-                      dailyBalances={projectedDailyBalances.map(d => ({ date: d.date, balance: d.runningBalance }))}
+                      dailyBalances={projectedDailyBalances}
                       onUpdateReserveAmount={updateReserveAmount}
                       excludeToday={excludeToday}
                       transactionMatchButton={
