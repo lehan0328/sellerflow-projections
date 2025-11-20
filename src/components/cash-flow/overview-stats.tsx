@@ -593,36 +593,42 @@ export function OverviewStats({
             </div>
           </div>
           <div className="space-y-3">
-            <div className="grid grid-cols-3 gap-2">
-              <div className="text-center">
-                <p className="text-xs text-muted-foreground mb-1">Inflow</p>
-                <p className="text-lg font-bold text-green-600">{formatCurrency(todaysIncome)}</p>
-              </div>
-              <div className="text-center">
-                <p className="text-xs text-muted-foreground mb-1">Outflow</p>
-                <p className="text-lg font-bold text-red-600">{formatCurrency(todaysBankExpenses)}</p>
-              </div>
-              <div className="text-center">
-                <p className="text-xs text-muted-foreground mb-1">Bank Net</p>
-                <p className={`text-lg font-bold ${todaysIncome - todaysBankExpenses >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {formatCurrency(todaysIncome - todaysBankExpenses)}
-                </p>
+            <div className="mb-2">
+              <p className="text-xs font-semibold text-muted-foreground uppercase mb-2">Bank</p>
+              <div className="grid grid-cols-3 gap-2">
+                <div className="text-center">
+                  <p className="text-xs text-muted-foreground mb-1">Inflow</p>
+                  <p className="text-lg font-bold text-green-600">{formatCurrency(todaysIncome)}</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-xs text-muted-foreground mb-1">Outflow</p>
+                  <p className="text-lg font-bold text-red-600">{formatCurrency(todaysBankExpenses)}</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-xs text-muted-foreground mb-1">Net</p>
+                  <p className={`text-lg font-bold ${todaysIncome - todaysBankExpenses >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {formatCurrency(todaysIncome - todaysBankExpenses)}
+                  </p>
+                </div>
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-2">
-              <div className="text-center">
-                <p className="text-xs text-muted-foreground mb-1">CC Outflow</p>
-                <p className="text-lg font-bold text-orange-600">{formatCurrency(todaysCreditCardExpenses)}</p>
-              </div>
-              <div className="text-center">
-                <p className="text-xs text-muted-foreground mb-1">CC Inflow</p>
-                <p className="text-lg font-bold text-blue-600">{formatCurrency(todaysCreditCardInflow)}</p>
-              </div>
-              <div className="text-center">
-                <p className="text-xs text-muted-foreground mb-1">CC Net</p>
-                <p className={`text-lg font-bold ${todaysCreditCardInflow - todaysCreditCardExpenses >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {formatCurrency(todaysCreditCardInflow - todaysCreditCardExpenses)}
-                </p>
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground uppercase mb-2">Credit Card</p>
+              <div className="grid grid-cols-3 gap-2">
+                <div className="text-center">
+                  <p className="text-xs text-muted-foreground mb-1">Purchases</p>
+                  <p className="text-lg font-bold text-orange-600">{formatCurrency(todaysCreditCardExpenses)}</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-xs text-muted-foreground mb-1">Payments</p>
+                  <p className="text-lg font-bold text-blue-600">{formatCurrency(todaysCreditCardInflow)}</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-xs text-muted-foreground mb-1">Net</p>
+                  <p className={`text-lg font-bold ${todaysCreditCardInflow - todaysCreditCardExpenses >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {formatCurrency(todaysCreditCardInflow - todaysCreditCardExpenses)}
+                  </p>
+                </div>
               </div>
             </div>
           </div>
