@@ -479,6 +479,9 @@ const Dashboard = () => {
   const { reserveAmount, updateReserveAmount } = useReserveAmount();
   const { excludeToday } = useExcludeToday();
   
+  // Store card opportunities from CashFlowInsights
+  const [cardOpportunities, setCardOpportunities] = useState<Record<string, Array<{ date: string; availableCredit: number }>>>({});
+  
   // Initialize safe spending - projected balances will be used once calculated below
   // PERFORMANCE: Reduced from 90 to 60 days for faster calculation
   const { data: safeSpendingData, refetch: refetchSafeSpending, isLoading: isSafeSpendingLoading } =
@@ -3016,6 +3019,7 @@ const Dashboard = () => {
                       dailyBalances={projectedDailyBalances}
                       onUpdateReserveAmount={updateReserveAmount}
                       excludeToday={excludeToday}
+                      onCardOpportunitiesChange={setCardOpportunities}
                       transactionMatchButton={
                         <TransactionMatchButton
                           matches={matches}
@@ -3812,6 +3816,7 @@ const Dashboard = () => {
               reserveAmount={reserveAmount}
               allCalendarEvents={allCalendarEvents}
               onPaymentSuccess={() => refetchBankTransactions()}
+              cardOpportunities={cardOpportunities}
             />
           )}
 
