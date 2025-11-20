@@ -593,15 +593,23 @@ export function OverviewStats({
             </div>
           </div>
           <div className="space-y-3">
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-3 gap-2">
               <div className="text-center">
                 <p className="text-xs text-muted-foreground mb-1">Inflow</p>
                 <p className="text-lg font-bold text-green-600">{formatCurrency(todaysIncome)}</p>
               </div>
               <div className="text-center">
-                <p className="text-xs text-muted-foreground mb-1">Bank Outflow</p>
+                <p className="text-xs text-muted-foreground mb-1">Outflow</p>
                 <p className="text-lg font-bold text-red-600">{formatCurrency(todaysBankExpenses)}</p>
               </div>
+              <div className="text-center">
+                <p className="text-xs text-muted-foreground mb-1">Bank Net</p>
+                <p className={`text-lg font-bold ${todaysIncome - todaysBankExpenses >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {formatCurrency(todaysIncome - todaysBankExpenses)}
+                </p>
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-2">
               <div className="text-center">
                 <p className="text-xs text-muted-foreground mb-1">CC Outflow</p>
                 <p className="text-lg font-bold text-orange-600">{formatCurrency(todaysCreditCardExpenses)}</p>
@@ -610,18 +618,10 @@ export function OverviewStats({
                 <p className="text-xs text-muted-foreground mb-1">CC Inflow</p>
                 <p className="text-lg font-bold text-blue-600">{formatCurrency(todaysCreditCardInflow)}</p>
               </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3 pt-2 border-t">
               <div className="text-center">
-                <p className="text-xs text-muted-foreground mb-1">Bank Net</p>
-                <p className={`text-lg font-bold ${todaysIncome - todaysBankExpenses >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {formatCurrency(todaysIncome - todaysBankExpenses)}
-                </p>
-              </div>
-              <div className="text-center">
-                <p className="text-xs text-muted-foreground mb-1">Total Net</p>
-                <p className={`text-lg font-bold ${todaysIncome - todaysExpenses >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {formatCurrency(todaysIncome - todaysExpenses)}
+                <p className="text-xs text-muted-foreground mb-1">CC Net</p>
+                <p className={`text-lg font-bold ${todaysCreditCardInflow - todaysCreditCardExpenses >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {formatCurrency(todaysCreditCardInflow - todaysCreditCardExpenses)}
                 </p>
               </div>
             </div>
