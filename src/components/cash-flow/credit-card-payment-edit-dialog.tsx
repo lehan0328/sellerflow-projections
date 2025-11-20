@@ -32,7 +32,7 @@ export function CreditCardPaymentEditDialog({
   useEffect(() => {
     if (payment && open) {
       setPaymentAmount(Math.abs(payment.amount).toString());
-      setPaymentDate(addDays(parseISO(payment.payment_date), 1));
+      setPaymentDate(addDays(parseISO(payment.payment_date), -1));
     }
   }, [payment, open]);
 
@@ -51,8 +51,8 @@ export function CreditCardPaymentEditDialog({
 
     try {
       // Use timezone-safe date extraction to prevent off-by-one errors
-      // Subtract 1 day to compensate for the +1 day we add for display
-      const adjustedDate = addDays(paymentDate, -1);
+      // Add 1 day to compensate for the -1 day we subtract for display
+      const adjustedDate = addDays(paymentDate, 1);
       const year = adjustedDate.getFullYear();
       const month = String(adjustedDate.getMonth() + 1).padStart(2, '0');
       const day = String(adjustedDate.getDate()).padStart(2, '0');
