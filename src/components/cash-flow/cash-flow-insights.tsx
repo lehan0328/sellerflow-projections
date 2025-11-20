@@ -390,8 +390,8 @@ export const CashFlowInsights = memo(({
     for (const card of creditCards) {
       const opportunities: Array<{ date: string; availableCredit: number }> = [];
       
-      // Get today's projected credit from dailyBalances
-      const todayStr = today.toISOString().split('T')[0];
+      // Get today's projected credit from dailyBalances (use format to avoid timezone issues)
+      const todayStr = format(today, 'yyyy-MM-dd');
       const todayBalance = dailyBalances.find(d => d.date === todayStr);
       const todayCredit = todayBalance?.cardCredit?.get(card.id);
       
@@ -403,12 +403,13 @@ export const CashFlowInsights = memo(({
 
       // If card has statement balance and due date, that's a buying opportunity
       if (card.statement_balance && card.statement_balance > 0 && card.payment_due_date) {
-        const paymentDueDate = new Date(card.payment_due_date);
-        paymentDueDate.setHours(0, 0, 0, 0);
+        // Parse date string as local date to avoid timezone shifts
+        const [year, month, day] = card.payment_due_date.split('-').map(Number);
+        const paymentDueDate = new Date(year, month - 1, day);
 
         // Only include if due date is in the future
         if (paymentDueDate > today) {
-          const dueDateStr = paymentDueDate.toISOString().split('T')[0];
+          const dueDateStr = format(paymentDueDate, 'yyyy-MM-dd');
           const dueDateBalance = dailyBalances.find(d => d.date === dueDateStr);
           const dueDateCredit = dueDateBalance?.cardCredit?.get(card.id);
           
