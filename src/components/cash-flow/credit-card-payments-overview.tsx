@@ -19,7 +19,6 @@ import { formatCurrency } from "@/lib/utils";
 import { useState, useMemo } from "react";
 import { useCreditCardPayments } from "@/hooks/useCreditCardPayments";
 import { useCreditCards } from "@/hooks/useCreditCards";
-import { useBankAccounts } from "@/hooks/useBankAccounts";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { CreditCardPaymentEditDialog } from "./credit-card-payment-edit-dialog";
@@ -27,7 +26,6 @@ import { CreditCardPaymentEditDialog } from "./credit-card-payment-edit-dialog";
 export const CreditCardPaymentsOverview = () => {
   const { payments, isLoading } = useCreditCardPayments();
   const { creditCards } = useCreditCards();
-  const { accounts: bankAccounts } = useBankAccounts();
   
   const [editingPayment, setEditingPayment] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -35,7 +33,7 @@ export const CreditCardPaymentsOverview = () => {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [paymentToDelete, setPaymentToDelete] = useState<any | null>(null);
 
-  // Transform payments to include credit card and bank account names with deduplication
+  // Transform payments to include credit card names with deduplication
   const enrichedPayments = useMemo(() => {
     // Deduplicate: keep only the first payment for each card+date+type combo
     const uniquePayments = payments.reduce((acc, payment) => {
@@ -48,22 +46,19 @@ export const CreditCardPaymentsOverview = () => {
 
     return Array.from(uniquePayments.values()).map(payment => {
       const creditCard = creditCards.find(cc => cc.id === payment.credit_card_id);
-      const bankAccount = bankAccounts.find(ba => ba.id === payment.bank_account_id);
       
       return {
         ...payment,
         creditCardName: creditCard?.account_name || 'Unknown Card',
-        bankAccountName: bankAccount?.account_name || 'Unknown Account',
       };
     });
-  }, [payments, creditCards, bankAccounts]);
+  }, [payments, creditCards]);
 
   const filteredAndSortedPayments = useMemo(() => {
     let filtered = enrichedPayments.filter(payment => {
       const matchesSearch = (payment.description || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
         payment.amount.toString().includes(searchTerm) ||
-        payment.creditCardName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        payment.bankAccountName.toLowerCase().includes(searchTerm.toLowerCase());
+        payment.creditCardName.toLowerCase().includes(searchTerm.toLowerCase());
       
       return matchesSearch;
     });
@@ -191,7 +186,6 @@ export const CreditCardPaymentsOverview = () => {
                       </TableHead>
                       <TableHead>Description</TableHead>
                       <TableHead>Credit Card</TableHead>
-                      <TableHead>Bank Account</TableHead>
                       <TableHead className="text-right">
                         <Button
                           variant="ghost"
@@ -223,11 +217,6 @@ export const CreditCardPaymentsOverview = () => {
                         <TableCell>
                           <Badge variant="outline" className="font-normal">
                             {payment.creditCardName}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="secondary" className="font-normal">
-                            {payment.bankAccountName}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
