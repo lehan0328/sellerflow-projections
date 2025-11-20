@@ -473,7 +473,12 @@ export function CreditCards() {
                             if (isPast) {
                               return (
                                 <button
-                                  onClick={() => handleEditCard(card)}
+                                  onClick={() => {
+                                    setCardForStatementUpdate(card);
+                                    setUpdateStatementBalance('');
+                                    setUpdateDueDate('');
+                                    setShowStatementUpdateModal(true);
+                                  }}
                                   className="flex items-center text-destructive hover:underline font-medium"
                                 >
                                   <AlertTriangle className="mr-1 h-3 w-3" />
