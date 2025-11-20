@@ -91,7 +91,7 @@ export const CreditCardPaymentsOverview = () => {
         return {
           id: `bill-${card.id}`,
           credit_card_id: card.id,
-          payment_date: format(parseISODate(card.payment_due_date!), 'yyyy-MM-dd'),
+          payment_date: card.payment_due_date!,
           amount: paymentAmount,
           description: card.pay_minimum ? 'Minimum Payment Due' : 'Statement Balance Due',
           payment_type: 'bill_payment' as const,
