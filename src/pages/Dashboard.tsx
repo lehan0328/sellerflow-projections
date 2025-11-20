@@ -2026,10 +2026,28 @@ const Dashboard = () => {
             return dueDate >= today;
           })
           .map((card) => {
-            // If pay_minimum is enabled, show minimum payment; otherwise show statement balance
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const dueDate = new Date(card.payment_due_date!);
+            dueDate.setHours(0, 0, 0, 0);
+            
+            // Calculate early manual payments (after today, before due date)
+            const earlyPayments = creditCardPaymentsForEvents
+              .filter(payment => 
+                payment.creditCardId === card.id &&
+                payment.date >= today &&
+                payment.date < dueDate
+              )
+              .reduce((sum, payment) => sum + payment.amount, 0);
+            
+            // Calculate effective statement balance after early payments
+            const baseStatementAmount = card.statement_balance || card.balance;
+            const effectiveStatementBalance = Math.max(0, baseStatementAmount - earlyPayments);
+            
+            // If pay_minimum is enabled, show minimum payment; otherwise show effective statement balance
             const paymentAmount = card.pay_minimum
               ? card.minimum_payment
-              : card.statement_balance || card.balance;
+              : effectiveStatementBalance;
 
             return {
               id: `credit-payment-${card.id}`,
@@ -2040,9 +2058,10 @@ const Dashboard = () => {
               } Payment${card.pay_minimum ? " (Min Only)" : ""}`,
               creditCard: card.institution_name,
               creditCardId: card.id,
-              date: new Date(card.payment_due_date!),
+              date: dueDate,
             };
           })
+          .filter((event) => event.amount > 0) // Remove fully paid bills
       : [];
 
   // Add forecasted next month payments for cards with forecast enabled - generate dynamically, no insertion
