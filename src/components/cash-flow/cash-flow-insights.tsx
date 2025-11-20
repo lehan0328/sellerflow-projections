@@ -484,13 +484,13 @@ export const CashFlowInsights = memo(({
           .reduce((sum, event) => sum + (event.amount || 0), 0);
         
         // Calculate all payments up to and including this payment date
-        const allPaymentsUpToDate = events
-          .filter(event =>
-            event.creditCardId === card.id &&
-            event.type === 'credit_card_payment' &&
-            event.date && new Date(event.date) > today && new Date(event.date) <= paymentDate
-          )
-          .reduce((sum, event) => sum + (event.amount || 0), 0);
+          const allPaymentsUpToDate = events
+            .filter(event =>
+              event.creditCardId === card.id &&
+              event.type === 'credit-payment' &&
+              event.date && new Date(event.date) > today && new Date(event.date) <= paymentDate
+            )
+            .reduce((sum, event) => sum + (event.amount || 0), 0);
         
         // Calculate available credit after this payment
         const creditAfterPayment = currentAvailableSpend - pendingExpenses + allPaymentsUpToDate;
