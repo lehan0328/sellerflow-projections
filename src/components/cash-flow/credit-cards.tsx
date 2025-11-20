@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { format, addMonths, isBefore, startOfDay } from "date-fns";
+import { format, addMonths, isBefore, startOfDay, addDays, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -896,7 +896,7 @@ export function CreditCards() {
                 <div className="flex items-center gap-2 mb-2">
                   <AlertTriangle className="h-5 w-5 text-destructive" />
                   <p className="font-semibold text-destructive text-lg">
-                    Payment Due: {cardForStatementUpdate?.payment_due_date ? format(new Date(cardForStatementUpdate.payment_due_date), "MMM dd, yyyy") : ""}
+                    Payment Due: {cardForStatementUpdate?.payment_due_date ? format(addDays(parseISO(cardForStatementUpdate.payment_due_date), -1), "MMM dd, yyyy") : ""}
                   </p>
                 </div>
                 <p className="text-2xl font-bold text-destructive">

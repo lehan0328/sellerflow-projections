@@ -1604,7 +1604,7 @@ export const CashFlowInsights = memo(({
                         <div className="flex gap-3 text-xs">
                           {card.payment_due_date && (
                             <span className="text-blue-600 dark:text-blue-400 font-medium">
-                              Due: {format(parseISO(card.payment_due_date), 'MMM d')}
+                              Due: {format(addDays(parseISO(card.payment_due_date), -1), 'MMM d')}
                             </span>
                           )}
                           {card.statement_balance > 0 && (
