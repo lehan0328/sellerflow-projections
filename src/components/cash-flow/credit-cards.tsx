@@ -650,7 +650,10 @@ export function CreditCards() {
                     >
                       <Calendar className="mr-2 h-4 w-4" />
                       {formData.payment_due_date ? (
-                        format(new Date(formData.payment_due_date), "PPP")
+                        (() => {
+                          const [year, month, day] = formData.payment_due_date.split('-').map(Number);
+                          return format(new Date(year, month - 1, day), "PPP");
+                        })()
                       ) : (
                         <span>Pick a date</span>
                       )}
@@ -659,7 +662,10 @@ export function CreditCards() {
                   <PopoverContent className="w-auto p-0" align="start">
                     <CalendarComponent
                       mode="single"
-                      selected={formData.payment_due_date ? new Date(formData.payment_due_date) : undefined}
+                      selected={formData.payment_due_date ? (() => {
+                        const [year, month, day] = formData.payment_due_date.split('-').map(Number);
+                        return new Date(year, month - 1, day);
+                      })() : undefined}
                       onSelect={(date) => {
                         if (date) {
                           setFormData({...formData, payment_due_date: format(date, 'yyyy-MM-dd')});
