@@ -22,6 +22,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { useAmazonPayouts } from "@/hooks/useAmazonPayouts";
 import { useAuth } from "@/hooks/useAuth";
+import { DailyBalance } from "@/lib/calendarBalances";
 import aurenLogo from "@/assets/auren-icon-blue.png";
 interface CashFlowInsightsProps {
   currentBalance: number;
@@ -40,7 +41,7 @@ interface CashFlowInsightsProps {
   nextBuyingOpportunityDate?: string;
   nextBuyingOpportunityAvailableDate?: string;
   allBuyingOpportunities?: Array<{ date: string; balance: number; available_date?: string }>;
-  dailyBalances?: Array<{ date: string; balance: number }>;
+  dailyBalances?: DailyBalance[];
   onUpdateReserveAmount?: (amount: number) => Promise<void>;
   transactionMatchButton?: React.ReactNode;
   excludeToday?: boolean;
@@ -379,7 +380,7 @@ export const CashFlowInsights = memo(({
   
   // Calculate buying opportunities for each credit card - memoized
   const calculatedCardOpportunities = useMemo(() => {
-    if (!creditCards || creditCards.length === 0) return {};
+    if (!creditCards || creditCards.length === 0 || !dailyBalances || dailyBalances.length === 0) return {};
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -389,14 +390,15 @@ export const CashFlowInsights = memo(({
     for (const card of creditCards) {
       const opportunities: Array<{ date: string; availableCredit: number }> = [];
       
-      // Calculate effective available credit using override if set
-      const effectiveCreditLimit = card.credit_limit_override || card.credit_limit;
-      const effectiveAvailableCredit = effectiveCreditLimit - card.balance;
+      // Get today's projected credit from dailyBalances
+      const todayStr = today.toISOString().split('T')[0];
+      const todayBalance = dailyBalances.find(d => d.date === todayStr);
+      const todayCredit = todayBalance?.cardCredit?.get(card.id);
       
       // Current available credit is always the first opportunity
       opportunities.push({
-        date: today.toISOString().split('T')[0],
-        availableCredit: effectiveAvailableCredit
+        date: todayStr,
+        availableCredit: todayCredit !== undefined ? Math.max(0, todayCredit) : 0
       });
 
       // If card has statement balance and due date, that's a buying opportunity
@@ -406,10 +408,13 @@ export const CashFlowInsights = memo(({
 
         // Only include if due date is in the future
         if (paymentDueDate > today) {
-          const newAvailableCredit = effectiveAvailableCredit + Number(card.statement_balance);
+          const dueDateStr = paymentDueDate.toISOString().split('T')[0];
+          const dueDateBalance = dailyBalances.find(d => d.date === dueDateStr);
+          const dueDateCredit = dueDateBalance?.cardCredit?.get(card.id);
+          
           opportunities.push({
-            date: paymentDueDate.toISOString().split('T')[0],
-            availableCredit: newAvailableCredit
+            date: dueDateStr,
+            availableCredit: dueDateCredit !== undefined ? Math.max(0, dueDateCredit) : 0
           });
         }
       }
@@ -428,7 +433,7 @@ export const CashFlowInsights = memo(({
     }
 
     return opportunitiesMap;
-  }, [creditCards]);
+  }, [creditCards, dailyBalances]);
 
   useEffect(() => {
     setCardOpportunities(calculatedCardOpportunities);
@@ -601,7 +606,7 @@ export const CashFlowInsights = memo(({
     
     // Find the projected balance for this date from daily_balances
     const dailyBalance = dailyBalances.find(db => db.date === dateStr);
-    const projectedCash = dailyBalance?.balance || currentBalance;
+    const projectedCash = dailyBalance?.runningBalance || currentBalance;
     
     // Calculate available credit with per-card capping
     const totalAvailableCredit = creditCards.reduce((sum, card) => {
