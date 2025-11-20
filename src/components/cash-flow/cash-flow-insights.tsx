@@ -512,6 +512,8 @@ export const CashFlowInsights = memo(({
         return sum + effectiveAvailableCredit;
       }, 0);
 
+      console.log('🔵 CashFlowInsights passing totalAvailableCredit:', totalAvailableCredit);
+
       onCreditDataCalculated({
         lowestCreditByCard: calculatedLowestCreditByCard,
         cardOpportunities: calculatedCardOpportunities,

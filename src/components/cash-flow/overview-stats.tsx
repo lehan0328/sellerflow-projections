@@ -151,6 +151,8 @@ export function OverviewStats({
   
   // Use the value passed from CashFlowInsights - this is the EXACT number displayed there
   const totalAvailableCredit = totalAvailableCreditFromInsights ?? 0;
+  console.log('🟢 OverviewStats received totalAvailableCreditFromInsights:', totalAvailableCreditFromInsights);
+  console.log('🟢 OverviewStats using totalAvailableCredit:', totalAvailableCredit);
   
   const {
     reserveAmount,
