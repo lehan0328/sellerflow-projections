@@ -52,6 +52,7 @@ interface CashFlowInsightsProps {
     cardOpportunities: Record<string, Array<{ date: string; availableCredit: number }>>;
     totalAvailableCredit: number;
     totalPendingOrders: number;
+    cardAvailableCredit: Record<string, number>;
   }) => void;
 }
 export const CashFlowInsights = memo(({
@@ -523,11 +524,22 @@ export const CashFlowInsights = memo(({
       console.log('🔵 CashFlowInsights passing totalAvailableCredit:', totalAvailableCredit);
       console.log('🔵 CashFlowInsights passing totalPendingOrders:', totalPendingOrders);
 
+      // Calculate per-card available credit for purchase order form
+      const cardAvailableCredit: Record<string, number> = {};
+      creditCards.forEach(card => {
+        const effectiveCreditLimit = card.credit_limit_override || card.credit_limit;
+        const effectiveAvailableCredit = effectiveCreditLimit - card.balance;
+        const pendingOrders = pendingOrdersByCard[card.id] || 0;
+        const currentAvailableSpend = effectiveAvailableCredit - pendingOrders;
+        cardAvailableCredit[card.id] = currentAvailableSpend;
+      });
+
       onCreditDataCalculated({
         lowestCreditByCard: calculatedLowestCreditByCard,
         cardOpportunities: calculatedCardOpportunities,
         totalAvailableCredit,
-        totalPendingOrders
+        totalPendingOrders,
+        cardAvailableCredit
       });
     }
   }, [calculatedLowestCreditByCard, calculatedCardOpportunities, onCreditDataCalculated, creditCards, pendingOrdersByCard]);

@@ -85,6 +85,7 @@ interface PurchaseOrderFormProps {
   projectedDailyBalances?: Array<{ date: string; runningBalance: number }>;
   reserveAmount?: number;
   cardOpportunities?: Record<string, Array<{ date: string; availableCredit: number }>>;
+  cardAvailableCredit?: Record<string, number>;
 }
 interface PaymentSchedule {
   id: string;
@@ -110,7 +111,8 @@ export const PurchaseOrderForm = ({
   allBuyingOpportunities,
   projectedDailyBalances,
   reserveAmount = 0,
-  cardOpportunities = {}
+  cardOpportunities = {},
+  cardAvailableCredit = {}
 }: PurchaseOrderFormProps) => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -1358,15 +1360,16 @@ export const PurchaseOrderForm = ({
                           </SelectTrigger>
                           <SelectContent className="bg-background z-50">
                             {creditCards.filter(card => card.is_active).sort((a, b) => (a.priority || 3) - (b.priority || 3)).map(card => {
-                              const effectiveLimit = card.credit_limit_override || card.credit_limit;
-                              const pendingCommitments = creditCardPendingAmounts.get(card.id) || 0;
-                              const staticAvailableCredit = effectiveLimit - card.balance - pendingCommitments;
-                              const availableCredit = getAvailableCreditForDate(
-                                card.id,
-                                formData.dueDate,
-                                staticAvailableCredit,
-                                cardOpportunities
-                              );
+                      const effectiveLimit = card.credit_limit_override || card.credit_limit;
+                      const pendingCommitments = creditCardPendingAmounts.get(card.id) || 0;
+                      // Use pre-calculated value from CashFlowInsights if available, otherwise fallback
+                      const staticAvailableCredit = cardAvailableCredit[card.id] ?? (effectiveLimit - card.balance - pendingCommitments);
+                      const availableCredit = getAvailableCreditForDate(
+                        card.id,
+                        formData.dueDate,
+                        staticAvailableCredit,
+                        cardOpportunities
+                      );
                               return (
                                 <SelectItem key={card.id} value={card.id}>
                                   <div className="flex items-center gap-2 w-full">
@@ -1391,7 +1394,12 @@ export const PurchaseOrderForm = ({
                   const orderAmount = parseFloat(formData.amount) || 0;
                   const effectiveLimit = selectedCard ? (selectedCard.credit_limit_override || selectedCard.credit_limit) : 0;
                   const pendingCommitments = selectedCard ? (creditCardPendingAmounts.get(selectedCard.id) || 0) : 0;
-                  const staticAvailableCredit = selectedCard ? effectiveLimit - selectedCard.balance - pendingCommitments : 0;
+                  
+                  // Use pre-calculated value from CashFlowInsights (single source of truth)
+                  const staticAvailableCredit = selectedCard 
+                    ? (cardAvailableCredit[selectedCard.id] ?? (effectiveLimit - selectedCard.balance - pendingCommitments))
+                    : 0;
+                  
                   const availableCredit = selectedCard 
                     ? getAvailableCreditForDate(
                         selectedCard.id, 
