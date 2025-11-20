@@ -410,8 +410,7 @@ export const CashFlowInsights = memo(({
 
       // PAYMENT DUE DATE OPPORTUNITY
       if (card.statement_balance && card.statement_balance > 0 && card.payment_due_date) {
-        const [year, month, day] = card.payment_due_date.split('-').map(Number);
-        const paymentDueDate = new Date(year, month - 1, day);
+        const paymentDueDate = startOfDay(parseISO(card.payment_due_date));
 
         if (paymentDueDate > today) {
           const dueDateStr = format(paymentDueDate, 'yyyy-MM-dd');
