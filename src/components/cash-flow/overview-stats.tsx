@@ -22,6 +22,7 @@ import { generateRecurringDates } from "@/lib/recurringDates";
 import { OverdueTransactionsModal } from "./overdue-transactions-modal";
 import { TransactionsListModal } from "./transactions-list-modal";
 import { formatCurrency } from "@/lib/utils";
+import { DailyBalance } from "@/lib/calendarBalances";
 interface OverviewStatsProps {
   totalCash?: number;
   events?: Array<{
@@ -43,6 +44,7 @@ interface OverviewStatsProps {
     status: string;
     creditCardId?: string;
   }>;
+  dailyBalances?: DailyBalance[];
 }
 const timeRangeOptions = [{
   value: "today",
@@ -90,7 +92,8 @@ export function OverviewStats({
   onTransactionUpdate,
   pendingIncomeToday,
   useAvailableBalance,
-  transactions = []
+  transactions = [],
+  dailyBalances: projectedBalances = []
 }: OverviewStatsProps & {
   useAvailableBalance?: boolean;
 }) {
@@ -725,22 +728,21 @@ export function OverviewStats({
             const nextWeekEnd = new Date(today);
             nextWeekEnd.setDate(nextWeekEnd.getDate() + 14);
 
-            // Get projected balances from safe spending calculation
-            const dailyBalances = safeSpendingData?.calculation?.daily_balances || [];
+            // Get projected balances from calendar calculations
 
             // Find lowest balance this week (next 7 days)
-            const thisWeekBalances = dailyBalances.filter((day: any) => {
+            const thisWeekBalances = projectedBalances.filter((day) => {
               const dayDate = new Date(day.date + 'T00:00:00');
               return dayDate >= today && dayDate < thisWeekEnd;
             });
 
             // Find lowest balance next week (days 8-14)
-            const nextWeekBalances = dailyBalances.filter((day: any) => {
+            const nextWeekBalances = projectedBalances.filter((day) => {
               const dayDate = new Date(day.date + 'T00:00:00');
               return dayDate >= thisWeekEnd && dayDate < nextWeekEnd;
             });
-            const thisWeekLowest = thisWeekBalances.length > 0 ? Math.min(...thisWeekBalances.map((d: any) => d.balance)) : bankAccountBalance;
-            const nextWeekLowest = nextWeekBalances.length > 0 ? Math.min(...nextWeekBalances.map((d: any) => d.balance)) : thisWeekLowest;
+            const thisWeekLowest = thisWeekBalances.length > 0 ? Math.min(...thisWeekBalances.map((d) => d.runningBalance)) : bankAccountBalance;
+            const nextWeekLowest = nextWeekBalances.length > 0 ? Math.min(...nextWeekBalances.map((d) => d.runningBalance)) : thisWeekLowest;
             const weeklyChange = nextWeekLowest - thisWeekLowest;
             const isPositive = weeklyChange >= 0;
             return <span className={isPositive ? "text-emerald-700" : "text-rose-700"}>
