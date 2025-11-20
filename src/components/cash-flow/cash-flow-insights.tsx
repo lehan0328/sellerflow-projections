@@ -321,20 +321,29 @@ export const CashFlowInsights = memo(({
     if (!creditCards || creditCards.length === 0 || !transactions || !recurringExpenses) return {};
 
     const ordersByCard: Record<string, number> = {};
+    const today = startOfDay(new Date());
+    const todayStr = format(today, 'yyyy-MM-dd');
     
     // Add pending transactions with credit cards
     transactions
-      .filter(tx => 
-        tx.creditCardId && 
-        tx.status === 'pending' && 
-        (tx.type === 'purchase_order' || tx.type === 'expense')
-      )
+      .filter(tx => {
+        // Exclude today's transactions if excludeToday is enabled
+        if (excludeToday && tx.dueDate) {
+          const txDueDate = format(startOfDay(new Date(tx.dueDate)), 'yyyy-MM-dd');
+          if (txDueDate === todayStr) {
+            return false;
+          }
+        }
+        
+        return tx.creditCardId && 
+          tx.status === 'pending' && 
+          (tx.type === 'purchase_order' || tx.type === 'expense');
+      })
       .forEach(tx => {
         ordersByCard[tx.creditCardId!] = (ordersByCard[tx.creditCardId!] || 0) + tx.amount;
       });
 
     // Add recurring expenses (calculate occurrences in next 30 days)
-    const today = startOfDay(new Date());
     const endDate = addDays(today, 30);
 
     recurringExpenses
@@ -357,13 +366,19 @@ export const CashFlowInsights = memo(({
         };
 
         const occurrences = generateRecurringDates(recurringTransaction, today, endDate);
-        const totalAmount = occurrences.length * recurring.amount;
+        
+        // Filter out today's occurrences if excludeToday is enabled
+        const filteredOccurrences = excludeToday 
+          ? occurrences.filter(date => format(date, 'yyyy-MM-dd') !== todayStr)
+          : occurrences;
+
+        const totalAmount = filteredOccurrences.length * recurring.amount;
 
         ordersByCard[recurring.credit_card_id!] = (ordersByCard[recurring.credit_card_id!] || 0) + totalAmount;
       });
 
     return ordersByCard;
-  }, [creditCards, transactions, recurringExpenses]);
+  }, [creditCards, transactions, recurringExpenses, excludeToday]);
   
   // Calculate buying opportunities for each credit card - memoized
   const calculatedCardOpportunities = useMemo(() => {
