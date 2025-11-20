@@ -48,6 +48,7 @@ interface OverviewStatsProps {
   }>;
   dailyBalances?: DailyBalance[];
   totalAvailableCreditFromInsights?: number;
+  totalPendingOrdersFromInsights?: number;
 }
 const timeRangeOptions = [{
   value: "today",
@@ -97,7 +98,8 @@ export function OverviewStats({
   useAvailableBalance,
   transactions = [],
   dailyBalances: projectedBalances = [],
-  totalAvailableCreditFromInsights
+  totalAvailableCreditFromInsights,
+  totalPendingOrdersFromInsights
 }: OverviewStatsProps & {
   useAvailableBalance?: boolean;
 }) {
@@ -400,8 +402,12 @@ export function OverviewStats({
     return sum + Math.max(0, currentAvailableSpend);
   }, 0);
 
-  // Calculate total pending credit (sum of all cards' pending orders)
-  const pendingCreditTotal = Array.from(creditCardPendingAmounts.values()).reduce((sum, amount) => sum + amount, 0);
+  // Use the value from CashFlowInsights, or fallback to local calculation
+  const pendingCreditTotal = totalPendingOrdersFromInsights ?? 
+    Array.from(creditCardPendingAmounts.values()).reduce((sum, amount) => sum + amount, 0);
+  
+  console.log('🟢 OverviewStats received totalPendingOrdersFromInsights:', totalPendingOrdersFromInsights);
+  console.log('🟢 OverviewStats using pendingCreditTotal:', pendingCreditTotal);
 
   // Calculate overflow (for display purposes)
   let totalCreditOverflow = 0;

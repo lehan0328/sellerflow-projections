@@ -411,6 +411,7 @@ const Dashboard = () => {
     lowestCreditByCard: Record<string, { date: string; credit: number }>;
     cardOpportunities: Record<string, Array<{ date: string; availableCredit: number }>>;
     totalAvailableCredit?: number;
+    totalPendingOrders?: number;
   }>({ lowestCreditByCard: {}, cardOpportunities: {} });
   const { toast } = useToast();
   const [vendorTxRefresh, setVendorTxRefresh] = useState(0);
@@ -2961,6 +2962,7 @@ const Dashboard = () => {
                     transactions={transactions}
                     dailyBalances={projectedDailyBalances}
                     totalAvailableCreditFromInsights={creditCardData.totalAvailableCredit}
+                    totalPendingOrdersFromInsights={creditCardData.totalPendingOrders}
                   />
                 ) : (
                   <OverviewStatsSkeleton />

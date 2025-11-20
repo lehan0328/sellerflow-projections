@@ -51,6 +51,7 @@ interface CashFlowInsightsProps {
     lowestCreditByCard: Record<string, { date: string; credit: number }>;
     cardOpportunities: Record<string, Array<{ date: string; availableCredit: number }>>;
     totalAvailableCredit: number;
+    totalPendingOrders: number;
   }) => void;
 }
 export const CashFlowInsights = memo(({
@@ -516,12 +517,17 @@ export const CashFlowInsights = memo(({
         return sum + Math.max(0, currentAvailableSpend);
       }, 0);
 
+      // Calculate total pending orders
+      const totalPendingOrders = Object.values(pendingOrdersByCard).reduce((sum, amount) => sum + amount, 0);
+
       console.log('🔵 CashFlowInsights passing totalAvailableCredit:', totalAvailableCredit);
+      console.log('🔵 CashFlowInsights passing totalPendingOrders:', totalPendingOrders);
 
       onCreditDataCalculated({
         lowestCreditByCard: calculatedLowestCreditByCard,
         cardOpportunities: calculatedCardOpportunities,
-        totalAvailableCredit
+        totalAvailableCredit,
+        totalPendingOrders
       });
     }
   }, [calculatedLowestCreditByCard, calculatedCardOpportunities, onCreditDataCalculated, creditCards, pendingOrdersByCard]);
