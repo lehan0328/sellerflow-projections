@@ -384,7 +384,7 @@ export function OverviewStats({
   const pendingCreditPurchases = events.filter(event => {
     const eventDate = new Date(event.date);
     eventDate.setHours(0, 0, 0, 0);
-    return (event as any).creditCardId && eventDate >= now && eventDate <= thirtyDaysFromNow;
+    return (event as any).creditCardId && event.type !== 'credit-payment' && eventDate >= now && eventDate <= thirtyDaysFromNow;
   });
   const pendingCreditTotal = pendingCreditPurchases.reduce((sum, purchase) => sum + purchase.amount, 0);
 

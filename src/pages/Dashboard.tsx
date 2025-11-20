@@ -2006,7 +2006,18 @@ const Dashboard = () => {
   const creditCardEvents: CashFlowEvent[] =
     creditCards.length > 0
       ? creditCards
-          .filter((card) => card.payment_due_date && (card.statement_balance || card.balance) > 0)
+          .filter((card) => {
+            if (!card.payment_due_date) return false;
+            if (!card.statement_balance && !card.balance) return false;
+            
+            // Only include if payment due date is today or in the future
+            const dueDate = new Date(card.payment_due_date);
+            dueDate.setHours(0, 0, 0, 0);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            return dueDate >= today;
+          })
           .map((card) => {
             // If pay_minimum is enabled, show minimum payment; otherwise show statement balance
             const paymentAmount = card.pay_minimum
