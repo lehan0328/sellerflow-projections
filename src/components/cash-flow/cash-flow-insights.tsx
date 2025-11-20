@@ -404,41 +404,105 @@ export const CashFlowInsights = memo(({
         availableCredit: Math.max(0, currentAvailableSpend)
       });
 
-      // PAYMENT DUE DATE OPPORTUNITY
+      // PAYMENT DUE DATE OPPORTUNITY (with early payment reduction)
       if (card.statement_balance && card.statement_balance > 0 && card.payment_due_date) {
         const paymentDueDate = startOfDay(parseISO(card.payment_due_date));
 
         if (paymentDueDate > today) {
           const dueDateStr = format(paymentDueDate, 'yyyy-MM-dd');
           
-          // Calculate expenses between today and due date
-          const pendingExpenses = events
+          // Calculate early manual payments (before due date)
+          const earlyPayments = events
             .filter(event => 
               event.creditCardId === card.id &&
-              event.status === 'pending' &&
-              (event.type === 'purchase_order' || event.type === 'expense') &&
-              event.date && new Date(event.date) > today && new Date(event.date) <= paymentDueDate
-            )
-            .reduce((sum, event) => sum + (event.amount || 0), 0);
-          
-          // Calculate payments between today and due date
-          const paymentsAdded = events
-            .filter(event =>
-              event.creditCardId === card.id &&
               event.type === 'credit_card_payment' &&
-              event.date && new Date(event.date) > today && new Date(event.date) <= paymentDueDate
+              event.date && new Date(event.date) > today && new Date(event.date) < paymentDueDate
             )
             .reduce((sum, event) => sum + (event.amount || 0), 0);
           
-          // Calculate available credit on payment due date
-          const dueDateCredit = currentAvailableSpend - pendingExpenses + paymentsAdded + card.statement_balance;
+          // Calculate effective statement balance after early payments
+          const effectiveStatementBalance = Math.max(0, card.statement_balance - earlyPayments);
           
-          opportunities.push({
-            date: dueDateStr,
-            availableCredit: Math.max(0, dueDateCredit)
-          });
+          // Only add opportunity if there's remaining statement balance to pay
+          if (effectiveStatementBalance > 0) {
+            // Calculate expenses between today and due date
+            const pendingExpenses = events
+              .filter(event => 
+                event.creditCardId === card.id &&
+                event.status === 'pending' &&
+                (event.type === 'purchase_order' || event.type === 'expense') &&
+                event.date && new Date(event.date) > today && new Date(event.date) <= paymentDueDate
+              )
+              .reduce((sum, event) => sum + (event.amount || 0), 0);
+            
+            // Calculate payments between today and due date
+            const paymentsAdded = events
+              .filter(event =>
+                event.creditCardId === card.id &&
+                event.type === 'credit_card_payment' &&
+                event.date && new Date(event.date) > today && new Date(event.date) <= paymentDueDate
+              )
+              .reduce((sum, event) => sum + (event.amount || 0), 0);
+            
+            // Calculate available credit on payment due date using effective statement balance
+            const dueDateCredit = currentAvailableSpend - pendingExpenses + paymentsAdded + effectiveStatementBalance;
+            
+            opportunities.push({
+              date: dueDateStr,
+              availableCredit: Math.max(0, dueDateCredit)
+            });
+          }
         }
       }
+
+      // MANUAL PAYMENT OPPORTUNITIES
+      // Each manual payment increases available credit on that date
+      const manualPayments = events
+        .filter(event =>
+          event.creditCardId === card.id &&
+          event.type === 'credit_card_payment' &&
+          event.date && new Date(event.date) > today
+        );
+
+      manualPayments.forEach(payment => {
+        const paymentDate = startOfDay(new Date(payment.date));
+        const paymentDateStr = format(paymentDate, 'yyyy-MM-dd');
+        
+        // Skip if we already have an opportunity for this date (payment due date)
+        if (opportunities.some(opp => opp.date === paymentDateStr)) {
+          return;
+        }
+        
+        // Calculate expenses between today and this payment date
+        const pendingExpenses = events
+          .filter(event =>
+            event.creditCardId === card.id &&
+            event.status === 'pending' &&
+            (event.type === 'purchase_order' || event.type === 'expense') &&
+            event.date && new Date(event.date) > today && new Date(event.date) <= paymentDate
+          )
+          .reduce((sum, event) => sum + (event.amount || 0), 0);
+        
+        // Calculate all payments up to and including this payment date
+        const allPaymentsUpToDate = events
+          .filter(event =>
+            event.creditCardId === card.id &&
+            event.type === 'credit_card_payment' &&
+            event.date && new Date(event.date) > today && new Date(event.date) <= paymentDate
+          )
+          .reduce((sum, event) => sum + (event.amount || 0), 0);
+        
+        // Calculate available credit after this payment
+        const creditAfterPayment = currentAvailableSpend - pendingExpenses + allPaymentsUpToDate;
+        
+        opportunities.push({
+          date: paymentDateStr,
+          availableCredit: Math.max(0, creditAfterPayment)
+        });
+      });
+
+      // Sort all opportunities by date chronologically
+      opportunities.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
       opportunitiesMap[card.id] = opportunities;
     }
