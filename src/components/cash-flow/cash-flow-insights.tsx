@@ -1545,7 +1545,7 @@ export const CashFlowInsights = memo(({
                     {lowestCredit && (
                       <div className="p-2.5 rounded-lg border bg-amber-50 dark:bg-amber-950/20 border-amber-500">
                         <div className="flex items-center justify-between">
-                          <span className="text-xs font-medium text-gray-600 dark:text-gray-300">Lowest Credit</span>
+                          <span className="text-xs font-medium text-gray-600 dark:text-gray-300">Lowest Credit (30 days)</span>
                           <div className="text-right">
                             <span className="text-sm font-bold text-amber-700 dark:text-amber-400">
                               ${lowestCredit.credit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
