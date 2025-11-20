@@ -616,12 +616,12 @@ export function OverviewStats({
               <p className="text-xs font-semibold text-muted-foreground uppercase mb-2">Credit Card</p>
               <div className="grid grid-cols-3 gap-2">
                 <div className="text-center">
-                  <p className="text-xs text-muted-foreground mb-1">Purchases</p>
-                  <p className="text-lg font-bold text-orange-600">{formatCurrency(todaysCreditCardExpenses)}</p>
-                </div>
-                <div className="text-center">
                   <p className="text-xs text-muted-foreground mb-1">Payments</p>
                   <p className="text-lg font-bold text-blue-600">{formatCurrency(todaysCreditCardInflow)}</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-xs text-muted-foreground mb-1">Purchases</p>
+                  <p className="text-lg font-bold text-orange-600">{formatCurrency(todaysCreditCardExpenses)}</p>
                 </div>
                 <div className="text-center">
                   <p className="text-xs text-muted-foreground mb-1">Net</p>
