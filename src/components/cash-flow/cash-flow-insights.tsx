@@ -432,7 +432,7 @@ export const CashFlowInsights = memo(({
             .reduce((sum, event) => sum + (event.amount || 0), 0);
           
           // Calculate available credit on payment due date
-          const dueDateCredit = currentAvailableSpend - pendingExpenses + paymentsAdded;
+          const dueDateCredit = currentAvailableSpend - pendingExpenses + paymentsAdded + card.statement_balance;
           
           opportunities.push({
             date: dueDateStr,
