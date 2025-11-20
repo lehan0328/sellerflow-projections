@@ -674,7 +674,10 @@ export function CreditCards() {
                       })() : undefined}
                       onSelect={(date) => {
                         if (date) {
-                          setFormData({...formData, payment_due_date: format(date, 'yyyy-MM-dd')});
+                          const year = date.getFullYear();
+                          const month = String(date.getMonth() + 1).padStart(2, '0');
+                          const day = String(date.getDate()).padStart(2, '0');
+                          setFormData({...formData, payment_due_date: `${year}-${month}-${day}`});
                         }
                       }}
                       initialFocus
@@ -833,7 +836,10 @@ export function CreditCards() {
                       selected={newDueDate ? parseLocalDate(newDueDate) : undefined}
                       onSelect={(date) => {
                         if (date) {
-                          setNewDueDate(format(date, "yyyy-MM-dd"));
+                          const year = date.getFullYear();
+                          const month = String(date.getMonth() + 1).padStart(2, '0');
+                          const day = String(date.getDate()).padStart(2, '0');
+                          setNewDueDate(`${year}-${month}-${day}`);
                         }
                       }}
                       disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
@@ -944,7 +950,10 @@ export function CreditCards() {
                       selected={updateDueDate ? parseLocalDate(updateDueDate) : undefined}
                       onSelect={(date) => {
                         if (date) {
-                          setUpdateDueDate(format(date, "yyyy-MM-dd"));
+                          const year = date.getFullYear();
+                          const month = String(date.getMonth() + 1).padStart(2, '0');
+                          const day = String(date.getDate()).padStart(2, '0');
+                          setUpdateDueDate(`${year}-${month}-${day}`);
                           setIsCalendarOpen(false);
                         }
                       }}
