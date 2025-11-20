@@ -415,7 +415,7 @@ export const CashFlowInsights = memo(({
           const earlyPayments = events
             .filter(event => 
               event.creditCardId === card.id &&
-              event.type === 'credit_card_payment' &&
+              event.type === 'credit-payment' &&
               event.date && new Date(event.date) > today && new Date(event.date) < paymentDueDate
             )
             .reduce((sum, event) => sum + (event.amount || 0), 0);
@@ -439,7 +439,7 @@ export const CashFlowInsights = memo(({
             const paymentsAdded = events
               .filter(event =>
                 event.creditCardId === card.id &&
-                event.type === 'credit_card_payment' &&
+                event.type === 'credit-payment' &&
                 event.date && new Date(event.date) > today && new Date(event.date) <= paymentDueDate
               )
               .reduce((sum, event) => sum + (event.amount || 0), 0);
@@ -460,7 +460,7 @@ export const CashFlowInsights = memo(({
       const manualPayments = events
         .filter(event =>
           event.creditCardId === card.id &&
-          event.type === 'credit_card_payment' &&
+          event.type === 'credit-payment' &&
           event.date && new Date(event.date) > today
         );
 
