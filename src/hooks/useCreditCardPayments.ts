@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useEffect } from 'react';
+import { startOfDay } from 'date-fns';
 
 export interface CreditCardPayment {
   id: string;
@@ -42,6 +43,24 @@ export const useCreditCardPayments = () => {
         .order('payment_date', { ascending: true });
 
       if (error) throw error;
+      
+      // Auto-archive payments with payment_date < today
+      const today = startOfDay(new Date());
+      const paymentsToArchive = data?.filter(p => 
+        new Date(p.payment_date) < today && p.status === 'scheduled'
+      ) || [];
+      
+      if (paymentsToArchive.length > 0) {
+        await Promise.all(
+          paymentsToArchive.map(p =>
+            supabase
+              .from('credit_card_payments')
+              .update({ status: 'completed' })
+              .eq('id', p.id)
+          )
+        );
+      }
+      
       return data as CreditCardPayment[];
     },
     enabled: !!user?.id,
