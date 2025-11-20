@@ -77,6 +77,7 @@ export const CashFlowInsights = memo(({
   const { amazonPayouts, refetch: refetchPayouts } = useAmazonPayouts();
   const [pendingOrdersByCard, setPendingOrdersByCard] = useState<Record<string, number>>({});
   const [cardOpportunities, setCardOpportunities] = useState<Record<string, Array<{ date: string; availableCredit: number }>>>({});
+  const [lowestCreditByCard, setLowestCreditByCard] = useState<Record<string, { date: string; credit: number }>>({});
   const [tempProjections, setTempProjections] = useState<Array<{ amount: number; date: string }>>([]);
   const [projectionAmount, setProjectionAmount] = useState('');
   const [projectionDate, setProjectionDate] = useState('');
@@ -447,9 +448,80 @@ export const CashFlowInsights = memo(({
     return opportunitiesMap;
   }, [creditCards, events, pendingOrdersByCard]);
 
+  // Calculate lowest credit date for each card
+  const calculatedLowestCreditByCard = useMemo(() => {
+    if (!creditCards || creditCards.length === 0 || !events || events.length === 0) return {};
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const endDate = addDays(today, 90);
+    
+    const lowestCreditMap: Record<string, { date: string; credit: number }> = {};
+
+    for (const card of creditCards) {
+      const effectiveCreditLimit = card.credit_limit_override || card.credit_limit || 0;
+      const effectiveAvailableCredit = effectiveCreditLimit - (card.balance || 0);
+      const pendingOrders = pendingOrdersByCard[card.id] || 0;
+      let runningCredit = effectiveAvailableCredit - pendingOrders;
+      
+      let minCredit = Math.max(0, runningCredit);
+      let minDate = format(today, "yyyy-MM-dd");
+      
+      // Process each day chronologically
+      let currentDate = new Date(today);
+      while (currentDate <= endDate) {
+        const dateStr = format(currentDate, "yyyy-MM-dd");
+        
+        // Get events for THIS CARD on this specific date (exclude overdue)
+        const dayEvents = events.filter(event => {
+          const eventDate = new Date(event.date);
+          eventDate.setHours(0, 0, 0, 0);
+          const eventDateStr = format(eventDate, "yyyy-MM-dd");
+          const isOverdue = eventDate < today;
+          return eventDateStr === dateStr && event.creditCardId === card.id && !isOverdue;
+        });
+        
+        // Process purchases (decrease available credit)
+        const purchases = dayEvents.filter(e => e.type !== 'credit-payment');
+        purchases.forEach(purchase => {
+          runningCredit -= purchase.amount;
+        });
+        
+        // Process payments (increase available credit)
+        const payments = dayEvents.filter(e => e.type === 'credit-payment');
+        payments.forEach(payment => {
+          runningCredit += payment.amount;
+        });
+        
+        // Apply floor of zero (overflow logic)
+        const creditForDay = Math.max(0, runningCredit);
+        
+        // Track minimum
+        if (creditForDay < minCredit) {
+          minCredit = creditForDay;
+          minDate = dateStr;
+        }
+        
+        // Move to next day
+        currentDate = addDays(currentDate, 1);
+      }
+      
+      lowestCreditMap[card.id] = {
+        date: minDate,
+        credit: minCredit
+      };
+    }
+
+    return lowestCreditMap;
+  }, [creditCards, events, pendingOrdersByCard]);
+
   useEffect(() => {
     setCardOpportunities(calculatedCardOpportunities);
   }, [calculatedCardOpportunities]);
+
+  useEffect(() => {
+    setLowestCreditByCard(calculatedLowestCreditByCard);
+  }, [calculatedLowestCreditByCard]);
 
   // Handle adding a temporary PO projection
   const handleAddProjection = () => {
@@ -1401,6 +1473,7 @@ export const CashFlowInsights = memo(({
                 const pendingOrders = pendingOrdersByCard[card.id] || 0;
                 const currentAvailableSpend = effectiveAvailableCredit - pendingOrders;
                 const opportunities = cardOpportunities[card.id] || [];
+                const lowestCredit = lowestCreditByCard[card.id];
                 const isOverLimit = currentAvailableSpend < 0;
                 
                 return (
@@ -1471,6 +1544,23 @@ export const CashFlowInsights = memo(({
                       )}
                     </div>
                     
+                    {/* Lowest Credit Projection */}
+                    {lowestCredit && (
+                      <div className="p-2.5 rounded-lg border bg-amber-50 dark:bg-amber-950/20 border-amber-500">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-medium text-gray-600 dark:text-gray-300">Lowest Credit</span>
+                          <div className="text-right">
+                            <span className="text-sm font-bold text-amber-700 dark:text-amber-400">
+                              ${lowestCredit.credit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </span>
+                            <p className="text-xs text-amber-600 dark:text-amber-500">
+                              on {new Date(lowestCredit.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Buying Opportunities */}
                     {opportunities.length > 0 && (
                       <div className="space-y-1.5">
