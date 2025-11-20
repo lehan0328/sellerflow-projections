@@ -1500,7 +1500,7 @@ export const CashFlowInsights = memo(({
                           {opportunities.slice(0, 2).map((opp, idx) => (
                             <div key={idx} className="flex justify-between items-center p-2 bg-blue-50 dark:bg-blue-950/20 rounded text-xs border border-blue-200 dark:border-blue-800">
                               <span className="text-muted-foreground">
-                                {format(parseISO(opp.date), 'MMM d')}
+                                {new Date(opp.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                               </span>
                               <span className="font-semibold text-blue-600">
                                 ${opp.availableCredit.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
