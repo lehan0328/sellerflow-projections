@@ -380,53 +380,61 @@ export const CashFlowInsights = memo(({
   
   // Calculate buying opportunities for each credit card - memoized
   const calculatedCardOpportunities = useMemo(() => {
-    if (!creditCards || creditCards.length === 0 || !dailyBalances || dailyBalances.length === 0) return {};
+    if (!creditCards || creditCards.length === 0 || !events || events.length === 0) return {};
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+    const todayStr = format(today, 'yyyy-MM-dd');
     
     const opportunitiesMap: Record<string, Array<{ date: string; availableCredit: number }>> = {};
 
     for (const card of creditCards) {
       const opportunities: Array<{ date: string; availableCredit: number }> = [];
       
-      // Get today's projected credit from dailyBalances (use format to avoid timezone issues)
-      const todayStr = format(today, 'yyyy-MM-dd');
-      const todayBalance = dailyBalances.find(d => d.date === todayStr);
-      const todayCredit = todayBalance?.cardCredit?.get(card.id);
+      // Calculate base available credit
+      const effectiveCreditLimit = card.credit_limit_override || card.credit_limit || 0;
+      const baseAvailableCredit = effectiveCreditLimit - (card.balance || 0);
       
-      // Current available credit is always the first opportunity
+      // TODAY'S OPPORTUNITY - current available credit
       opportunities.push({
         date: todayStr,
-        availableCredit: todayCredit !== undefined ? Math.max(0, todayCredit) : 0
+        availableCredit: Math.max(0, baseAvailableCredit)
       });
 
-      // If card has statement balance and due date, that's a buying opportunity
+      // PAYMENT DUE DATE OPPORTUNITY
       if (card.statement_balance && card.statement_balance > 0 && card.payment_due_date) {
-        // Parse date string as local date to avoid timezone shifts
         const [year, month, day] = card.payment_due_date.split('-').map(Number);
         const paymentDueDate = new Date(year, month - 1, day);
 
-        // Only include if due date is in the future
         if (paymentDueDate > today) {
           const dueDateStr = format(paymentDueDate, 'yyyy-MM-dd');
-          const dueDateBalance = dailyBalances.find(d => d.date === dueDateStr);
-          const dueDateCredit = dueDateBalance?.cardCredit?.get(card.id);
+          
+          // Calculate expenses between today and due date
+          const pendingExpenses = events
+            .filter(event => 
+              event.credit_card_id === card.id &&
+              event.status === 'pending' &&
+              (event.type === 'purchase_order' || event.type === 'expense') &&
+              event.date && new Date(event.date) > today && new Date(event.date) <= paymentDueDate
+            )
+            .reduce((sum, event) => sum + (event.amount || 0), 0);
+          
+          // Calculate payments between today and due date
+          const paymentsAdded = events
+            .filter(event =>
+              event.credit_card_id === card.id &&
+              event.type === 'credit_card_payment' &&
+              event.date && new Date(event.date) > today && new Date(event.date) <= paymentDueDate
+            )
+            .reduce((sum, event) => sum + (event.amount || 0), 0);
+          
+          // Calculate available credit on payment due date
+          const dueDateCredit = baseAvailableCredit - pendingExpenses + paymentsAdded;
           
           opportunities.push({
             date: dueDateStr,
-            availableCredit: dueDateCredit !== undefined ? Math.max(0, dueDateCredit) : 0
+            availableCredit: Math.max(0, dueDateCredit)
           });
-        }
-      }
-
-      // Sort opportunities by date
-      opportunities.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-      
-      // Ensure later opportunities never have lower available credit than earlier ones
-      for (let i = 1; i < opportunities.length; i++) {
-        if (opportunities[i].availableCredit < opportunities[i - 1].availableCredit) {
-          opportunities[i].availableCredit = opportunities[i - 1].availableCredit;
         }
       }
 
@@ -434,7 +442,7 @@ export const CashFlowInsights = memo(({
     }
 
     return opportunitiesMap;
-  }, [creditCards, dailyBalances]);
+  }, [creditCards, events]);
 
   useEffect(() => {
     setCardOpportunities(calculatedCardOpportunities);
