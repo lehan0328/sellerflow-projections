@@ -38,32 +38,54 @@ const getAvailableCreditForDate = (
   currentAvailableCredit: number,
   cardOpportunities: Record<string, Array<{ date: string; availableCredit: number }>>
 ): number => {
+  console.log('🟡 getAvailableCreditForDate called:', {
+    cardId,
+    selectedDate,
+    currentAvailableCredit,
+    hasOpportunities: !!cardOpportunities[cardId],
+    opportunitiesCount: cardOpportunities[cardId]?.length || 0
+  });
+
   // If no date selected, return current available credit
-  if (!selectedDate) return currentAvailableCredit;
+  if (!selectedDate) {
+    console.log('🟡 No date selected, returning current credit');
+    return currentAvailableCredit;
+  }
   
   // Get opportunities for this specific card
   const opportunities = cardOpportunities[cardId] || [];
   
+  console.log('🟡 Opportunities for card:', opportunities);
+  
   // If no opportunities, return current available credit
-  if (opportunities.length === 0) return currentAvailableCredit;
+  if (opportunities.length === 0) {
+    console.log('🟡 No opportunities found, returning current credit');
+    return currentAvailableCredit;
+  }
   
   // Format selected date for comparison (YYYY-MM-DD)
   const selectedDateStr = format(selectedDate, 'yyyy-MM-dd');
+  
+  console.log('🟡 Selected date string:', selectedDateStr);
   
   // Find the appropriate opportunity based on date range
   // Opportunities are sorted chronologically, so iterate through them
   let applicableCredit = currentAvailableCredit;
   
   for (const opportunity of opportunities) {
+    console.log('🟡 Checking opportunity:', opportunity, 'against', selectedDateStr);
     // If selected date is on or after this opportunity date, use this opportunity's credit
     if (selectedDateStr >= opportunity.date) {
       applicableCredit = opportunity.availableCredit;
+      console.log('🟡 Date matches! Using credit:', applicableCredit);
     } else {
       // Once we hit an opportunity in the future, stop checking
+      console.log('🟡 Future opportunity, breaking');
       break;
     }
   }
   
+  console.log('🟡 Final applicable credit:', applicableCredit);
   return applicableCredit;
 };
 interface Vendor {
@@ -121,6 +143,12 @@ export const PurchaseOrderForm = ({
     creditCards,
     creditCardPendingAmounts
   } = useCreditCards();
+
+  // Debug: Log received props
+  useEffect(() => {
+    console.log('🟢 PurchaseOrderForm received cardOpportunities:', cardOpportunities);
+    console.log('🟢 PurchaseOrderForm received cardAvailableCredit:', cardAvailableCredit);
+  }, [cardOpportunities, cardAvailableCredit]);
   const subscription = useSubscription();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isProcessingDocument, setIsProcessingDocument] = useState(false);
@@ -1401,12 +1429,15 @@ export const PurchaseOrderForm = ({
                     : 0;
                   
                   const availableCredit = selectedCard 
-                    ? getAvailableCreditForDate(
-                        selectedCard.id, 
-                        formData.dueDate, 
-                        staticAvailableCredit,
-                        cardOpportunities
-                      )
+                    ? (() => {
+                        console.log('🟢 Calculating credit for dueDate:', formData.dueDate, 'type:', typeof formData.dueDate);
+                        return getAvailableCreditForDate(
+                          selectedCard.id, 
+                          formData.dueDate, 
+                          staticAvailableCredit,
+                          cardOpportunities
+                        );
+                      })()
                     : 0;
                   const remainingCredit = selectedCard ? availableCredit - orderAmount : 0;
                   const hasInsufficientCredit = selectedCard ? availableCredit < orderAmount : false;
