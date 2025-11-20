@@ -175,6 +175,12 @@ export function CreditCardPaymentDialog({
         .eq('user_id', user.id)
         .single();
 
+      // Use timezone-safe date extraction to prevent off-by-one errors
+      const year = paymentDate.getFullYear();
+      const month = String(paymentDate.getMonth() + 1).padStart(2, '0');
+      const day = String(paymentDate.getDate()).padStart(2, '0');
+      const dateString = `${year}-${month}-${day}`;
+
       // Insert into credit_card_payments table
       const { error } = await supabase
         .from("credit_card_payments")
@@ -184,7 +190,7 @@ export function CreditCardPaymentDialog({
           bank_account_id: defaultBankAccount.id,
           credit_card_id: selectedCreditCardId,
           amount: amount,
-          payment_date: format(paymentDate, "yyyy-MM-dd"),
+          payment_date: dateString,
           description: `Credit Card Payment - ${selectedCreditCard.account_name}`,
           payment_type: 'manual',
           status: 'scheduled'

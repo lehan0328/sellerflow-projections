@@ -50,11 +50,17 @@ export function CreditCardPaymentEditDialog({
     setIsSubmitting(true);
 
     try {
+      // Use timezone-safe date extraction to prevent off-by-one errors
+      const year = paymentDate.getFullYear();
+      const month = String(paymentDate.getMonth() + 1).padStart(2, '0');
+      const day = String(paymentDate.getDate()).padStart(2, '0');
+      const dateString = `${year}-${month}-${day}`;
+      
       const { error } = await supabase
         .from('credit_card_payments')
         .update({
           amount: amount,
-          payment_date: format(paymentDate, "yyyy-MM-dd"),
+          payment_date: dateString,
           updated_at: new Date().toISOString(),
         })
         .eq('id', payment.id);
