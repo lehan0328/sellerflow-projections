@@ -2105,6 +2105,34 @@ const Dashboard = () => {
       .filter((event) => event.amount > 0); // Remove fully paid bills
   }, [creditCards, creditCardPaymentsForEvents]);
 
+  // Calculate effective statement balances for each card (for UI display)
+  const effectiveStatementBalances = useMemo(() => {
+    const result = new Map<string, number>();
+    
+    creditCards.forEach(card => {
+      if (card.payment_due_date && (card.statement_balance || card.balance) > 0) {
+        const dueDate = new Date(card.payment_due_date);
+        dueDate.setHours(0, 0, 0, 0);
+        
+        // Calculate early manual payments (same logic as creditCardEvents)
+        const earlyPayments = creditCardPaymentsForEvents
+          .filter(payment => 
+            payment.creditCardId === card.id &&
+            payment.date < dueDate &&
+            payment.wasPaid !== false
+          )
+          .reduce((sum, payment) => sum + payment.amount, 0);
+        
+        const baseStatementAmount = card.statement_balance || card.balance;
+        const effectiveBalance = Math.max(0, baseStatementAmount - earlyPayments);
+        
+        result.set(card.id, effectiveBalance);
+      }
+    });
+    
+    return result;
+  }, [creditCards, creditCardPaymentsForEvents]);
+
   // Add forecasted next month payments for cards with forecast enabled - generate dynamically, no insertion
   const forecastedCreditCardEvents: CashFlowEvent[] =
     creditCards.length > 0
@@ -3048,6 +3076,7 @@ const Dashboard = () => {
                       dailyBalances={projectedDailyBalances}
                       onUpdateReserveAmount={updateReserveAmount}
                       excludeToday={excludeToday}
+                      effectiveStatementBalances={effectiveStatementBalances}
                       onCreditDataCalculated={setCreditCardData}
                       transactionMatchButton={
                         <TransactionMatchButton
