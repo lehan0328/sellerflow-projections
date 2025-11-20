@@ -462,7 +462,7 @@ export const CashFlowInsights = memo(({
       const effectiveCreditLimit = card.credit_limit_override || card.credit_limit || 0;
       const effectiveAvailableCredit = effectiveCreditLimit - (card.balance || 0);
       const pendingOrders = pendingOrdersByCard[card.id] || 0;
-      let runningCredit = effectiveAvailableCredit - pendingOrders;
+      let runningCredit = effectiveAvailableCredit; // Don't subtract pendingOrders - they're in events
       
       let minCredit = Math.max(0, runningCredit);
       let minDate = format(today, "yyyy-MM-dd");
