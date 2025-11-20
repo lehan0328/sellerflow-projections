@@ -25,18 +25,16 @@ interface CreditCardPaymentDialogProps {
   reserveAmount?: number;
   allCalendarEvents?: CalendarEvent[];
   onPaymentSuccess?: () => void;
-  cardOpportunities?: Record<string, Array<{ date: string; availableCredit: number }>>;
 }
 
-export function CreditCardPaymentDialog({
-  open,
-  onOpenChange,
+export function CreditCardPaymentDialog({ 
+  open, 
+  onOpenChange, 
   allBuyingOpportunities = [],
   projectedDailyBalances = [],
   reserveAmount = 0,
   allCalendarEvents = [],
-  onPaymentSuccess,
-  cardOpportunities = {}
+  onPaymentSuccess
 }: CreditCardPaymentDialogProps) {
   const { user } = useAuth();
   const { creditCards, creditCardPendingAmounts, refetch: refetchCreditCards } = useCreditCards();
@@ -50,40 +48,65 @@ export function CreditCardPaymentDialog({
 
   const selectedCreditCard = creditCards.find(card => card.id === selectedCreditCardId);
 
-  // Calculate lowest credit date from pre-calculated opportunities
+  // Calculate the date when selected credit card will have lowest available credit
   const lowestCreditDate = useMemo(() => {
-    if (!selectedCreditCardId || !cardOpportunities) return null;
+    if (!selectedCreditCardId || !selectedCreditCard) return null;
 
-    const opportunities = cardOpportunities[selectedCreditCardId];
-    if (!opportunities || opportunities.length === 0) return null;
-
-    // Find the opportunity with the lowest available credit
-    let minCredit = opportunities[0].availableCredit;
-    let minDate = opportunities[0].date;
-
-    opportunities.forEach(opp => {
-      if (opp.availableCredit < minCredit) {
-        minCredit = opp.availableCredit;
-        minDate = opp.date;
+    const today = startOfDay(new Date());
+    const endDate = addDays(today, 90); // Project 90 days forward
+    
+    // Initialize with current available credit (matching buying opportunities)
+    const effectiveCreditLimit = selectedCreditCard.credit_limit_override || selectedCreditCard.credit_limit;
+    const effectiveAvailableCredit = effectiveCreditLimit - selectedCreditCard.balance;
+    const pendingOrders = creditCardPendingAmounts.get(selectedCreditCardId) || 0;
+    let runningCredit = effectiveAvailableCredit - pendingOrders;
+    
+    let minCredit = Math.max(0, runningCredit); // Floor at zero
+    let minDate = format(today, "yyyy-MM-dd");
+    
+    // Process each day chronologically
+    let currentDate = new Date(today);
+    while (currentDate <= endDate) {
+      const dateStr = format(currentDate, "yyyy-MM-dd");
+      
+      // Get events for THIS CARD on this specific date (exclude overdue transactions)
+      const dayEvents = allCalendarEvents.filter(event => {
+        const eventDateStr = format(new Date(event.date), "yyyy-MM-dd");
+        const eventDate = startOfDay(new Date(event.date));
+        const isOverdue = eventDate < today;
+        return eventDateStr === dateStr && event.creditCardId === selectedCreditCardId && !isOverdue;
+      });
+      
+      // Process purchases (decrease available credit)
+      const purchases = dayEvents.filter(e => e.type !== 'credit-payment');
+      purchases.forEach(purchase => {
+        runningCredit -= purchase.amount;
+      });
+      
+      // Process payments (increase available credit)
+      const payments = dayEvents.filter(e => e.type === 'credit-payment');
+      payments.forEach(payment => {
+        runningCredit += payment.amount;
+      });
+      
+      // Apply floor of zero (overflow logic - card can't go below zero available credit)
+      const creditForDay = Math.max(0, runningCredit);
+      
+      // Track minimum
+      if (creditForDay < minCredit) {
+        minCredit = creditForDay;
+        minDate = dateStr;
       }
-    });
-
+      
+      // Move to next day
+      currentDate = addDays(currentDate, 1);
+    }
+    
     return {
       date: minDate,
       credit: minCredit
     };
-  }, [selectedCreditCardId, cardOpportunities]);
-
-  // Calculate adjusted available credit using same formula as cash flow insights
-  const adjustedAvailableCredit = useMemo(() => {
-    if (!selectedCreditCard) return 0;
-    
-    const effectiveCreditLimit = selectedCreditCard.credit_limit_override || selectedCreditCard.credit_limit;
-    const effectiveAvailableCredit = effectiveCreditLimit - selectedCreditCard.balance;
-    const pendingOrders = creditCardPendingAmounts.get(selectedCreditCardId) || 0;
-    
-    return Math.max(0, effectiveAvailableCredit - pendingOrders);
-  }, [selectedCreditCard, selectedCreditCardId, creditCardPendingAmounts]);
+  }, [selectedCreditCardId, selectedCreditCard, allCalendarEvents, creditCardPendingAmounts]);
 
   // Calculate projected available credit on selected date for selected card
   const projectedAvailableCredit = useMemo(() => {
@@ -285,7 +308,7 @@ export function CreditCardPaymentDialog({
               <div className="space-y-1">
                 <p className="text-sm text-muted-foreground">
                   Credit Limit: ${(selectedCreditCard.credit_limit_override || selectedCreditCard.credit_limit).toFixed(2)} | 
-                  Available Credit: ${adjustedAvailableCredit.toFixed(2)}
+                  Available Credit: ${getAdjustedAvailableCredit(selectedCreditCard).toFixed(2)}
                 </p>
                 {selectedCreditCard.payment_due_date && (
                   <p className="text-sm text-muted-foreground">

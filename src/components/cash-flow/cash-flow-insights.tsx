@@ -45,7 +45,6 @@ interface CashFlowInsightsProps {
   onUpdateReserveAmount?: (amount: number) => Promise<void>;
   transactionMatchButton?: React.ReactNode;
   excludeToday?: boolean;
-  onCardOpportunitiesChange?: (opportunities: Record<string, Array<{ date: string; availableCredit: number }>>) => void;
 }
 export const CashFlowInsights = memo(({
   currentBalance,
@@ -67,8 +66,7 @@ export const CashFlowInsights = memo(({
   dailyBalances = [],
   onUpdateReserveAmount,
   transactionMatchButton,
-  excludeToday = false,
-  onCardOpportunitiesChange
+  excludeToday = false
 }: CashFlowInsightsProps) => {
   const {
     toast
@@ -451,11 +449,7 @@ export const CashFlowInsights = memo(({
 
   useEffect(() => {
     setCardOpportunities(calculatedCardOpportunities);
-    // Pass card opportunities back to parent
-    if (onCardOpportunitiesChange) {
-      onCardOpportunitiesChange(calculatedCardOpportunities);
-    }
-  }, [calculatedCardOpportunities, onCardOpportunitiesChange]);
+  }, [calculatedCardOpportunities]);
 
   // Handle adding a temporary PO projection
   const handleAddProjection = () => {
