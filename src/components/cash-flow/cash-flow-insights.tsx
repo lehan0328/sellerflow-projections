@@ -508,9 +508,8 @@ export const CashFlowInsights = memo(({
       // Calculate total available credit
       const totalAvailableCredit = creditCards.reduce((sum, card) => {
         const effectiveCreditLimit = card.credit_limit_override || card.credit_limit;
-        const pendingOrders = creditCardPendingAmounts.get(card.id) || 0;
-        const currentAvailableSpend = Math.max(0, effectiveCreditLimit - card.balance - pendingOrders);
-        return sum + currentAvailableSpend;
+        const effectiveAvailableCredit = effectiveCreditLimit - card.balance;
+        return sum + effectiveAvailableCredit;
       }, 0);
 
       onCreditDataCalculated({

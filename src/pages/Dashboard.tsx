@@ -2960,6 +2960,7 @@ const Dashboard = () => {
                     useAvailableBalance={useAvailableBalance}
                     transactions={transactions}
                     dailyBalances={projectedDailyBalances}
+                    totalAvailableCreditFromInsights={creditCardData.totalAvailableCredit}
                   />
                 ) : (
                   <OverviewStatsSkeleton />
