@@ -5,7 +5,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useVendorTransactions, VendorTransaction } from "@/hooks/useVendorTransactions";
 import { useIncome } from "@/hooks/useIncome";
 import { useTransactions } from "@/hooks/useTransactions";
-import { AlertCircle, Trash2, CheckCircle, Calendar } from "lucide-react";
+import { useCreditCardPayments } from "@/hooks/useCreditCardPayments";
+import { AlertCircle, Trash2, CheckCircle, Calendar, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
@@ -17,18 +18,19 @@ interface OverdueTransactionsModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onUpdate?: () => void;
-  initialTab?: 'expenses' | 'income' | 'purchaseOrders' | 'creditCard';
+  initialTab?: 'expenses' | 'income' | 'purchaseOrders' | 'creditCard' | 'creditCardPayments';
 }
 
 export function OverdueTransactionsModal({ open, onOpenChange, onUpdate, initialTab = 'expenses' }: OverdueTransactionsModalProps) {
   const { transactions: purchaseOrders, markAsPaid: markPOPaid, deleteTransaction: deletePO, updateDueDate: updatePODate } = useVendorTransactions();
   const { incomeItems, updateIncome, deleteIncome } = useIncome();
   const { transactions: allTransactions, deleteTransaction: deleteTransactionGeneric, refetch: refetchTransactions } = useTransactions();
+  const { payments, refetch: refetchPayments } = useCreditCardPayments();
   const [activeTab, setActiveTab] = useState(initialTab);
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [changingDateId, setChangingDateId] = useState<string | null>(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [itemToDelete, setItemToDelete] = useState<{ id: string; type: 'expense' | 'purchaseOrder' | 'income' | 'creditCard'; name: string } | null>(null);
+  const [itemToDelete, setItemToDelete] = useState<{ id: string; type: 'expense' | 'purchaseOrder' | 'income' | 'creditCard' | 'creditCardPayment'; name: string } | null>(null);
 
   useEffect(() => {
     if (open) {
@@ -65,6 +67,13 @@ export function OverdueTransactionsModal({ open, onOpenChange, onUpdate, initial
     const dueDate = new Date(tx.dueDate);
     dueDate.setHours(0, 0, 0, 0);
     return tx.status === 'pending' && dueDate < today && tx.creditCardId;
+  });
+
+  // Filter overdue credit card payments
+  const overdueCreditCardPayments = payments.filter(payment => {
+    const paymentDate = new Date(payment.payment_date);
+    paymentDate.setHours(0, 0, 0, 0);
+    return payment.status === 'completed' && paymentDate < today;
   });
 
   const handleMarkExpensePaid = async (id: string) => {
@@ -170,12 +179,14 @@ export function OverdueTransactionsModal({ open, onOpenChange, onUpdate, initial
       handleDeletePO(itemToDelete.id);
     } else if (itemToDelete.type === 'creditCard') {
       handleDeleteCreditCard(itemToDelete.id);
+    } else if (itemToDelete.type === 'creditCardPayment') {
+      handleDeletePayment(itemToDelete.id);
     } else {
       handleDeleteIncome(itemToDelete.id);
     }
   };
 
-  const openDeleteConfirm = (id: string, type: 'expense' | 'purchaseOrder' | 'income' | 'creditCard', name: string) => {
+  const openDeleteConfirm = (id: string, type: 'expense' | 'purchaseOrder' | 'income' | 'creditCard' | 'creditCardPayment', name: string) => {
     setItemToDelete({ id, type, name });
     setDeleteConfirmOpen(true);
   };
@@ -237,6 +248,40 @@ export function OverdueTransactionsModal({ open, onOpenChange, onUpdate, initial
     }
   };
 
+  const handleMarkPaymentNotPaid = async (id: string) => {
+    setProcessingId(id);
+    try {
+      const { error } = await supabase
+        .from('credit_card_payments')
+        .update({ was_paid: false, status: 'scheduled' })
+        .eq('id', id);
+      
+      if (error) throw error;
+      await refetchPayments();
+      onUpdate?.();
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const handleDeletePayment = async (id: string) => {
+    setProcessingId(id);
+    try {
+      const { error } = await supabase
+        .from('credit_card_payments')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+      await refetchPayments();
+      onUpdate?.();
+      setDeleteConfirmOpen(false);
+      setItemToDelete(null);
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
   const formatCurrency = (amount: number) => `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   const formatDate = (date: Date) => new Date(date).toLocaleDateString('en-US', { 
     month: 'short', 
@@ -255,7 +300,7 @@ export function OverdueTransactionsModal({ open, onOpenChange, onUpdate, initial
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="expenses">
               Expenses ({overdueExpenses.length})
             </TabsTrigger>
@@ -266,7 +311,10 @@ export function OverdueTransactionsModal({ open, onOpenChange, onUpdate, initial
               Purchase Orders ({overduePurchaseOrders.length})
             </TabsTrigger>
             <TabsTrigger value="creditCard">
-              Credit Card ({overdueCreditCardTransactions.length})
+              CC Purchases ({overdueCreditCardTransactions.length})
+            </TabsTrigger>
+            <TabsTrigger value="creditCardPayments">
+              CC Payments ({overdueCreditCardPayments.length})
             </TabsTrigger>
           </TabsList>
 
@@ -531,6 +579,57 @@ export function OverdueTransactionsModal({ open, onOpenChange, onUpdate, initial
                   </div>
                 ))}
               </div>
+            )}
+          </TabsContent>
+
+          {/* Credit Card Payments Tab */}
+          <TabsContent value="creditCardPayments" className="space-y-4">
+            {overdueCreditCardPayments.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">No overdue credit card payments</p>
+            ) : (
+              <>
+                <div className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-md">
+                  Overdue payments are assumed to be paid. Click "Not Paid" if you didn't make this payment.
+                </div>
+                <div className="space-y-3">
+                  {overdueCreditCardPayments.map((payment) => (
+                    <div key={payment.id} className="border rounded-lg p-4 bg-destructive/5">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1">
+                          <div className="font-medium">{payment.description || 'Credit Card Payment'}</div>
+                          <div className="text-sm text-muted-foreground">
+                            Payment Type: {payment.payment_type === 'manual' ? 'Manual' : 'Bill Payment'}
+                          </div>
+                          <div className="text-sm text-destructive mt-1">
+                            Due: {formatDate(new Date(payment.payment_date))}
+                          </div>
+                          <div className="text-lg font-bold mt-2">{formatCurrency(payment.amount)}</div>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => handleMarkPaymentNotPaid(payment.id)}
+                            disabled={processingId === payment.id}
+                          >
+                            <X className="h-4 w-4 mr-1" />
+                            Not Paid
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => openDeleteConfirm(payment.id, 'creditCardPayment', payment.description || 'Payment')}
+                            disabled={processingId === payment.id}
+                            className="text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
             )}
           </TabsContent>
         </Tabs>

@@ -1115,6 +1115,7 @@ export type Database = {
           status: string
           updated_at: string
           user_id: string
+          was_paid: boolean | null
         }
         Insert: {
           account_id: string
@@ -1129,6 +1130,7 @@ export type Database = {
           status?: string
           updated_at?: string
           user_id: string
+          was_paid?: boolean | null
         }
         Update: {
           account_id?: string
@@ -1143,6 +1145,7 @@ export type Database = {
           status?: string
           updated_at?: string
           user_id?: string
+          was_paid?: boolean | null
         }
         Relationships: [
           {
