@@ -90,7 +90,7 @@ export const useCreditCards = () => {
       )
       .forEach(tx => {
         const current = pendingMap.get(tx.creditCardId!) || 0;
-        pendingMap.set(tx.creditCardId!, current + Math.abs(tx.amount));
+        pendingMap.set(tx.creditCardId!, current + tx.amount);
       });
 
     // Calculate recurring expense occurrences in next 30 days
@@ -117,7 +117,7 @@ export const useCreditCards = () => {
         };
         
         const occurrences = generateRecurringDates(recurringTx, today, thirtyDaysFromNow);
-        const totalAmount = occurrences.length * Math.abs(expense.amount);
+        const totalAmount = occurrences.length * expense.amount;
         
         const current = pendingMap.get(expense.credit_card_id!) || 0;
         pendingMap.set(expense.credit_card_id!, current + totalAmount);
