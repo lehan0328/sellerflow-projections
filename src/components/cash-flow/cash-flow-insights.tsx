@@ -392,14 +392,16 @@ export const CashFlowInsights = memo(({
     for (const card of creditCards) {
       const opportunities: Array<{ date: string; availableCredit: number }> = [];
       
-      // Calculate base available credit
+      // Calculate available credit using EXACT same formula as green box
       const effectiveCreditLimit = card.credit_limit_override || card.credit_limit || 0;
-      const baseAvailableCredit = effectiveCreditLimit - (card.balance || 0);
+      const effectiveAvailableCredit = effectiveCreditLimit - (card.balance || 0);
+      const pendingOrders = pendingOrdersByCard[card.id] || 0;
+      const currentAvailableSpend = effectiveAvailableCredit - pendingOrders;
 
-      // TODAY'S OPPORTUNITY
+      // TODAY'S OPPORTUNITY - matches green "Available to Spend" box
       opportunities.push({
         date: todayStr,
-        availableCredit: Math.max(0, baseAvailableCredit)
+        availableCredit: Math.max(0, currentAvailableSpend)
       });
 
       // PAYMENT DUE DATE OPPORTUNITY
@@ -430,7 +432,7 @@ export const CashFlowInsights = memo(({
             .reduce((sum, event) => sum + (event.amount || 0), 0);
           
           // Calculate available credit on payment due date
-          const dueDateCredit = baseAvailableCredit - pendingExpenses + paymentsAdded;
+          const dueDateCredit = currentAvailableSpend - pendingExpenses + paymentsAdded;
           
           opportunities.push({
             date: dueDateStr,
@@ -443,7 +445,7 @@ export const CashFlowInsights = memo(({
     }
 
     return opportunitiesMap;
-  }, [creditCards, events]);
+  }, [creditCards, events, pendingOrdersByCard]);
 
   useEffect(() => {
     setCardOpportunities(calculatedCardOpportunities);
