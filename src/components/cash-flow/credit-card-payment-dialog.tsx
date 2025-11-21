@@ -175,13 +175,8 @@ export function CreditCardPaymentDialog({
         .eq('user_id', user.id)
         .single();
 
-      // Use timezone-safe date extraction to prevent off-by-one errors
-      // Add 1 day to compensate for the -1 day we subtract for display
-      const adjustedDate = addDays(paymentDate, 1);
-      const year = adjustedDate.getFullYear();
-      const month = String(adjustedDate.getMonth() + 1).padStart(2, '0');
-      const day = String(adjustedDate.getDate()).padStart(2, '0');
-      const dateString = `${year}-${month}-${day}`;
+      // Use timezone-safe date formatting - no adjustment needed
+      const dateString = format(paymentDate, 'yyyy-MM-dd');
 
       // Insert into credit_card_payments table
       const { error } = await supabase

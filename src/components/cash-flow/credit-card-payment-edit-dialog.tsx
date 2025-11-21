@@ -6,8 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CalendarIcon } from "lucide-react";
-import { format, parseISO, addDays } from "date-fns";
-import { cn } from "@/lib/utils";
+import { format, addDays } from "date-fns";
+import { cn, parseISODate } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useQueryClient } from '@tanstack/react-query';
@@ -36,7 +36,7 @@ export function CreditCardPaymentEditDialog({
   useEffect(() => {
     if (payment && open) {
       setPaymentAmount(Math.abs(payment.amount).toString());
-      setPaymentDate(addDays(parseISO(payment.payment_date), -1));
+      setPaymentDate(parseISODate(payment.payment_date));
     }
   }, [payment, open]);
 
@@ -54,13 +54,8 @@ export function CreditCardPaymentEditDialog({
     setIsSubmitting(true);
 
     try {
-      // Use timezone-safe date extraction to prevent off-by-one errors
-      // Add 1 day to compensate for the -1 day we subtract for display
-      const adjustedDate = addDays(paymentDate, 1);
-      const year = adjustedDate.getFullYear();
-      const month = String(adjustedDate.getMonth() + 1).padStart(2, '0');
-      const day = String(adjustedDate.getDate()).padStart(2, '0');
-      const dateString = `${year}-${month}-${day}`;
+      // Use timezone-safe date formatting - no adjustment needed
+      const dateString = format(paymentDate, 'yyyy-MM-dd');
       
       const { error } = await supabase
         .from('credit_card_payments')
