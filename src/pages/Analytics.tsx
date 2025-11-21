@@ -404,6 +404,63 @@ export default function Analytics() {
       futureIncomeScore * 0.10
     );
     
+    // Calculate Total Liability Load (Next 30 Days)
+    const thirtyDaysOut = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+    
+    // 1. PO payments due in next 30 days
+    const poPaymentsDue = dbTransactions.filter(tx => {
+      const dueDate = new Date(tx.transactionDate);
+      return tx.type === 'purchase_order' && 
+             tx.status === 'pending' && 
+             dueDate >= now && 
+             dueDate <= thirtyDaysOut;
+    }).reduce((sum, tx) => sum + tx.amount, 0);
+    
+    // 2. Credit card statement balances due in next 30 days
+    const creditCardPaymentsDue = creditCards.filter(card => {
+      if (!card.payment_due_date || !card.statement_balance) return false;
+      const dueDate = new Date(card.payment_due_date);
+      return dueDate >= now && dueDate <= thirtyDaysOut;
+    }).reduce((sum, card) => sum + (card.statement_balance || 0), 0);
+    
+    // 3. Recurring expenses due in next 30 days
+    const recurringDue = recurringExpenses.filter(e => e.is_active && e.type === 'expense').reduce((sum, e) => {
+      const occurrences = generateRecurringDates(e as any, now, thirtyDaysOut);
+      return sum + e.amount * occurrences.length;
+    }, 0);
+    
+    // 4. Other expenses due in next 30 days
+    const expensesDue = dbTransactions.filter(tx => {
+      const dueDate = new Date(tx.transactionDate);
+      return tx.type === 'expense' && 
+             tx.status === 'pending' && 
+             dueDate >= now && 
+             dueDate <= thirtyDaysOut;
+    }).reduce((sum, tx) => sum + tx.amount, 0);
+    
+    const totalLiabilityLoad = poPaymentsDue + creditCardPaymentsDue + recurringDue + expensesDue;
+    
+    // Calculate expected 30-day inflows
+    const expected30DayInflows = amazonPayouts.filter(p => {
+      const payoutDate = new Date(p.payout_date);
+      return (p.status === 'confirmed' || p.status === 'forecasted') && 
+             payoutDate >= now && 
+             payoutDate <= thirtyDaysOut;
+    }).reduce((sum, p) => sum + (p.total_amount || 0), 0) +
+    incomeItems.filter(i => {
+      const paymentDate = new Date(i.paymentDate);
+      return i.status === 'pending' && 
+             paymentDate >= now && 
+             paymentDate <= thirtyDaysOut;
+    }).reduce((sum, i) => sum + i.amount, 0) +
+    recurringExpenses.filter(e => e.is_active && e.type === 'income').reduce((sum, e) => {
+      const occurrences = generateRecurringDates(e as any, now, thirtyDaysOut);
+      return sum + e.amount * occurrences.length;
+    }, 0);
+    
+    const totalAvailable = currentBalance + expected30DayInflows;
+    const liabilityLoadPercentage = totalAvailable > 0 ? (totalLiabilityLoad / totalAvailable) * 100 : 0;
+    
     return {
       totalInflow,
       totalOutflow,
@@ -421,9 +478,12 @@ export default function Analytics() {
       totalForecastedExpenses,
       averageDailyNetOutflow,
       cashRunwayDays,
-      stabilityScore
+      stabilityScore,
+      totalLiabilityLoad,
+      expected30DayInflows,
+      liabilityLoadPercentage
     };
-  }, [bankTransactions, dbTransactions, incomeItems, vendors, creditCards, amazonPayouts, accounts, amazonRevenue, recurringExpenses]);
+  }, [bankTransactions, dbTransactions, incomeItems, vendors, creditCards, amazonPayouts, accounts, amazonRevenue, recurringExpenses, creditCardPendingAmounts]);
 
   // Revenue over time (last 6 months + next 2 months) - AMAZON PAYOUTS + separate additional income line
   const revenueData = useMemo(() => {
@@ -1102,7 +1162,7 @@ export default function Analytics() {
           <p className="text-sm text-muted-foreground">Key performance indicators for your business health</p>
         </div>
         
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-4">
           <Card className={cn(
             "border-2",
             (() => {
@@ -1252,6 +1312,68 @@ export default function Analytics() {
                 <p className="text-xs text-amber-600 dark:text-amber-400">⚠ Monitor: 30-45 days</p>
                 <p className="text-xs text-red-600 dark:text-red-400">⚠ Warning: &lt;30 days</p>
                 <p className="text-xs text-red-700 dark:text-red-500 font-semibold">🚨 Critical: ≤14 days</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className={cn(
+            "border-2",
+            (() => {
+              if (metrics.liabilityLoadPercentage <= 50) return "border-green-500 bg-green-50 dark:bg-green-950/20";
+              if (metrics.liabilityLoadPercentage <= 80) return "border-yellow-500 bg-yellow-50 dark:bg-yellow-950/20";
+              if (metrics.liabilityLoadPercentage <= 100) return "border-orange-500 bg-orange-50 dark:bg-orange-950/20";
+              return "border-red-500 bg-red-50 dark:bg-red-950/20";
+            })()
+          )}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Liability Load (30 Days)</CardTitle>
+              <AlertTriangle className={cn(
+                "h-5 w-5",
+                (() => {
+                  if (metrics.liabilityLoadPercentage <= 50) return "text-green-600";
+                  if (metrics.liabilityLoadPercentage <= 80) return "text-yellow-600";
+                  if (metrics.liabilityLoadPercentage <= 100) return "text-orange-600";
+                  return "text-red-600";
+                })()
+              )} />
+            </CardHeader>
+            <CardContent>
+              <div className={cn(
+                "text-3xl font-bold",
+                (() => {
+                  if (metrics.liabilityLoadPercentage <= 50) return "text-green-600";
+                  if (metrics.liabilityLoadPercentage <= 80) return "text-yellow-600";
+                  if (metrics.liabilityLoadPercentage <= 100) return "text-orange-600";
+                  return "text-red-600";
+                })()
+              )}>
+                {formatCurrency(metrics.totalLiabilityLoad)}
+              </div>
+              <p className={cn(
+                "text-xs font-medium mt-1",
+                (() => {
+                  if (metrics.liabilityLoadPercentage <= 50) return "text-green-700 dark:text-green-400";
+                  if (metrics.liabilityLoadPercentage <= 80) return "text-yellow-700 dark:text-yellow-400";
+                  if (metrics.liabilityLoadPercentage <= 100) return "text-orange-700 dark:text-orange-400";
+                  return "text-red-700 dark:text-red-400";
+                })()
+              )}>
+                {(() => {
+                  if (metrics.liabilityLoadPercentage <= 50) return "✓ Healthy";
+                  if (metrics.liabilityLoadPercentage <= 80) return "🟡 Moderate";
+                  if (metrics.liabilityLoadPercentage <= 100) return "🟠 Warning";
+                  return "🔴 Critical";
+                })()}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {metrics.liabilityLoadPercentage.toFixed(1)}% of available funds
+              </p>
+              <div className="mt-3 pt-3 border-t border-muted space-y-1">
+                <p className="text-xs font-medium text-muted-foreground">Thresholds:</p>
+                <p className="text-xs text-green-600 dark:text-green-400">✓ Healthy: ≤50% of funds</p>
+                <p className="text-xs text-yellow-600 dark:text-yellow-400">🟡 Moderate: 50-80%</p>
+                <p className="text-xs text-orange-600 dark:text-orange-400">🟠 Warning: 80-100%</p>
+                <p className="text-xs text-red-600 dark:text-red-400">🔴 Critical: &gt;100%</p>
               </div>
             </CardContent>
           </Card>
