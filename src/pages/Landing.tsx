@@ -631,29 +631,25 @@ const Landing = () => {
               <div className="animate-fade-in space-y-6" style={{
               animationDelay: '200ms'
             }}>
-                <div className="flex items-start gap-4">
-                  <h1 className="text-4xl lg:text-5xl xl:text-6xl font-display font-bold leading-relaxed tracking-tight flex-1">
-                    <div className="flex items-center justify-between pb-2">
-                      <span className="text-foreground">Smarter</span>
-                      <div className="flex flex-col gap-2">
-                        <Badge className="inline-flex items-center gap-3 bg-primary/10 text-primary border border-primary/20 px-4 py-2 text-sm font-semibold backdrop-blur-sm hover-scale whitespace-nowrap" style={{
-                        wordSpacing: '0.3em'
-                      }}>
-                          <Sparkles className="h-4 w-4 animate-pulse" />
-                          <span className="font-badge">Mathematical Rule-Based</span>
-                          <span className="ml-2 px-2.5 py-0.5 bg-primary/20 rounded-full text-xs">Accurate</span>
-                        </Badge>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-4 pb-2">
-                      <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent animate-shimmer bg-[length:200%_100%] leading-tight tracking-tight py-1">
-                        Cash Flow Forecasting
-                      </span>
-                      <Badge variant="secondary" className="text-base px-4 py-2 whitespace-nowrap font-semibold tracking-wide">
-                        Starting at only $29/mo
-                      </Badge>
-                    </div>
-                    <span className="block text-foreground pb-2">for Amazon Sellers</span>
+                <div className="space-y-4">
+                  <h1 className="text-4xl lg:text-5xl xl:text-6xl font-display font-bold leading-tight tracking-tight">
+                    <span className="text-foreground block mb-2">Smarter</span>
+                    
+                    <Badge className="inline-flex items-center gap-2 bg-primary/10 text-primary border border-primary/20 px-3 py-1.5 text-xs sm:text-sm font-semibold backdrop-blur-sm mb-3 flex-wrap">
+                      <Sparkles className="h-4 w-4 animate-pulse flex-shrink-0" />
+                      <span className="font-badge">Mathematical Rule-Based</span>
+                      <span className="px-2 py-0.5 bg-primary/20 rounded-full text-xs">Accurate</span>
+                    </Badge>
+                    
+                    <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent animate-shimmer bg-[length:200%_100%] leading-tight tracking-tight block mb-2">
+                      Cash Flow Forecasting
+                    </span>
+                    
+                    <Badge variant="secondary" className="text-sm sm:text-base px-3 sm:px-4 py-1.5 sm:py-2 font-semibold tracking-wide inline-block mb-2">
+                      Starting at only $29/mo
+                    </Badge>
+                    
+                    <span className="block text-foreground">for Amazon Sellers</span>
                   </h1>
                 </div>
               </div>
@@ -666,13 +662,13 @@ const Landing = () => {
                 </p>
               </blockquote>
               
-              <p className="text-xl text-muted-foreground max-w-xl animate-fade-in leading-relaxed" style={{
+              <p className="text-base sm:text-lg lg:text-xl text-muted-foreground max-w-full animate-fade-in leading-relaxed px-2 sm:px-0" style={{
               animationDelay: '400ms'
-            }}>Auren forecasts 90-day precise Amazon payout forecast based on your amazon data, tracks every purchase order, recurring expense, credit card payment, and additional income to provide you your cashflow for the next 3 months.</p>
+            }}>Auren forecasts 90-day precise Amazon payout forecast based on your amazon data, tracks every purchase order, recurring expense, credit card payment, and additional income to provide you your cashflow for the next 3 months.</p>
               
-              <p className="text-base text-muted-foreground/90 max-w-xl animate-fade-in leading-relaxed" style={{
+              <p className="text-sm sm:text-base text-muted-foreground/90 max-w-full animate-fade-in leading-relaxed px-2 sm:px-0" style={{
               animationDelay: '500ms'
-            }}>How it works - Search by budget (“I want to spend $X”) and Auren tells you the exact date you can spend it, or search by date (“I need to buy inventory on this day”) and Auren shows how much you can safely spend aligned with all of your expenses and additional i</p>
+            }}>How it works - Search by budget ("I want to spend $X") and Auren tells you the exact date you can spend it, or search by date ("I need to buy inventory on this day") and Auren shows how much you can safely spend aligned with all of your expenses and additional income sources.</p>
               
               <div className="flex flex-col sm:flex-row items-start gap-4 animate-fade-in" style={{
               animationDelay: '600ms'

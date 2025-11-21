@@ -31,28 +31,27 @@ export const PublicHeader = ({ activePage }: PublicHeaderProps) => {
   return (
     <nav className="border-b bg-background/60 backdrop-blur-xl sticky top-0 z-50 animate-fade-in">
       <div className="container mx-auto px-6 py-4">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center md:justify-between justify-center relative">
+          {/* Mobile Menu Button - Top Left */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setMobileMenuOpen(true)}
+            className="md:hidden absolute left-0"
+          >
+            <Menu className="h-6 w-6" />
+          </Button>
+          
+          {/* Logo - Centered on mobile, left on desktop */}
           <Link to="/" className="flex items-center gap-3 animate-scale-in">
             <div className="relative">
               <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full animate-glow-pulse" />
               <img src={aurenIcon} alt="Auren - Amazon Cash Flow Forecasting Software" className="relative h-12 w-12 hover-scale transition-all duration-300" />
             </div>
-            <span className="text-2xl font-display font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
             <span className="text-2xl font-bold font-display bg-gradient-primary bg-clip-text text-transparent">
               Auren
             </span>
-            </span>
           </Link>
-          
-          {/* Mobile Menu Button */}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setMobileMenuOpen(true)}
-            className="md:hidden"
-          >
-            <Menu className="h-6 w-6" />
-          </Button>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-6">
@@ -143,7 +142,7 @@ export const PublicHeader = ({ activePage }: PublicHeaderProps) => {
 
       {/* Mobile Menu Sheet */}
       <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-        <SheetContent side="right" className="w-[300px] sm:w-[400px]">
+        <SheetContent side="left" className="w-[300px] sm:w-[400px]">
           <SheetHeader>
             <SheetTitle className="text-left">Menu</SheetTitle>
           </SheetHeader>
