@@ -1218,7 +1218,7 @@ export default function Analytics() {
 
           <Card className={cn(
             "border-2",
-            metrics.cashRunwayDays >= 90 ? "border-green-500 bg-green-50 dark:bg-green-950/20" :
+            metrics.cashRunwayDays >= 45 ? "border-green-500 bg-green-50 dark:bg-green-950/20" :
             metrics.cashRunwayDays >= 30 ? "border-amber-500 bg-amber-50 dark:bg-amber-950/20" :
             metrics.cashRunwayDays >= 15 ? "border-red-500 bg-red-50 dark:bg-red-950/20" :
             "border-red-700 bg-red-100 dark:bg-red-950/40"
@@ -1227,7 +1227,7 @@ export default function Analytics() {
               <CardTitle className="text-sm font-medium">Cash Runway (days)</CardTitle>
               <CalendarIcon className={cn(
                 "h-5 w-5",
-                metrics.cashRunwayDays >= 90 ? "text-green-600" :
+                metrics.cashRunwayDays >= 45 ? "text-green-600" :
                 metrics.cashRunwayDays >= 30 ? "text-amber-600" :
                 metrics.cashRunwayDays >= 15 ? "text-red-600" :
                 "text-red-700"
@@ -1236,7 +1236,7 @@ export default function Analytics() {
             <CardContent>
               <div className={cn(
                 "text-3xl font-bold",
-                metrics.cashRunwayDays >= 90 ? "text-green-600" :
+                metrics.cashRunwayDays >= 45 ? "text-green-600" :
                 metrics.cashRunwayDays >= 30 ? "text-amber-600" :
                 metrics.cashRunwayDays >= 15 ? "text-red-600" :
                 "text-red-700"
@@ -1248,8 +1248,8 @@ export default function Analytics() {
               </p>
               <div className="mt-3 pt-3 border-t border-muted space-y-1">
                 <p className="text-xs font-medium text-muted-foreground">Thresholds:</p>
-                <p className="text-xs text-green-600 dark:text-green-400">✓ Healthy: 90+ days</p>
-                <p className="text-xs text-amber-600 dark:text-amber-400">⚠ Monitor: 30-90 days</p>
+                <p className="text-xs text-green-600 dark:text-green-400">✓ Healthy: 45+ days</p>
+                <p className="text-xs text-amber-600 dark:text-amber-400">⚠ Monitor: 30-45 days</p>
                 <p className="text-xs text-red-600 dark:text-red-400">⚠ Warning: &lt;30 days</p>
                 <p className="text-xs text-red-700 dark:text-red-500 font-semibold">🚨 Critical: ≤14 days</p>
               </div>
