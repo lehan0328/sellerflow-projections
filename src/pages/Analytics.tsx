@@ -302,8 +302,15 @@ export default function Analytics() {
     const totalForecastedExpenses = purchaseOrdersAndExpensesMonth + recurringExpensesThisMonth;
     
     // Calculate average daily net outflow for cash runway
+    // Use only expenses (not purchase orders) + recurring expenses
+    const expensesOnlyMonth = dbTransactions.filter(tx => {
+      const txDate = new Date(tx.transactionDate);
+      return tx.type === 'expense' && txDate >= startOfMonth && txDate <= endOfMonth;
+    }).reduce((sum, tx) => sum + tx.amount, 0);
+    
+    const totalExpensesForRunway = expensesOnlyMonth + recurringExpensesThisMonth;
     const daysElapsed = Math.max(1, Math.ceil((now.getTime() - startOfMonth.getTime()) / (1000 * 60 * 60 * 24)));
-    const averageDailyNetOutflow = totalOutflow / daysElapsed;
+    const averageDailyNetOutflow = totalExpensesForRunway / daysElapsed;
     const cashRunwayDays = averageDailyNetOutflow > 0 ? Math.floor(currentBalance / averageDailyNetOutflow) : 999;
     
     return {
