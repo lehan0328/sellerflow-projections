@@ -1360,24 +1360,7 @@ export default function Analytics() {
           <div className="grid gap-4 md:grid-cols-2" data-pdf-section="income-expense-breakdown">
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between gap-4 flex-wrap">
-                  <CardTitle>Income Breakdown by Source</CardTitle>
-                  <div className="flex gap-2 items-center">
-                    <Select value={incomeDateRange} onValueChange={setIncomeDateRange}>
-                      <SelectTrigger className="w-40">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="z-[100] bg-background border border-border shadow-lg">
-                        <SelectItem value="this-month">This Month</SelectItem>
-                        <SelectItem value="last-month">Last Month</SelectItem>
-                        <SelectItem value="last-2-months">Last 2 Months</SelectItem>
-                        <SelectItem value="last-3-months">Last 3 Months</SelectItem>
-                        <SelectItem value="last-6-months">Last 6 Months</SelectItem>
-                        <SelectItem value="ytd">Year to Date</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
+                <CardTitle>Income Breakdown by Source</CardTitle>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
@@ -1419,22 +1402,7 @@ export default function Analytics() {
 
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between gap-4 flex-wrap">
-                  <CardTitle>Expense Breakdown by Category</CardTitle>
-                  <Select value={vendorDateRange} onValueChange={setVendorDateRange}>
-                    <SelectTrigger className="w-40">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="z-[100] bg-background border border-border shadow-lg">
-                      <SelectItem value="this-month">This Month</SelectItem>
-                      <SelectItem value="last-month">Last Month</SelectItem>
-                      <SelectItem value="last-2-months">Last 2 Months</SelectItem>
-                      <SelectItem value="last-3-months">Last 3 Months</SelectItem>
-                      <SelectItem value="last-6-months">Last 6 Months</SelectItem>
-                      <SelectItem value="ytd">Year to Date</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                <CardTitle>Expense Breakdown by Category</CardTitle>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
