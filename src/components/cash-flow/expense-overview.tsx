@@ -73,6 +73,11 @@ export const ExpenseOverview = ({ expenses, onEditExpense, onDeleteExpense, onCr
     today.setHours(0, 0, 0, 0);
     
     let filtered = expenses.filter(expense => {
+      // Exclude overdue paid transactions
+      const expenseDate = new Date(expense.paymentDate);
+      expenseDate.setHours(0, 0, 0, 0);
+      if (expenseDate < today && expense.status === 'paid') return false;
+
       // Search filter
       const matchesSearch = expense.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
         expense.amount.toString().includes(searchTerm) ||
