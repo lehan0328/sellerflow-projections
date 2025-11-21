@@ -16,7 +16,7 @@ import { TrendingUp, TrendingDown, DollarSign, CreditCard as CreditCardIcon, Cal
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { useNavigate } from "react-router-dom";
-import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area, AreaChart } from "recharts";
+import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area, AreaChart, LabelList } from "recharts";
 import { useMemo, useState, useEffect } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -1716,6 +1716,12 @@ export default function Analytics() {
                     }}
                   />
                   <Bar dataKey="net" fill="#8b5cf6">
+                    <LabelList 
+                      dataKey="net" 
+                      position="top" 
+                      formatter={(value: number) => formatCurrency(value)}
+                      style={{ fontSize: '12px', fontWeight: 'bold', fill: 'hsl(var(--foreground))' }}
+                    />
                     {cashFlowData.map((entry, index) => (
                       <Cell 
                         key={`cell-${index}`} 
