@@ -300,6 +300,12 @@ export default function Analytics() {
       return sum + e.amount * occurrences.length;
     }, 0);
     const totalForecastedExpenses = purchaseOrdersAndExpensesMonth + recurringExpensesThisMonth;
+    
+    // Calculate average daily net outflow for cash runway
+    const daysElapsed = Math.max(1, Math.ceil((now.getTime() - startOfMonth.getTime()) / (1000 * 60 * 60 * 24)));
+    const averageDailyNetOutflow = totalOutflow / daysElapsed;
+    const cashRunwayDays = averageDailyNetOutflow > 0 ? Math.floor(currentBalance / averageDailyNetOutflow) : 999;
+    
     return {
       totalInflow,
       totalOutflow,
@@ -314,7 +320,9 @@ export default function Analytics() {
       totalExpenses,
       netCashFlow,
       totalForecastedIncome,
-      totalForecastedExpenses
+      totalForecastedExpenses,
+      averageDailyNetOutflow,
+      cashRunwayDays
     };
   }, [bankTransactions, dbTransactions, incomeItems, vendors, creditCards, amazonPayouts, accounts, amazonRevenue, recurringExpenses]);
 
@@ -1068,16 +1076,33 @@ export default function Analytics() {
             </CardContent>
           </Card>
 
-          <Card className="border-green-200 dark:border-green-900/30">
+          <Card className={cn(
+            "border-2",
+            metrics.cashRunwayDays >= 60 ? "border-green-500 bg-green-50 dark:bg-green-950/20" :
+            metrics.cashRunwayDays >= 30 ? "border-amber-500 bg-amber-50 dark:bg-amber-950/20" :
+            "border-red-500 bg-red-50 dark:bg-red-950/20"
+          )}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Projected Inflow</CardTitle>
-              <TrendingUp className="h-5 w-5 text-green-600" />
+              <CardTitle className="text-sm font-medium">Cash Runway (days)</CardTitle>
+              <CalendarIcon className={cn(
+                "h-5 w-5",
+                metrics.cashRunwayDays >= 60 ? "text-green-600" :
+                metrics.cashRunwayDays >= 30 ? "text-amber-600" :
+                "text-red-600"
+              )} />
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-green-600">
-                {formatCurrency(metrics.totalForecastedIncome)}
+              <div className={cn(
+                "text-3xl font-bold",
+                metrics.cashRunwayDays >= 60 ? "text-green-600" :
+                metrics.cashRunwayDays >= 30 ? "text-amber-600" :
+                "text-red-600"
+              )}>
+                {metrics.cashRunwayDays === 999 ? "∞" : metrics.cashRunwayDays}
               </div>
-              <p className="text-xs text-muted-foreground mt-1">Expected this month</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {formatCurrency(metrics.currentBalance)} ÷ {formatCurrency(metrics.averageDailyNetOutflow)}/day
+              </p>
             </CardContent>
           </Card>
 
