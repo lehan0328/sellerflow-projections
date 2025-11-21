@@ -1059,6 +1059,12 @@ export default function Analytics() {
                 })()}
               </p>
               <p className="text-xs text-muted-foreground mt-1">This month's projection</p>
+              <div className="mt-3 pt-3 border-t border-muted space-y-1">
+                <p className="text-xs font-medium text-muted-foreground">Thresholds:</p>
+                <p className="text-xs text-green-600 dark:text-green-400">✓ Healthy: 1.2 to 2.0</p>
+                <p className="text-xs text-amber-600 dark:text-amber-400">⚠ Monitor: 1.0 to 1.2</p>
+                <p className="text-xs text-red-600 dark:text-red-400">⚠ Warning: &lt;1.0</p>
+              </div>
             </CardContent>
           </Card>
 
