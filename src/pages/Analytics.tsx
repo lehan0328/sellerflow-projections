@@ -989,6 +989,106 @@ export default function Analytics() {
 
       {/* Grouped Metrics Section for PDF - Income, Account Health, Payment Status */}
       <div data-pdf-section="grouped-metrics" className="space-y-4">
+        {/* Key Performance Indicators */}
+        <div className="grid gap-4 md:grid-cols-3">
+          <Card className={cn(
+            "border-2",
+            (() => {
+              const ratio = metrics.totalForecastedExpenses > 0 
+                ? metrics.totalForecastedIncome / metrics.totalForecastedExpenses 
+                : metrics.totalForecastedIncome > 0 ? 999 : 0;
+              
+              if (ratio >= 1.2 && ratio <= 2.0) return "border-green-500 bg-green-50 dark:bg-green-950/20";
+              if (ratio >= 1.0 && ratio < 1.2) return "border-amber-500 bg-amber-50 dark:bg-amber-950/20";
+              return "border-red-500 bg-red-50 dark:bg-red-950/20";
+            })()
+          )}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Inflow/Outflow Ratio</CardTitle>
+              <Target className={cn(
+                "h-5 w-5",
+                (() => {
+                  const ratio = metrics.totalForecastedExpenses > 0 
+                    ? metrics.totalForecastedIncome / metrics.totalForecastedExpenses 
+                    : metrics.totalForecastedIncome > 0 ? 999 : 0;
+                  
+                  if (ratio >= 1.2 && ratio <= 2.0) return "text-green-600";
+                  if (ratio >= 1.0 && ratio < 1.2) return "text-amber-600";
+                  return "text-red-600";
+                })()
+              )} />
+            </CardHeader>
+            <CardContent>
+              <div className={cn(
+                "text-3xl font-bold",
+                (() => {
+                  const ratio = metrics.totalForecastedExpenses > 0 
+                    ? metrics.totalForecastedIncome / metrics.totalForecastedExpenses 
+                    : metrics.totalForecastedIncome > 0 ? 999 : 0;
+                  
+                  if (ratio >= 1.2 && ratio <= 2.0) return "text-green-600";
+                  if (ratio >= 1.0 && ratio < 1.2) return "text-amber-600";
+                  return "text-red-600";
+                })()
+              )}>
+                {metrics.totalForecastedExpenses > 0 
+                  ? (metrics.totalForecastedIncome / metrics.totalForecastedExpenses).toFixed(2)
+                  : metrics.totalForecastedIncome > 0 ? "∞" : "0.00"
+                }
+              </div>
+              <p className={cn(
+                "text-xs font-medium mt-1",
+                (() => {
+                  const ratio = metrics.totalForecastedExpenses > 0 
+                    ? metrics.totalForecastedIncome / metrics.totalForecastedExpenses 
+                    : metrics.totalForecastedIncome > 0 ? 999 : 0;
+                  
+                  if (ratio >= 1.2 && ratio <= 2.0) return "text-green-700 dark:text-green-400";
+                  if (ratio >= 1.0 && ratio < 1.2) return "text-amber-700 dark:text-amber-400";
+                  return "text-red-700 dark:text-red-400";
+                })()
+              )}>
+                {(() => {
+                  const ratio = metrics.totalForecastedExpenses > 0 
+                    ? metrics.totalForecastedIncome / metrics.totalForecastedExpenses 
+                    : metrics.totalForecastedIncome > 0 ? 999 : 0;
+                  
+                  if (ratio >= 1.2 && ratio <= 2.0) return "✓ Healthy";
+                  if (ratio >= 1.0 && ratio < 1.2) return "⚠ Monitor";
+                  return "⚠ Warning";
+                })()}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">This month's projection</p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-green-200 dark:border-green-900/30">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Projected Inflow</CardTitle>
+              <TrendingUp className="h-5 w-5 text-green-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-green-600">
+                {formatCurrency(metrics.totalForecastedIncome)}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">Expected this month</p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-red-200 dark:border-red-900/30">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Projected Outflow</CardTitle>
+              <TrendingDown className="h-5 w-5 text-red-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-red-600">
+                {formatCurrency(metrics.totalForecastedExpenses)}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">Expected this month</p>
+            </CardContent>
+          </Card>
+        </div>
+
         {/* Income Metrics Section */}
         <Card>
         <CardHeader>
