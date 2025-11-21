@@ -74,6 +74,7 @@ export const VendorsOverview = ({
   const [paymentMethodFilter, setPaymentMethodFilter] = useState<'all' | 'cash' | 'credit'>('all');
   const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
   const [lineItemsByTransaction, setLineItemsByTransaction] = useState<Record<string, any[]>>({});
+  const [lineItemCounts, setLineItemCounts] = useState<Record<string, number>>({});
   const [matchingPOsByTransaction, setMatchingPOsByTransaction] = useState<Record<string, any[]>>({});
   const [deleteDialogTx, setDeleteDialogTx] = useState<VendorTransaction | null>(null);
   const [deleteDialogAmounts, setDeleteDialogAmounts] = useState<{ paidAmount: number; totalAmount: number }>({ paidAmount: 0, totalAmount: 0 });
@@ -97,6 +98,38 @@ export const VendorsOverview = ({
       });
     }
   }, [lineItemSearch, transactions]);
+
+  // Pre-fetch line item counts for all transactions
+  useEffect(() => {
+    const fetchLineItemCounts = async () => {
+      if (transactions.length === 0) return;
+      
+      const transactionIds = transactions.map(tx => tx.id);
+      
+      try {
+        // @ts-ignore - Suppress excessive type depth error from Supabase generated types
+        const { data, error } = await supabase
+          .from('purchase_order_line_items')
+          .select('transaction_id')
+          .in('transaction_id', transactionIds);
+        
+        if (error) throw error;
+        
+        // Count line items per transaction
+        const counts: Record<string, number> = {};
+        data?.forEach((item: any) => {
+          counts[item.transaction_id] = (counts[item.transaction_id] || 0) + 1;
+        });
+        
+        setLineItemCounts(counts);
+      } catch (error) {
+        console.error('Error fetching line item counts:', error);
+      }
+    };
+    
+    fetchLineItemCounts();
+  }, [transactions]);
+
 
   const fetchLineItems = async (transactionId: string) => {
     try {
@@ -847,26 +880,28 @@ export const VendorsOverview = ({
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end space-x-2">
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                onClick={() => toggleRow(tx.id)}
-                              >
-                                {expandedRows[tx.id] ? (
-                                  <ChevronDown className="h-3 w-3" />
-                                ) : (
-                                  <ChevronRight className="h-3 w-3" />
-                                )}
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>{expandedRows[tx.id] ? 'Hide' : 'View'} line items</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
+                        {(lineItemCounts[tx.id] > 0) && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  onClick={() => toggleRow(tx.id)}
+                                >
+                                  {expandedRows[tx.id] ? (
+                                    <ChevronDown className="h-3 w-3" />
+                                  ) : (
+                                    <ChevronRight className="h-3 w-3" />
+                                  )}
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>{expandedRows[tx.id] ? 'Hide' : 'View'} line items</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
