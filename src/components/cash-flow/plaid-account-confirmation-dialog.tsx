@@ -207,11 +207,11 @@ export function PlaidAccountConfirmationDialog({
                 <p className="text-muted-foreground">
                   {remainingConnections > 0 ? (
                     <>
-                      You have <strong className="text-foreground">{remainingConnections}</strong> of <strong className="text-foreground">{planLimits.bankConnections}</strong> connections remaining on your <strong className="text-foreground">{planLimits.name}</strong> plan.
+                      You have <strong className="text-foreground">{remainingConnections}</strong> of <strong className="text-foreground">{planLimits.bankConnections}</strong> connections remaining on your <strong className="text-foreground">{isInTrial ? 'Professional' : planLimits.name}</strong> plan.
                     </>
                   ) : (
                     <>
-                      You've used all <strong className="text-foreground">{planLimits.bankConnections}</strong> connections on your <strong className="text-foreground">{planLimits.name}</strong> plan. Upgrade to add more.
+                      You've used all <strong className="text-foreground">{planLimits.bankConnections}</strong> connections on your <strong className="text-foreground">{isInTrial ? 'Professional' : planLimits.name}</strong> plan. Upgrade to add more.
                     </>
                   )}
                 </p>
