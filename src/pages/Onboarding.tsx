@@ -666,11 +666,7 @@ export default function Onboarding() {
               <CardDescription>
                 Securely connect your bank account via Plaid
                 <span className="block mt-2 text-primary font-medium">
-                  {isInTrial ? (
-                    <>Your trial includes unlimited bank accounts</>
-                  ) : (
-                    <>Your {planLimits.name} plan includes {planLimits.bankConnections} bank account{planLimits.bankConnections !== 1 ? 's' : ''}</>
-                  )}
+                  Your professional trial account includes 4 bank accounts
                 </span>
               </CardDescription>
             </CardHeader>
