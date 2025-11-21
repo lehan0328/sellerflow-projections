@@ -1505,14 +1505,15 @@ export default function Analytics() {
                     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
                     const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
                     
-                    const allExpenses = dbTransactions.filter(tx => {
+                    const pendingExpenses = dbTransactions.filter(tx => {
                       const txDate = new Date(tx.transactionDate);
                       return tx.type === 'expense' && 
+                             tx.status === 'pending' &&
                              txDate >= startOfMonth && 
                              txDate <= endOfMonth;
                     });
                     
-                    return `${allExpenses.length} expense${allExpenses.length !== 1 ? 's' : ''} this month`;
+                    return `${pendingExpenses.length} pending this month`;
                   })()}
                 </p>
               </CardContent>
