@@ -47,30 +47,58 @@ const AuthComponent = () => {
     lastName: '',
   });
   const [invitedEmail, setInvitedEmail] = useState('');
+  const [inviteValidationError, setInviteValidationError] = useState<string | null>(null);
+  const [validatingInvite, setValidatingInvite] = useState(false);
 
   useEffect(() => {
     // Check for invite token
     const inviteToken = searchParams.get('invite');
     if (inviteToken) {
-      // Store invite token for after authentication
-      sessionStorage.setItem('pendingInvite', inviteToken);
-      setShowInviteSignup(true);
-      
-      // Fetch invitation details to get the invited email
-      const fetchInvitation = async () => {
-        const { data, error } = await supabase
-          .from('team_invitations')
-          .select('email')
-          .eq('token', inviteToken)
-          .single();
-        
-        if (data && !error) {
+      // Validate invitation before showing signup form
+      const validateInvitation = async () => {
+        setValidatingInvite(true);
+        try {
+          const { data, error } = await supabase
+            .from('team_invitations')
+            .select('email, expires_at, accepted_at')
+            .eq('token', inviteToken)
+            .single();
+          
+          if (error || !data) {
+            setInviteValidationError('This invitation is no longer valid. It may have been cancelled by the administrator.');
+            sessionStorage.removeItem('pendingInvite');
+            return;
+          }
+
+          // Check if already accepted
+          if (data.accepted_at) {
+            setInviteValidationError('This invitation has already been used.');
+            sessionStorage.removeItem('pendingInvite');
+            return;
+          }
+
+          // Check if expired
+          if (new Date(data.expires_at) < new Date()) {
+            setInviteValidationError('This invitation has expired. Please ask your administrator to send a new invitation.');
+            sessionStorage.removeItem('pendingInvite');
+            return;
+          }
+
+          // Invitation is valid - proceed with signup
+          sessionStorage.setItem('pendingInvite', inviteToken);
           setInvitedEmail(data.email);
           setInviteSignupData(prev => ({ ...prev, email: data.email }));
+          setShowInviteSignup(true);
+        } catch (error) {
+          console.error('Invitation validation error:', error);
+          setInviteValidationError('Failed to validate invitation. Please try again or contact support.');
+          sessionStorage.removeItem('pendingInvite');
+        } finally {
+          setValidatingInvite(false);
         }
       };
       
-      fetchInvitation();
+      validateInvitation();
     }
 
     // Check for password reset token
@@ -408,7 +436,39 @@ const AuthComponent = () => {
           <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-accent/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
           
           <CardContent className="p-10 relative z-10">
-            {showInviteSignup ? (
+            {inviteValidationError ? (
+              <div className="space-y-6">
+                <div className="rounded-lg bg-destructive/10 border border-destructive/20 p-6 space-y-4">
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 w-10 h-10 rounded-full bg-destructive/20 flex items-center justify-center">
+                      <svg className="w-5 h-5 text-destructive" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-destructive mb-2">Invitation Invalid</h3>
+                      <p className="text-sm text-muted-foreground">{inviteValidationError}</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="text-center space-y-3">
+                  <p className="text-sm text-muted-foreground">
+                    Please contact your administrator for a new invitation.
+                  </p>
+                  <Button
+                    onClick={() => navigate('/')}
+                    className="w-full h-12"
+                  >
+                    Return to Home
+                  </Button>
+                </div>
+              </div>
+            ) : validatingInvite ? (
+              <div className="flex flex-col items-center justify-center py-12 space-y-4">
+                <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+                <p className="text-muted-foreground">Validating invitation...</p>
+              </div>
+            ) : showInviteSignup ? (
               <div className="space-y-4">
                 <form onSubmit={handleInviteSignup} className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
