@@ -3,6 +3,7 @@ import { Helmet } from "react-helmet";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { PublicHeader } from "@/components/PublicHeader";
 import { CheckCircle, Star, TrendingUp, Shield, Zap, Users, ArrowRight, ShoppingCart, CreditCard, Calendar, Sparkles, Check, X, Plus, Minus, Moon, Sun, ExternalLink, Lock, AlertCircle, BookOpen, Calculator, BadgeCheck, Lightbulb, Wallet, ChevronDown } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import aurenIcon from "@/assets/auren-icon-blue.png";
@@ -513,98 +514,7 @@ const Landing = () => {
         </div>}
 
       {/* Navigation */}
-      <nav className="border-b bg-background/60 backdrop-blur-xl sticky top-0 z-50 animate-fade-in">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3 animate-scale-in">
-              <div className="relative">
-                <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full animate-glow-pulse" />
-                <img src={aurenIcon} alt="Auren - Amazon Cash Flow Forecasting Software" className="relative h-12 w-12 hover-scale transition-all duration-300" />
-              </div>
-              <span className="text-2xl font-display font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
-                Auren
-              </span>
-            </div>
-            <div className="hidden md:flex items-center space-x-6">
-              <Link to="/features" className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link font-medium">
-                Features
-              </Link>
-              <Link to="/pricing" className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link font-medium">
-                Pricing
-              </Link>
-              <a href="#testimonials" onClick={e => {
-              e.preventDefault();
-              document.getElementById('testimonials')?.scrollIntoView({
-                behavior: 'smooth',
-                block: 'start'
-              });
-            }} className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link font-medium">
-                Reviews
-              </a>
-              <a href="/blog" className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link font-medium">
-                Blog
-              </a>
-              <Link to="/partners" className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link font-medium">
-                Partners
-              </Link>
-              <Link to="/contact" className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link font-medium">
-                Contact
-              </Link>
-              <a href="/docs" className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link font-medium">
-                Docs
-              </a>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="text-muted-foreground hover:text-foreground transition-all duration-300 font-medium gap-1">
-                    Coming Soon
-                    <ChevronDown className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuItem asChild>
-                    <Link to="/inventory" className="cursor-pointer">
-                      Inventory
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/reimbursements" className="cursor-pointer">
-                      Reimbursements
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/advanced-analytics" className="cursor-pointer">
-                      Analytics
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/accounting" className="cursor-pointer">
-                      Accounting
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/platforms" className="cursor-pointer">
-                      Walmart, Shopify & More
-                    </Link>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-              <Button variant="ghost" size="icon" onClick={() => setTheme(theme === "dark" ? "light" : "dark")} className="hover-scale transition-all duration-200">
-                <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-                <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-                <span className="sr-only">Toggle theme</span>
-              </Button>
-              <Button variant="outline" size="sm" className="hover-scale transition-all duration-200 border-primary/20 hover:border-primary/40" onClick={() => navigate('/auth')}>
-                Sign In
-              </Button>
-              <Button size="sm" className="bg-gradient-primary hover-scale transition-all duration-200 hover:shadow-lg hover:shadow-primary/50" onClick={() => document.getElementById('pricing')?.scrollIntoView({
-              behavior: 'smooth'
-            })}>
-                Start Free Trial
-              </Button>
-            </div>
-          </div>
-        </div>
-      </nav>
+      <PublicHeader activePage="landing" />
 
       {/* Hero Section */}
       <section className="relative overflow-hidden pt-4 pb-12 lg:pt-6 lg:pb-16">
@@ -627,25 +537,25 @@ const Landing = () => {
         <div className="container relative mx-auto px-4">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             {/* Left Content */}
-            <div className="space-y-8 z-10">
+            <div className="space-y-8 z-10 max-w-full overflow-x-hidden px-4 sm:px-0">
               <div className="animate-fade-in space-y-6" style={{
               animationDelay: '200ms'
             }}>
                 <div className="space-y-4">
-                  <h1 className="text-4xl lg:text-5xl xl:text-6xl font-display font-bold leading-tight tracking-tight">
-                    <span className="text-foreground block mb-2">Smarter</span>
+                  <h1 className="text-4xl lg:text-5xl xl:text-6xl font-display font-bold leading-tight tracking-tight break-words">
+                    <span className="text-foreground block mb-2 w-full">Smarter</span>
                     
-                    <Badge className="inline-flex items-center gap-2 bg-primary/10 text-primary border border-primary/20 px-3 py-1.5 text-xs sm:text-sm font-semibold backdrop-blur-sm mb-3 flex-wrap">
-                      <Sparkles className="h-4 w-4 animate-pulse flex-shrink-0" />
+                    <Badge className="inline-flex items-center gap-2 bg-primary/10 text-primary border border-primary/20 px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm font-semibold backdrop-blur-sm mb-3 flex-wrap max-w-full">
+                      <Sparkles className="h-3 w-3 sm:h-4 sm:w-4 animate-pulse flex-shrink-0" />
                       <span className="font-badge">Mathematical Rule-Based</span>
-                      <span className="px-2 py-0.5 bg-primary/20 rounded-full text-xs">Accurate</span>
+                      <span className="px-1.5 sm:px-2 py-0.5 bg-primary/20 rounded-full text-xs">Accurate</span>
                     </Badge>
                     
-                    <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent animate-shimmer bg-[length:200%_100%] leading-tight tracking-tight block mb-2">
+                    <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent animate-shimmer bg-[length:200%_100%] leading-tight tracking-tight block mb-2 break-words text-3xl sm:text-4xl lg:text-5xl xl:text-6xl">
                       Cash Flow Forecasting
                     </span>
                     
-                    <Badge variant="secondary" className="text-sm sm:text-base px-3 sm:px-4 py-1.5 sm:py-2 font-semibold tracking-wide inline-block mb-2">
+                    <Badge variant="secondary" className="text-xs sm:text-sm md:text-base px-2 sm:px-3 md:px-4 py-1 sm:py-1.5 md:py-2 font-semibold tracking-wide inline-block mb-2 max-w-full break-words">
                       Starting at only $29/mo
                     </Badge>
                     
@@ -662,11 +572,11 @@ const Landing = () => {
                 </p>
               </blockquote>
               
-              <p className="text-base sm:text-lg lg:text-xl text-muted-foreground max-w-full animate-fade-in leading-relaxed px-2 sm:px-0" style={{
+              <p className="text-base sm:text-lg lg:text-xl text-muted-foreground max-w-full md:max-w-2xl animate-fade-in leading-relaxed break-words" style={{
               animationDelay: '400ms'
             }}>Auren forecasts 90-day precise Amazon payout forecast based on your amazon data, tracks every purchase order, recurring expense, credit card payment, and additional income to provide you your cashflow for the next 3 months.</p>
               
-              <p className="text-sm sm:text-base text-muted-foreground/90 max-w-full animate-fade-in leading-relaxed px-2 sm:px-0" style={{
+              <p className="text-sm sm:text-base text-muted-foreground/90 max-w-full md:max-w-2xl animate-fade-in leading-relaxed break-words" style={{
               animationDelay: '500ms'
             }}>How it works - Search by budget ("I want to spend $X") and Auren tells you the exact date you can spend it, or search by date ("I need to buy inventory on this day") and Auren shows how much you can safely spend aligned with all of your expenses and additional income sources.</p>
               
