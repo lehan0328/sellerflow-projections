@@ -131,37 +131,51 @@ export function TeamManagement() {
     queryKey: ['team-members', profile?.account_id],
     staleTime: 5 * 60 * 1000, // 5 minutes - team changes moderately
     queryFn: async () => {
-      // First get all user_roles
+      // First get all profiles with this account_id (includes the account owner)
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('user_id, first_name, last_name, is_account_owner')
+        .eq('account_id', profile!.account_id);
+      
+      if (profilesError) throw profilesError;
+      if (!profiles || profiles.length === 0) return [];
+
+      const userIds = profiles.map(p => p.user_id);
+
+      // Get user_roles for these users
       const { data: roles, error: rolesError } = await supabase
         .from('user_roles')
         .select('*')
-        .eq('account_id', profile!.account_id);
-      
-      if (rolesError) throw rolesError;
-
-      // Then get profiles for each user
-      const userIds = roles.map(r => r.user_id);
-      const { data: profiles, error: profilesError} = await supabase
-        .from('profiles')
-        .select('user_id, first_name, last_name')
+        .eq('account_id', profile!.account_id)
         .in('user_id', userIds);
       
-      if (profilesError) throw profilesError;
+      if (rolesError) throw rolesError;
 
       // Get emails from auth.users via edge function
       const { data: emailData } = await supabase.functions.invoke('get-user-emails', {
         body: { userIds }
       });
 
-      // Combine the data
-      return roles.map(role => ({
-        ...role,
-        profiles: profiles?.find(p => p.user_id === role.user_id) || {
-          first_name: '',
-          last_name: ''
-        },
-        email: emailData?.emails?.[role.user_id] || 'Unknown'
-      })) as TeamMember[];
+      // Combine the data - include all profiles, with roles when available
+      return profiles.map(profileData => {
+        const userRole = roles?.find(r => r.user_id === profileData.user_id);
+        
+        // If user has account_id but no role, they're the owner
+        const role = userRole?.role || (profileData.is_account_owner ? 'owner' : 'staff');
+        
+        return {
+          id: userRole?.id || profileData.user_id, // Use role id if exists, otherwise user_id
+          user_id: profileData.user_id,
+          role: role as 'owner' | 'admin' | 'staff',
+          account_id: profile!.account_id,
+          created_at: userRole?.created_at || new Date().toISOString(),
+          profiles: {
+            first_name: profileData.first_name || '',
+            last_name: profileData.last_name || ''
+          },
+          email: emailData?.emails?.[profileData.user_id] || 'Unknown'
+        };
+      }) as TeamMember[];
     },
     enabled: !!profile?.account_id,
   });
