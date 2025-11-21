@@ -15,7 +15,8 @@ import {
   Megaphone,
   LayoutDashboard,
   Tag,
-  Shield
+  Shield,
+  Wrench
 } from "lucide-react";
 import { AdminCustomers } from "@/components/admin/AdminCustomers";
 import { AdminSupportTickets } from "@/components/admin/AdminSupportTickets";
@@ -32,6 +33,7 @@ import { AdminDashboardOverview } from "@/components/admin/AdminDashboardOvervie
 import { AdminStaffDirectory } from "@/components/admin/AdminStaffDirectory";
 import { AdminCodeTracking } from "@/components/admin/AdminCodeTracking";
 import { AdminStripeAudit } from "@/components/admin/AdminStripeAudit";
+import { AdminAmazonSyncFix } from "@/components/admin/AdminAmazonSyncFix";
 
 const Admin = () => {
   const { isAdmin, userRole } = useAdmin();
@@ -59,6 +61,7 @@ const Admin = () => {
           { value: "send-update", label: "Send Update", icon: Megaphone, rolesAllowed: ['admin'] },
           { value: "support-dashboard", label: "Support Dashboard", icon: MessageSquare, rolesAllowed: ['admin'] },
           { value: "forecast-accuracy", label: "Forecast Accuracy", icon: Target, rolesAllowed: ['admin'] },
+          { value: "amazon-sync-fix", label: "Amazon Sync Fix", icon: Wrench, rolesAllowed: ['admin'] },
         ],
         rolesAllowed: ['admin'] // Only admin can access
       },
@@ -235,6 +238,10 @@ const Admin = () => {
 
             <TabsContent value="plan-override" className="m-0">
               <SetPlanOverride />
+            </TabsContent>
+
+            <TabsContent value="amazon-sync-fix" className="m-0">
+              <AdminAmazonSyncFix />
             </TabsContent>
           </div>
         </Tabs>
