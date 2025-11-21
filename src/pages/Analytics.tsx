@@ -1096,8 +1096,13 @@ export default function Analytics() {
 
       {/* Grouped Metrics Section for PDF - Income, Account Health, Payment Status */}
       <div data-pdf-section="grouped-metrics" className="space-y-4">
-        {/* Key Performance Indicators */}
-        <div className="grid gap-4 md:grid-cols-4">
+        {/* KPI Overview Section */}
+        <div className="mb-4">
+          <h2 className="text-2xl font-bold">KPI Overview</h2>
+          <p className="text-sm text-muted-foreground">Key performance indicators for your business health</p>
+        </div>
+        
+        <div className="grid gap-4 md:grid-cols-3">
           <Card className={cn(
             "border-2",
             (() => {
@@ -1248,19 +1253,6 @@ export default function Analytics() {
                 <p className="text-xs text-red-600 dark:text-red-400">⚠ Warning: &lt;30 days</p>
                 <p className="text-xs text-red-700 dark:text-red-500 font-semibold">🚨 Critical: ≤14 days</p>
               </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-red-200 dark:border-red-900/30">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Projected Outflow</CardTitle>
-              <TrendingDown className="h-5 w-5 text-red-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-red-600">
-                {formatCurrency(metrics.totalForecastedExpenses)}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">Expected this month</p>
             </CardContent>
           </Card>
         </div>
