@@ -551,13 +551,13 @@ const Landing = () => {
                       <span className="px-1.5 sm:px-2 py-0.5 bg-primary/20 rounded-full text-xs">Accurate</span>
                     </Badge>
                     
-                    <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent animate-shimmer bg-[length:200%_100%] leading-tight tracking-tight block mb-2 break-words text-3xl sm:text-4xl lg:text-5xl xl:text-6xl">
-                      Cash Flow Forecasting
-                    </span>
-                    
                     <Badge variant="secondary" className="text-xs sm:text-sm md:text-base px-2 sm:px-3 md:px-4 py-1 sm:py-1.5 md:py-2 font-semibold tracking-wide inline-block mb-2 max-w-full break-words">
                       Starting at only $29/mo
                     </Badge>
+                    
+                    <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent animate-shimmer bg-[length:200%_100%] leading-tight tracking-tight block mb-2 break-words text-3xl sm:text-4xl lg:text-5xl xl:text-6xl">
+                      Cash Flow Forecasting
+                    </span>
                     
                     <span className="block text-foreground">for Amazon Sellers</span>
                   </h1>
