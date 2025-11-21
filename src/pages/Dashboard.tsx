@@ -2027,7 +2027,8 @@ const Dashboard = () => {
       const { data: payments } = await supabase
         .from('credit_card_payments')
         .select('*')
-        .eq('account_id', profile.account_id);
+        .eq('account_id', profile.account_id)
+        .eq('status', 'scheduled');
 
       if (!payments) return [];
 
