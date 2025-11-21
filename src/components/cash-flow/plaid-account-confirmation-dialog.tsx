@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -74,14 +74,24 @@ export function PlaidAccountConfirmationDialog({
   const [isAdding, setIsAdding] = useState(false);
   const [openPriorityPopover, setOpenPriorityPopover] = useState<string | null>(null);
   const [openDatePopover, setOpenDatePopover] = useState<string | null>(null);
+  
+  // Track if user has manually interacted with checkboxes
+  const hasUserInteracted = useRef(false);
 
-  // Auto-select all accounts when dialog opens
+  // Auto-select all accounts when dialog opens (only if user hasn't interacted)
   useEffect(() => {
-    if (open && accountsWithIds.length > 0) {
+    if (open && accountsWithIds.length > 0 && !hasUserInteracted.current) {
       const allAccountIds = new Set(accountsWithIds.map(acc => acc.uniqueId));
       setSelectedAccountIds(allAccountIds);
     }
   }, [open, accounts]);
+  
+  // Reset interaction flag when dialog closes
+  useEffect(() => {
+    if (!open) {
+      hasUserInteracted.current = false;
+    }
+  }, [open]);
   
   // Calculate remaining connections
   const remainingConnections = planLimits.bankConnections - currentUsage.bankConnections;
@@ -91,6 +101,7 @@ export function PlaidAccountConfirmationDialog({
     account.type === 'credit' || account.subtype === 'credit card' || account.subtype === 'credit';
 
   const toggleAccount = (uniqueId: string) => {
+    hasUserInteracted.current = true; // Mark as user interaction
     const newSelected = new Set(selectedAccountIds);
     if (newSelected.has(uniqueId)) {
       newSelected.delete(uniqueId);
