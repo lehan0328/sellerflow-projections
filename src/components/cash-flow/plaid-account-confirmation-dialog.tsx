@@ -403,7 +403,7 @@ export function PlaidAccountConfirmationDialog({
                       {isSelected && (
                         <Collapsible className="w-full px-3">
                           <CollapsibleTrigger className="w-full mt-2 px-3 py-2 text-sm bg-primary/5 hover:bg-primary/10 border border-primary/20 rounded-md flex items-center justify-between transition-colors">
-                            <span className="font-medium text-foreground">Add statement details (optional)</span>
+                            <span className="font-medium text-foreground">Add statement details (recommended)</span>
                             <span className="text-sm">▼</span>
                           </CollapsibleTrigger>
                           <CollapsibleContent className="mt-3 space-y-3">
