@@ -1160,8 +1160,15 @@ export default function Analytics() {
               <CardContent>
                 <div className="text-2xl font-bold text-orange-600">{metrics.creditUtilization.toFixed(1)}%</div>
                 <p className="text-xs text-muted-foreground">
-                  {formatCurrency(creditCards.reduce((sum, cc) => sum + (cc.balance || 0), 0))} of{' '}
+                  {formatCurrency(creditCards.reduce((sum, cc) => {
+                    const balance = cc.balance || 0;
+                    const pending = creditCardPendingAmounts.get(cc.id) || 0;
+                    return sum + balance + pending;
+                  }, 0))} of{' '}
                   {formatCurrency(creditCards.reduce((sum, cc) => sum + (cc.credit_limit || 0), 0))}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Pending: {formatCurrency(creditCards.reduce((sum, cc) => sum + (creditCardPendingAmounts.get(cc.id) || 0), 0))}
                 </p>
               </CardContent>
             </Card>
