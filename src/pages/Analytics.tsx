@@ -612,7 +612,7 @@ export default function Analytics() {
     return Object.entries(vendorTotals).map(([name, amount]) => ({
       name,
       amount
-    })).sort((a, b) => b.amount - a.amount).slice(0, 10);
+    })).filter(vendor => vendor.amount > 0).sort((a, b) => b.amount - a.amount).slice(0, 10);
   }, [vendors, vendorTransactions, vendorDateRange, customStartDate, customEndDate]);
 
   // Cash flow trend (income vs expenses over time)
