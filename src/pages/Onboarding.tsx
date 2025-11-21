@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Progress } from "@/components/ui/progress";
 import { Building2, ShoppingCart, CheckCircle2, ArrowRight, Sparkles, TrendingUp, Brain, Search, FileText, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { useBankAccounts } from "@/hooks/useBankAccounts";
@@ -343,6 +344,17 @@ export default function Onboarding() {
     }
   };
 
+  // Calculate progress
+  const getStepInfo = () => {
+    const steps = ['welcome', 'amazon', 'bank', 'reserve', 'forecasting', 'guides'];
+    const stepIndex = steps.indexOf(currentStep);
+    const stepNumber = stepIndex + 1;
+    const totalSteps = 6;
+    const progress = (stepNumber / totalSteps) * 100;
+    
+    return { stepNumber, totalSteps, progress };
+  };
+
   const handleFinish = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -433,6 +445,17 @@ export default function Onboarding() {
             </p>
           </div>
         </div>
+
+        {/* Progress Indicator */}
+        {currentStep !== 'guides' && (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Step {getStepInfo().stepNumber} of {getStepInfo().totalSteps}</span>
+              <span className="text-muted-foreground">{Math.round(getStepInfo().progress)}%</span>
+            </div>
+            <Progress value={getStepInfo().progress} className="h-2" />
+          </div>
+        )}
 
         {/* Welcome Step */}
         {currentStep === 'welcome' && (
