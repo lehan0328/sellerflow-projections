@@ -1203,7 +1203,42 @@ const Dashboard = () => {
                     "⚠️ No valid line items to insert after filtering"
                   );
                 }
-              } else if (
+              }
+
+              // Also save manually entered line items from the form
+              if (orderData.lineItems && Array.isArray(orderData.lineItems) && orderData.lineItems.length > 0) {
+                console.info('📝 Processing manually entered line items:', orderData.lineItems);
+                
+                const manualLineItemsToInsert = orderData.lineItems.map((item: any) => ({
+                  transaction_id: newTransaction.id,
+                  account_id: profile.account_id,
+                  product_name: item.productName || item.product_name,
+                  sku: item.sku || null,
+                  quantity: item.quantity || 1,
+                  unit_price: item.unitPrice || item.unit_price,
+                  total_price: (item.quantity || 1) * (item.unitPrice || item.unit_price || 0),
+                })).filter((item: any) => item.product_name); // Only include items with product names
+                
+                if (manualLineItemsToInsert.length > 0) {
+                  console.info('📝 Inserting manual line items:', manualLineItemsToInsert);
+                  const { error: manualItemsError } = await supabase
+                    .from('purchase_order_line_items')
+                    .insert(manualLineItemsToInsert);
+                    
+                  if (manualItemsError) {
+                    console.error('❌ Error saving manual line items:', manualItemsError);
+                    toast({
+                      title: "Error",
+                      description: "Purchase order created but failed to save line items",
+                      variant: "destructive"
+                    });
+                  } else {
+                    console.info('✅ Manual line items saved:', manualLineItemsToInsert.length);
+                  }
+                }
+              }
+              
+              if (
                 orderData.lineItemDescription &&
                 orderData.lineItemDescription.trim()
               ) {
