@@ -100,7 +100,11 @@ export function TeamManagement() {
         .eq('user_id', user!.id)
         .single();
       
-      if (error) throw error;
+      if (error) {
+        console.error('[Team Management] Profile fetch error:', error);
+        throw error;
+      }
+      console.log('[Team Management] Current user profile:', data);
       return data;
     },
     enabled: !!user,
@@ -127,20 +131,31 @@ export function TeamManagement() {
   const canManageTeam = isWebsiteAdmin || isAccountAdmin || userRole?.role === 'owner' || userRole?.role === 'admin';
 
   // Fetch team members
-  const { data: teamMembers = [] } = useQuery({
+  const { data: teamMembers = [], error: teamMembersError } = useQuery({
     queryKey: ['team-members', profile?.account_id],
     staleTime: 5 * 60 * 1000, // 5 minutes - team changes moderately
     queryFn: async () => {
+      console.log('[Team Management] Fetching team members for account_id:', profile!.account_id);
+      
       // First get all profiles with this account_id (includes the account owner)
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('user_id, first_name, last_name, is_account_owner')
         .eq('account_id', profile!.account_id);
       
-      if (profilesError) throw profilesError;
-      if (!profiles || profiles.length === 0) return [];
+      if (profilesError) {
+        console.error('[Team Management] Profiles fetch error:', profilesError);
+        throw profilesError;
+      }
+      console.log('[Team Management] Found profiles:', profiles);
+      
+      if (!profiles || profiles.length === 0) {
+        console.warn('[Team Management] No profiles found for account_id:', profile!.account_id);
+        return [];
+      }
 
       const userIds = profiles.map(p => p.user_id);
+      console.log('[Team Management] User IDs:', userIds);
 
       // Get user_roles for these users
       const { data: roles, error: rolesError } = await supabase
@@ -149,15 +164,24 @@ export function TeamManagement() {
         .eq('account_id', profile!.account_id)
         .in('user_id', userIds);
       
-      if (rolesError) throw rolesError;
+      if (rolesError) {
+        console.error('[Team Management] Roles fetch error:', rolesError);
+        throw rolesError;
+      }
+      console.log('[Team Management] User roles:', roles);
 
       // Get emails from auth.users via edge function
-      const { data: emailData } = await supabase.functions.invoke('get-user-emails', {
+      const { data: emailData, error: emailError } = await supabase.functions.invoke('get-user-emails', {
         body: { userIds }
       });
+      
+      if (emailError) {
+        console.error('[Team Management] Email fetch error:', emailError);
+      }
+      console.log('[Team Management] Email data:', emailData);
 
       // Combine the data - include all profiles, with roles when available
-      return profiles.map(profileData => {
+      const teamMembersList = profiles.map(profileData => {
         const userRole = roles?.find(r => r.user_id === profileData.user_id);
         
         // If user has account_id but no role, they're the owner
@@ -176,9 +200,17 @@ export function TeamManagement() {
           email: emailData?.emails?.[profileData.user_id] || 'Unknown'
         };
       }) as TeamMember[];
+      
+      console.log('[Team Management] Final team members list:', teamMembersList);
+      return teamMembersList;
     },
     enabled: !!profile?.account_id,
   });
+  
+  // Log any errors
+  if (teamMembersError) {
+    console.error('[Team Management] Team members query error:', teamMembersError);
+  }
 
   // Calculate seats based on subscription plan (after teamMembers is loaded)
   const calculateTotalSeats = () => {
