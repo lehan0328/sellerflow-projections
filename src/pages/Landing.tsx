@@ -543,17 +543,17 @@ const Landing = () => {
             }}>
                 <div className="space-y-4">
                   <h1 className="text-4xl lg:text-5xl xl:text-6xl font-display font-bold leading-tight tracking-tight break-words">
-                    <span className="text-foreground block mb-2 w-full">Smarter</span>
-                    
                     <Badge className="inline-flex items-center gap-2 bg-primary/10 text-primary border border-primary/20 px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm font-semibold backdrop-blur-sm mb-3 flex-wrap max-w-full">
                       <Sparkles className="h-3 w-3 sm:h-4 sm:w-4 animate-pulse flex-shrink-0" />
                       <span className="font-badge">Mathematical Rule-Based</span>
                       <span className="px-1.5 sm:px-2 py-0.5 bg-primary/20 rounded-full text-xs">Accurate</span>
                     </Badge>
                     
-                    <Badge variant="secondary" className="text-xs sm:text-sm md:text-base px-2 sm:px-3 md:px-4 py-1 sm:py-1.5 md:py-2 font-semibold tracking-wide inline-block mb-2 max-w-full break-words">
+                    <Badge variant="secondary" className="text-xs sm:text-sm md:text-base px-2 sm:px-3 md:px-4 py-1 sm:py-1.5 md:py-2 font-semibold tracking-wide inline-block mb-3 max-w-full break-words">
                       Starting at only $29/mo
                     </Badge>
+                    
+                    <span className="text-foreground block mb-2 w-full">Smarter</span>
                     
                     <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent animate-shimmer bg-[length:200%_100%] leading-tight tracking-tight block mb-2 break-words text-3xl sm:text-4xl lg:text-5xl xl:text-6xl">
                       Cash Flow Forecasting
