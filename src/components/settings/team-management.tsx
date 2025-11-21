@@ -1,369 +1,215 @@
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/useAuth";
+import { useAdmin } from "@/hooks/useAdmin";
 import { supabase } from "@/integrations/supabase/client";
-import { profileQueryKey } from "@/lib/cacheConfig";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { DialogFooter } from "@/components/ui/dialog";
-import { UserPlus, Trash2, Shield, Users, Mail } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { useAuth } from "@/hooks/useAuth";
-import { useAdmin } from "@/hooks/useAdmin";
-import { usePlanLimits } from "@/hooks/usePlanLimits";
+import { Users, Mail, Trash2, UserPlus, X } from "lucide-react";
+import { useSubscription } from "@/hooks/useSubscription";
 import { AddonLimitDialog } from "@/components/cash-flow/addon-limit-dialog";
-import { useLimitCheck } from "@/contexts/LimitCheckContext";
 
 interface TeamMember {
-  id: string;
-  user_id: string;
+  userId: string;
+  firstName: string;
+  lastName: string;
+  email: string;
   role: 'owner' | 'admin' | 'staff';
-  created_at: string;
-  profiles: {
-    first_name: string;
-    last_name: string;
-  };
-  email?: string; // Fetched separately
+  isAccountOwner: boolean;
 }
 
 interface PendingInvite {
   id: string;
   email: string;
   role: string;
-  created_at: string;
-  expires_at: string;
+  invitedAt: string;
+  invitedBy: string;
+  accountCreated: boolean;
 }
 
 export function TeamManagement() {
   const { user } = useAuth();
-  const { isAdmin: isWebsiteAdmin, isAccountAdmin } = useAdmin();
+  const { isAdmin: isWebsiteAdmin } = useAdmin();
   const queryClient = useQueryClient();
-  const { canAddTeamMember, currentUsage, planLimits } = usePlanLimits();
-  const { triggerLimitCheck } = useLimitCheck();
-  const [showInviteDialog, setShowInviteDialog] = useState(false);
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [showAddonDialog, setShowAddonDialog] = useState(false);
+
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<'admin' | 'staff'>('staff');
-  const [createForm, setCreateForm] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-  });
-  const [isSending, setIsSending] = useState(false);
+  const [createEmail, setCreateEmail] = useState("");
+  const [createFirstName, setCreateFirstName] = useState("");
+  const [createLastName, setCreateLastName] = useState("");
+  const [createRole, setCreateRole] = useState<'admin' | 'staff'>('staff');
+  const [removingUserId, setRemovingUserId] = useState<string | null>(null);
+  const [showInviteDialog, setShowInviteDialog] = useState(false);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showLimitDialog, setShowLimitDialog] = useState(false);
 
-  // Fetch user's profile to get account_id and role
-  const { data: profile } = useQuery({
-    queryKey: profileQueryKey(user?.id),
-    staleTime: 10 * 60 * 1000, // 10 minutes - profile rarely changes
+  // Get current user's profile
+  const { data: currentProfile } = useQuery({
+    queryKey: ['current-profile', user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('profiles')
-        .select('account_id, max_team_members, plan_override, company')
+        .select('user_id, account_id, first_name, last_name, is_account_owner, email, max_team_members')
         .eq('user_id', user!.id)
         .single();
       
-      if (error) {
-        console.error('[Team Management] Profile fetch error:', error);
-        throw error;
-      }
-      console.log('[Team Management] Current user profile:', data);
+      if (error) throw error;
       return data;
     },
     enabled: !!user,
   });
 
-  // Fetch user's role
-  const { data: userRole } = useQuery({
-    queryKey: ['user-role', user?.id, profile?.account_id],
-    staleTime: 10 * 60 * 1000, // 10 minutes - user role rarely changes
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', user!.id)
-        .eq('account_id', profile!.account_id)
-        .single();
-      
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!user && !!profile?.account_id,
-  });
+  // Check if user can manage team
+  const canManageTeam = isWebsiteAdmin || currentProfile?.is_account_owner;
 
-  const canManageTeam = isWebsiteAdmin || isAccountAdmin || userRole?.role === 'owner' || userRole?.role === 'admin';
+  // Fetch team members with a single joined query
+  const { data: teamMembers = [], isLoading: loadingMembers, error: membersError } = useQuery<TeamMember[]>({
+    queryKey: ['team-members', currentProfile?.account_id],
+    queryFn: async (): Promise<TeamMember[]> => {
+      if (!currentProfile?.account_id) return [];
 
-  // Fetch team members
-  const { data: teamMembers = [], error: teamMembersError } = useQuery({
-    queryKey: ['team-members', profile?.account_id],
-    staleTime: 5 * 60 * 1000, // 5 minutes - team changes moderately
-    queryFn: async () => {
-      console.log('[Team Management] Fetching team members for account_id:', profile!.account_id);
-      
-      // First get all profiles with this account_id (includes the account owner)
+      // Get all profiles in the account with their roles
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
-        .select('user_id, first_name, last_name, is_account_owner')
-        .eq('account_id', profile!.account_id);
-      
-      if (profilesError) {
-        console.error('[Team Management] Profiles fetch error:', profilesError);
-        throw profilesError;
-      }
-      console.log('[Team Management] Found profiles:', profiles);
-      
-      if (!profiles || profiles.length === 0) {
-        console.warn('[Team Management] No profiles found for account_id:', profile!.account_id);
-        return [];
-      }
+        .select('user_id, first_name, last_name, is_account_owner, email, account_id')
+        .eq('account_id', currentProfile.account_id);
+
+      if (profilesError) throw profilesError;
+      if (!profiles || profiles.length === 0) return [];
 
       const userIds = profiles.map(p => p.user_id);
-      console.log('[Team Management] User IDs:', userIds);
 
-      // Get user_roles for these users
+      // Get roles for all users in this account
       const { data: roles, error: rolesError } = await supabase
         .from('user_roles')
-        .select('*')
-        .eq('account_id', profile!.account_id)
+        .select('user_id, role')
+        .eq('account_id', currentProfile.account_id)
         .in('user_id', userIds);
-      
-      if (rolesError) {
-        console.error('[Team Management] Roles fetch error:', rolesError);
-        throw rolesError;
-      }
-      console.log('[Team Management] User roles:', roles);
 
-      // Get emails from auth.users via edge function
-      const { data: emailData, error: emailError } = await supabase.functions.invoke('get-user-emails', {
+      if (rolesError) throw rolesError;
+
+      // Get emails from auth.users
+      const { data: emailData } = await supabase.functions.invoke('get-user-emails', {
         body: { userIds }
       });
-      
-      if (emailError) {
-        console.error('[Team Management] Email fetch error:', emailError);
-      }
-      console.log('[Team Management] Email data:', emailData);
 
-      // Combine the data - include all profiles, with roles when available
-      const teamMembersList = profiles.map(profileData => {
-        const userRole = roles?.find(r => r.user_id === profileData.user_id);
+      // Combine data
+      const members: TeamMember[] = profiles.map(profile => {
+        const userRole = roles?.find(r => r.user_id === profile.user_id);
         
-        // If user has account_id but no role, they're the owner
-        const role = userRole?.role || (profileData.is_account_owner ? 'owner' : 'staff');
-        
+        // Determine role: owner if is_account_owner, otherwise use user_roles table
+        const role = profile.is_account_owner 
+          ? 'owner' 
+          : (userRole?.role as 'admin' | 'staff') || 'staff';
+
         return {
-          id: userRole?.id || profileData.user_id, // Use role id if exists, otherwise user_id
-          user_id: profileData.user_id,
-          role: role as 'owner' | 'admin' | 'staff',
-          account_id: profile!.account_id,
-          created_at: userRole?.created_at || new Date().toISOString(),
-          profiles: {
-            first_name: profileData.first_name || '',
-            last_name: profileData.last_name || ''
-          },
-          email: emailData?.emails?.[profileData.user_id] || 'Unknown'
+          userId: profile.user_id,
+          firstName: profile.first_name || '',
+          lastName: profile.last_name || '',
+          email: emailData?.emails?.[profile.user_id] || profile.email || 'Unknown',
+          role,
+          isAccountOwner: profile.is_account_owner || false
         };
-      }) as TeamMember[];
-      
-      console.log('[Team Management] Final team members list:', teamMembersList);
-      return teamMembersList;
-    },
-    enabled: !!profile?.account_id,
-  });
-  
-  // Log any errors
-  if (teamMembersError) {
-    console.error('[Team Management] Team members query error:', teamMembersError);
-  }
+      });
 
-  // Calculate seats based on subscription plan (after teamMembers is loaded)
-  const calculateTotalSeats = () => {
-    // Always prioritize max_team_members from profile
-    if (profile?.max_team_members) {
-      return profile.max_team_members;
-    }
-    // Fallback to plan override
-    if (profile?.plan_override) {
-      const planName = profile.plan_override.toLowerCase();
-      if (planName.includes('starter')) return 1;
-      if (planName.includes('growing')) return 3;
-      if (planName.includes('professional')) return 5;
-      if (planName.includes('enterprise')) return 8;
-    }
-    // Default to 1 if nothing is set
-    return 1;
-  };
-  
-  const totalSeats = calculateTotalSeats();
-  const usedSeats = teamMembers?.length || 0;
-  const availableSeats = Math.max(0, totalSeats - usedSeats);
+      // Sort: owner first, then alphabetically by name
+      return members.sort((a, b) => {
+        if (a.isAccountOwner) return -1;
+        if (b.isAccountOwner) return 1;
+        const nameA = `${a.firstName} ${a.lastName}`.trim();
+        const nameB = `${b.firstName} ${b.lastName}`.trim();
+        return nameA.localeCompare(nameB);
+      });
+    },
+    enabled: !!currentProfile?.account_id,
+    staleTime: 5 * 60 * 1000,
+  });
 
   // Fetch pending invitations
   const { data: pendingInvites = [] } = useQuery({
-    queryKey: ['pending-invites', profile?.account_id],
-    staleTime: 5 * 60 * 1000, // 5 minutes - invitations change moderately
+    queryKey: ['pending-invites', currentProfile?.account_id],
     queryFn: async () => {
+      if (!currentProfile?.account_id) return [];
+
       const { data, error } = await supabase
         .from('team_invitations')
         .select('*')
-        .eq('account_id', profile!.account_id)
+        .eq('account_id', currentProfile.account_id)
         .is('accepted_at', null)
         .gt('expires_at', new Date().toISOString());
-      
+
       if (error) throw error;
-      return data as PendingInvite[];
+
+      return (data || []).map(invite => ({
+        id: invite.id,
+        email: invite.email,
+        role: invite.role,
+        invitedAt: invite.created_at,
+        invitedBy: invite.invited_by,
+        accountCreated: false
+      })) as PendingInvite[];
     },
-    enabled: !!profile?.account_id && canManageTeam,
+    enabled: !!currentProfile?.account_id,
+    staleTime: 5 * 60 * 1000,
   });
+
+  // Calculate team member limits from profile
+  const maxTeamMembers = currentProfile?.max_team_members || 1;
+  const currentTeamCount = teamMembers.length;
+  const seatsAvailable = maxTeamMembers - currentTeamCount;
+  const canAddMembers = seatsAvailable > 0;
 
   // Send invitation mutation
   const sendInviteMutation = useMutation({
-    mutationFn: async () => {
-      if (!canAddTeamMember) {
-        toast.error(`Team member limit reached! You have ${currentUsage.teamMembers}/${planLimits.teamMembers} members. Please remove a member or purchase add-ons.`);
-        throw new Error('Team member limit reached');
-      }
-
+    mutationFn: async ({ email, role }: { email: string; role: string }) => {
       const { data, error } = await supabase.functions.invoke('send-team-invitation', {
-        body: { email: inviteEmail, role: inviteRole },
+        body: { email, role }
       });
 
       if (error) throw error;
       return data;
     },
     onSuccess: () => {
-      toast.success('Invitation sent successfully');
-      setShowInviteDialog(false);
+      toast.success("Invitation sent successfully");
       setInviteEmail("");
       setInviteRole('staff');
+      setShowInviteDialog(false);
       queryClient.invalidateQueries({ queryKey: ['pending-invites'] });
-      triggerLimitCheck(); // Check limits after successful invitation
     },
-    onError: (error: Error) => {
-      if (error.message === 'Team member limit reached') {
-        setShowAddonDialog(true);
-      } else {
-        toast.error(error.message || 'Failed to send invitation');
-      }
-    },
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to send invitation");
+    }
   });
 
-  // Create account directly
+  // Create account mutation
   const createAccountMutation = useMutation({
-    mutationFn: async () => {
-      if (!createForm.email || !createForm.firstName || !createForm.lastName || !createForm.password || !profile?.account_id) {
-        throw new Error('Please fill in all fields');
-      }
-
-      if (createForm.password !== createForm.confirmPassword) {
-        throw new Error('Passwords do not match');
-      }
-
-      if (createForm.password.length < 6) {
-        throw new Error('Password must be at least 6 characters');
-      }
-
-      if (!canAddTeamMember) {
-        toast.error(`Team member limit reached! You have ${currentUsage.teamMembers}/${planLimits.teamMembers} members. Please remove a member or purchase add-ons.`);
-        throw new Error('Team member limit reached');
-      }
-
-      // Create the user account
-      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-        email: createForm.email,
-        password: createForm.password,
-        options: {
-          data: {
-            first_name: createForm.firstName,
-            last_name: createForm.lastName,
-          }
-        }
+    mutationFn: async ({ email, firstName, lastName, role }: { email: string; firstName: string; lastName: string; role: string }) => {
+      const { data, error } = await supabase.functions.invoke('create-team-member-account', {
+        body: { email, firstName, lastName, role }
       });
 
-      if (signUpError) throw signUpError;
-      if (!signUpData.user) throw new Error('Failed to create user');
-
-      // Update the user's profile with account_id
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({ 
-          account_id: profile.account_id,
-          is_account_owner: false 
-        })
-        .eq('user_id', signUpData.user.id);
-
-      if (profileError) throw profileError;
-
-      // Create user role
-      const { error: roleError } = await supabase
-        .from('user_roles')
-        .insert({
-          user_id: signUpData.user.id,
-          account_id: profile.account_id,
-          role: inviteRole
-        });
-
-      if (roleError) throw roleError;
-
-      return { firstName: createForm.firstName, lastName: createForm.lastName };
+      if (error) throw error;
+      return data;
     },
-    onSuccess: (data) => {
-      toast.success(`Account created successfully for ${data.firstName} ${data.lastName}!`);
+    onSuccess: () => {
+      toast.success("Team member account created successfully");
+      setCreateEmail("");
+      setCreateFirstName("");
+      setCreateLastName("");
+      setCreateRole('staff');
       setShowCreateDialog(false);
-      setCreateForm({
-        firstName: "",
-        lastName: "",
-        email: "",
-        password: "",
-        confirmPassword: "",
-      });
-      setInviteRole('staff');
       queryClient.invalidateQueries({ queryKey: ['team-members'] });
-      triggerLimitCheck(); // Check limits after successful account creation
     },
-    onError: (error: Error) => {
-      if (error.message === 'Team member limit reached') {
-        setShowAddonDialog(true);
-      } else {
-        toast.error(error.message || 'Failed to create account');
-      }
-    },
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to create account");
+    }
   });
 
   // Update role mutation
@@ -373,36 +219,37 @@ export function TeamManagement() {
         .from('user_roles')
         .update({ role: newRole })
         .eq('user_id', userId)
-        .eq('account_id', profile!.account_id);
+        .eq('account_id', currentProfile!.account_id);
 
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success('Role updated successfully');
+      toast.success("Role updated successfully");
       queryClient.invalidateQueries({ queryKey: ['team-members'] });
     },
-    onError: (error: Error) => {
-      toast.error(error.message || 'Failed to update role');
-    },
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to update role");
+    }
   });
 
-  // Remove member mutation - deletes entire account
+  // Remove member mutation
   const removeMemberMutation = useMutation({
     mutationFn: async (userId: string) => {
-      const { data, error } = await supabase.functions.invoke('delete-user-account', {
+      const { error } = await supabase.functions.invoke('delete-user-account', {
         body: { userId }
       });
 
       if (error) throw error;
-      if (data?.error) throw new Error(data.error);
     },
     onSuccess: () => {
-      toast.success('Team member account deleted');
+      toast.success("Team member removed successfully");
+      setRemovingUserId(null);
       queryClient.invalidateQueries({ queryKey: ['team-members'] });
     },
-    onError: (error: Error) => {
-      toast.error(error.message || 'Failed to delete team member account');
-    },
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to remove team member");
+      setRemovingUserId(null);
+    }
   });
 
   // Cancel invitation mutation
@@ -416,318 +263,331 @@ export function TeamManagement() {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success('Invitation cancelled');
+      toast.success("Invitation cancelled");
       queryClient.invalidateQueries({ queryKey: ['pending-invites'] });
     },
-    onError: (error: Error) => {
-      toast.error(error.message || 'Failed to cancel invitation');
-    },
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to cancel invitation");
+    }
   });
 
-  const getRoleBadgeVariant = (role: string) => {
-    switch (role) {
-      case 'owner':
-        return 'default';
-      case 'admin':
-        return 'secondary';
-      default:
-        return 'outline';
+  const handleSendInvite = () => {
+    if (!canAddMembers) {
+      setShowLimitDialog(true);
+      return;
     }
+    if (!inviteEmail) {
+      toast.error("Please enter an email address");
+      return;
+    }
+    sendInviteMutation.mutate({ email: inviteEmail, role: inviteRole });
   };
 
+  const handleCreateAccount = () => {
+    if (!canAddMembers) {
+      setShowLimitDialog(true);
+      return;
+    }
+    if (!createEmail || !createFirstName || !createLastName) {
+      toast.error("Please fill in all fields");
+      return;
+    }
+    createAccountMutation.mutate({ 
+      email: createEmail, 
+      firstName: createFirstName, 
+      lastName: createLastName, 
+      role: createRole 
+    });
+  };
+
+  if (loadingMembers) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            Team Management
+          </CardTitle>
+          <CardDescription>Loading team members...</CardDescription>
+        </CardHeader>
+      </Card>
+    );
+  }
+
+  if (membersError) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            Team Management
+          </CardTitle>
+          <CardDescription className="text-destructive">
+            Error loading team members. Please refresh the page.
+          </CardDescription>
+        </CardHeader>
+      </Card>
+    );
+  }
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-semibold">Team Management</h3>
-          <p className="text-sm text-muted-foreground">
-            Manage team members and their permissions for {profile?.company || 'your account'}
-          </p>
-          <p className="text-xs text-muted-foreground mt-1">
-            <Users className="inline h-3 w-3 mr-1" />
-            {currentUsage.teamMembers} / {planLimits.teamMembers} seats used
-            {!canAddTeamMember && <span className="ml-2 text-amber-600">• Purchase add-ons for more seats</span>}
-          </p>
-        </div>
-        {canManageTeam && (
-          <div className="flex gap-2">
-            <Dialog open={showInviteDialog} onOpenChange={setShowInviteDialog}>
-              <DialogTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  onClick={() => {
-                    if (!canAddTeamMember) {
-                      setShowAddonDialog(true);
-                    }
-                  }}
-                >
-                  <Mail className="mr-2 h-4 w-4" />
-                  Send Invite Email
-                </Button>
-              </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Invite Team Member</DialogTitle>
-                <DialogDescription>
-                  Send an invitation to join your team
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email Address</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="colleague@example.com"
-                    value={inviteEmail}
-                    onChange={(e) => setInviteEmail(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="role">Role</Label>
-                  <Select value={inviteRole} onValueChange={(value: 'admin' | 'staff') => setInviteRole(value)}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="staff">Staff - View and edit data</SelectItem>
-                      <SelectItem value="admin">Admin - Manage team and settings</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setShowInviteDialog(false)}>
-                  Cancel
-                </Button>
-                <Button
-                  onClick={() => sendInviteMutation.mutate()}
-                  disabled={!inviteEmail || sendInviteMutation.isPending}
-                >
-                  {sendInviteMutation.isPending ? 'Sending...' : 'Send Invitation'}
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-          
-          <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-            <DialogTrigger asChild>
-              <Button 
-                onClick={() => {
-                  if (!canAddTeamMember) {
-                    setShowAddonDialog(true);
-                  }
-                }}
-              >
-                <UserPlus className="mr-2 h-4 w-4" />
-                Create Account
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Create Account for {profile?.company || 'Your Team'}</DialogTitle>
-                <DialogDescription>
-                  Create a new team member account directly
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label>First Name</Label>
-                  <Input
-                    placeholder="John"
-                    value={createForm.firstName}
-                    onChange={(e) => setCreateForm({ ...createForm, firstName: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Last Name</Label>
-                  <Input
-                    placeholder="Doe"
-                    value={createForm.lastName}
-                    onChange={(e) => setCreateForm({ ...createForm, lastName: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Email</Label>
-                  <Input
-                    type="email"
-                    placeholder="john.doe@example.com"
-                    value={createForm.email}
-                    onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Password</Label>
-                  <Input
-                    type="password"
-                    placeholder="Minimum 6 characters"
-                    value={createForm.password}
-                    onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Confirm Password</Label>
-                  <Input
-                    type="password"
-                    value={createForm.confirmPassword}
-                    onChange={(e) => setCreateForm({ ...createForm, confirmPassword: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Role</Label>
-                  <Select value={inviteRole} onValueChange={(value: 'admin' | 'staff') => setInviteRole(value)}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="staff">Staff</SelectItem>
-                      <SelectItem value="admin">Admin</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={() => createAccountMutation.mutate()} disabled={createAccountMutation.isPending}>
-                  {createAccountMutation.isPending ? "Creating..." : "Create Account"}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+    <>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                Team Management
+              </CardTitle>
+              <CardDescription>
+                Manage your team members and their access levels
+              </CardDescription>
+            </div>
+            <div className="text-sm text-muted-foreground">
+              <span className="font-medium">{currentTeamCount}</span> / <span className="font-medium">{maxTeamMembers}</span> seats used
+            </div>
           </div>
-        )}
-      </div>
+        </CardHeader>
 
-      {/* Current Team Members */}
-      <div className="border rounded-lg">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Member</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Role</TableHead>
-              {canManageTeam && <TableHead className="text-right">Actions</TableHead>}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {teamMembers.map((member) => (
-              <TableRow key={member.id}>
-                <TableCell>
-                  {member.profiles.first_name && member.profiles.last_name 
-                    ? `${member.profiles.first_name} ${member.profiles.last_name}`
-                    : member.email
-                  }
-                </TableCell>
-                <TableCell>{member.email}</TableCell>
-                <TableCell>
-                  {canManageTeam && member.role !== 'owner' ? (
-                    <Select
-                      value={member.role}
-                      onValueChange={(value) =>
-                        updateRoleMutation.mutate({ userId: member.user_id, newRole: value as 'admin' | 'staff' })
-                      }
-                    >
-                      <SelectTrigger className="w-32">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="staff">Staff</SelectItem>
-                        <SelectItem value="admin">Admin</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  ) : (
-                    <Badge variant={getRoleBadgeVariant(member.role)}>
-                      {member.role === 'owner' && <Shield className="mr-1 h-3 w-3" />}
-                      {member.role === 'owner' ? 'Admin (Account Owner)' : member.role.charAt(0).toUpperCase() + member.role.slice(1)}
-                    </Badge>
-                  )}
-                </TableCell>
-                {canManageTeam && (
-                  <TableCell className="text-right">
-                    {member.role !== 'owner' && (
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="sm">
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Remove Team Member</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Are you sure you want to remove this member from your team?
-                              They will lose access to all team data.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => removeMemberMutation.mutate(member.user_id)}
-                            >
-                              Remove
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    )}
-                  </TableCell>
-                )}
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-
-      {/* Pending Invitations */}
-      {canManageTeam && pendingInvites.length > 0 && (
-        <div className="space-y-2">
-          <h4 className="text-sm font-medium">Pending Invitations</h4>
-          <div className="border rounded-lg">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Expires</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {pendingInvites.map((invite) => (
-                  <TableRow key={invite.id}>
-                    <TableCell>{invite.email}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{invite.role}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      {new Date(invite.expires_at).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => cancelInviteMutation.mutate(invite.id)}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
+        <CardContent className="space-y-6">
+          {/* Action Buttons */}
+          {canManageTeam && (
+            <div className="flex gap-2">
+              <Dialog open={showInviteDialog} onOpenChange={setShowInviteDialog}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="gap-2">
+                    <Mail className="h-4 w-4" />
+                    Send Invite Email
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Invite Team Member</DialogTitle>
+                    <DialogDescription>
+                      Send an invitation email to add a new team member
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4 pt-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="invite-email">Email Address</Label>
+                      <Input
+                        id="invite-email"
+                        type="email"
+                        placeholder="colleague@example.com"
+                        value={inviteEmail}
+                        onChange={(e) => setInviteEmail(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="invite-role">Role</Label>
+                      <Select value={inviteRole} onValueChange={(value: 'admin' | 'staff') => setInviteRole(value)}>
+                        <SelectTrigger id="invite-role">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="admin">Admin</SelectItem>
+                          <SelectItem value="staff">Staff</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex gap-2 justify-end">
+                      <Button variant="outline" onClick={() => setShowInviteDialog(false)}>
+                        Cancel
                       </Button>
-                    </TableCell>
-                  </TableRow>
+                      <Button onClick={handleSendInvite} disabled={sendInviteMutation.isPending}>
+                        {sendInviteMutation.isPending ? "Sending..." : "Send Invitation"}
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+
+              <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="gap-2">
+                    <UserPlus className="h-4 w-4" />
+                    Create Account
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Create Team Member Account</DialogTitle>
+                    <DialogDescription>
+                      Directly create an account for a new team member
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4 pt-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="create-email">Email Address</Label>
+                      <Input
+                        id="create-email"
+                        type="email"
+                        placeholder="colleague@example.com"
+                        value={createEmail}
+                        onChange={(e) => setCreateEmail(e.target.value)}
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="create-firstname">First Name</Label>
+                        <Input
+                          id="create-firstname"
+                          placeholder="John"
+                          value={createFirstName}
+                          onChange={(e) => setCreateFirstName(e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="create-lastname">Last Name</Label>
+                        <Input
+                          id="create-lastname"
+                          placeholder="Doe"
+                          value={createLastName}
+                          onChange={(e) => setCreateLastName(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="create-role">Role</Label>
+                      <Select value={createRole} onValueChange={(value: 'admin' | 'staff') => setCreateRole(value)}>
+                        <SelectTrigger id="create-role">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="admin">Admin</SelectItem>
+                          <SelectItem value="staff">Staff</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex gap-2 justify-end">
+                      <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
+                        Cancel
+                      </Button>
+                      <Button onClick={handleCreateAccount} disabled={createAccountMutation.isPending}>
+                        {createAccountMutation.isPending ? "Creating..." : "Create Account"}
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
+          )}
+
+          {/* Team Members List */}
+          <div className="space-y-4">
+            <h3 className="font-medium">Team Members</h3>
+            {teamMembers.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No team members found.</p>
+            ) : (
+              <div className="space-y-2">
+                {teamMembers.map((member) => (
+                  <Card key={member.userId}>
+                    <CardContent className="flex items-center justify-between p-4">
+                      <div className="flex items-center gap-4">
+                        <div>
+                          <p className="font-medium">
+                            {member.firstName} {member.lastName}
+                            {member.userId === user?.id && <span className="text-muted-foreground ml-2">(You)</span>}
+                          </p>
+                          <p className="text-sm text-muted-foreground">{member.email}</p>
+                        </div>
+                        <Badge variant={member.role === 'owner' ? 'default' : 'secondary'}>
+                          {member.role === 'owner' ? 'Account Owner' : member.role.charAt(0).toUpperCase() + member.role.slice(1)}
+                        </Badge>
+                      </div>
+
+                      {canManageTeam && !member.isAccountOwner && member.userId !== user?.id && (
+                        <div className="flex items-center gap-2">
+                          <Select
+                            value={member.role}
+                            onValueChange={(value: 'admin' | 'staff') => updateRoleMutation.mutate({ userId: member.userId, newRole: value })}
+                          >
+                            <SelectTrigger className="w-32">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="admin">Admin</SelectItem>
+                              <SelectItem value="staff">Staff</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => setRemovingUserId(member.userId)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
                 ))}
-              </TableBody>
-            </Table>
+              </div>
+            )}
           </div>
-        </div>
-      )}
-      
+
+          {/* Pending Invitations */}
+          {pendingInvites.length > 0 && (
+            <div className="space-y-4">
+              <h3 className="font-medium">Pending Invitations</h3>
+              <div className="space-y-2">
+                {pendingInvites.map((invite) => (
+                  <Card key={invite.id}>
+                    <CardContent className="flex items-center justify-between p-4">
+                      <div>
+                        <p className="font-medium">{invite.email}</p>
+                        <p className="text-sm text-muted-foreground">
+                          Invited as {invite.role} • {new Date(invite.invitedAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                      {canManageTeam && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => cancelInviteMutation.mutate(invite.id)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Remove Member Confirmation Dialog */}
+      <AlertDialog open={!!removingUserId} onOpenChange={(open) => !open && setRemovingUserId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove Team Member</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete this team member's account and all associated data. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => removingUserId && removeMemberMutation.mutate(removingUserId)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Remove Member
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Team Member Limit Dialog */}
       <AddonLimitDialog
-        open={showAddonDialog}
-        onOpenChange={setShowAddonDialog}
+        open={showLimitDialog}
+        onOpenChange={setShowLimitDialog}
         addonType="user"
-        currentUsage={currentUsage.teamMembers}
-        currentLimit={planLimits.teamMembers}
+        currentUsage={currentTeamCount}
+        currentLimit={maxTeamMembers}
       />
-    </div>
+    </>
   );
 }
