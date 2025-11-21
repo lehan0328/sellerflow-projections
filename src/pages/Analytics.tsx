@@ -313,6 +313,97 @@ export default function Analytics() {
     const averageDailyNetOutflow = totalExpensesForRunway / daysElapsed;
     const cashRunwayDays = averageDailyNetOutflow > 0 ? Math.floor(currentBalance / averageDailyNetOutflow) : 999;
     
+    // Calculate Auren Cash Flow Stability Score (0-100)
+    // 1. Inflow/Outflow Ratio Score (30%)
+    const inflowOutflowRatio = totalForecastedExpenses > 0 ? totalForecastedIncome / totalForecastedExpenses : 0;
+    let ratioScore = 0;
+    if (inflowOutflowRatio >= 1.2) ratioScore = 100;
+    else if (inflowOutflowRatio >= 1.0) ratioScore = 70;
+    else ratioScore = Math.max(0, inflowOutflowRatio * 70);
+    
+    // 2. Income Volatility Score (25%) - Based on last 6 months
+    const last6MonthsIncome: number[] = [];
+    for (let i = 5; i >= 0; i--) {
+      const monthStart = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const monthEnd = new Date(now.getFullYear(), now.getMonth() - i + 1, 0, 23, 59, 59, 999);
+      
+      const monthAmazonIncome = amazonPayouts.filter(p => {
+        const payoutDate = new Date(p.payout_date);
+        return p.status === 'confirmed' && payoutDate >= monthStart && payoutDate <= monthEnd;
+      }).reduce((sum, p) => sum + (p.total_amount || 0), 0);
+      
+      const monthOtherIncome = incomeItems.filter(i => {
+        const paymentDate = new Date(i.paymentDate);
+        return i.status === 'received' && paymentDate >= monthStart && paymentDate <= monthEnd;
+      }).reduce((sum, i) => sum + i.amount, 0);
+      
+      last6MonthsIncome.push(monthAmazonIncome + monthOtherIncome);
+    }
+    
+    const avgIncome = last6MonthsIncome.reduce((sum, val) => sum + val, 0) / 6;
+    const incomeVariance = last6MonthsIncome.reduce((sum, val) => sum + Math.pow(val - avgIncome, 2), 0) / 6;
+    const incomeStdDev = Math.sqrt(incomeVariance);
+    const incomeVolatility = avgIncome > 0 ? incomeStdDev / avgIncome : 0;
+    let volatilityScore = 0;
+    if (incomeVolatility <= 0.15) volatilityScore = 100;
+    else if (incomeVolatility <= 0.30) volatilityScore = 70;
+    else if (incomeVolatility <= 0.50) volatilityScore = 40;
+    else volatilityScore = 20;
+    
+    // 3. Expense Stability Score (20%) - Based on last 6 months
+    const last6MonthsExpenses: number[] = [];
+    for (let i = 5; i >= 0; i--) {
+      const monthStart = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const monthEnd = new Date(now.getFullYear(), now.getMonth() - i + 1, 0, 23, 59, 59, 999);
+      
+      const monthExpenses = dbTransactions.filter(tx => {
+        const txDate = new Date(tx.transactionDate);
+        return tx.type === 'expense' && txDate >= monthStart && txDate <= monthEnd;
+      }).reduce((sum, tx) => sum + tx.amount, 0);
+      
+      const monthRecurring = recurringExpenses.filter(e => e.is_active && e.type === 'expense').reduce((sum, e) => {
+        const occurrences = generateRecurringDates(e as any, monthStart, monthEnd);
+        return sum + e.amount * occurrences.length;
+      }, 0);
+      
+      last6MonthsExpenses.push(monthExpenses + monthRecurring);
+    }
+    
+    const avgExpenses = last6MonthsExpenses.reduce((sum, val) => sum + val, 0) / 6;
+    const expenseVariance = last6MonthsExpenses.reduce((sum, val) => sum + Math.pow(val - avgExpenses, 2), 0) / 6;
+    const expenseStdDev = Math.sqrt(expenseVariance);
+    const expenseVolatility = avgExpenses > 0 ? expenseStdDev / avgExpenses : 0;
+    let expenseStabilityScore = 0;
+    if (expenseVolatility <= 0.15) expenseStabilityScore = 100;
+    else if (expenseVolatility <= 0.30) expenseStabilityScore = 70;
+    else if (expenseVolatility <= 0.50) expenseStabilityScore = 40;
+    else expenseStabilityScore = 20;
+    
+    // 4. Credit Utilization Score (15%)
+    let creditScore = 0;
+    if (creditUtilization < 30) creditScore = 100;
+    else if (creditUtilization < 50) creditScore = 70;
+    else if (creditUtilization < 75) creditScore = 40;
+    else creditScore = 20;
+    
+    // 5. Confirmed Future Income Score (10%)
+    const confirmedFutureIncome = forecastedPayouts + recurringIncome;
+    const futureIncomeRatio = totalForecastedExpenses > 0 ? confirmedFutureIncome / totalForecastedExpenses : 0;
+    let futureIncomeScore = 0;
+    if (futureIncomeRatio >= 0.8) futureIncomeScore = 100;
+    else if (futureIncomeRatio >= 0.5) futureIncomeScore = 70;
+    else if (futureIncomeRatio >= 0.3) futureIncomeScore = 40;
+    else futureIncomeScore = 20;
+    
+    // Calculate weighted stability score
+    const stabilityScore = Math.round(
+      ratioScore * 0.30 +
+      volatilityScore * 0.25 +
+      expenseStabilityScore * 0.20 +
+      creditScore * 0.15 +
+      futureIncomeScore * 0.10
+    );
+    
     return {
       totalInflow,
       totalOutflow,
@@ -329,7 +420,8 @@ export default function Analytics() {
       totalForecastedIncome,
       totalForecastedExpenses,
       averageDailyNetOutflow,
-      cashRunwayDays
+      cashRunwayDays,
+      stabilityScore
     };
   }, [bankTransactions, dbTransactions, incomeItems, vendors, creditCards, amazonPayouts, accounts, amazonRevenue, recurringExpenses]);
 
@@ -1005,7 +1097,7 @@ export default function Analytics() {
       {/* Grouped Metrics Section for PDF - Income, Account Health, Payment Status */}
       <div data-pdf-section="grouped-metrics" className="space-y-4">
         {/* Key Performance Indicators */}
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-4">
           <Card className={cn(
             "border-2",
             (() => {
@@ -1085,31 +1177,77 @@ export default function Analytics() {
 
           <Card className={cn(
             "border-2",
-            metrics.cashRunwayDays >= 60 ? "border-green-500 bg-green-50 dark:bg-green-950/20" :
-            metrics.cashRunwayDays >= 30 ? "border-amber-500 bg-amber-50 dark:bg-amber-950/20" :
+            metrics.stabilityScore >= 70 ? "border-green-500 bg-green-50 dark:bg-green-950/20" :
+            metrics.stabilityScore >= 50 ? "border-amber-500 bg-amber-50 dark:bg-amber-950/20" :
             "border-red-500 bg-red-50 dark:bg-red-950/20"
           )}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Cash Runway (days)</CardTitle>
-              <CalendarIcon className={cn(
+              <CardTitle className="text-sm font-medium">Cash Flow Stability</CardTitle>
+              <BarChart3 className={cn(
                 "h-5 w-5",
-                metrics.cashRunwayDays >= 60 ? "text-green-600" :
-                metrics.cashRunwayDays >= 30 ? "text-amber-600" :
+                metrics.stabilityScore >= 70 ? "text-green-600" :
+                metrics.stabilityScore >= 50 ? "text-amber-600" :
                 "text-red-600"
               )} />
             </CardHeader>
             <CardContent>
               <div className={cn(
                 "text-3xl font-bold",
-                metrics.cashRunwayDays >= 60 ? "text-green-600" :
-                metrics.cashRunwayDays >= 30 ? "text-amber-600" :
+                metrics.stabilityScore >= 70 ? "text-green-600" :
+                metrics.stabilityScore >= 50 ? "text-amber-600" :
                 "text-red-600"
+              )}>
+                {metrics.stabilityScore}/100
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">Auren Stability Score</p>
+              <div className="mt-3 pt-3 border-t border-muted space-y-1">
+                <p className="text-xs font-medium text-muted-foreground">Components:</p>
+                <p className="text-xs text-muted-foreground">• Inflow/Outflow (30%)</p>
+                <p className="text-xs text-muted-foreground">• Income Volatility (25%)</p>
+                <p className="text-xs text-muted-foreground">• Expense Stability (20%)</p>
+                <p className="text-xs text-muted-foreground">• Credit Use (15%)</p>
+                <p className="text-xs text-muted-foreground">• Future Income (10%)</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className={cn(
+            "border-2",
+            metrics.cashRunwayDays >= 90 ? "border-green-500 bg-green-50 dark:bg-green-950/20" :
+            metrics.cashRunwayDays >= 30 ? "border-amber-500 bg-amber-50 dark:bg-amber-950/20" :
+            metrics.cashRunwayDays >= 15 ? "border-red-500 bg-red-50 dark:bg-red-950/20" :
+            "border-red-700 bg-red-100 dark:bg-red-950/40"
+          )}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Cash Runway (days)</CardTitle>
+              <CalendarIcon className={cn(
+                "h-5 w-5",
+                metrics.cashRunwayDays >= 90 ? "text-green-600" :
+                metrics.cashRunwayDays >= 30 ? "text-amber-600" :
+                metrics.cashRunwayDays >= 15 ? "text-red-600" :
+                "text-red-700"
+              )} />
+            </CardHeader>
+            <CardContent>
+              <div className={cn(
+                "text-3xl font-bold",
+                metrics.cashRunwayDays >= 90 ? "text-green-600" :
+                metrics.cashRunwayDays >= 30 ? "text-amber-600" :
+                metrics.cashRunwayDays >= 15 ? "text-red-600" :
+                "text-red-700"
               )}>
                 {metrics.cashRunwayDays === 999 ? "∞" : metrics.cashRunwayDays}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
                 {formatCurrency(metrics.currentBalance)} ÷ {formatCurrency(metrics.averageDailyNetOutflow)}/day
               </p>
+              <div className="mt-3 pt-3 border-t border-muted space-y-1">
+                <p className="text-xs font-medium text-muted-foreground">Thresholds:</p>
+                <p className="text-xs text-green-600 dark:text-green-400">✓ Healthy: 90+ days</p>
+                <p className="text-xs text-amber-600 dark:text-amber-400">⚠ Monitor: 30-90 days</p>
+                <p className="text-xs text-red-600 dark:text-red-400">⚠ Warning: &lt;30 days</p>
+                <p className="text-xs text-red-700 dark:text-red-500 font-semibold">🚨 Critical: ≤14 days</p>
+              </div>
             </CardContent>
           </Card>
 
