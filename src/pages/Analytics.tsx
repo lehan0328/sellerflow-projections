@@ -126,7 +126,8 @@ export default function Analytics() {
     };
   }, []);
   const {
-    creditCards
+    creditCards,
+    creditCardPendingAmounts
   } = useCreditCards();
   const {
     amazonPayouts
@@ -244,9 +245,13 @@ export default function Analytics() {
     // Pending income
     const pendingIncome = incomeItems.filter(i => i.status === 'pending').reduce((sum, i) => sum + i.amount, 0);
 
-    // Credit card utilization
+    // Credit card utilization (includes current balance + pending transactions)
     const totalCreditLimit = creditCards.reduce((sum, c) => sum + (c.credit_limit || 0), 0);
-    const totalCreditUsed = creditCards.reduce((sum, c) => sum + (c.balance || 0), 0);
+    const totalCreditUsed = creditCards.reduce((sum, c) => {
+      const balance = c.balance || 0;
+      const pending = creditCardPendingAmounts.get(c.id) || 0;
+      return sum + balance + pending;
+    }, 0);
     const creditUtilization = totalCreditLimit > 0 ? totalCreditUsed / totalCreditLimit * 100 : 0;
 
     // Total expenses from vendors + purchase orders + expenses
