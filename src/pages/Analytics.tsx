@@ -1478,7 +1478,7 @@ export default function Analytics() {
 
             <Card className="border-amber-200 dark:border-amber-900/30">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Pending Expenses</CardTitle>
+                <CardTitle className="text-sm font-medium">Additional Expenses</CardTitle>
                 <Target className="h-4 w-4 text-amber-600" />
               </CardHeader>
               <CardContent>
@@ -1488,16 +1488,15 @@ export default function Analytics() {
                     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
                     const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
                     
-                    // Get all pending one-time expenses this month
-                    const pendingExpenses = dbTransactions.filter(tx => {
+                    // Get all one-time expenses this month
+                    const allExpenses = dbTransactions.filter(tx => {
                       const txDate = new Date(tx.transactionDate);
                       return tx.type === 'expense' && 
-                             tx.status === 'pending' && 
                              txDate >= startOfMonth && 
                              txDate <= endOfMonth;
                     });
                     
-                    return pendingExpenses.reduce((sum, tx) => sum + tx.amount, 0);
+                    return allExpenses.reduce((sum, tx) => sum + tx.amount, 0);
                   })())}
                 </div>
                 <p className="text-xs text-muted-foreground">
@@ -1506,18 +1505,14 @@ export default function Analytics() {
                     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
                     const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
                     
-                    const allPending = dbTransactions.filter(tx => {
+                    const allExpenses = dbTransactions.filter(tx => {
                       const txDate = new Date(tx.transactionDate);
                       return tx.type === 'expense' && 
-                             tx.status === 'pending' && 
                              txDate >= startOfMonth && 
                              txDate <= endOfMonth;
                     });
                     
-                    const pending = allPending.filter(tx => new Date(tx.transactionDate) > now).length;
-                    const overdue = allPending.filter(tx => new Date(tx.transactionDate) <= now).length;
-                    
-                    return `${pending} pending, ${overdue} overdue`;
+                    return `${allExpenses.length} expense${allExpenses.length !== 1 ? 's' : ''} this month`;
                   })()}
                 </p>
               </CardContent>
