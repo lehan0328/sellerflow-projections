@@ -350,11 +350,7 @@ export function PlaidAccountConfirmationDialog({
                                 size="sm"
                                 className="cursor-pointer hover:bg-primary/10 hover:border-primary transition-all flex items-center gap-1.5 px-3 h-7 text-xs select-none"
                               >
-                                {priority !== 3 ? (
-                                  <>Priority: {priority} ▼</>
-                                ) : (
-                                  <>Set Priority ▼</>
-                                )}
+                                <>Priority: {priority} ▼</>
                               </Button>
                             </PopoverTrigger>
                   <PopoverContent 
