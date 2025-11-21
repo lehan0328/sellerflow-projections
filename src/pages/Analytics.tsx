@@ -1365,10 +1365,7 @@ export default function Analytics() {
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
                   <PieChart>
-                    <Pie data={incomeBySource} cx="50%" cy="50%" labelLine={false} label={({
-                  name,
-                  percent
-                }) => `${name} ${(percent * 100).toFixed(0)}%`} outerRadius={80} fill="#8884d8" dataKey="value">
+                    <Pie data={incomeBySource} cx="50%" cy="50%" labelLine={false} outerRadius={80} fill="#8884d8" dataKey="value">
                       {incomeBySource.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
                     </Pie>
                     <Tooltip 
@@ -1407,10 +1404,7 @@ export default function Analytics() {
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
                   <PieChart>
-                    <Pie data={vendorCategoryData} cx="50%" cy="50%" labelLine={false} label={({
-                  name,
-                  percent
-                }) => `${name} ${(percent * 100).toFixed(0)}%`} outerRadius={80} fill="#8884d8" dataKey="value">
+                    <Pie data={vendorCategoryData} cx="50%" cy="50%" labelLine={false} outerRadius={80} fill="#8884d8" dataKey="value">
                       {vendorCategoryData.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
                     </Pie>
                     <Tooltip 
@@ -1617,14 +1611,7 @@ export default function Analytics() {
                   <Line type="monotone" dataKey="revenue" name="Amazon Confirmed" stroke="#10b981" strokeWidth={2} />
                   <Line type="monotone" dataKey="projected" name="Amazon Projected" stroke="#8b5cf6" strokeWidth={2} strokeDasharray="5 5" />
                   <Line type="monotone" dataKey="otherIncome" name="Other Income" stroke="#f59e0b" strokeWidth={2} />
-                  <Line type="monotone" dataKey="total" name="Total Income" stroke="#3b82f6" strokeWidth={3}>
-                    <LabelList 
-                      dataKey="total" 
-                      position="top" 
-                      formatter={(value: number) => formatCurrency(value)}
-                      style={{ fontSize: '11px', fontWeight: 'bold', fill: '#3b82f6' }}
-                    />
-                  </Line>
+                  <Line type="monotone" dataKey="total" name="Total Income" stroke="#3b82f6" strokeWidth={3} />
                 </LineChart>
               </ResponsiveContainer>
             </CardContent>
@@ -1669,22 +1656,8 @@ export default function Analytics() {
                     }}
                   />
                   <Legend />
-                  <Area type="monotone" dataKey="Income" stackId="1" stroke="#10b981" fill="#10b981" fillOpacity={0.6}>
-                    <LabelList 
-                      dataKey="Income" 
-                      position="top" 
-                      formatter={(value: number) => formatCurrency(value)}
-                      style={{ fontSize: '11px', fontWeight: 'bold', fill: '#10b981' }}
-                    />
-                  </Area>
-                  <Area type="monotone" dataKey="Expenses" stackId="2" stroke="#ef4444" fill="#ef4444" fillOpacity={0.6}>
-                    <LabelList 
-                      dataKey="Expenses" 
-                      position="top" 
-                      formatter={(value: number) => formatCurrency(value)}
-                      style={{ fontSize: '11px', fontWeight: 'bold', fill: '#ef4444' }}
-                    />
-                  </Area>
+                  <Area type="monotone" dataKey="Income" stackId="1" stroke="#10b981" fill="#10b981" fillOpacity={0.6} />
+                  <Area type="monotone" dataKey="Expenses" stackId="2" stroke="#ef4444" fill="#ef4444" fillOpacity={0.6} />
                 </AreaChart>
               </ResponsiveContainer>
             </CardContent>
