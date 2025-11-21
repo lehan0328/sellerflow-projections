@@ -13,6 +13,7 @@ import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Sparkles, TrendingUp, AlertCircle, Loader2, Pencil, Check, X, CreditCard, ShoppingCart, Info, RefreshCw, Settings, DollarSign, Calendar, ArrowLeft, Search } from "lucide-react";
 import { useState, useEffect, useMemo, useCallback, memo } from "react";
 import { format, addDays, parseISO, startOfDay } from "date-fns";
+import { parseISODate } from "@/lib/utils";
 import { generateRecurringDates } from "@/lib/recurringDates";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -2005,7 +2006,7 @@ export const CashFlowInsights = memo(({
                 return cardPayments
                   .sort((a, b) => new Date(a.payment_date).getTime() - new Date(b.payment_date).getTime())
                   .map((payment) => {
-                    const paymentDate = parseISO(payment.payment_date);
+                    const paymentDate = parseISODate(payment.payment_date);
                     const today = startOfDay(new Date());
                     const isCompleted = payment.status === 'completed';
                     const isOverdue = startOfDay(paymentDate) < today && payment.status === 'scheduled';

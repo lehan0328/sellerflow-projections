@@ -308,7 +308,7 @@ export const CreditCardPaymentsOverview = () => {
                           <div className="flex items-center gap-2">
                             <Calendar className="h-4 w-4 text-muted-foreground" />
                             <span className="font-medium">
-                              {format(addDays(parseISODate(payment.payment_date), -1), 'MMM d, yyyy')}
+                              {format(parseISODate(payment.payment_date), 'MMM d, yyyy')}
                             </span>
                           </div>
                         </TableCell>
