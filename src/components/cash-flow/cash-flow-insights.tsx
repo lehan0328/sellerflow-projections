@@ -465,6 +465,11 @@ export const CashFlowInsights = memo(({
         const paymentDate = startOfDay(new Date(payment.date));
         const paymentDateStr = format(paymentDate, 'yyyy-MM-dd');
         
+        // Skip if we already have an opportunity for this date (payment due date)
+        if (opportunities.some(opp => opp.date === paymentDateStr)) {
+          return;
+        }
+        
         // Calculate expenses between today and this payment date
         const pendingExpenses = events
           .filter(event =>
@@ -476,33 +481,21 @@ export const CashFlowInsights = memo(({
           .reduce((sum, event) => sum + (event.amount || 0), 0);
         
         // Calculate all payments up to and including this payment date
-        const allPaymentsUpToDate = events
-          .filter(event =>
-            event.creditCardId === card.id &&
-            event.type === 'credit-payment' &&
-            event.date && new Date(event.date) > today && new Date(event.date) <= paymentDate
-          )
-          .reduce((sum, event) => sum + (event.amount || 0), 0);
+          const allPaymentsUpToDate = events
+            .filter(event =>
+              event.creditCardId === card.id &&
+              event.type === 'credit-payment' &&
+              event.date && new Date(event.date) > today && new Date(event.date) <= paymentDate
+            )
+            .reduce((sum, event) => sum + (event.amount || 0), 0);
         
         // Calculate available credit after this payment
         const creditAfterPayment = currentAvailableSpend - pendingExpenses + allPaymentsUpToDate;
         
-        // Check if opportunity already exists for this date
-        const existingOppIndex = opportunities.findIndex(opp => opp.date === paymentDateStr);
-        
-        if (existingOppIndex >= 0) {
-          // Update existing opportunity with the higher credit value
-          opportunities[existingOppIndex].availableCredit = Math.max(
-            opportunities[existingOppIndex].availableCredit,
-            Math.max(0, creditAfterPayment)
-          );
-        } else {
-          // Add new opportunity for this payment date
-          opportunities.push({
-            date: paymentDateStr,
-            availableCredit: Math.max(0, creditAfterPayment)
-          });
-        }
+        opportunities.push({
+          date: paymentDateStr,
+          availableCredit: Math.max(0, creditAfterPayment)
+        });
       });
 
       // Sort all opportunities by date chronologically
