@@ -16,10 +16,16 @@ export function capitalizeName(name: string): string {
 /**
  * Parse an ISO date string (YYYY-MM-DD) without timezone conversion
  * This prevents dates from shifting due to timezone offsets
- * @param dateStr - ISO date string in format YYYY-MM-DD
+ * @param dateStr - ISO date string in format YYYY-MM-DD or Date object
  * @returns Date object representing the date in local timezone
  */
-export function parseISODate(dateStr: string): Date {
+export function parseISODate(dateStr: string | Date): Date {
+  // If already a Date object, return a new Date at start of day in local timezone
+  if (dateStr instanceof Date) {
+    return new Date(dateStr.getFullYear(), dateStr.getMonth(), dateStr.getDate());
+  }
+  
+  // Parse string date
   const [year, month, day] = dateStr.split('T')[0].split('-').map(Number);
   return new Date(year, month - 1, day);
 }
