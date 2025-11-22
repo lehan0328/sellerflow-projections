@@ -575,11 +575,15 @@ const Landing = () => {
               
               <p className="text-base sm:text-lg lg:text-xl text-muted-foreground max-w-full md:max-w-2xl animate-fade-in leading-relaxed break-words" style={{
               animationDelay: '400ms'
-            }}>Auren forecasts 90-day precise Amazon payout forecast based on your amazon data, tracks every purchase order, recurring expense, credit card payment, and additional income to provide you your cashflow for the next 3 months.</p>
+            }}>Never get blindsided by cash shortages again.</p>
               
               <p className="text-sm sm:text-base text-muted-foreground/90 max-w-full md:max-w-2xl animate-fade-in leading-relaxed break-words" style={{
               animationDelay: '500ms'
-            }}>How it works - Search by budget ("I want to spend $X") and Auren tells you the exact date you can spend it, or search by date ("I need to buy inventory on this day") and Auren shows how much you can safely spend aligned with all of your expenses and additional income sources.</p>
+            }}>Auren looks ahead and forecasts your payouts, upcoming purchase orders, employee payroll, recurring expenses, and any other expenses you incur — then shows how much you can safely spend without risking your next PO or bill.</p>
+              
+              <p className="text-sm sm:text-base text-muted-foreground/80 max-w-full md:max-w-2xl animate-fade-in leading-relaxed break-words font-medium" style={{
+              animationDelay: '550ms'
+            }}>No more guessing. No more delays. No more &quot;can I afford this?&quot; moments.</p>
               
               <div className="flex flex-col sm:flex-row items-start gap-4 animate-fade-in" style={{
               animationDelay: '600ms'
