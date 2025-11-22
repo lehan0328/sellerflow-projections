@@ -412,7 +412,7 @@ export const CashFlowInsights = memo(({
 
       // PAYMENT DUE DATE OPPORTUNITY (with early payment reduction)
       if (card.statement_balance && card.statement_balance > 0 && card.payment_due_date) {
-        const paymentDueDate = startOfDay(parseISO(card.payment_due_date));
+        const paymentDueDate = startOfDay(parseISODate(card.payment_due_date));
 
         if (paymentDueDate > today) {
           const dueDateStr = format(paymentDueDate, 'yyyy-MM-dd');
@@ -1197,7 +1197,7 @@ export const CashFlowInsights = memo(({
                     {tempProjections.map((proj, idx) => (
                       <div key={idx} className="flex justify-between">
                         <span>${proj.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                        <span>{format(parseISO(proj.date), 'MMM d')}</span>
+                        <span>{format(parseISODate(proj.date), 'MMM d')}</span>
                       </div>
                     ))}
                   </div>
@@ -1498,7 +1498,7 @@ export const CashFlowInsights = memo(({
                         <div className="p-6 rounded-lg border bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border-blue-200 dark:border-blue-800">
                           <div className="text-center mb-4">
                             <div className="text-xs text-muted-foreground mb-2">
-                              On {format(parseISO(searchDate), 'MMMM d, yyyy')}
+                              On {format(parseISODate(searchDate), 'MMMM d, yyyy')}
                             </div>
                             <div className="text-4xl font-bold text-blue-600">
                               ${relevantOpp.balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -1619,7 +1619,7 @@ export const CashFlowInsights = memo(({
                         <div className="flex gap-3 text-xs">
                           {card.payment_due_date && (
                             <span className="text-blue-600 dark:text-blue-400 font-medium">
-                              Due: {format(addDays(parseISO(card.payment_due_date), -1), 'MMM d')}
+                              Due: {format(parseISODate(card.payment_due_date), 'MMM d')}
                             </span>
                           )}
                           {card.statement_balance > 0 && (
@@ -1673,7 +1673,7 @@ export const CashFlowInsights = memo(({
                               ${lowestCredit.credit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </span>
                             <p className="text-xs text-amber-600 dark:text-amber-500">
-                              on {format(parseISO(lowestCredit.date), 'MMM d')}
+                              on {format(parseISODate(lowestCredit.date), 'MMM d')}
                             </p>
                           </div>
                         </div>
@@ -1696,7 +1696,7 @@ export const CashFlowInsights = memo(({
                           {opportunities.map((opp, idx) => (
                             <div key={idx} className="flex justify-between items-center p-2 bg-blue-50 dark:bg-blue-950/20 rounded text-xs border border-blue-200 dark:border-blue-800">
                               <span className="text-muted-foreground">
-                                {format(parseISO(opp.date), 'MMM d')}
+                                {format(parseISODate(opp.date), 'MMM d')}
                               </span>
                               <span className="font-semibold text-blue-600">
                                 ${opp.availableCredit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
