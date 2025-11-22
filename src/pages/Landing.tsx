@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PublicHeader } from "@/components/PublicHeader";
-import { CheckCircle, Star, TrendingUp, Shield, Zap, Users, ArrowRight, ShoppingCart, CreditCard, Calendar, Sparkles, Check, X, Plus, Minus, Moon, Sun, ExternalLink, Lock, AlertCircle, BookOpen, Calculator, BadgeCheck, Lightbulb, Wallet, ChevronDown } from "lucide-react";
+import { CheckCircle, Star, TrendingUp, Shield, Zap, Users, ArrowRight, ShoppingCart, CreditCard, Calendar, Sparkles, Check, X, Plus, Minus, Moon, Sun, ExternalLink, Lock, AlertCircle, BookOpen, Calculator, BadgeCheck, Lightbulb, Wallet, ChevronDown, Maximize2 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import aurenIcon from "@/assets/auren-icon-blue.png";
 import aurenFullLogo from "@/assets/auren-full-logo.png";
@@ -17,12 +17,12 @@ import dashboardPreview from "@/assets/dashboard-preview-new.png";
 import { useNavigate, Link } from "react-router-dom";
 import { FloatingChatWidget } from "@/components/floating-chat-widget";
 import { LineChart, Line, ResponsiveContainer } from 'recharts';
+import { Dialog, DialogContent, DialogClose, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useAuth } from "@/hooks/useAuth";
 import { useAmazonPayouts } from "@/hooks/useAmazonPayouts";
 import { useUserSettings } from "@/hooks/useUserSettings";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { useTheme } from "next-themes";
@@ -45,6 +45,7 @@ const Landing = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showEnterpriseCustomizer, setShowEnterpriseCustomizer] = useState(false);
   const [showStickyCTA, setShowStickyCTA] = useState(false);
+  const [isImageOpen, setIsImageOpen] = useState(false);
   const [isStartingTrial, setIsStartingTrial] = useState(false);
   const [selectedMobilePlan, setSelectedMobilePlan] = useState(0); // Default to Starter plan (index 0)
 
@@ -701,13 +702,26 @@ const Landing = () => {
                 <div className="absolute -inset-8 bg-gradient-to-r from-primary/20 via-accent/20 to-primary/20 rounded-3xl blur-3xl" />
                 
                 {/* Image card */}
-                <div className="relative rounded-2xl border-2 border-primary/20 bg-card/80 backdrop-blur-xl shadow-2xl overflow-hidden">
-                  <img src={dashboardPreview} alt="Auren Dashboard Preview - Cash Flow Visualization and Safe Spending Power" className="w-full h-auto will-change-transform" style={{
-                  imageRendering: '-webkit-optimize-contrast',
-                  transform: 'translateZ(0)',
-                  backfaceVisibility: 'hidden',
-                  WebkitFontSmoothing: 'subpixel-antialiased'
-                }} />
+                <div 
+                  className="relative rounded-2xl border-2 border-primary/20 bg-card/80 backdrop-blur-xl shadow-2xl overflow-hidden group cursor-pointer"
+                  onClick={() => setIsImageOpen(true)}
+                >
+                  <img 
+                    src={dashboardPreview} 
+                    alt="Auren Dashboard Preview - Cash Flow Visualization and Safe Spending Power" 
+                    className="w-full h-auto will-change-transform transition-transform duration-300 group-hover:scale-[1.02]" 
+                    style={{
+                      imageRendering: '-webkit-optimize-contrast',
+                      transform: 'translateZ(0)',
+                      backfaceVisibility: 'hidden',
+                      WebkitFontSmoothing: 'subpixel-antialiased'
+                    }} 
+                  />
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-300 flex items-center justify-center">
+                    <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-primary text-primary-foreground p-3 rounded-full shadow-lg">
+                      <Maximize2 className="h-6 w-6" />
+                    </div>
+                  </div>
                 </div>
               </div>
               
@@ -2276,6 +2290,23 @@ const Landing = () => {
 
       {/* Floating AI Chat Widget */}
       <FloatingChatWidget />
+
+      {/* Fullscreen Image Dialog */}
+      <Dialog open={isImageOpen} onOpenChange={setIsImageOpen}>
+        <DialogContent className="max-w-[95vw] max-h-[95vh] p-0 overflow-hidden border-0">
+          <DialogClose className="absolute right-4 top-4 z-50 rounded-full bg-background/80 backdrop-blur-sm p-2 opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
+            <X className="h-5 w-5" />
+            <span className="sr-only">Close</span>
+          </DialogClose>
+          <div className="w-full h-full flex items-center justify-center bg-black/95 p-4">
+            <img 
+              src={dashboardPreview} 
+              alt="Auren Dashboard Preview - Full View" 
+              className="max-w-full max-h-full object-contain rounded-lg"
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>;
 };
 export default Landing;
