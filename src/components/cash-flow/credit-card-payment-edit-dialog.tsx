@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CalendarIcon } from "lucide-react";
-import { format, addDays } from "date-fns";
+import { format, addDays, startOfDay } from "date-fns";
 import { cn, parseISODate } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -54,8 +54,8 @@ export function CreditCardPaymentEditDialog({
     setIsSubmitting(true);
 
     try {
-      // Use timezone-safe date formatting - no adjustment needed
-      const dateString = format(paymentDate, 'yyyy-MM-dd');
+      // Use timezone-safe date formatting with startOfDay
+      const dateString = format(startOfDay(paymentDate), 'yyyy-MM-dd');
       
       const { error } = await supabase
         .from('credit_card_payments')
