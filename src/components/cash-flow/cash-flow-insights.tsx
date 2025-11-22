@@ -422,7 +422,7 @@ export const CashFlowInsights = memo(({
             .filter(event => 
               event.creditCardId === card.id &&
               event.type === 'credit-payment' &&
-              event.date && new Date(event.date) > today && new Date(event.date) < paymentDueDate
+              event.date && parseISODate(event.date) > today && parseISODate(event.date) < paymentDueDate
             )
             .reduce((sum, event) => sum + (event.amount || 0), 0);
           
@@ -437,7 +437,7 @@ export const CashFlowInsights = memo(({
                 event.creditCardId === card.id &&
                 event.status === 'pending' &&
                 (event.type === 'purchase_order' || event.type === 'expense') &&
-                event.date && new Date(event.date) > today && new Date(event.date) <= paymentDueDate
+                event.date && parseISODate(event.date) > today && parseISODate(event.date) <= paymentDueDate
               )
               .reduce((sum, event) => sum + (event.amount || 0), 0);
             
@@ -458,11 +458,11 @@ export const CashFlowInsights = memo(({
         .filter(event =>
           event.creditCardId === card.id &&
           event.type === 'credit-payment' &&
-          event.date && new Date(event.date) > today
+          event.date && parseISODate(event.date) > today
         );
 
       manualPayments.forEach(payment => {
-        const paymentDate = startOfDay(new Date(payment.date));
+        const paymentDate = startOfDay(parseISODate(payment.date));
         const paymentDateStr = format(paymentDate, 'yyyy-MM-dd');
         
         // Skip if we already have an opportunity for this date (payment due date)
@@ -476,7 +476,7 @@ export const CashFlowInsights = memo(({
             event.creditCardId === card.id &&
             event.status === 'pending' &&
             (event.type === 'purchase_order' || event.type === 'expense') &&
-            event.date && new Date(event.date) > today && new Date(event.date) <= paymentDate
+            event.date && parseISODate(event.date) > today && parseISODate(event.date) <= paymentDate
           )
           .reduce((sum, event) => sum + (event.amount || 0), 0);
         
@@ -485,7 +485,7 @@ export const CashFlowInsights = memo(({
             .filter(event =>
               event.creditCardId === card.id &&
               event.type === 'credit-payment' &&
-              event.date && new Date(event.date) > today && new Date(event.date) <= paymentDate
+              event.date && parseISODate(event.date) > today && parseISODate(event.date) <= paymentDate
             )
             .reduce((sum, event) => sum + (event.amount || 0), 0);
         
@@ -499,7 +499,7 @@ export const CashFlowInsights = memo(({
       });
 
       // Sort all opportunities by date chronologically
-      opportunities.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      opportunities.sort((a, b) => parseISODate(a.date).getTime() - parseISODate(b.date).getTime());
 
       opportunitiesMap[card.id] = opportunities;
     }
@@ -532,7 +532,7 @@ export const CashFlowInsights = memo(({
         
         // Get events for THIS CARD on this specific date (exclude overdue)
         const dayEvents = events.filter(event => {
-          const eventDate = new Date(event.date);
+          const eventDate = parseISODate(event.date);
           eventDate.setHours(0, 0, 0, 0);
           const eventDateStr = format(eventDate, "yyyy-MM-dd");
           const isOverdue = eventDate < today;
@@ -1331,8 +1331,8 @@ export const CashFlowInsights = memo(({
                       // Sort by available_date to find the earliest one
                       const matchingOpp = matchingOpps.length > 0
                         ? matchingOpps.sort((a, b) => {
-                            const dateA = new Date(a.available_date || a.date).getTime();
-                            const dateB = new Date(b.available_date || b.date).getTime();
+                            const dateA = parseISODate(a.available_date || a.date).getTime();
+                            const dateB = parseISODate(b.available_date || b.date).getTime();
                             return dateA - dateB;
                           })[0]
                         : null;
@@ -1910,9 +1910,9 @@ export const CashFlowInsights = memo(({
                 }
                 
                 return cardTransactions
-                  .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+                  .sort((a, b) => parseISODate(a.date).getTime() - parseISODate(b.date).getTime())
                   .map((transaction, idx) => {
-                    const date = new Date(transaction.date);
+                    const date = parseISODate(transaction.date);
                     const isOverdue = startOfDay(date) < startOfDay(new Date());
                     
                     return (
