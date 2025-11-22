@@ -27,7 +27,13 @@ export function CreditCardPaymentEditDialog({
   onSuccess,
 }: CreditCardPaymentEditDialogProps) {
   const [paymentAmount, setPaymentAmount] = useState("");
-  const [paymentDate, setPaymentDate] = useState<Date>(new Date());
+  const [paymentDate, setPaymentDate] = useState<string>(() => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  });
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const queryClient = useQueryClient();
@@ -36,7 +42,7 @@ export function CreditCardPaymentEditDialog({
   useEffect(() => {
     if (payment && open) {
       setPaymentAmount(Math.abs(payment.amount).toString());
-      setPaymentDate(parseISODate(payment.payment_date));
+      setPaymentDate(payment.payment_date);
     }
   }, [payment, open]);
 
@@ -54,8 +60,8 @@ export function CreditCardPaymentEditDialog({
     setIsSubmitting(true);
 
     try {
-      // Use timezone-safe date formatting with startOfDay
-      const dateString = format(startOfDay(paymentDate), 'yyyy-MM-dd');
+      // Payment date is already in YYYY-MM-DD format
+      const dateString = paymentDate;
       
       const { error } = await supabase
         .from('credit_card_payments')
@@ -116,16 +122,19 @@ export function CreditCardPaymentEditDialog({
                   )}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {paymentDate ? format(paymentDate, "PPP") : <span>Pick a date</span>}
+                  {paymentDate ? format(parseISODate(paymentDate), "PPP") : <span>Pick a date</span>}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
                 <Calendar
                   mode="single"
-                  selected={paymentDate}
+                  selected={paymentDate ? parseISODate(paymentDate) : undefined}
                   onSelect={(date) => {
                     if (date) {
-                      setPaymentDate(date);
+                      const year = date.getFullYear();
+                      const month = String(date.getMonth() + 1).padStart(2, '0');
+                      const day = String(date.getDate()).padStart(2, '0');
+                      setPaymentDate(`${year}-${month}-${day}`);
                       setIsCalendarOpen(false);
                     }
                   }}
