@@ -391,17 +391,15 @@ const Landing = () => {
         {/* Breadcrumb Structured Data */}
         <script type="application/ld+json">
           {JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "BreadcrumbList",
-            "itemListElement": [
-              {
-                "@type": "ListItem",
-                "position": 1,
-                "name": "Home",
-                "item": "https://aurenapp.com/"
-              }
-            ]
-          })}
+          "@context": "https://schema.org",
+          "@type": "BreadcrumbList",
+          "itemListElement": [{
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Home",
+            "item": "https://aurenapp.com/"
+          }]
+        })}
         </script>
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://aurenapp.com/" />
@@ -577,7 +575,7 @@ const Landing = () => {
               
               <p className="text-base sm:text-lg lg:text-xl text-muted-foreground max-w-full md:max-w-2xl animate-fade-in leading-relaxed break-words" style={{
               animationDelay: '400ms'
-            }}>Never get blindsided by cash shortages again.</p>
+            }}>Never get blindsided by cash shortages with Auren again.</p>
               
               <p className="text-sm sm:text-base text-muted-foreground/90 max-w-full md:max-w-2xl animate-fade-in leading-relaxed break-words" style={{
               animationDelay: '500ms'
@@ -1456,19 +1454,17 @@ const Landing = () => {
             <div className="max-w-7xl mx-auto">
               {/* Mobile Plan Selector - Only visible on mobile */}
               <div className="sm:hidden mb-4">
-                <Select value={selectedMobilePlan.toString()} onValueChange={(value) => setSelectedMobilePlan(parseInt(value))}>
+                <Select value={selectedMobilePlan.toString()} onValueChange={value => setSelectedMobilePlan(parseInt(value))}>
                   <SelectTrigger className="w-full bg-background border-2 z-50">
                     <SelectValue placeholder="Select a plan" />
                   </SelectTrigger>
                   <SelectContent className="bg-background border z-50">
-                    {pricingPlans.map((plan, index) => (
-                      <SelectItem key={index} value={index.toString()} className="bg-background hover:bg-muted">
+                    {pricingPlans.map((plan, index) => <SelectItem key={index} value={index.toString()} className="bg-background hover:bg-muted">
                         <div className="flex items-center justify-between w-full">
                           <span className="font-medium">{plan.name}</span>
                           {plan.popular && <Badge className="ml-2 bg-gradient-primary text-[10px]">Popular</Badge>}
                         </div>
-                      </SelectItem>
-                    ))}
+                      </SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
@@ -1479,18 +1475,13 @@ const Landing = () => {
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-0 border-b">
                   <div className="p-2 sm:p-4 bg-muted/30 text-xs sm:text-sm font-medium">Features</div>
                   {pricingPlans.map((plan, index) => {
-                    // On mobile, only show the selected plan
-                    const showOnMobile = index === selectedMobilePlan;
-                    const hideOnMobile = !showOnMobile;
-                    
-                    return (
-                      <div 
-                        key={index} 
-                        className={`p-2 sm:p-4 border-l ${plan.popular ? 'bg-primary/5 relative' : 'bg-background'} 
+                // On mobile, only show the selected plan
+                const showOnMobile = index === selectedMobilePlan;
+                const hideOnMobile = !showOnMobile;
+                return <div key={index} className={`p-2 sm:p-4 border-l ${plan.popular ? 'bg-primary/5 relative' : 'bg-background'} 
                           ${hideOnMobile ? 'hidden' : ''} 
                           ${index === 0 ? 'sm:block' : ''} 
-                          ${index === 3 ? 'sm:hidden lg:block' : 'sm:block'}`}
-                      >
+                          ${index === 3 ? 'sm:hidden lg:block' : 'sm:block'}`}>
                         {plan.popular && <div className="absolute top-0 left-0 right-0">
                             <Badge className="bg-gradient-primary text-primary-foreground rounded-none w-full rounded-t-lg text-[10px] sm:text-xs py-0.5 sm:py-1">
                               Most Popular
@@ -1520,30 +1511,22 @@ const Landing = () => {
                               No credit card required
                             </p>}
                         </div>
-                      </div>
-                    );
-                  })}
+                      </div>;
+              })}
                 </div>
 
                 {/* Feature Comparison Table - Connected */}
                 <CardContent className="p-0">
                   <div className="divide-y">
                     {featureComparison.map((row, index) => {
-                      // Get the feature value for the selected mobile plan
-                      const mobileFeatureValue = selectedMobilePlan === 0 ? row.starter : 
-                                                 selectedMobilePlan === 1 ? row.growing : 
-                                                 selectedMobilePlan === 2 ? row.professional : 
-                                                 row.enterprise;
-                      
-                      return (
-                        <div key={index} className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-0 hover:bg-muted/30 transition-colors">
+                  // Get the feature value for the selected mobile plan
+                  const mobileFeatureValue = selectedMobilePlan === 0 ? row.starter : selectedMobilePlan === 1 ? row.growing : selectedMobilePlan === 2 ? row.professional : row.enterprise;
+                  return <div key={index} className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-0 hover:bg-muted/30 transition-colors">
                           <div className="p-2 sm:p-3 font-medium text-xs sm:text-sm bg-muted/30 flex items-center">{row.feature}</div>
                           
                           {/* Mobile: Show only selected plan */}
                           <div className={`p-2 sm:p-3 border-l flex items-center justify-center sm:hidden ${pricingPlans[selectedMobilePlan].popular ? 'bg-primary/5' : ''}`}>
-                            {mobileFeatureValue === true ? <Check className="h-3 w-3 text-success" /> : 
-                             mobileFeatureValue === false ? <X className="h-3 w-3 text-destructive" /> : 
-                             <span className="text-xs font-medium">{mobileFeatureValue}</span>}
+                            {mobileFeatureValue === true ? <Check className="h-3 w-3 text-success" /> : mobileFeatureValue === false ? <X className="h-3 w-3 text-destructive" /> : <span className="text-xs font-medium">{mobileFeatureValue}</span>}
                           </div>
                           
                           {/* Tablet/Desktop: Show all plans */}
@@ -1559,9 +1542,8 @@ const Landing = () => {
                           <div className={`p-2 sm:p-3 border-l items-center justify-center ${pricingPlans[3].popular ? 'bg-primary/5' : ''} hidden lg:flex`}>
                             {row.enterprise === true ? <Check className="h-3 w-3 sm:h-4 sm:w-4 text-success" /> : row.enterprise === false ? <X className="h-3 w-3 sm:h-4 sm:w-4 text-destructive" /> : <span className="text-xs sm:text-sm font-medium">{row.enterprise}</span>}
                           </div>
-                        </div>
-                      );
-                    })}
+                        </div>;
+                })}
                   </div>
                 </CardContent>
               </Card>
