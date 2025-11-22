@@ -555,7 +555,7 @@ const Landing = () => {
                     
                     <span className="text-foreground block mb-2 w-full">Smarter</span>
                     
-                    <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent animate-shimmer bg-[length:200%_100%] leading-tight tracking-tight block mb-2 break-words text-3xl sm:text-4xl lg:text-5xl xl:text-6xl">
+                    <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent animate-shimmer bg-[length:200%_100%] leading-snug tracking-tight block mb-2 pb-1 break-words text-3xl sm:text-4xl lg:text-5xl xl:text-6xl">
                       Cash Flow Forecasting
                     </span>
                     
