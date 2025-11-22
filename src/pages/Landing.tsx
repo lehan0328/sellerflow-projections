@@ -574,6 +574,10 @@ const Landing = () => {
               </blockquote>
               
               <p className="text-base sm:text-lg lg:text-xl text-muted-foreground max-w-full md:max-w-2xl animate-fade-in leading-relaxed break-words" style={{
+              animationDelay: '350ms'
+            }}>Ever check your bank and still feel unsure if you can afford a PO or payroll this week?</p>
+              
+              <p className="text-base sm:text-lg lg:text-xl text-muted-foreground max-w-full md:max-w-2xl animate-fade-in leading-relaxed break-words" style={{
               animationDelay: '400ms'
             }}>Never get blindsided by cash shortages with Auren again.</p>
               
