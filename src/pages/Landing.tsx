@@ -544,15 +544,17 @@ const Landing = () => {
             }}>
                 <div className="space-y-4">
                   <h1 className="text-4xl lg:text-5xl xl:text-6xl font-display font-bold leading-tight tracking-tight break-words">
-                    <Badge className="inline-flex items-center gap-2 bg-primary/10 text-primary border border-primary/20 px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm font-semibold backdrop-blur-sm mb-3 flex-wrap max-w-full">
-                      <Sparkles className="h-3 w-3 sm:h-4 sm:w-4 animate-pulse flex-shrink-0" />
-                      <span className="font-badge">Mathematical Rule-Based</span>
-                      <span className="px-1.5 sm:px-2 py-0.5 bg-primary/20 rounded-full text-xs">Accurate</span>
-                    </Badge>
-                    
-                    <Badge variant="secondary" className="text-xs sm:text-sm md:text-base px-2 sm:px-3 md:px-4 py-1 sm:py-1.5 md:py-2 font-semibold tracking-wide inline-block mb-3 max-w-full break-words">
-                      Starting at only $29/mo
-                    </Badge>
+                    <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between lg:gap-8 mb-3">
+                      <Badge className="inline-flex items-center gap-2 bg-primary/10 text-primary border border-primary/20 px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm font-semibold backdrop-blur-sm mb-2 lg:mb-0 flex-wrap max-w-full lg:max-w-fit">
+                        <Sparkles className="h-3 w-3 sm:h-4 sm:w-4 animate-pulse flex-shrink-0" />
+                        <span className="font-badge">Mathematical Rule-Based</span>
+                        <span className="px-1.5 sm:px-2 py-0.5 bg-primary/20 rounded-full text-xs">Accurate</span>
+                      </Badge>
+                      
+                      <Badge variant="secondary" className="text-xs sm:text-sm md:text-base px-2 sm:px-3 md:px-4 py-1 sm:py-1.5 md:py-2 font-semibold tracking-wide inline-block max-w-full lg:max-w-fit break-words">
+                        Starting at only $29/mo
+                      </Badge>
+                    </div>
                     
                     <span className="text-foreground block mb-2 w-full">Smarter</span>
                     
