@@ -30,7 +30,7 @@ Deno.serve(async (req) => {
       .from('amazon_accounts')
       .select('id, user_id, account_name, marketplace_name, last_sync, sync_status, sync_progress, initial_sync_complete, sync_next_token, created_at')
       .eq('is_active', true)
-      .in('sync_status', ['idle', 'syncing', 'completed']) // Include completed accounts for daily sync
+      .in('sync_status', ['idle', 'syncing', 'completed']) // Include completed accounts
 
     if (fetchError) {
       console.error('Error fetching Amazon accounts:', fetchError)
@@ -112,26 +112,11 @@ Deno.serve(async (req) => {
           }
           console.log(`📥 Continuing backfill for ${account.account_name} (${account.sync_progress || 0}% complete)`)
         }
-        // For completed accounts, sync once daily BUT check 4 days back
-        // to catch settlements delayed by Amazon's API (up to 24h delay)
+        // For completed accounts
         else {
-          const minHoursBetweenSync = 23 // Once per day with 1hr buffer
-          
-          const hoursSinceSync = minutesSinceSync / 60
-          
-          if (hoursSinceSync < minHoursBetweenSync) {
-            console.log(`Skipping ${account.account_name} - last synced ${hoursSinceSync.toFixed(1)} hours ago`)
-            syncResults.push({
-              accountId: account.id,
-              accountName: account.account_name,
-              success: true,
-              skipped: true,
-              reason: `Last synced ${hoursSinceSync.toFixed(1)} hours ago`
-            })
-            continue
-          }
-          
-          console.log(`📅 Daily sync for ${account.account_name} (will check last 4 days for delayed settlements)`)
+          // MODIFICATION: Removed the 23-hour limit logic.
+          // This will now run every time the scheduler triggers, regardless of when the last sync was.
+          console.log(`📅 Standard sync for ${account.account_name} (checking last 4 days for delayed settlements)`)
         }
       }
 
@@ -190,7 +175,6 @@ Deno.serve(async (req) => {
         }
 
         // Add delay between accounts to avoid rate limiting (30 seconds)
-        // Reduced from 3 minutes since we're now doing 1-day batches
         await new Promise(resolve => setTimeout(resolve, 30000))
       } catch (error) {
         console.error(`Exception syncing account ${account.id}:`, error)
@@ -208,9 +192,6 @@ Deno.serve(async (req) => {
     const failedCount = syncResults.filter(r => !r.success).length
 
     console.log(`Sync complete: ${successCount} succeeded, ${skippedCount} skipped, ${failedCount} failed`)
-
-    // Workflow now handles rollover + forecast regeneration decision per account
-    console.log('✅ Sync orchestration complete. Forecast workflow runs during individual sync.')
 
     return new Response(
       JSON.stringify({
