@@ -14,7 +14,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { CreditCard, CalendarIcon, Info } from "lucide-react";
-import { format, startOfDay, addDays, parseISO } from "date-fns";
+import { format, startOfDay, addDays } from "date-fns";
 import { cn, parseISODate } from "@/lib/utils";
 import type { CalendarEvent } from "@/lib/calendarBalances";
 
@@ -282,12 +282,12 @@ export function CreditCardPaymentDialog({
                 </p>
                 {selectedCreditCard.payment_due_date && (
                   <p className="text-sm text-muted-foreground">
-                    Payment Due Date: {format(addDays(parseISO(selectedCreditCard.payment_due_date), -1), "MMM dd, yyyy")}
+                    Payment Due Date: {format(parseISODate(selectedCreditCard.payment_due_date), "MMM dd, yyyy")}
                   </p>
                 )}
                 {lowestCreditDate && (
                   <p className="text-sm font-medium text-amber-600 dark:text-amber-400">
-                    Lowest Credit (30 days): ${lowestCreditDate.credit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} on {format(addDays(parseISO(lowestCreditDate.date), -1), 'MMM d, yyyy')}
+                    Lowest Credit (30 days): ${lowestCreditDate.credit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} on {format(parseISODate(lowestCreditDate.date), 'MMM d, yyyy')}
                   </p>
                 )}
                 {selectedCardOpportunities.length > 0 && (
@@ -295,7 +295,7 @@ export function CreditCardPaymentDialog({
                     <p className="text-xs font-semibold text-muted-foreground">Buying Opportunities ({selectedCardOpportunities.length} available)</p>
                     {selectedCardOpportunities.slice(0, 2).map((opp, idx) => (
                       <div key={idx} className="flex justify-between items-center text-xs">
-                        <span className="text-muted-foreground">{format(addDays(parseISO(opp.date), -1), 'MMM d')}</span>
+                        <span className="text-muted-foreground">{format(parseISODate(opp.date), 'MMM d')}</span>
                         <span className="font-semibold text-blue-600 dark:text-blue-400">
                           ${opp.availableCredit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </span>
