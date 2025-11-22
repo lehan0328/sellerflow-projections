@@ -46,7 +46,7 @@ const Landing = () => {
   const [showEnterpriseCustomizer, setShowEnterpriseCustomizer] = useState(false);
   const [showStickyCTA, setShowStickyCTA] = useState(false);
   const [isStartingTrial, setIsStartingTrial] = useState(false);
-  const [selectedMobilePlan, setSelectedMobilePlan] = useState(1); // Default to Growing plan (index 1)
+  const [selectedMobilePlan, setSelectedMobilePlan] = useState(0); // Default to Starter plan (index 0)
 
   // Calculate forecast stats
   const forecastStats = (() => {
