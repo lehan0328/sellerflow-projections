@@ -431,18 +431,26 @@ export const CashFlowInsights = memo(({
           
           // Only add opportunity if there's remaining statement balance to pay
           if (effectiveStatementBalance > 0) {
-            // Calculate expenses between today and due date
+            // Find the most recent opportunity before due date to build upon
+            const previousOpportunity = opportunities
+              .filter(opp => parseISODate(opp.date) < paymentDueDate)
+              .sort((a, b) => parseISODate(b.date).getTime() - parseISODate(a.date).getTime())[0];
+            
+            const startingCredit = previousOpportunity?.availableCredit ?? currentAvailableSpend;
+            const startDate = previousOpportunity ? parseISODate(previousOpportunity.date) : today;
+            
+            // Calculate expenses between the last opportunity and due date
             const pendingExpenses = events
               .filter(event => 
                 event.creditCardId === card.id &&
                 event.status === 'pending' &&
                 (event.type === 'purchase_order' || event.type === 'expense') &&
-                event.date && parseISODate(event.date) > today && parseISODate(event.date) <= paymentDueDate
+                event.date && parseISODate(event.date) > startDate && parseISODate(event.date) <= paymentDueDate
               )
               .reduce((sum, event) => sum + (event.amount || 0), 0);
             
-            // Calculate available credit on payment due date using effective statement balance
-            const dueDateCredit = currentAvailableSpend - pendingExpenses + effectiveStatementBalance;
+            // Calculate available credit on payment due date, building on previous opportunity
+            const dueDateCredit = startingCredit - pendingExpenses + effectiveStatementBalance;
             
             opportunities.push({
               date: dueDateStr,
