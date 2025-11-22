@@ -1979,7 +1979,7 @@ export type Database = {
           last_amazon_connection: string | null
           last_name: string | null
           max_bank_connections: number | null
-          max_team_members: number
+          max_team_members: number | null
           monthly_amazon_revenue: string | null
           monthly_revenue: string | null
           my_referral_code: string | null
@@ -2013,7 +2013,7 @@ export type Database = {
           last_amazon_connection?: string | null
           last_name?: string | null
           max_bank_connections?: number | null
-          max_team_members?: number
+          max_team_members?: number | null
           monthly_amazon_revenue?: string | null
           monthly_revenue?: string | null
           my_referral_code?: string | null
@@ -2047,7 +2047,7 @@ export type Database = {
           last_amazon_connection?: string | null
           last_name?: string | null
           max_bank_connections?: number | null
-          max_team_members?: number
+          max_team_members?: number | null
           monthly_amazon_revenue?: string | null
           monthly_revenue?: string | null
           my_referral_code?: string | null
