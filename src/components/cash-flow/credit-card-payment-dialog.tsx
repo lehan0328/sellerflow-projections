@@ -15,7 +15,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { CreditCard, CalendarIcon, Info } from "lucide-react";
 import { format, startOfDay, addDays, parseISO } from "date-fns";
-import { cn } from "@/lib/utils";
+import { cn, parseISODate } from "@/lib/utils";
 import type { CalendarEvent } from "@/lib/calendarBalances";
 
 interface CreditCardPaymentDialogProps {
@@ -48,7 +48,13 @@ export function CreditCardPaymentDialog({
   
   const [selectedCreditCardId, setSelectedCreditCardId] = useState<string>("");
   const [paymentAmount, setPaymentAmount] = useState<string>("");
-  const [paymentDate, setPaymentDate] = useState<Date>(new Date());
+  const [paymentDate, setPaymentDate] = useState<string>(() => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
@@ -64,8 +70,9 @@ export function CreditCardPaymentDialog({
   const projectedAvailableCredit = useMemo(() => {
     if (!selectedCreditCardId || !paymentDate || !selectedCreditCard) return null;
 
-    const today = startOfDay(new Date());
-    const targetDate = startOfDay(paymentDate);
+    const today = new Date();
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    const targetDate = paymentDate;
 
     // Start with current available credit
     const currentAvailableCredit = (selectedCreditCard.credit_limit_override || selectedCreditCard.credit_limit) - (selectedCreditCard.statement_balance || selectedCreditCard.balance);
@@ -73,8 +80,8 @@ export function CreditCardPaymentDialog({
 
     // Only process future events (after today) to avoid double-counting
     const futureEvents = allCalendarEvents.filter(event => {
-      const eventDate = startOfDay(new Date(event.date));
-      return eventDate > today && eventDate <= targetDate;
+      const eventDateStr = typeof event.date === 'string' ? event.date : format(event.date, 'yyyy-MM-dd');
+      return eventDateStr > todayStr && eventDateStr <= targetDate;
     });
 
     // Process events that affect this specific card
@@ -97,8 +104,7 @@ export function CreditCardPaymentDialog({
   const projectedCashBalance = useMemo(() => {
     if (!paymentDate || projectedDailyBalances.length === 0) return null;
 
-    const dateStr = format(paymentDate, "yyyy-MM-dd");
-    const dailyBalance = projectedDailyBalances.find(db => db.date === dateStr);
+    const dailyBalance = projectedDailyBalances.find(db => db.date === paymentDate);
     
     return dailyBalance ? dailyBalance.runningBalance : null;
   }, [paymentDate, projectedDailyBalances]);
@@ -175,8 +181,8 @@ export function CreditCardPaymentDialog({
         .eq('user_id', user.id)
         .single();
 
-      // Use timezone-safe date formatting with startOfDay
-      const dateString = format(startOfDay(paymentDate), 'yyyy-MM-dd');
+      // Payment date is already in YYYY-MM-DD format
+      const dateString = paymentDate;
 
       // Insert into credit_card_payments table
       const { error } = await supabase
@@ -195,7 +201,7 @@ export function CreditCardPaymentDialog({
 
       if (error) throw error;
 
-      toast.success(`Payment of $${amount.toFixed(2)} scheduled for ${format(paymentDate, "PPP")}`);
+      toast.success(`Payment of $${amount.toFixed(2)} scheduled for ${format(parseISODate(paymentDate), "PPP")}`);
       
       // Explicitly invalidate credit card payments cache for immediate UI update
       await queryClient.invalidateQueries({ 
@@ -213,7 +219,11 @@ export function CreditCardPaymentDialog({
       // Reset form and close
       setSelectedCreditCardId("");
       setPaymentAmount("");
-      setPaymentDate(new Date());
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = String(today.getMonth() + 1).padStart(2, '0');
+      const day = String(today.getDate()).padStart(2, '0');
+      setPaymentDate(`${year}-${month}-${day}`);
       onOpenChange(false);
       
     } catch (error) {
@@ -315,16 +325,19 @@ export function CreditCardPaymentDialog({
                   )}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {paymentDate ? format(paymentDate, "PPP") : <span>Pick a date</span>}
+                  {paymentDate ? format(parseISODate(paymentDate), "PPP") : <span>Pick a date</span>}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
                 <Calendar
                   mode="single"
-                  selected={paymentDate}
+                  selected={paymentDate ? parseISODate(paymentDate) : undefined}
                   onSelect={(date) => {
                     if (date) {
-                      setPaymentDate(date);
+                      const year = date.getFullYear();
+                      const month = String(date.getMonth() + 1).padStart(2, '0');
+                      const day = String(date.getDate()).padStart(2, '0');
+                      setPaymentDate(`${year}-${month}-${day}`);
                       setIsCalendarOpen(false);
                     }
                   }}
@@ -352,7 +365,7 @@ export function CreditCardPaymentDialog({
                       "font-medium",
                       projectedAvailableCredit !== null && projectedAvailableCredit >= 0 ? "text-blue-900 dark:text-blue-100" : "text-red-900 dark:text-red-100"
                     )}>
-                      On {format(addDays(paymentDate, -1), "MMM d, yyyy")}:
+                       On {format(parseISODate(paymentDate), "MMM d, yyyy")}:
                     </p>
                   </div>
                   
