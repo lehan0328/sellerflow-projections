@@ -20,7 +20,7 @@ serve(async (req) => {
     // Parse request body first (we need it for userId if using admin auth)
     const requestBody = await req.json().catch(() => ({}));
     const customWeights = requestBody.customWeights;
-    
+
     // Get user ID from the JWT token OR request body (if admin)
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
@@ -41,7 +41,7 @@ serve(async (req) => {
     } else {
       // Standard User Authentication
       const { data: { user }, error: userError } = await supabase.auth.getUser(token);
-      
+
       if (userError || !user) {
         console.error('[FORECAST] Auth error:', userError);
         throw new Error('Invalid or expired token');
@@ -931,11 +931,7 @@ serve(async (req) => {
       // Insert the unique forecasts (duplicates already removed, old forecasts already deleted)
       const { error: insertError } = await supabase
         .from('amazon_payouts')
-        .upsert(uniqueForecasts, {
-          // This now matches the standard UNIQUE constraint we just created
-          onConflict: 'amazon_account_id,payout_date,status',
-          ignoreDuplicates: false
-        });
+        .insert(uniqueForecasts);
 
       if (insertError) {
         console.error('[FORECAST] ❌ Error storing forecasted payouts:', JSON.stringify(insertError, null, 2));
