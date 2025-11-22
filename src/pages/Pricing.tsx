@@ -19,6 +19,7 @@ export default function Pricing() {
   const [isLoading, setIsLoading] = useState(false);
   const [showEnterpriseCustomizer, setShowEnterpriseCustomizer] = useState(false);
   const [showStickyCTA, setShowStickyCTA] = useState(false);
+  const [selectedMobilePlan, setSelectedMobilePlan] = useState(0); // Default to Starter plan (index 0)
   const [enterpriseTier, setEnterpriseTier] = useState<"tier1" | "tier2" | "tier3">("tier1");
   const [enterpriseAddons, setEnterpriseAddons] = useState({
     bankConnections: 0,
@@ -267,108 +268,161 @@ export default function Pricing() {
           </div>
           
           <div className="max-w-7xl mx-auto">
+            {/* Mobile Plan Selector */}
+            <div className="sm:hidden mb-4">
+              <Select value={selectedMobilePlan.toString()} onValueChange={(value) => setSelectedMobilePlan(parseInt(value))}>
+                <SelectTrigger className="w-full bg-background border-2 z-50">
+                  <SelectValue placeholder="Select a plan" />
+                </SelectTrigger>
+                <SelectContent className="z-50">
+                  {pricingPlans.map((plan, index) => (
+                    <SelectItem key={index} value={index.toString()}>
+                      {plan.name} - {isYearly ? plan.yearlyPrice : plan.price}
+                      {plan.period && '/mo'}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             <Card className="overflow-hidden">
               {/* Plan Headers */}
-              <div className="grid grid-cols-5 gap-0 border-b">
-                <div className="p-4 bg-muted/30"></div>
-                {pricingPlans.map((plan, index) => (
-                  <div 
-                    key={index} 
-                    className={`p-4 border-l ${plan.popular ? 'bg-primary/5 relative' : 'bg-background'}`}
-                  >
-                    {plan.popular && (
-                      <div className="absolute top-0 left-0 right-0">
-                        <Badge className="bg-gradient-primary text-primary-foreground rounded-none w-full rounded-t-lg text-xs py-1">
-                          Most Popular
-                        </Badge>
-                      </div>
-                    )}
-                    <div className={`text-center space-y-3 ${plan.popular ? 'mt-6' : ''}`}>
-                      <div>
-                        <h3 className="text-xl font-bold">{plan.name}</h3>
-                        <p className="text-xs text-muted-foreground mt-1">{plan.description}</p>
-                      </div>
-                      <div className="space-y-1.5">
-                        <div className="flex items-baseline justify-center gap-1">
-                          <span className="text-3xl font-bold">{isYearly ? plan.yearlyPrice : plan.price}</span>
-                          <span className="text-muted-foreground text-xs">/month</span>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-0 border-b">
+                <div className="p-2 sm:p-4 bg-muted/30 text-xs sm:text-sm font-semibold">Features</div>
+                {pricingPlans.map((plan, index) => {
+                  // Mobile: only show selected plan
+                  const shouldShow = index === selectedMobilePlan || window.innerWidth >= 640;
+                  if (!shouldShow) return null;
+                  
+                  return (
+                    <div 
+                      key={index} 
+                      className={`p-2 sm:p-4 border-l ${plan.popular ? 'bg-primary/5 relative' : 'bg-background'} ${index === 0 ? 'hidden sm:block' : ''} ${index === 3 ? 'hidden lg:block' : ''}`}
+                    >
+                      {plan.popular && (
+                        <div className="absolute top-0 left-0 right-0">
+                          <Badge className="bg-gradient-primary text-primary-foreground rounded-none w-full rounded-t-lg text-[10px] sm:text-xs py-1">
+                            Most Popular
+                          </Badge>
                         </div>
-                        {isYearly && plan.savings && (
-                          <p className="text-xs text-muted-foreground">
-                            Billed annually at {plan.yearlyPrice === "$24" ? "$290" : plan.yearlyPrice === "$66" ? "$790" : plan.yearlyPrice === "$81" ? "$970" : ""}/yr
+                      )}
+                      <div className={`text-center space-y-2 sm:space-y-3 ${plan.popular ? 'mt-4 sm:mt-6' : ''}`}>
+                        <div>
+                          <h3 className="text-base sm:text-xl font-bold">{plan.name}</h3>
+                          <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">{plan.description}</p>
+                        </div>
+                        <div className="space-y-1 sm:space-y-1.5">
+                          <div className="flex items-baseline justify-center gap-1">
+                            <span className="text-xl sm:text-3xl font-bold">{isYearly ? plan.yearlyPrice : plan.price}</span>
+                            <span className="text-muted-foreground text-[10px] sm:text-xs">/month</span>
+                          </div>
+                          {isYearly && plan.savings && (
+                            <p className="text-[10px] sm:text-xs text-muted-foreground">
+                              Billed annually at {plan.yearlyPrice === "$24" ? "$290" : plan.yearlyPrice === "$66" ? "$790" : plan.yearlyPrice === "$81" ? "$970" : ""}/yr
+                            </p>
+                          )}
+                          {isYearly && plan.savings && (
+                            <Badge variant="secondary" className="text-[10px] sm:text-xs py-0.5 px-2">
+                              Save {plan.savings}/year
+                            </Badge>
+                          )}
+                        </div>
+                        <Button 
+                          className={`w-full text-xs sm:text-sm py-1.5 sm:py-2 h-auto ${plan.popular ? 'bg-gradient-primary' : ''}`}
+                          variant={plan.popular ? "default" : "outline"}
+                          onClick={() => handleStartTrial(isYearly ? plan.yearlyPriceId : plan.priceId)}
+                          disabled={isLoading}
+                        >
+                          {isLoading ? "Loading..." : plan.name === "Enterprise" ? "Customize" : "Start Trial"}
+                        </Button>
+                        {plan.name !== "Enterprise" && (
+                          <p className="text-[10px] sm:text-xs text-muted-foreground text-center mt-2">
+                            No credit card
                           </p>
                         )}
-                        {isYearly && plan.savings && (
-                          <Badge variant="secondary" className="text-xs py-0.5 px-2">
-                            Save {plan.savings}/year
-                          </Badge>
-                        )}
                       </div>
-                      <Button 
-                        className={`w-full text-sm py-2 h-auto ${plan.popular ? 'bg-gradient-primary' : ''}`}
-                        variant={plan.popular ? "default" : "outline"}
-                        onClick={() => handleStartTrial(isYearly ? plan.yearlyPriceId : plan.priceId)}
-                        disabled={isLoading}
-                      >
-                        {isLoading ? "Loading..." : plan.name === "Enterprise" ? "Customize Plan" : "Start Trial"}
-                      </Button>
-                      {plan.name !== "Enterprise" && (
-                        <p className="text-xs text-muted-foreground text-center mt-2">
-                          No credit card required
-                        </p>
-                      )}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               {/* Feature Comparison */}
               <CardContent className="p-0">
                 <div className="divide-y">
-                  {featureComparison.map((row, index) => (
-                    <div key={index} className="grid grid-cols-5 gap-0 hover:bg-muted/30 transition-colors">
-                      <div className="p-3 font-medium text-sm bg-muted/30 flex items-center gap-2">
-                        {row.signature && <Star className="h-4 w-4 fill-primary text-primary" />}
-                        {row.feature}
+                  {featureComparison.map((row, index) => {
+                    // Get the mobile feature value based on selected plan
+                    const mobileFeatureValue = selectedMobilePlan === 0 ? row.starter : 
+                                               selectedMobilePlan === 1 ? row.growing :
+                                               selectedMobilePlan === 2 ? row.professional :
+                                               row.enterprise;
+                    
+                    return (
+                      <div key={index} className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-0 hover:bg-muted/30 transition-colors">
+                        <div className="p-2 sm:p-3 font-medium text-xs sm:text-sm bg-muted/30 flex items-center gap-2">
+                          {row.signature && <Star className="h-3 sm:h-4 w-3 sm:w-4 fill-primary text-primary" />}
+                          <span className="line-clamp-2">{row.feature}</span>
+                        </div>
+                        
+                        {/* Mobile: Show only selected plan */}
+                        <div className="sm:hidden p-2 border-l flex items-center justify-center">
+                          {mobileFeatureValue === true ? (
+                            <Check className="h-3 w-3 text-success" />
+                          ) : mobileFeatureValue === false ? (
+                            <X className="h-3 w-3 text-destructive" />
+                          ) : (
+                            <span className="text-xs font-medium text-center">{mobileFeatureValue}</span>
+                          )}
+                        </div>
+
+                        {/* Desktop/Tablet: Show all plans */}
+                        <div className={`hidden sm:flex p-2 sm:p-3 border-l items-center justify-center ${pricingPlans[0].popular ? 'bg-primary/5' : ''}`}>
+                          {row.starter === true ? (
+                            <Check className="h-4 w-4 text-success" />
+                          ) : row.starter === false ? (
+                            <X className="h-4 w-4 text-destructive" />
+                          ) : (
+                            <span className="text-xs sm:text-sm font-medium text-center">{row.starter}</span>
+                          )}
+                        </div>
+                        <div className={`hidden sm:flex p-2 sm:p-3 border-l items-center justify-center ${pricingPlans[1].popular ? 'bg-primary/5' : ''}`}>
+                          {row.growing === true ? (
+                            <Check className="h-4 w-4 text-success" />
+                          ) : row.growing === false ? (
+                            <X className="h-4 w-4 text-destructive" />
+                          ) : (
+                            <span className="text-xs sm:text-sm font-medium text-center">{row.growing}</span>
+                          )}
+                        </div>
+                        <div className={`hidden sm:flex lg:hidden p-2 sm:p-3 border-l items-center justify-center ${pricingPlans[2].popular ? 'bg-primary/5' : ''}`}>
+                          {row.professional === true ? (
+                            <Check className="h-4 w-4 text-success" />
+                          ) : row.professional === false ? (
+                            <X className="h-4 w-4 text-destructive" />
+                          ) : (
+                            <span className="text-xs sm:text-sm font-medium text-center">{row.professional}</span>
+                          )}
+                        </div>
+                        <div className={`hidden lg:flex p-2 sm:p-3 border-l items-center justify-center ${pricingPlans[2].popular ? 'bg-primary/5' : ''}`}>
+                          {row.professional === true ? (
+                            <Check className="h-4 w-4 text-success" />
+                          ) : row.professional === false ? (
+                            <X className="h-4 w-4 text-destructive" />
+                          ) : (
+                            <span className="text-xs sm:text-sm font-medium text-center">{row.professional}</span>
+                          )}
+                        </div>
+                        <div className={`hidden lg:flex p-2 sm:p-3 border-l items-center justify-center ${pricingPlans[3].popular ? 'bg-primary/5' : ''}`}>
+                          {row.enterprise === true ? (
+                            <Check className="h-4 w-4 text-success" />
+                          ) : row.enterprise === false ? (
+                            <X className="h-4 w-4 text-destructive" />
+                          ) : (
+                            <span className="text-xs sm:text-sm font-medium text-center">{row.enterprise}</span>
+                          )}
+                        </div>
                       </div>
-                      <div className={`p-3 border-l flex items-center justify-center ${pricingPlans[0].popular ? 'bg-primary/5' : ''}`}>
-                        {row.starter === true ? (
-                          <Check className="h-4 w-4 text-success" />
-                        ) : row.starter === false ? (
-                          <X className="h-4 w-4 text-destructive" />
-                        ) : (
-                          <span className="text-sm font-medium">{row.starter}</span>
-                        )}
-                      </div>
-                      <div className={`p-3 border-l flex items-center justify-center ${pricingPlans[1].popular ? 'bg-primary/5' : ''}`}>
-                        {row.growing === true ? (
-                          <Check className="h-4 w-4 text-success" />
-                        ) : row.growing === false ? (
-                          <X className="h-4 w-4 text-destructive" />
-                        ) : (
-                          <span className="text-sm font-medium">{row.growing}</span>
-                        )}
-                      </div>
-                      <div className={`p-3 border-l flex items-center justify-center ${pricingPlans[2].popular ? 'bg-primary/5' : ''}`}>
-                        {row.professional === true ? (
-                          <Check className="h-4 w-4 text-success" />
-                        ) : row.professional === false ? (
-                          <X className="h-4 w-4 text-destructive" />
-                        ) : (
-                          <span className="text-sm font-medium">{row.professional}</span>
-                        )}
-                      </div>
-                      <div className={`p-3 border-l flex items-center justify-center ${pricingPlans[3].popular ? 'bg-primary/5' : ''}`}>
-                        {row.enterprise === true ? (
-                          <Check className="h-4 w-4 text-success" />
-                        ) : row.enterprise === false ? (
-                          <X className="h-4 w-4 text-destructive" />
-                        ) : (
-                          <span className="text-sm font-medium">{row.enterprise}</span>
-                        )}
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </CardContent>
             </Card>
