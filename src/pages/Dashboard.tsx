@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { addDays, isToday, isBefore, startOfDay, format, parseISO } from "date-fns";
 import { calculateCalendarBalances } from "@/lib/calendarBalances";
+import { parseISODate } from "@/lib/utils";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   RefreshCw,
@@ -2073,7 +2074,7 @@ const Dashboard = () => {
         amount: payment.amount,
         description: payment.description || 'Credit Card Payment',
         creditCardId: payment.credit_card_id,
-        date: new Date(payment.payment_date),
+        date: parseISODate(payment.payment_date),
         wasPaid: payment.was_paid,
       }));
     })();
