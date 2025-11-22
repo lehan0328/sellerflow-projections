@@ -1429,18 +1429,20 @@ const Landing = () => {
             <p className="text-xl text-muted-foreground">
               Choose the plan that fits your Amazon business
             </p>
-            <div className="flex items-center justify-center gap-4 mt-6 bg-muted/50 backdrop-blur-sm border rounded-lg p-4 max-w-md mx-auto">
-              <span className={`text-sm ${!isYearly ? 'font-semibold' : 'text-muted-foreground'}`}>Monthly</span>
-              <button onClick={() => setIsYearly(!isYearly)} className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isYearly ? 'bg-primary' : 'bg-border'}`}>
-                <span className={`inline-block h-4 w-4 transform rounded-full bg-background shadow-md transition-transform ${isYearly ? 'translate-x-6' : 'translate-x-1'}`} />
-              </button>
-              <span className={`text-sm ${isYearly ? 'font-semibold' : 'text-muted-foreground'}`}>
-                Yearly
-              </span>
-              <Badge className="bg-gradient-primary">Save up to 20% ($178/year)</Badge>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mt-6 bg-muted/50 backdrop-blur-sm border rounded-lg p-3 sm:p-4 max-w-md mx-auto">
+              <div className="flex items-center gap-3">
+                <span className={`text-xs sm:text-sm ${!isYearly ? 'font-semibold' : 'text-muted-foreground'}`}>Monthly</span>
+                <button onClick={() => setIsYearly(!isYearly)} className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isYearly ? 'bg-primary' : 'bg-border'}`}>
+                  <span className={`inline-block h-4 w-4 transform rounded-full bg-background shadow-md transition-transform ${isYearly ? 'translate-x-6' : 'translate-x-1'}`} />
+                </button>
+                <span className={`text-xs sm:text-sm ${isYearly ? 'font-semibold' : 'text-muted-foreground'}`}>
+                  Yearly
+                </span>
+              </div>
+              <Badge className="bg-gradient-primary text-xs">Save up to 20%</Badge>
             </div>
-            <Badge variant="secondary" className="text-sm">
-              7-day free trial • Secure checkout • Cancel anytime
+            <Badge variant="secondary" className="text-xs sm:text-sm">
+              7-day free trial • Secure • Cancel anytime
             </Badge>
           </div>
           
@@ -1448,35 +1450,35 @@ const Landing = () => {
               {/* Integrated Plan Cards with Comparison */}
               <Card className="overflow-hidden">
                 {/* Plan Headers with Pricing */}
-                <div className="grid grid-cols-5 gap-0 border-b">
-                  <div className="p-4 bg-muted/30"></div>
-                  {pricingPlans.map((plan, index) => <div key={index} className={`p-4 border-l ${plan.popular ? 'bg-primary/5 relative' : 'bg-background'}`}>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-0 border-b">
+                  <div className="p-2 sm:p-4 bg-muted/30 text-xs sm:text-sm font-medium">Features</div>
+                  {pricingPlans.map((plan, index) => <div key={index} className={`p-2 sm:p-4 border-l ${plan.popular ? 'bg-primary/5 relative' : 'bg-background'} ${index === 0 || index === 3 ? 'hidden sm:block' : ''} ${index === 3 ? 'hidden lg:block' : ''}`}>
                       {plan.popular && <div className="absolute top-0 left-0 right-0">
-                          <Badge className="bg-gradient-primary text-primary-foreground rounded-none w-full rounded-t-lg text-xs py-1">
+                          <Badge className="bg-gradient-primary text-primary-foreground rounded-none w-full rounded-t-lg text-[10px] sm:text-xs py-0.5 sm:py-1">
                             Most Popular
                           </Badge>
                         </div>}
-                      <div className={`text-center space-y-3 ${plan.popular ? 'mt-6' : ''}`}>
+                      <div className={`text-center space-y-2 sm:space-y-3 ${plan.popular ? 'mt-4 sm:mt-6' : ''}`}>
                         <div>
-                          <h3 className="text-xl font-bold">{plan.name}</h3>
-                          <p className="text-xs text-muted-foreground mt-1">{plan.description}</p>
+                          <h3 className="text-base sm:text-xl font-bold">{plan.name}</h3>
+                          <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1 line-clamp-2">{plan.description}</p>
                         </div>
-                        <div className="space-y-1.5">
-                          <div className="flex items-baseline justify-center gap-1">
-                            <span className="text-3xl font-bold">{isYearly ? plan.yearlyPrice : plan.price}</span>
-                            <span className="text-muted-foreground text-xs">/month</span>
+                        <div className="space-y-1">
+                          <div className="flex items-baseline justify-center gap-0.5 sm:gap-1">
+                            <span className="text-xl sm:text-3xl font-bold">{isYearly ? plan.yearlyPrice : plan.price}</span>
+                            <span className="text-muted-foreground text-[10px] sm:text-xs">/mo</span>
                           </div>
-                           {isYearly && plan.savings && <p className="text-xs text-muted-foreground">
+                           {isYearly && plan.savings && <p className="text-[10px] sm:text-xs text-muted-foreground hidden sm:block">
                               Billed annually at {plan.yearlyPrice === "$24" ? "$290" : plan.yearlyPrice === "$66" ? "$790" : plan.yearlyPrice === "$81" ? "$970" : ""}/yr
                             </p>}
-                          {isYearly && plan.savings && <Badge variant="secondary" className="text-xs py-0.5 px-2">
+                          {isYearly && plan.savings && <Badge variant="secondary" className="text-[10px] sm:text-xs py-0.5 px-1.5 sm:px-2">
                               Save {plan.savings}/year
                             </Badge>}
                         </div>
-                        <Button className={`w-full text-sm py-2 h-auto ${plan.popular ? 'bg-gradient-primary' : ''}`} variant={plan.popular ? "default" : "outline"} onClick={() => handleStartTrial(isYearly ? plan.yearlyPriceId : plan.priceId)} disabled={isLoading}>
-                          {isLoading ? "Loading..." : plan.name === "Enterprise" ? "Customize Plan" : "Start Trial"}
+                        <Button className={`w-full text-xs sm:text-sm py-1.5 sm:py-2 h-auto ${plan.popular ? 'bg-gradient-primary' : ''}`} variant={plan.popular ? "default" : "outline"} onClick={() => handleStartTrial(isYearly ? plan.yearlyPriceId : plan.priceId)} disabled={isLoading}>
+                          {isLoading ? "Loading..." : plan.name === "Enterprise" ? "Customize" : "Start Trial"}
                         </Button>
-                        {plan.name !== "Enterprise" && <p className="text-xs text-muted-foreground text-center mt-2">
+                        {plan.name !== "Enterprise" && <p className="text-[10px] sm:text-xs text-muted-foreground text-center mt-1 sm:mt-2 hidden sm:block">
                             No credit card required
                           </p>}
                       </div>
@@ -1486,19 +1488,19 @@ const Landing = () => {
                 {/* Feature Comparison Table - Connected */}
                 <CardContent className="p-0">
                   <div className="divide-y">
-                    {featureComparison.map((row, index) => <div key={index} className="grid grid-cols-5 gap-0 hover:bg-muted/30 transition-colors">
-                        <div className="p-3 font-medium text-sm bg-muted/30 flex items-center">{row.feature}</div>
-                        <div className={`p-3 border-l flex items-center justify-center ${pricingPlans[0].popular ? 'bg-primary/5' : ''}`}>
-                          {row.starter === true ? <Check className="h-4 w-4 text-success" /> : row.starter === false ? <X className="h-4 w-4 text-destructive" /> : <span className="text-sm font-medium">{row.starter}</span>}
+                    {featureComparison.map((row, index) => <div key={index} className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-0 hover:bg-muted/30 transition-colors">
+                        <div className="p-2 sm:p-3 font-medium text-xs sm:text-sm bg-muted/30 flex items-center">{row.feature}</div>
+                        <div className={`p-2 sm:p-3 border-l flex items-center justify-center ${pricingPlans[0].popular ? 'bg-primary/5' : ''} hidden sm:flex`}>
+                          {row.starter === true ? <Check className="h-3 w-3 sm:h-4 sm:w-4 text-success" /> : row.starter === false ? <X className="h-3 w-3 sm:h-4 sm:w-4 text-destructive" /> : <span className="text-xs sm:text-sm font-medium">{row.starter}</span>}
                         </div>
-                        <div className={`p-3 border-l flex items-center justify-center ${pricingPlans[1].popular ? 'bg-primary/5' : ''}`}>
-                          {row.growing === true ? <Check className="h-4 w-4 text-success" /> : row.growing === false ? <X className="h-4 w-4 text-destructive" /> : <span className="text-sm font-medium">{row.growing}</span>}
+                        <div className={`p-2 sm:p-3 border-l flex items-center justify-center ${pricingPlans[1].popular ? 'bg-primary/5' : ''}`}>
+                          {row.growing === true ? <Check className="h-3 w-3 sm:h-4 sm:w-4 text-success" /> : row.growing === false ? <X className="h-3 w-3 sm:h-4 sm:w-4 text-destructive" /> : <span className="text-xs sm:text-sm font-medium">{row.growing}</span>}
                         </div>
-                        <div className={`p-3 border-l flex items-center justify-center ${pricingPlans[2].popular ? 'bg-primary/5' : ''}`}>
-                          {row.professional === true ? <Check className="h-4 w-4 text-success" /> : row.professional === false ? <X className="h-4 w-4 text-destructive" /> : <span className="text-sm font-medium">{row.professional}</span>}
+                        <div className={`p-2 sm:p-3 border-l flex items-center justify-center ${pricingPlans[2].popular ? 'bg-primary/5' : ''} hidden sm:flex lg:flex`}>
+                          {row.professional === true ? <Check className="h-3 w-3 sm:h-4 sm:w-4 text-success" /> : row.professional === false ? <X className="h-3 w-3 sm:h-4 sm:w-4 text-destructive" /> : <span className="text-xs sm:text-sm font-medium">{row.professional}</span>}
                         </div>
-                        <div className={`p-3 border-l flex items-center justify-center ${pricingPlans[3].popular ? 'bg-primary/5' : ''}`}>
-                          {row.enterprise === true ? <Check className="h-4 w-4 text-success" /> : row.enterprise === false ? <X className="h-4 w-4 text-destructive" /> : <span className="text-sm font-medium">{row.enterprise}</span>}
+                        <div className={`p-2 sm:p-3 border-l flex items-center justify-center ${pricingPlans[3].popular ? 'bg-primary/5' : ''} hidden lg:flex`}>
+                          {row.enterprise === true ? <Check className="h-3 w-3 sm:h-4 sm:w-4 text-success" /> : row.enterprise === false ? <X className="h-3 w-3 sm:h-4 sm:w-4 text-destructive" /> : <span className="text-xs sm:text-sm font-medium">{row.enterprise}</span>}
                         </div>
                       </div>)}
                   </div>
