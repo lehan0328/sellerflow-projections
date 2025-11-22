@@ -243,27 +243,33 @@ export default function Pricing() {
             <p className="text-xl text-muted-foreground">
               Choose the plan that fits your Amazon business
             </p>
-            <div className="flex items-center justify-center gap-4 mt-6 bg-muted/50 backdrop-blur-sm border rounded-lg p-4 max-w-md mx-auto">
-              <span className={`text-sm ${!isYearly ? 'font-semibold' : 'text-muted-foreground'}`}>Monthly</span>
-              <button
-                onClick={() => setIsYearly(!isYearly)}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  isYearly ? 'bg-primary' : 'bg-border'
-                }`}
-              >
-                <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-background shadow-md transition-transform ${
-                    isYearly ? 'translate-x-6' : 'translate-x-1'
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mt-6 bg-muted/50 backdrop-blur-sm border rounded-lg p-3 sm:p-4 max-w-md mx-auto">
+              <div className="flex items-center gap-3 sm:gap-4">
+                <span className={`text-xs sm:text-sm ${!isYearly ? 'font-semibold' : 'text-muted-foreground'}`}>Monthly</span>
+                <button
+                  onClick={() => setIsYearly(!isYearly)}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                    isYearly ? 'bg-primary' : 'bg-border'
                   }`}
-                />
-              </button>
-              <span className={`text-sm ${isYearly ? 'font-semibold' : 'text-muted-foreground'}`}>
-                Yearly
-              </span>
-              <Badge className="bg-gradient-primary">Save up to 20% ($178/year)</Badge>
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-background shadow-md transition-transform ${
+                      isYearly ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+                <span className={`text-xs sm:text-sm ${isYearly ? 'font-semibold' : 'text-muted-foreground'}`}>
+                  Yearly
+                </span>
+              </div>
+              <Badge className="bg-gradient-primary text-[10px] sm:text-xs px-2 py-0.5">
+                <span className="hidden sm:inline">Save up to 20% ($178/year)</span>
+                <span className="sm:hidden">Save 20%</span>
+              </Badge>
             </div>
-            <Badge variant="secondary" className="text-sm">
-              7-day free trial • Secure checkout • Cancel anytime
+            <Badge variant="secondary" className="text-xs sm:text-sm">
+              <span className="hidden sm:inline">7-day free trial • Secure checkout • Cancel anytime</span>
+              <span className="sm:hidden">7-day free trial • No credit card</span>
             </Badge>
           </div>
           
