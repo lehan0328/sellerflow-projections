@@ -649,7 +649,7 @@ const UpgradePlan = () => {
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium">Financial Connections</span>
                     <Badge variant="secondary">
-                      {currentUsage.bankConnections}/{planLimits.bankConnections === 999 ? '∞' : planLimits.bankConnections}
+                      {currentUsage.bankConnections}/{is_trialing ? '∞' : (planLimits.bankConnections === 999 ? '∞' : planLimits.bankConnections)}
                     </Badge>
                   </div>
                   
