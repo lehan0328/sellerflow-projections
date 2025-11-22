@@ -13,7 +13,7 @@ import avatar1 from "@/assets/avatar-1.jpg";
 import avatar2 from "@/assets/avatar-2.jpg";
 import avatar3 from "@/assets/avatar-3.jpg";
 import avatar4 from "@/assets/avatar-4.jpg";
-import dashboardPreview from "@/assets/dashboard-preview-enhanced.png";
+import dashboardPreview from "@/assets/dashboard-preview-new.png";
 import { useNavigate, Link } from "react-router-dom";
 import { FloatingChatWidget } from "@/components/floating-chat-widget";
 import { LineChart, Line, ResponsiveContainer } from 'recharts';
