@@ -580,7 +580,7 @@ const Landing = () => {
               
               <p className="text-base sm:text-lg lg:text-xl text-muted-foreground max-w-full md:max-w-2xl animate-fade-in leading-relaxed break-words" style={{
               animationDelay: '400ms'
-            }}>Never get blindsided by cash shortages with Auren again.</p>
+            }}>Never get blindsided by cash shortages again.</p>
               
               <p className="text-sm sm:text-base text-muted-foreground/90 max-w-full md:max-w-2xl animate-fade-in leading-relaxed break-words" style={{
               animationDelay: '500ms'
@@ -702,21 +702,13 @@ const Landing = () => {
                 <div className="absolute -inset-8 bg-gradient-to-r from-primary/20 via-accent/20 to-primary/20 rounded-3xl blur-3xl" />
                 
                 {/* Image card */}
-                <div 
-                  className="relative rounded-2xl border-2 border-primary/20 bg-card/80 backdrop-blur-xl shadow-2xl overflow-hidden group cursor-pointer"
-                  onClick={() => setIsImageOpen(true)}
-                >
-                  <img 
-                    src={dashboardPreview} 
-                    alt="Auren Dashboard Preview - Cash Flow Visualization and Safe Spending Power" 
-                    className="w-full h-auto will-change-transform transition-transform duration-300 group-hover:scale-[1.02]" 
-                    style={{
-                      imageRendering: '-webkit-optimize-contrast',
-                      transform: 'translateZ(0)',
-                      backfaceVisibility: 'hidden',
-                      WebkitFontSmoothing: 'subpixel-antialiased'
-                    }} 
-                  />
+                <div className="relative rounded-2xl border-2 border-primary/20 bg-card/80 backdrop-blur-xl shadow-2xl overflow-hidden group cursor-pointer" onClick={() => setIsImageOpen(true)}>
+                  <img src={dashboardPreview} alt="Auren Dashboard Preview - Cash Flow Visualization and Safe Spending Power" className="w-full h-auto will-change-transform transition-transform duration-300 group-hover:scale-[1.02]" style={{
+                  imageRendering: '-webkit-optimize-contrast',
+                  transform: 'translateZ(0)',
+                  backfaceVisibility: 'hidden',
+                  WebkitFontSmoothing: 'subpixel-antialiased'
+                }} />
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-300 flex items-center justify-center">
                     <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-primary text-primary-foreground p-3 rounded-full shadow-lg">
                       <Maximize2 className="h-6 w-6" />
@@ -2299,11 +2291,7 @@ const Landing = () => {
             <span className="sr-only">Close</span>
           </DialogClose>
           <div className="w-full h-full flex items-center justify-center bg-black/95 p-4">
-            <img 
-              src={dashboardPreview} 
-              alt="Auren Dashboard Preview - Full View" 
-              className="max-w-full max-h-full object-contain rounded-lg"
-            />
+            <img src={dashboardPreview} alt="Auren Dashboard Preview - Full View" className="max-w-full max-h-full object-contain rounded-lg" />
           </div>
         </DialogContent>
       </Dialog>
