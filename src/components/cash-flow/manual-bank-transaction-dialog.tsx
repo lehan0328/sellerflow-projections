@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CalendarIcon } from "lucide-react";
-import { format } from "date-fns";
+import { format, startOfDay } from "date-fns";
 import { cn } from "@/lib/utils";
 
 interface ManualBankTransactionDialogProps {
@@ -60,7 +60,7 @@ export function ManualBankTransactionDialog({
       const insertData: any = {
         user_id: user.id,
         amount: finalAmount,
-        date: format(date, 'yyyy-MM-dd'),
+        date: format(startOfDay(date), 'yyyy-MM-dd'),
         name: merchantName,
         merchant_name: merchantName,
         pending: false,

@@ -1473,9 +1473,9 @@ const Dashboard = () => {
           "Recurring Income",
         amount: amount,
         frequency: frequency,
-        start_date: format(paymentDate, "yyyy-MM-dd"),
+        start_date: format(startOfDay(paymentDate), "yyyy-MM-dd"),
         end_date: incomeData.endDate
-          ? format(incomeData.endDate, "yyyy-MM-dd")
+          ? format(startOfDay(incomeData.endDate), "yyyy-MM-dd")
           : null,
         is_active: true,
         type: "income",
@@ -1566,9 +1566,9 @@ const Dashboard = () => {
           "Recurring Expense",
         amount: amount,
         frequency: frequency,
-        start_date: format(expenseData.paymentDate || new Date(), "yyyy-MM-dd"),
+        start_date: format(startOfDay(expenseData.paymentDate || new Date()), "yyyy-MM-dd"),
         end_date: expenseData.endDate
-          ? format(expenseData.endDate, "yyyy-MM-dd")
+          ? format(startOfDay(expenseData.endDate), "yyyy-MM-dd")
           : null,
         is_active: true,
         type: "expense",

@@ -175,8 +175,8 @@ export function CreditCardPaymentDialog({
         .eq('user_id', user.id)
         .single();
 
-      // Use timezone-safe date formatting - no adjustment needed
-      const dateString = format(paymentDate, 'yyyy-MM-dd');
+      // Use timezone-safe date formatting with startOfDay
+      const dateString = format(startOfDay(paymentDate), 'yyyy-MM-dd');
 
       // Insert into credit_card_payments table
       const { error } = await supabase
