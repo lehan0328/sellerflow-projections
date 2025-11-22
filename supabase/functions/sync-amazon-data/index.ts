@@ -335,6 +335,19 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string,
         
         // Only process Succeeded settlements
         if (group.FundTransferStatus !== 'Succeeded') return false
+
+        // === OPTIMIZATION START ===
+        // Filter out short settlements (Daily Payouts) to avoid API throttling.
+        // B2B/Invoiced settlements are typically 14 days. Daily ones are < 7 days.
+        if (group.FinancialEventGroupStart) {
+          const start = new Date(group.FinancialEventGroupStart);
+          const durationDays = (settlementEndDate.getTime() - start.getTime()) / (1000 * 60 * 60 * 24);
+          
+          // If settlement is shorter than 7 days, it's likely a standard daily payout, not B2B.
+          // Skip the expensive API check.
+          if (durationDays < 7) return false;
+        }
+        // === OPTIMIZATION END ===
         
         return true
       })
