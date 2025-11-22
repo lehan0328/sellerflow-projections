@@ -498,10 +498,14 @@ export const CashFlowInsights = memo(({
             // Calculate available credit on payment due date, building on previous opportunity
             const dueDateCredit = startingCredit - pendingExpenses + effectiveStatementBalance;
             
-            opportunities.push({
-              date: dueDateStr,
-              availableCredit: Math.max(0, dueDateCredit)
-            });
+            // Only add if we don't already have an opportunity for this date
+            // (e.g., from a manual payment on the same date)
+            if (!opportunities.some(opp => opp.date === dueDateStr)) {
+              opportunities.push({
+                date: dueDateStr,
+                availableCredit: Math.max(0, dueDateCredit)
+              });
+            }
           }
         }
       }
