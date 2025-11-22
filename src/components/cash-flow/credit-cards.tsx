@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { format, addMonths, isBefore, startOfDay, addDays, parseISO } from "date-fns";
-import { cn } from "@/lib/utils";
+import { cn, parseISODate } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -465,7 +465,7 @@ export function CreditCards() {
                       <div className="flex items-center space-x-4 text-sm text-muted-foreground">
                         {card.payment_due_date ? (
                           (() => {
-                            const dueDate = new Date(card.payment_due_date);
+                            const dueDate = parseISODate(card.payment_due_date);
                             const today = new Date();
                             today.setHours(0, 0, 0, 0);
                             const isPast = dueDate < today;
@@ -478,7 +478,7 @@ export function CreditCards() {
                                     setUpdateStatementBalance('');
                                     // Auto-calculate next due date as one month from previous
                                     if (card.payment_due_date) {
-                                      const previousDueDate = new Date(card.payment_due_date);
+                                      const previousDueDate = parseISODate(card.payment_due_date);
                                       const nextDueDate = addMonths(previousDueDate, 1);
                                       setUpdateDueDate(format(nextDueDate, "yyyy-MM-dd"));
                                     } else {
@@ -896,7 +896,7 @@ export function CreditCards() {
                 <div className="flex items-center gap-2 mb-2">
                   <AlertTriangle className="h-5 w-5 text-destructive" />
                   <p className="font-semibold text-destructive text-lg">
-                    Payment Due: {cardForStatementUpdate?.payment_due_date ? format(addDays(parseISO(cardForStatementUpdate.payment_due_date), -1), "MMM dd, yyyy") : ""}
+                    Payment Due: {cardForStatementUpdate?.payment_due_date ? format(parseISODate(cardForStatementUpdate.payment_due_date), "MMM dd, yyyy") : ""}
                   </p>
                 </div>
                 <p className="text-2xl font-bold text-destructive">
