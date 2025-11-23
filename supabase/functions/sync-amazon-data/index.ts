@@ -342,15 +342,6 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string,
         
         // Only process Succeeded settlements
         if (group.FundTransferStatus !== 'Succeeded') return false
-
-        // === OPTIMIZATION START ===
-        // Filter out short settlements (Daily Payouts) to avoid API throttling.
-        if (group.FinancialEventGroupStart) {
-          const start = new Date(group.FinancialEventGroupStart);
-          const durationDays = (settlementEndDate.getTime() - start.getTime()) / (1000 * 60 * 60 * 24);
-          if (durationDays < 7) return false;
-        }
-        // === OPTIMIZATION END ===
         
         return true
       })
