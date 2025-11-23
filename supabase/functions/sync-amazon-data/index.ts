@@ -331,86 +331,159 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string,
       }).eq('id', amazonAccountId)
     }
 
-   // === NEW: Filter B2B Settlements by Inspecting Events ===
+  //  // === NEW: Filter B2B Settlements by Inspecting Events ===
+  //   const processSettlementCandidates = async () => {
+  //     const candidates = allSettlements.filter((group: any) => {
+  //       const settlementEndDate = group.FinancialEventGroupEnd ? new Date(group.FinancialEventGroupEnd) : null
+  //       const currentTime = new Date()
+
+  //       // Only process confirmed/closed settlements in the past
+  //       if (!settlementEndDate || settlementEndDate > currentTime) return false
+        
+  //       // Only process Succeeded settlements
+  //       if (group.FundTransferStatus !== 'Succeeded') return false
+        
+  //       return true
+  //     })
+      
+  //     console.log(`[SYNC] Analyzing ${candidates.length} candidates for processing...`)
+      
+  //     const results = []
+      
+  //     const BATCH_SIZE = 3; 
+  //     for (let i = 0; i < candidates.length; i += BATCH_SIZE) {
+  //       const batch = candidates.slice(i, i + BATCH_SIZE)
+        
+  //       const batchPromises = batch.map(async (group: any) => {
+  //         try {
+  //           const beginningBalance = parseFloat(group.BeginningBalance?.CurrencyAmount || '0');
+  //           let isB2B = false;
+            
+  //           if (beginningBalance === 0) {
+  //             const eventsUrl = `${apiEndpoint}/finances/v0/financialEventGroups/${group.FinancialEventGroupId}/financialEvents?MaxResultsPerPage=100`;
+  //             const eventResponse = await makeRequest(eventsUrl, {
+  //               headers: {
+  //                 'x-amz-access-token': accessToken,
+  //                 'Content-Type': 'application/json'
+  //               }
+  //             });
+              
+  //             if (eventResponse.ok) {
+  //               const eventData = await eventResponse.json();
+  //               const events = eventData.payload?.FinancialEvents || {};
+  //               const shipmentEvents = events.ShipmentEventList || [];
+
+  //               if (shipmentEvents.length > 0) {
+  //                 const hasB2BIndicators = shipmentEvents.some((shipment: any) => {
+  //                   return shipment.ShipmentItemList?.some((item: any) => {
+  //                     const taxList = item.ItemTaxWithheldList || [];
+  //                     const isTaxExempt = taxList.some((t: any) => 
+  //                       t.TaxCollectionModel === 'MarketplaceFacilitator' && 
+  //                       (!t.TaxesWithheld || t.TaxesWithheld.length === 0)
+  //                     );
+  //                     const promoList = item.PromotionList || [];
+  //                     const hasPLCC = promoList.some((p: any) => 
+  //                       p.PromotionId && p.PromotionId.includes('PLCC')
+  //                     );
+  //                     return isTaxExempt || hasPLCC;
+  //                   });
+  //                 });
+
+  //                 if (hasB2BIndicators) {
+  //                   isB2B = true;
+  //                 }
+  //               }
+  //             }
+  //           }
+
+  //           if (isB2B) return null;
+  //           return group;
+  //         } catch (err) {
+  //           console.warn(`[SYNC] Failed to inspect settlement ${group.FinancialEventGroupId}, including by default:`, err);
+  //           return group; 
+  //         }
+  //       });
+        
+  //       const batchResults = await Promise.all(batchPromises);
+  //       results.push(...batchResults);
+        
+  //       if (i + BATCH_SIZE < candidates.length) {
+  //         await new Promise(resolve => setTimeout(resolve, 1000));
+  //       }
+  //     }
+      
+  //     return results.filter(Boolean);
+  //   };
+    
+  //   const validSettlements = await processSettlementCandidates();
+    
+  //   const settlementsToSave = validSettlements.map((group: any) => {
+  //     const settlementEndDate = new Date(group.FinancialEventGroupEnd)
+  //     const totalAmount = parseFloat(group.ConvertedTotal?.CurrencyAmount || group.OriginalTotal?.CurrencyAmount || '0');
+      
+  //     const payoutDate = settlementEndDate.toISOString().split('T')[0]
+      
+  //     return {
+  //       user_id: userId,
+  //       account_id: amazonAccount.account_id,
+  //       amazon_account_id: amazonAccountId,
+  //       settlement_id: group.FinancialEventGroupId,
+  //       payout_date: payoutDate,
+  //       total_amount: totalAmount,
+  //       currency_code: group.ConvertedTotal?.CurrencyCode || group.OriginalTotal?.CurrencyCode || 'USD',
+  //       status: 'confirmed',
+  //       payout_type: detectedFrequency,
+  //       marketplace_name: amazonAccount.marketplace_name,
+  //       raw_settlement_data: group
+  //     }
+  //   });
+
+  //   console.log(`[SYNC] Saving ${settlementsToSave.length} settlements to database...`)
+
+    // === OPTIMIZED SETTLEMENT PROCESSING ===
     const processSettlementCandidates = async () => {
+      // 1. First, filter candidates from the raw list
       const candidates = allSettlements.filter((group: any) => {
         const settlementEndDate = group.FinancialEventGroupEnd ? new Date(group.FinancialEventGroupEnd) : null
         const currentTime = new Date()
 
-        // Only process confirmed/closed settlements in the past
+        // Must be a closed settlement in the past
         if (!settlementEndDate || settlementEndDate > currentTime) return false
         
-        // Only process Succeeded settlements
+        // Must be Succeeded
         if (group.FundTransferStatus !== 'Succeeded') return false
+
+        // REMOVED: The "duration < 7 days" check has been deleted.
+        // This ensures your 2-day settlements are now included.
         
         return true
       })
       
-      console.log(`[SYNC] Analyzing ${candidates.length} candidates for processing...`)
+      console.log(`[SYNC] Processing ${candidates.length} valid candidates...`)
       
-      const results = []
-      
-      const BATCH_SIZE = 3; 
-      for (let i = 0; i < candidates.length; i += BATCH_SIZE) {
-        const batch = candidates.slice(i, i + BATCH_SIZE)
-        
-        const batchPromises = batch.map(async (group: any) => {
-          try {
-            const beginningBalance = parseFloat(group.BeginningBalance?.CurrencyAmount || '0');
-            let isB2B = false;
-            
-            if (beginningBalance === 0) {
-              const eventsUrl = `${apiEndpoint}/finances/v0/financialEventGroups/${group.FinancialEventGroupId}/financialEvents?MaxResultsPerPage=100`;
-              const eventResponse = await makeRequest(eventsUrl, {
-                headers: {
-                  'x-amz-access-token': accessToken,
-                  'Content-Type': 'application/json'
-                }
-              });
-              
-              if (eventResponse.ok) {
-                const eventData = await eventResponse.json();
-                const events = eventData.payload?.FinancialEvents || {};
-                const shipmentEvents = events.ShipmentEventList || [];
-
-                if (shipmentEvents.length > 0) {
-                  const hasB2BIndicators = shipmentEvents.some((shipment: any) => {
-                    return shipment.ShipmentItemList?.some((item: any) => {
-                      const taxList = item.ItemTaxWithheldList || [];
-                      const isTaxExempt = taxList.some((t: any) => 
-                        t.TaxCollectionModel === 'MarketplaceFacilitator' && 
-                        (!t.TaxesWithheld || t.TaxesWithheld.length === 0)
-                      );
-                      const promoList = item.PromotionList || [];
-                      const hasPLCC = promoList.some((p: any) => 
-                        p.PromotionId && p.PromotionId.includes('PLCC')
-                      );
-                      return isTaxExempt || hasPLCC;
-                    });
-                  });
-
-                  if (hasB2BIndicators) {
-                    isB2B = true;
-                  }
-                }
-              }
-            }
-
-            if (isB2B) return null;
-            return group;
-          } catch (err) {
-            console.warn(`[SYNC] Failed to inspect settlement ${group.FinancialEventGroupId}, including by default:`, err);
-            return group; 
+      // 2. Process candidates (B2B Filter via Heuristic)
+      // We map directly without "batching" delays because we no longer make API calls here.
+      const results = candidates.map((group: any) => {
+        try {
+          const beginningBalance = parseFloat(group.BeginningBalance?.CurrencyAmount || '0');
+          
+          // === B2B LOGIC: ZERO BALANCE HEURISTIC ===
+          // Standard settlements (Rolling Reserve) almost always have a non-zero start balance.
+          // B2B (Pay by Invoice) settlements almost always start at 0.
+          // We assume 0 balance = B2B and skip it.
+          if (beginningBalance === 0) {
+            console.log(`[FILTER] Skipping ${group.FinancialEventGroupId}: Inferred B2B (BeginningBalance is 0)`);
+            return null; 
           }
-        });
-        
-        const batchResults = await Promise.all(batchPromises);
-        results.push(...batchResults);
-        
-        if (i + BATCH_SIZE < candidates.length) {
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          // If balance != 0, it's a standard settlement. Keep it.
+          return group;
+
+        } catch (err) {
+          console.warn(`[SYNC] Error processing group ${group.FinancialEventGroupId}, skipping:`, err);
+          return null; 
         }
-      }
+      });
       
       return results.filter(Boolean);
     };
