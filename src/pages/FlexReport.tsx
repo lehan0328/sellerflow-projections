@@ -96,13 +96,13 @@ const FlexReport = () => {
     totalAvailableCredit,
     creditCards
   } = useCreditCards();
-  const { excludeToday } = useExcludeToday();
-  const {
-    data: safeSpendingData
-  } = useSafeSpending(0, excludeToday);
   const {
     reserveAmount
   } = useReserveAmount();
+  const { excludeToday } = useExcludeToday();
+  const {
+    data: safeSpendingData
+  } = useSafeSpending(reserveAmount, excludeToday);
   const {
     vendors
   } = useVendors();
