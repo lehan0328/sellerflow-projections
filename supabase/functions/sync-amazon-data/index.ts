@@ -250,6 +250,14 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string,
 
     console.log(`[SYNC] ✅ TOTAL SETTLEMENTS FETCHED: ${allSettlements.length}`)
 
+    console.log('[DEBUG] Raw Fetched Settlement IDs:', allSettlements.map((s: any) => ({
+        id: s.FinancialEventGroupId,
+        status: s.FundTransferStatus,
+        amount: s.ConvertedTotal?.CurrencyAmount || s.OriginalTotal?.CurrencyAmount,
+        start: s.FinancialEventGroupStart,
+        end: s.FinancialEventGroupEnd
+    })));
+
     if (allSettlements.length === 0) {
       console.log('[SYNC] ⚠️ No settlements found')
 
@@ -396,10 +404,6 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string,
                 }
               }
             }
-            
-            // === GENERAL LOGGING FOR ALL PAYOUTS ===
-            console.log(`[PAYOUT-LOG] Settlement: ${group.FinancialEventGroupId} | Date: ${group.FinancialEventGroupEnd} | Amount: ${group.OriginalTotal?.CurrencyAmount || group.ConvertedTotal?.CurrencyAmount} | isB2B: ${isB2B}`);
-            // =======================================
 
             if (isB2B) return null;
             return group;
