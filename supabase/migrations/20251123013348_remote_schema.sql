@@ -5634,6 +5634,10 @@ CREATE POLICY "Allow public token validation" ON "public"."admin_permissions" FO
 
 
 
+CREATE POLICY "Anonymous users can validate invitations by token" ON "public"."team_invitations" FOR SELECT TO "anon" USING ((("token" IS NOT NULL) AND ("accepted_at" IS NULL) AND ("expires_at" > "now"())));
+
+
+
 CREATE POLICY "Authenticated users can view plan limits" ON "public"."plan_limits" FOR SELECT TO "authenticated" USING (true);
 
 
