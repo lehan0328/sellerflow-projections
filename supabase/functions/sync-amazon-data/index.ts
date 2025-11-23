@@ -323,7 +323,7 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string,
       }).eq('id', amazonAccountId)
     }
 
-    // === NEW: Filter B2B Settlements by Inspecting Events ===
+   // === NEW: Filter B2B Settlements by Inspecting Events ===
     const processSettlementCandidates = async () => {
       const candidates = allSettlements.filter((group: any) => {
         const settlementEndDate = group.FinancialEventGroupEnd ? new Date(group.FinancialEventGroupEnd) : null
@@ -347,7 +347,7 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string,
         return true
       })
       
-      console.log(`[SYNC] Analyzing ${candidates.length} candidates for B2B exclusion...`)
+      console.log(`[SYNC] Analyzing ${candidates.length} candidates for processing...`)
       
       const results = []
       
@@ -397,11 +397,9 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string,
               }
             }
             
-            // === LOGGING FOR SPECIFIC USER ===
-            // if (userId === '36c0828a-7428-48af-a1b4-c31b4d5a0480') {
-               console.log(`[B2B-AUDIT] Settlement: ${group.FinancialEventGroupId} | Date: ${group.FinancialEventGroupEnd} | Amount: ${group.OriginalTotal?.CurrencyAmount || group.ConvertedTotal?.CurrencyAmount} | isB2B: ${isB2B}`);
-            // }
-            // =================================
+            // === GENERAL LOGGING FOR ALL PAYOUTS ===
+            console.log(`[PAYOUT-LOG] Settlement: ${group.FinancialEventGroupId} | Date: ${group.FinancialEventGroupEnd} | Amount: ${group.OriginalTotal?.CurrencyAmount || group.ConvertedTotal?.CurrencyAmount} | isB2B: ${isB2B}`);
+            // =======================================
 
             if (isB2B) return null;
             return group;
