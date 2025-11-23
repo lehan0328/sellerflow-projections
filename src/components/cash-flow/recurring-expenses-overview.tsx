@@ -358,6 +358,21 @@ export const RecurringExpensesOverview = () => {
                         {item.end_date && ` - ${format(new Date(item.end_date), 'MMM d, yyyy')}`}
                       </span>
                     </div>
+                    {item.end_date && (() => {
+                      const occurrences = generateRecurringDates(
+                        item, 
+                        new Date(item.start_date), 
+                        new Date(item.end_date)
+                      );
+                      const totalAccumulated = occurrences.length * Number(item.amount);
+                      return (
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-xs font-medium text-muted-foreground">
+                            Total: {formatCurrency(totalAccumulated)} ({occurrences.length} payments)
+                          </span>
+                        </div>
+                      );
+                    })()}
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="text-right flex items-center gap-3">
