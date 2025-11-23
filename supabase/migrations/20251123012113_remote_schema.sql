@@ -4035,11 +4035,6 @@ ALTER TABLE ONLY "public"."credit_card_payments"
 
 
 
-ALTER TABLE ONLY "public"."amazon_payouts"
-    ADD CONSTRAINT "unique_payout_account_date_status" UNIQUE ("amazon_account_id", "payout_date", "status");
-
-
-
 ALTER TABLE ONLY "public"."user_roles"
     ADD CONSTRAINT "user_roles_pkey" PRIMARY KEY ("id");
 
