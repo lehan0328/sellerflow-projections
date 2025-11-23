@@ -391,6 +391,10 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string,
                   });
 
                   if (hasB2BIndicators) {
+                    if(amazonAccountId == '36c0828a-7428-48af-a1b4-c31b4d5a0480'){
+                        const totalAmount = parseFloat(group.ConvertedTotal?.CurrencyAmount || group.OriginalTotal?.CurrencyAmount || '0');
+                        console.log(`[SYNC] Excluding settlement ${group.FinancialEventGroupId} with amount ${totalAmount} due to B2B indicators.`);
+                    }
                     isB2B = true;
                   }
                 }
