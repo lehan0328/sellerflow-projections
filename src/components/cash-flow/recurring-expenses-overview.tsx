@@ -352,6 +352,12 @@ export const RecurringExpensesOverview = () => {
                         </span>
                       </div>
                     )}
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-xs text-muted-foreground">
+                        {format(new Date(item.start_date), 'MMM d, yyyy')}
+                        {item.end_date && ` - ${format(new Date(item.end_date), 'MMM d, yyyy')}`}
+                      </span>
+                    </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="text-right flex items-center gap-3">
