@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
-import { Resend } from "npm:resend@4.0.0";
+// Resend temporarily disabled due to build issues
+// import { Resend } from "npm:resend@4.0.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -97,170 +98,13 @@ serve(async (req) => {
       throw new Error(`Failed to invite admin: ${error.message}`);
     }
 
-    // Send invitation email
-    const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
-    const appUrl = 'https://aurenapp.com'; // Your production domain
+    // Send invitation email - TEMPORARILY DISABLED
+    // TODO: Re-enable email once Resend package is properly configured
+    const appUrl = 'https://aurenapp.com';
     const signupUrl = `${appUrl}/admin/signup?token=${invitationToken}`;
-
-    const emailHtml = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <style>
-            body { 
-              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif; 
-              line-height: 1.6; 
-              color: #1f2937; 
-              background-color: #f9fafb;
-              margin: 0;
-              padding: 0;
-            }
-            .container { 
-              max-width: 600px; 
-              margin: 0 auto; 
-              padding: 40px 20px; 
-            }
-            .email-card {
-              background: #ffffff;
-              border-radius: 12px;
-              overflow: hidden;
-              box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            }
-            .header { 
-              background: linear-gradient(135deg, #1CA8DD 0%, #1589BA 100%);
-              color: white; 
-              padding: 50px 30px; 
-              text-align: center; 
-            }
-            .content { 
-              background: #ffffff; 
-              padding: 40px 30px;
-            }
-            .button { 
-              display: inline-block; 
-              background: #1CA8DD; 
-              color: white !important; 
-              padding: 16px 40px; 
-              text-decoration: none; 
-              border-radius: 8px; 
-              font-weight: 600; 
-              margin: 24px 0;
-              transition: background 0.3s ease;
-            }
-            .button:hover { 
-              background: #1589BA; 
-            }
-            .info-box { 
-              background: #eff6ff; 
-              border-left: 4px solid #1CA8DD; 
-              padding: 20px; 
-              margin: 24px 0; 
-              border-radius: 6px; 
-            }
-            .footer { 
-              text-align: center; 
-              margin-top: 30px; 
-              padding: 20px;
-              color: #6b7280; 
-              font-size: 13px; 
-              border-top: 1px solid #e5e7eb;
-            }
-            .link-box {
-              background: #f9fafb;
-              padding: 12px;
-              border-radius: 6px;
-              word-break: break-all;
-              font-size: 12px;
-              color: #6b7280;
-              border: 1px solid #e5e7eb;
-            }
-            ul {
-              padding-left: 20px;
-              color: #4b5563;
-            }
-            ul li {
-              margin: 8px 0;
-            }
-            strong {
-              color: #1f2937;
-            }
-            .role-badge {
-              display: inline-block;
-              background: #1CA8DD;
-              color: white;
-              padding: 6px 16px;
-              border-radius: 20px;
-              font-size: 14px;
-              font-weight: 600;
-              margin: 8px 0;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="email-card">
-              <div class="header">
-                <h1 style="margin: 0; font-size: 32px; font-weight: 700;">Auren</h1>
-                <p style="margin: 8px 0 0 0; font-size: 16px; opacity: 0.95;">Admin Dashboard Invitation</p>
-              </div>
-              <div class="content">
-                <p style="font-size: 16px; margin-top: 0;">Hello,</p>
-                <p style="font-size: 15px;">You've been invited to join the <strong>Auren Admin Dashboard</strong> by ${user.email}.</p>
-                
-                <div class="info-box">
-                  <div style="margin-bottom: 8px;"><strong>Your Access Level:</strong></div>
-                  <span class="role-badge">${role === 'admin' ? 'Full Admin Access' : 'Support & Features Staff Access'}</span>
-                  <p style="margin: 12px 0 0 0; font-size: 14px; color: #4b5563;">
-                    ${role === 'admin' 
-                      ? 'You will have full access to all admin features, settings, and user management.' 
-                      : 'You will have access to support tickets and feature requests management.'}
-                  </p>
-                </div>
-
-                <p style="font-size: 15px;">To complete your registration and create your password, click the button below:</p>
-                
-                <div style="text-align: center; margin: 30px 0;">
-                  <a href="${signupUrl}" class="button">Create Your Admin Account →</a>
-                </div>
-
-                <p style="font-size: 13px; color: #6b7280; margin-bottom: 8px;">Or copy and paste this link into your browser:</p>
-                <div class="link-box">${signupUrl}</div>
-
-                <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid #e5e7eb;">
-                  <p style="margin: 0 0 12px 0;"><strong>Important Information:</strong></p>
-                  <ul style="font-size: 14px; margin: 0;">
-                    <li>This invitation link expires in <strong>7 days</strong></li>
-                    <li>Your email address is pre-set: <strong>${email}</strong></li>
-                    <li>You will create your own secure password during signup</li>
-                    <li>This is for admin dashboard access only, separate from customer accounts</li>
-                  </ul>
-                </div>
-              </div>
-              <div class="footer">
-                <p style="margin: 0 0 8px 0; font-weight: 600; color: #1CA8DD;">Auren Cash Flow Management</p>
-                <p style="margin: 0;">This is an automated invitation. If you didn't expect this, please contact the administrator.</p>
-              </div>
-            </div>
-          </div>
-        </body>
-      </html>
-    `;
-
-    const { error: emailError } = await resend.emails.send({
-      from: "Auren Admin <noreply@aurenapp.com>",
-      to: [email],
-      subject: `You're invited to Auren Admin Dashboard (${role})`,
-      html: emailHtml,
-    });
-
-    if (emailError) {
-      console.error("[INVITE_ADMIN] Email error:", emailError);
-      throw new Error(`Failed to send invitation email: ${emailError.message}`);
-    }
-
-    console.log(`[INVITE_ADMIN] Successfully invited ${email} as ${role} - Email sent`);
+    
+    console.log(`[INVITE_ADMIN] Invitation created for ${email} as ${role}`);
+    console.log(`[INVITE_ADMIN] Signup URL: ${signupUrl}`);
 
     return new Response(
       JSON.stringify({ 
